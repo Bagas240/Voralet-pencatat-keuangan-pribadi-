@@ -1,0 +1,6 @@
+{
+  "name": "Voralet",
+  "description": "Aplikasi pelacak keuangan dan kantong digital ala Blu by BCA dan GoPay dengan sistem 6-digit PIN lokal.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

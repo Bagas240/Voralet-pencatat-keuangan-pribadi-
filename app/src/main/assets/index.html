@@ -1,0 +1,2287 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>SakuClean - Financial Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              DEFAULT: '#0284C7',
+              hover: '#0369A1',
+              light: '#E0F2FE',
+              soft: '#F0F9FF',
+              dark: '#0C4A6E'
+            },
+            slate: {
+              900: '#0F172A',
+              800: '#1E293B',
+              700: '#334155',
+              600: '#475569',
+              500: '#64748B',
+              400: '#94A3B8',
+              200: '#E2E8F0',
+              100: '#F1F5F9',
+              50: '#F8FAFC'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- React 18 & ReactDOM & Babel Standalone -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script>window.React || document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"><\/script>')</script>
+
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script>window.ReactDOM || document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"><\/script>')</script>
+
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script>window.Babel || document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.4/babel.min.js"><\/script>')</script>
+
+  <style>
+    * {
+      -webkit-tap-highlight-color: transparent;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #F8FAFC;
+      color: #0F172A;
+      margin: 0;
+      padding: 0;
+      overscroll-behavior-y: none;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-8px); }
+      40%, 80% { transform: translateX(8px); }
+    }
+    .animate-shake {
+      animation: shake 0.35s ease-in-out;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo, useCallback, useRef } = React;
+
+    // =========================================================================
+    // 1. DATA LAYER (LOCAL STORAGE SERVICE & LEDGER UTILITIES)
+    // =========================================================================
+    const STORAGE_KEYS = {
+      PIN: 'sakuclean_pin',
+      NAME: 'sakuclean_name',
+      ACCOUNTS: 'sakuclean_accounts',
+      TRANSACTIONS: 'sakuclean_transactions',
+      HIDE_BALANCE: 'sakuclean_hide_balance'
+    };
+
+    const StorageService = {
+      getPin: () => {
+        try {
+          return localStorage.getItem(STORAGE_KEYS.PIN);
+        } catch (e) {
+          console.error('Storage error getting PIN', e);
+          return null;
+        }
+      },
+      setPin: (pin) => {
+        try {
+          localStorage.setItem(STORAGE_KEYS.PIN, pin);
+        } catch (e) {
+          console.error('Storage error setting PIN', e);
+        }
+      },
+      getName: () => {
+        try {
+          return localStorage.getItem(STORAGE_KEYS.NAME) || '';
+        } catch (e) {
+          return '';
+        }
+      },
+      setName: (name) => {
+        try {
+          localStorage.setItem(STORAGE_KEYS.NAME, name);
+        } catch (e) {
+          console.error('Storage error setting Name', e);
+        }
+      },
+      getAccounts: () => {
+        try {
+          const data = localStorage.getItem(STORAGE_KEYS.ACCOUNTS);
+          return data ? JSON.parse(data) : [];
+        } catch (e) {
+          console.error('Storage error getting Accounts', e);
+          return [];
+        }
+      },
+      setAccounts: (accounts) => {
+        try {
+          localStorage.setItem(STORAGE_KEYS.ACCOUNTS, JSON.stringify(accounts));
+        } catch (e) {
+          console.error('Storage error saving Accounts', e);
+        }
+      },
+      getTransactions: () => {
+        try {
+          const data = localStorage.getItem(STORAGE_KEYS.TRANSACTIONS);
+          return data ? JSON.parse(data) : [];
+        } catch (e) {
+          console.error('Storage error getting Transactions', e);
+          return [];
+        }
+      },
+      setTransactions: (transactions) => {
+        try {
+          localStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify(transactions));
+        } catch (e) {
+          console.error('Storage error saving Transactions', e);
+        }
+      },
+      getHideBalance: () => {
+        try {
+          return localStorage.getItem(STORAGE_KEYS.HIDE_BALANCE) === 'true';
+        } catch (e) {
+          return false;
+        }
+      },
+      setHideBalance: (val) => {
+        try {
+          localStorage.setItem(STORAGE_KEYS.HIDE_BALANCE, val ? 'true' : 'false');
+        } catch (e) {}
+      },
+      clearAll: () => {
+        try {
+          localStorage.removeItem(STORAGE_KEYS.PIN);
+          localStorage.removeItem(STORAGE_KEYS.NAME);
+          localStorage.removeItem(STORAGE_KEYS.ACCOUNTS);
+          localStorage.removeItem(STORAGE_KEYS.TRANSACTIONS);
+          localStorage.removeItem(STORAGE_KEYS.HIDE_BALANCE);
+        } catch (e) {
+          console.error('Storage error clearing all', e);
+        }
+      }
+    };
+
+    // LEDGER SYSTEM: Single Source of Truth for Balances
+    // Current Account Balance = Initial Deposit + Total Income - Total Expense
+    const Ledger = {
+      getAccountBalance: (accountId, accounts, transactions) => {
+        const acc = accounts.find(a => a.id === accountId);
+        if (!acc) return 0;
+        const initial = Number(acc.initialBalance) || 0;
+        const sumTx = transactions
+          .filter(t => t.accountId === accountId)
+          .reduce((sum, t) => {
+            const amt = Number(t.amount) || 0;
+            return t.type === 'INCOME' ? sum + amt : sum - amt;
+          }, 0);
+        return initial + sumTx;
+      },
+      getTotalBalance: (accounts, transactions) => {
+        return accounts.reduce((total, acc) => {
+          return total + Ledger.getAccountBalance(acc.id, accounts, transactions);
+        }, 0);
+      },
+      getSummaryTotals: (transactions, filterAccountId = null) => {
+        const filtered = filterAccountId
+          ? transactions.filter(t => t.accountId === filterAccountId)
+          : transactions;
+        let income = 0;
+        let expense = 0;
+        for (const t of filtered) {
+          const amt = Number(t.amount) || 0;
+          if (t.type === 'INCOME') income += amt;
+          else if (t.type === 'EXPENSE') expense += amt;
+        }
+        return { income, expense, net: income - expense };
+      }
+    };
+
+    // Currency Formatting Helpers
+    const formatIDR = (amount) => {
+      const num = Number(amount) || 0;
+      return 'Rp ' + new Intl.NumberFormat('id-ID').format(num);
+    };
+
+    const parseRawNumber = (str) => {
+      if (typeof str === 'number') return str;
+      if (!str) return 0;
+      const clean = str.toString().replace(/\D/g, '');
+      return clean ? parseInt(clean, 10) : 0;
+    };
+
+    const formatDateID = (dateStr) => {
+      try {
+        const d = new Date(dateStr);
+        return d.toLocaleDateString('id-ID', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric'
+        });
+      } catch (e) {
+        return dateStr;
+      }
+    };
+
+    // Category Configuration with Clean SVG Stroke Line Icons
+    const CATEGORIES = [
+      { id: 'makan', label: 'Makan & Minum', icon: 'food', type: 'EXPENSE' },
+      { id: 'transport', label: 'Transportasi', icon: 'transport', type: 'EXPENSE' },
+      { id: 'belanja', label: 'Belanja', icon: 'shopping', type: 'EXPENSE' },
+      { id: 'tagihan', label: 'Tagihan & Utilitas', icon: 'bill', type: 'EXPENSE' },
+      { id: 'hiburan', label: 'Hiburan', icon: 'entertainment', type: 'EXPENSE' },
+      { id: 'kesehatan', label: 'Kesehatan', icon: 'health', type: 'EXPENSE' },
+      { id: 'gaji', label: 'Gaji & Honor', icon: 'salary', type: 'INCOME' },
+      { id: 'bonus', label: 'Bonus & Hadiah', icon: 'gift', type: 'INCOME' },
+      { id: 'investasi', label: 'Hasil Investasi', icon: 'investment', type: 'INCOME' },
+      { id: 'lainnya', label: 'Lainnya', icon: 'tag', type: 'ALL' }
+    ];
+
+    // =========================================================================
+    // 2. ICON COMPONENT (Flat Clean SVGs - No 3D, No AI Sparkles)
+    // =========================================================================
+    const Icon = ({ name, className = "w-5 h-5", strokeWidth = 2 }) => {
+      switch (name) {
+        case 'x':
+        case 'close':
+          return (
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          );
+        case 'wallet':
+          return (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+            </svg>
+          );
+        case 'bank':
+          return (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M3 10h18M5 10v11M9 10v11M15 10v11M19 10v11M12 3l9 7H3l9-7z" />
+            </svg>
+          );
+        case 'cash':
+          return (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+          );
+        case 'smartphone':
+          return (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+            </svg>
+          );
+        case 'arrow-up-right':
+          return (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M7 17L17 7M17 7H7M17 7V17" />
+            </svg>
+          );
+        case 'arrow-down-left':
+          return (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17 7L7 17M7 17H17M7 17V7" />
+            </svg>
+          );
+        case 'eye':
+          return (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          );
+        case 'eye-off':
+          return (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+            </svg>
+          );
+        case 'lock':
+          return (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          );
+        case 'settings':
+          return (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          );
+        case 'plus':
+          return (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+          );
+        case 'trash':
+          return (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          );
+        case 'backspace':
+          return (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414-6.414A2 2 0 0110.828 5H19a2 2 0 012 2v10a2 2 0 01-2 2h-8.172a2 2 0 01-1.414-.586L3 12z" />
+            </svg>
+          );
+        case 'food':
+          return (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          );
+        case 'transport':
+          return (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h8m-8 5h8m-6 4h4m5 4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v12a2 2 0 01-2 2z" />
+            </svg>
+          );
+        case 'shopping':
+          return (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+            </svg>
+          );
+        case 'bill':
+          return (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z" />
+            </svg>
+          );
+        case 'entertainment':
+          return (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          );
+        case 'health':
+          return (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
+          );
+        case 'salary':
+          return (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+          );
+        case 'gift':
+          return (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v13m0-13V4m0 4h7m-7 0H5m14 0v13H5V8" />
+            </svg>
+          );
+        case 'investment':
+          return (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+            </svg>
+          );
+        case 'tag':
+          return (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M7 7h.01M7 3h5a1.99 1.99 0 011.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.99 1.99 0 013 12V7a4 4 0 014-4z" />
+            </svg>
+          );
+        default:
+          return (
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          );
+      }
+    };
+
+    // =========================================================================
+    // 3. TOAST COMPONENT
+    // =========================================================================
+    const Toast = ({ message, type = 'info', onClose }) => {
+      useEffect(() => {
+        const timer = setTimeout(() => {
+          onClose();
+        }, 3000);
+        return () => clearTimeout(timer);
+      }, [onClose]);
+
+      return (
+        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-lg bg-slate-900 text-white text-xs font-medium shadow-md flex items-center gap-2 max-w-xs border border-slate-700">
+          <span className="w-2 h-2 rounded-full bg-brand"></span>
+          <span>{message}</span>
+        </div>
+      );
+    };
+
+    // =========================================================================
+    // 4. ONBOARDING & PIN KEYPAD SCREENS
+    // =========================================================================
+    const PinDots = ({ count = 6, filled = 0, isError = false }) => {
+      return (
+        <div className={`flex justify-center items-center gap-3 my-6 ${isError ? 'animate-shake' : ''}`}>
+          {Array.from({ length: count }).map((_, idx) => (
+            <div
+              key={idx}
+              className={`w-3.5 h-3.5 rounded-full transition-all duration-150 ${
+                idx < filled
+                  ? isError
+                    ? 'bg-red-500 scale-110'
+                    : 'bg-brand scale-110'
+                  : 'bg-slate-200'
+              }`}
+            />
+          ))}
+        </div>
+      );
+    };
+
+    const Keypad = ({ onKeyPress, onBackspace }) => {
+      const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'back'];
+
+      return (
+        <div className="grid grid-cols-3 gap-3 w-full max-w-xs mx-auto mt-2">
+          {keys.map((k, i) => {
+            if (k === '') {
+              return <div key={i} className="h-14" />;
+            }
+            if (k === 'back') {
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={onBackspace}
+                  className="h-14 rounded-xl flex items-center justify-center text-slate-600 hover:bg-slate-100 active:bg-slate-200 transition-colors"
+                  aria-label="Hapus"
+                >
+                  <Icon name="backspace" className="w-6 h-6" />
+                </button>
+              );
+            }
+            return (
+              <button
+                key={i}
+                type="button"
+                onClick={() => onKeyPress(k)}
+                className="h-14 rounded-xl flex items-center justify-center text-xl font-semibold text-slate-800 bg-white border border-slate-200 hover:bg-slate-50 active:bg-slate-100 transition-colors shadow-sm"
+              >
+                {k}
+              </button>
+            );
+          })}
+        </div>
+      );
+    };
+
+    // Screen: Returning User PIN Keypad
+    const ReturningUserPinScreen = ({ storedPin, onUnlock }) => {
+      const [pin, setPin] = useState('');
+      const [error, setError] = useState(false);
+
+      const handlePress = (digit) => {
+        if (pin.length < 6) {
+          const next = pin + digit;
+          setPin(next);
+          setError(false);
+
+          if (next.length === 6) {
+            if (next === storedPin) {
+              setTimeout(() => {
+                onUnlock();
+              }, 100);
+            } else {
+              setError(true);
+              setTimeout(() => {
+                setPin('');
+              }, 400);
+            }
+          }
+        }
+      };
+
+      const handleBackspace = () => {
+        setPin(prev => prev.slice(0, -1));
+        setError(false);
+      };
+
+      return (
+        <div className="min-h-screen flex flex-col justify-between p-6 bg-white max-w-md mx-auto">
+          <div className="pt-8 text-center">
+            <div className="w-12 h-12 rounded-xl bg-brand-light flex items-center justify-center mx-auto mb-3 text-brand">
+              <Icon name="lock" className="w-6 h-6" />
+            </div>
+            <h1 className="text-xl font-bold text-slate-900">Masukkan PIN Keamanan</h1>
+            <p className="text-xs text-slate-500 mt-1">Ketik 6-digit PIN untuk membuka data keuangan kamu</p>
+
+            <PinDots count={6} filled={pin.length} isError={error} />
+            {error && (
+              <p className="text-xs font-semibold text-red-500 animate-pulse">PIN tidak sesuai. Silakan coba lagi.</p>
+            )}
+          </div>
+
+          <div className="pb-8">
+            <Keypad onKeyPress={handlePress} onBackspace={handleBackspace} />
+          </div>
+        </div>
+      );
+    };
+
+    // Screen: Onboarding Flow (Create PIN -> Confirm PIN -> Name -> First Wallet)
+    const OnboardingFlow = ({ onComplete }) => {
+      const [step, setStep] = useState(1); // 1: Create PIN, 2: Confirm PIN, 3: Set Name, 4: First Wallet
+      const [newPin, setNewPin] = useState('');
+      const [confirmPin, setConfirmPin] = useState('');
+      const [error, setError] = useState(false);
+      const [name, setName] = useState('');
+
+      // First Wallet Form State
+      const [walletName, setWalletName] = useState('Dompet Tunai');
+      const [walletType, setWalletType] = useState('Cash'); // Bank | E-Wallet | Cash
+      const [initialBalance, setInitialBalance] = useState('');
+
+      const handleCreatePress = (digit) => {
+        if (newPin.length < 6) {
+          const next = newPin + digit;
+          setNewPin(next);
+          if (next.length === 6) {
+            setTimeout(() => {
+              setStep(2);
+            }, 200);
+          }
+        }
+      };
+
+      const handleConfirmPress = (digit) => {
+        if (confirmPin.length < 6) {
+          const next = confirmPin + digit;
+          setConfirmPin(next);
+          setError(false);
+
+          if (next.length === 6) {
+            if (next === newPin) {
+              setTimeout(() => {
+                setStep(3);
+              }, 200);
+            } else {
+              setError(true);
+              setTimeout(() => {
+                setConfirmPin('');
+              }, 400);
+            }
+          }
+        }
+      };
+
+      const handleFinishOnboarding = (e) => {
+        e.preventDefault();
+        const trimmedName = name.trim() || 'Teman Saku';
+        const rawBalance = parseRawNumber(initialBalance);
+        const trimmedWallet = walletName.trim() || 'Dompet Utama';
+
+        const firstAccount = {
+          id: 'acc_' + Date.now(),
+          name: trimmedWallet,
+          type: walletType,
+          initialBalance: rawBalance,
+          createdAt: new Date().toISOString()
+        };
+
+        // Save everything cleanly
+        StorageService.setPin(newPin);
+        StorageService.setName(trimmedName);
+        StorageService.setAccounts([firstAccount]);
+        StorageService.setTransactions([]);
+
+        onComplete({
+          pin: newPin,
+          name: trimmedName,
+          accounts: [firstAccount],
+          transactions: []
+        });
+      };
+
+      return (
+        <div className="min-h-screen flex flex-col justify-between p-6 bg-white max-w-md mx-auto">
+          {step === 1 && (
+            <>
+              <div className="pt-8 text-center">
+                <div className="w-12 h-12 rounded-xl bg-brand-light flex items-center justify-center mx-auto mb-3 text-brand">
+                  <Icon name="lock" className="w-6 h-6" />
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-brand bg-brand-light px-2.5 py-1 rounded-full">
+                  Langkah 1 dari 3
+                </span>
+                <h1 className="text-xl font-bold text-slate-900 mt-2">Buat 6-Digit PIN</h1>
+                <p className="text-xs text-slate-500 mt-1">PIN digunakan untuk mengamankan data keuangan offline kamu</p>
+                <PinDots count={6} filled={newPin.length} />
+              </div>
+              <div className="pb-8">
+                <Keypad
+                  onKeyPress={handleCreatePress}
+                  onBackspace={() => setNewPin(prev => prev.slice(0, -1))}
+                />
+              </div>
+            </>
+          )}
+
+          {step === 2 && (
+            <>
+              <div className="pt-8 text-center">
+                <div className="w-12 h-12 rounded-xl bg-brand-light flex items-center justify-center mx-auto mb-3 text-brand">
+                  <Icon name="lock" className="w-6 h-6" />
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-brand bg-brand-light px-2.5 py-1 rounded-full">
+                  Langkah 1 dari 3
+                </span>
+                <h1 className="text-xl font-bold text-slate-900 mt-2">Konfirmasi PIN</h1>
+                <p className="text-xs text-slate-500 mt-1">Masukkan kembali 6-digit PIN yang baru saja kamu buat</p>
+                <PinDots count={6} filled={confirmPin.length} isError={error} />
+                {error && (
+                  <p className="text-xs font-semibold text-red-500">PIN tidak cocok. Silakan ulangi konfirmasi.</p>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNewPin('');
+                    setConfirmPin('');
+                    setStep(1);
+                  }}
+                  className="mt-2 text-xs font-medium text-brand hover:underline"
+                >
+                  Ubah PIN semula
+                </button>
+              </div>
+              <div className="pb-8">
+                <Keypad
+                  onKeyPress={handleConfirmPress}
+                  onBackspace={() => {
+                    setConfirmPin(prev => prev.slice(0, -1));
+                    setError(false);
+                  }}
+                />
+              </div>
+            </>
+          )}
+
+          {step === 3 && (
+            <div className="flex-1 flex flex-col justify-center py-6">
+              <div className="text-center mb-6">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-brand bg-brand-light px-2.5 py-1 rounded-full">
+                  Langkah 2 dari 3
+                </span>
+                <h1 className="text-xl font-bold text-slate-900 mt-2">Siapa Nama Panggilanmu?</h1>
+                <p className="text-xs text-slate-500 mt-1">Nama ini hanya ditampilkan di header aplikasi</p>
+              </div>
+
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 mb-6">
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Nama Panggilan</label>
+                <input
+                  type="text"
+                  maxLength={30}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Contoh: Bagas"
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-brand"
+                  autoFocus
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (name.trim()) setStep(4);
+                }}
+                disabled={!name.trim()}
+                className="w-full py-3 bg-brand text-white font-semibold text-sm rounded-xl disabled:bg-slate-300 transition-colors shadow-sm"
+              >
+                Lanjutkan
+              </button>
+            </div>
+          )}
+
+          {step === 4 && (
+            <div className="flex-1 flex flex-col justify-center py-6">
+              <div className="text-center mb-6">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-brand bg-brand-light px-2.5 py-1 rounded-full">
+                  Langkah 3 dari 3
+                </span>
+                <h1 className="text-xl font-bold text-slate-900 mt-2">Tambah Dompet Pertama</h1>
+                <p className="text-xs text-slate-500 mt-1">Buat dompet awal untuk mulai mencatat keuanganmu</p>
+              </div>
+
+              <form onSubmit={handleFinishOnboarding} className="space-y-4 bg-slate-50 border border-slate-200 rounded-xl p-5">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Nama Dompet / Akun</label>
+                  <input
+                    type="text"
+                    required
+                    value={walletName}
+                    onChange={(e) => setWalletName(e.target.value)}
+                    placeholder="Contoh: Dompet Utama / Rekening BCA"
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-brand"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Kategori Akun</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { id: 'Cash', label: 'Tunai', icon: 'cash' },
+                      { id: 'Bank', label: 'Bank', icon: 'bank' },
+                      { id: 'E-Wallet', label: 'E-Wallet', icon: 'smartphone' }
+                    ].map(type => (
+                      <button
+                        key={type.id}
+                        type="button"
+                        onClick={() => setWalletType(type.id)}
+                        className={`py-2 px-1 text-center rounded-lg border text-xs font-medium flex flex-col items-center gap-1 transition-colors ${
+                          walletType === type.id
+                            ? 'bg-brand-light border-brand text-brand font-semibold'
+                            : 'bg-white border-slate-200 text-slate-600'
+                        }`}
+                      >
+                        <Icon name={type.icon} className="w-4 h-4" />
+                        <span>{type.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Saldo Awal (Rp)</label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={initialBalance ? formatIDR(parseRawNumber(initialBalance)) : ''}
+                    onChange={(e) => {
+                      const num = parseRawNumber(e.target.value);
+                      setInitialBalance(num ? num.toString() : '');
+                    }}
+                    placeholder="Rp 0"
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-semibold text-slate-900 focus:outline-none focus:border-brand"
+                  />
+                  <span className="text-[11px] text-slate-500 mt-1 block">Bisa diisi 0 jika baru akan diisi nanti.</span>
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    type="submit"
+                    className="w-full py-3 bg-brand hover:bg-brand-hover active:bg-brand-dark text-white font-semibold text-sm rounded-xl transition-colors shadow-sm"
+                  >
+                    Buka Dashboard
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    // =========================================================================
+    // 5. TRANSACTION MODAL (ADD EXPENSE / INCOME)
+    // =========================================================================
+    const TransactionModal = ({ isOpen, onClose, initialType = 'EXPENSE', accounts, onAddTransaction }) => {
+      const [type, setType] = useState(initialType);
+      const [amountStr, setAmountStr] = useState('');
+      const [accountId, setAccountId] = useState(accounts[0]?.id || '');
+      const [category, setCategory] = useState(CATEGORIES[0].id);
+      const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
+      const [notes, setNotes] = useState('');
+      const [error, setError] = useState('');
+
+      useEffect(() => {
+        setType(initialType);
+        if (accounts.length > 0 && !accounts.some(a => a.id === accountId)) {
+          setAccountId(accounts[0].id);
+        }
+      }, [initialType, accounts]);
+
+      if (!isOpen) return null;
+
+      const filteredCategories = CATEGORIES.filter(c => c.type === 'ALL' || c.type === type);
+
+      const handleQuickAdd = (value) => {
+        const current = parseRawNumber(amountStr);
+        const next = current + value;
+        setAmountStr(next.toString());
+      };
+
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        const rawAmount = parseRawNumber(amountStr);
+        if (rawAmount <= 0) {
+          setError('Jumlah nominal harus lebih besar dari 0');
+          return;
+        }
+        if (!accountId) {
+          setError('Pilih dompet/akun tujuan terlebih dahulu');
+          return;
+        }
+
+        const newTx = {
+          id: 'tx_' + Date.now(),
+          accountId,
+          type,
+          amount: rawAmount,
+          category,
+          date,
+          notes: notes.trim(),
+          createdAt: new Date().toISOString()
+        };
+
+        onAddTransaction(newTx);
+        onClose();
+      };
+
+      return (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 p-0 sm:p-4">
+          <div className="w-full max-w-md bg-white rounded-t-2xl sm:rounded-2xl max-h-[92vh] flex flex-col shadow-xl border border-slate-200 overflow-hidden">
+            {/* Modal Header */}
+            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+              <h2 className="text-base font-bold text-slate-900">Catat Transaksi</h2>
+              <button
+                type="button"
+                onClick={onClose}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+
+            {/* Scrollable Form Body */}
+            <form onSubmit={handleSubmit} className="overflow-y-auto p-5 space-y-4 no-scrollbar">
+              {/* Type Switcher */}
+              <div className="grid grid-cols-2 p-1 bg-slate-100 rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setType('EXPENSE');
+                    setCategory('makan');
+                  }}
+                  className={`py-2 rounded-lg text-xs font-semibold transition-all ${
+                    type === 'EXPENSE'
+                      ? 'bg-white text-red-600 shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  [-] Pengeluaran
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setType('INCOME');
+                    setCategory('gaji');
+                  }}
+                  className={`py-2 rounded-lg text-xs font-semibold transition-all ${
+                    type === 'INCOME'
+                      ? 'bg-white text-emerald-600 shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  [+] Pemasukan
+                </button>
+              </div>
+
+              {/* Amount Input */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Nominal (IDR)</label>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">Rp</span>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    required
+                    value={amountStr ? new Intl.NumberFormat('id-ID').format(parseRawNumber(amountStr)) : ''}
+                    onChange={(e) => {
+                      const num = parseRawNumber(e.target.value);
+                      setAmountStr(num ? num.toString() : '');
+                      setError('');
+                    }}
+                    placeholder="0"
+                    className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-lg font-bold text-slate-900 focus:outline-none focus:border-brand focus:bg-white"
+                  />
+                </div>
+                {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
+
+                {/* Quick Chips */}
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {[20000, 50000, 100000, 250000, 500000].map(val => (
+                    <button
+                      key={val}
+                      type="button"
+                      onClick={() => handleQuickAdd(val)}
+                      className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 rounded-md text-[11px] font-medium transition-colors"
+                    >
+                      +{val >= 1000 ? `${val / 1000}rb` : val}
+                    </button>
+                  ))}
+                  {amountStr && (
+                    <button
+                      type="button"
+                      onClick={() => setAmountStr('')}
+                      className="px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-600 rounded-md text-[11px] font-medium transition-colors ml-auto"
+                    >
+                      Reset
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Source Account Selector */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Dompet / Akun</label>
+                {accounts.length === 0 ? (
+                  <p className="text-xs text-amber-600 bg-amber-50 p-2.5 rounded-lg border border-amber-200">
+                    Belum ada akun dompet. Buat akun di menu Akun terlebih dahulu.
+                  </p>
+                ) : (
+                  <select
+                    value={accountId}
+                    onChange={(e) => setAccountId(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm font-medium text-slate-800 focus:outline-none focus:border-brand"
+                  >
+                    {accounts.map(acc => (
+                      <option key={acc.id} value={acc.id}>
+                        {acc.name} ({acc.type})
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              {/* Category Grid */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Kategori</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {filteredCategories.map(cat => (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => setCategory(cat.id)}
+                      className={`p-2 rounded-xl border text-center flex flex-col items-center gap-1 transition-all ${
+                        category === cat.id
+                          ? 'border-brand bg-brand-light text-brand font-semibold'
+                          : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                      }`}
+                    >
+                      <Icon name={cat.icon} className="w-5 h-5" />
+                      <span className="text-[11px] leading-tight line-clamp-1">{cat.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Date & Note */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Tanggal</label>
+                  <input
+                    type="date"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:border-brand"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Catatan (Opsional)</label>
+                  <input
+                    type="text"
+                    maxLength={60}
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Contoh: Makan siang bareng tim"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-brand"
+                  />
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={accounts.length === 0}
+                  className={`w-full py-3 text-white font-semibold text-sm rounded-xl transition-colors shadow-sm ${
+                    type === 'EXPENSE'
+                      ? 'bg-red-600 hover:bg-red-700'
+                      : 'bg-emerald-600 hover:bg-emerald-700'
+                  }`}
+                >
+                  Simpan {type === 'EXPENSE' ? 'Pengeluaran' : 'Pemasukan'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      );
+    };
+
+    // =========================================================================
+    // 6. ACCOUNTS & WALLETS MANAGER MODAL
+    // =========================================================================
+    const AccountsManagerModal = ({
+      isOpen,
+      onClose,
+      accounts,
+      transactions,
+      onAddAccount,
+      onDeleteAccount,
+      onEditAccount
+    }) => {
+      const [isAdding, setIsAdding] = useState(false);
+      const [name, setName] = useState('');
+      const [type, setType] = useState('Bank');
+      const [initialBalance, setInitialBalance] = useState('');
+      const [editingAcc, setEditingAcc] = useState(null);
+
+      if (!isOpen) return null;
+
+      const handleSaveNew = (e) => {
+        e.preventDefault();
+        const trimmed = name.trim();
+        if (!trimmed) return;
+        const bal = parseRawNumber(initialBalance);
+
+        if (editingAcc) {
+          onEditAccount(editingAcc.id, {
+            name: trimmed,
+            type,
+            initialBalance: bal
+          });
+          setEditingAcc(null);
+        } else {
+          const newAcc = {
+            id: 'acc_' + Date.now(),
+            name: trimmed,
+            type,
+            initialBalance: bal,
+            createdAt: new Date().toISOString()
+          };
+          onAddAccount(newAcc);
+        }
+
+        setName('');
+        setInitialBalance('');
+        setType('Bank');
+        setIsAdding(false);
+      };
+
+      const startEdit = (acc) => {
+        setEditingAcc(acc);
+        setName(acc.name);
+        setType(acc.type);
+        setInitialBalance(acc.initialBalance.toString());
+        setIsAdding(true);
+      };
+
+      return (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 p-0 sm:p-4">
+          <div className="w-full max-w-md bg-white rounded-t-2xl sm:rounded-2xl max-h-[90vh] flex flex-col shadow-xl border border-slate-200 overflow-hidden">
+            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h2 className="text-base font-bold text-slate-900">Kelola Dompet & Akun</h2>
+                <p className="text-xs text-slate-500">Saldo dihitung otomatis dari deposit & mutasi</p>
+              </div>
+              <button
+                type="button"
+                onClick={onClose}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+
+            <div className="p-5 overflow-y-auto space-y-4 no-scrollbar">
+              {!isAdding ? (
+                <>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                      Daftar Akun ({accounts.length})
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingAcc(null);
+                        setName('');
+                        setInitialBalance('');
+                        setType('Bank');
+                        setIsAdding(true);
+                      }}
+                      className="px-3 py-1.5 bg-brand-light text-brand text-xs font-semibold rounded-lg hover:bg-sky-100 transition-colors flex items-center gap-1"
+                    >
+                      <Icon name="plus" className="w-4 h-4" />
+                      Tambah Akun
+                    </button>
+                  </div>
+
+                  {accounts.length === 0 ? (
+                    <div className="p-6 text-center bg-slate-50 rounded-xl border border-dashed border-slate-300">
+                      <Icon name="wallet" className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                      <p className="text-xs font-medium text-slate-600">Belum ada akun atau dompet.</p>
+                      <p className="text-[11px] text-slate-400 mt-0.5">Buat akun pertama kamu untuk mulai mencatat.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {accounts.map(acc => {
+                        const bal = Ledger.getAccountBalance(acc.id, accounts, transactions);
+                        return (
+                          <div
+                            key={acc.id}
+                            className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-brand">
+                                <Icon
+                                  name={acc.type === 'Bank' ? 'bank' : acc.type === 'Cash' ? 'cash' : 'smartphone'}
+                                  className="w-5 h-5"
+                                />
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-xs font-bold text-slate-900">{acc.name}</span>
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 text-slate-700 font-medium">
+                                    {acc.type}
+                                  </span>
+                                </div>
+                                <span className="text-xs font-semibold text-brand block mt-0.5">
+                                  {formatIDR(bal)}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => startEdit(acc)}
+                                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-brand hover:bg-white"
+                                title="Edit Akun"
+                              >
+                                <Icon name="edit" className="w-4 h-4" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (confirm(`Hapus dompet "${acc.name}"? Semua mutasi transaksi terkait juga akan dihapus.`)) {
+                                    onDeleteAccount(acc.id);
+                                  }
+                                }}
+                                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-red-600 hover:bg-white"
+                                title="Hapus Akun"
+                              >
+                                <Icon name="trash" className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </>
+              ) : (
+                /* Add / Edit Account Form */
+                <form onSubmit={handleSaveNew} className="space-y-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                      {editingAcc ? 'Edit Akun' : 'Tambah Akun Baru'}
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => setIsAdding(false)}
+                      className="text-xs text-slate-500 hover:text-slate-800"
+                    >
+                      Batal
+                    </button>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Nama Akun / Dompet</label>
+                    <input
+                      type="text"
+                      required
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Contoh: Bank BCA / GoPay / Dompet Tunai"
+                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs font-medium text-slate-900 focus:outline-none focus:border-brand"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Tipe Akun</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { id: 'Bank', label: 'Bank', icon: 'bank' },
+                        { id: 'E-Wallet', label: 'E-Wallet', icon: 'smartphone' },
+                        { id: 'Cash', label: 'Tunai', icon: 'cash' }
+                      ].map(item => (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => setType(item.id)}
+                          className={`py-2 px-1 text-center rounded-lg border text-xs flex flex-col items-center gap-1 ${
+                            type === item.id
+                              ? 'bg-brand-light border-brand text-brand font-semibold'
+                              : 'bg-white border-slate-200 text-slate-600'
+                          }`}
+                        >
+                          <Icon name={item.icon} className="w-4 h-4" />
+                          <span>{item.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Saldo Awal (Rp)</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={initialBalance ? new Intl.NumberFormat('id-ID').format(parseRawNumber(initialBalance)) : ''}
+                      onChange={(e) => {
+                        const num = parseRawNumber(e.target.value);
+                        setInitialBalance(num ? num.toString() : '');
+                      }}
+                      placeholder="0"
+                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:outline-none focus:border-brand"
+                    />
+                    <span className="text-[11px] text-slate-400 mt-1 block">Saldo awal saat pertama kali didaftarkan.</span>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full py-2.5 bg-brand hover:bg-brand-hover text-white font-semibold text-xs rounded-lg transition-colors shadow-sm"
+                  >
+                    {editingAcc ? 'Simpan Perubahan' : 'Tambahkan Akun'}
+                  </button>
+                </form>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // =========================================================================
+    // 7. SETTINGS & DATA CONTROL MODAL
+    // =========================================================================
+    const SettingsModal = ({
+      isOpen,
+      onClose,
+      storedName,
+      storedPin,
+      accounts,
+      transactions,
+      onUpdateName,
+      onUpdatePin,
+      onImportData,
+      onResetAll,
+      showToast
+    }) => {
+      const [nameInput, setNameInput] = useState(storedName);
+      const [isChangingPin, setIsChangingPin] = useState(false);
+      const [oldPin, setOldPin] = useState('');
+      const [newPin1, setNewPin1] = useState('');
+      const [newPin2, setNewPin2] = useState('');
+      const [pinError, setPinError] = useState('');
+      const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
+      const [resetText, setResetText] = useState('');
+      const fileInputRef = useRef(null);
+
+      useEffect(() => {
+        setNameInput(storedName);
+      }, [storedName]);
+
+      if (!isOpen) return null;
+
+      const handleSaveName = (e) => {
+        e.preventDefault();
+        const trimmed = nameInput.trim();
+        if (trimmed) {
+          onUpdateName(trimmed);
+          showToast('Nama profil berhasil disimpan');
+        }
+      };
+
+      const handleSaveNewPin = (e) => {
+        e.preventDefault();
+        setPinError('');
+        if (oldPin !== storedPin) {
+          setPinError('PIN lama salah');
+          return;
+        }
+        if (newPin1.length !== 6) {
+          setPinError('PIN baru harus 6 digit');
+          return;
+        }
+        if (newPin1 !== newPin2) {
+          setPinError('Konfirmasi PIN baru tidak cocok');
+          return;
+        }
+
+        onUpdatePin(newPin1);
+        setIsChangingPin(false);
+        setOldPin('');
+        setNewPin1('');
+        setNewPin2('');
+        showToast('PIN keamanan berhasil diperbarui');
+      };
+
+      const handleExportJson = () => {
+        const backupData = {
+          app: 'SakuClean',
+          version: 1,
+          exportedAt: new Date().toISOString(),
+          name: storedName,
+          accounts,
+          transactions
+        };
+
+        const jsonStr = JSON.stringify(backupData, null, 2);
+        const blob = new Blob([jsonStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `financial_backup_${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('File backup berhasil diunduh');
+      };
+
+      const handleImportFile = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          try {
+            const parsed = JSON.parse(evt.target.result);
+            if (!parsed || !Array.isArray(parsed.accounts) || !Array.isArray(parsed.transactions)) {
+              alert('Format file backup tidak valid. Pastikan struktur JSON benar.');
+              return;
+            }
+
+            if (confirm('Pulihkan data dari backup? Data saat ini akan digantikan.')) {
+              onImportData(parsed);
+              showToast('Data berhasil dipulihkan dari backup');
+              onClose();
+            }
+          } catch (err) {
+            alert('Gagal membaca file JSON: format rusak.');
+          }
+        };
+        reader.readAsText(file);
+      };
+
+      return (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 p-0 sm:p-4">
+          <div className="w-full max-w-md bg-white rounded-t-2xl sm:rounded-2xl max-h-[90vh] flex flex-col shadow-xl border border-slate-200 overflow-hidden">
+            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+              <h2 className="text-base font-bold text-slate-900">Pengaturan & Kontrol Data</h2>
+              <button
+                type="button"
+                onClick={onClose}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+
+            <div className="p-5 overflow-y-auto space-y-5 no-scrollbar">
+              {/* Profile Name Edit */}
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Nama Panggilan</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={nameInput}
+                    onChange={(e) => setNameInput(e.target.value)}
+                    className="flex-1 px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs font-medium text-slate-900 focus:outline-none focus:border-brand"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleSaveName}
+                    className="px-3 py-2 bg-brand text-white text-xs font-semibold rounded-lg hover:bg-brand-hover transition-colors"
+                  >
+                    Simpan
+                  </button>
+                </div>
+              </div>
+
+              {/* Security PIN Change */}
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <h3 className="text-xs font-bold text-slate-800">PIN Keamanan (6 Digit)</h3>
+                    <p className="text-[11px] text-slate-500">Ubah PIN untuk masuk ke aplikasi</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsChangingPin(!isChangingPin);
+                      setPinError('');
+                    }}
+                    className="text-xs font-semibold text-brand hover:underline"
+                  >
+                    {isChangingPin ? 'Tutup' : 'Ubah PIN'}
+                  </button>
+                </div>
+
+                {isChangingPin && (
+                  <form onSubmit={handleSaveNewPin} className="space-y-2.5 pt-2 border-t border-slate-200 mt-2">
+                    <div>
+                      <label className="block text-[11px] font-medium text-slate-600 mb-0.5">PIN Lama</label>
+                      <input
+                        type="password"
+                        maxLength={6}
+                        inputMode="numeric"
+                        required
+                        value={oldPin}
+                        onChange={(e) => setOldPin(e.target.value.replace(/\D/g, ''))}
+                        className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs tracking-widest text-slate-900 focus:outline-none focus:border-brand"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-medium text-slate-600 mb-0.5">PIN Baru (6 Digit)</label>
+                      <input
+                        type="password"
+                        maxLength={6}
+                        inputMode="numeric"
+                        required
+                        value={newPin1}
+                        onChange={(e) => setNewPin1(e.target.value.replace(/\D/g, ''))}
+                        className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs tracking-widest text-slate-900 focus:outline-none focus:border-brand"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-medium text-slate-600 mb-0.5">Konfirmasi PIN Baru</label>
+                      <input
+                        type="password"
+                        maxLength={6}
+                        inputMode="numeric"
+                        required
+                        value={newPin2}
+                        onChange={(e) => setNewPin2(e.target.value.replace(/\D/g, ''))}
+                        className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs tracking-widest text-slate-900 focus:outline-none focus:border-brand"
+                      />
+                    </div>
+                    {pinError && <p className="text-xs text-red-500 font-medium">{pinError}</p>}
+                    <button
+                      type="submit"
+                      className="w-full py-2 bg-brand text-white font-semibold text-xs rounded-lg hover:bg-brand-hover transition-colors mt-1"
+                    >
+                      Konfirmasi Ubah PIN
+                    </button>
+                  </form>
+                )}
+              </div>
+
+              {/* Backup & Restore Panel */}
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                <h3 className="text-xs font-bold text-slate-800">Cadangkan & Pulihkan Data</h3>
+                <p className="text-[11px] text-slate-500">
+                  Data tersimpan sepenuhnya di perangkat lokalmu. Ekspor file JSON secara berkala agar tidak hilang.
+                </p>
+
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={handleExportJson}
+                    className="py-2 px-3 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors shadow-sm"
+                  >
+                    <Icon name="arrow-up-right" className="w-4 h-4 text-brand" />
+                    Ekspor JSON
+                  </button>
+
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".json"
+                    onChange={handleImportFile}
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="py-2 px-3 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors shadow-sm"
+                  >
+                    <Icon name="arrow-down-left" className="w-4 h-4 text-emerald-600" />
+                    Impor JSON
+                  </button>
+                </div>
+              </div>
+
+              {/* Danger Zone: Reset All Data */}
+              <div className="bg-red-50 p-4 rounded-xl border border-red-200">
+                <h3 className="text-xs font-bold text-red-700">Zona Berbahaya</h3>
+                <p className="text-[11px] text-red-600 mt-0.5">
+                  Menghapus PIN, seluruh akun, dan catatan mutasi dari browser.
+                </p>
+
+                {!isResetConfirmOpen ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsResetConfirmOpen(true)}
+                    className="mt-3 px-3 py-2 bg-red-600 text-white font-semibold text-xs rounded-lg hover:bg-red-700 transition-colors"
+                  >
+                    Reset Semua Data
+                  </button>
+                ) : (
+                  <div className="mt-3 space-y-2 pt-2 border-t border-red-200">
+                    <p className="text-[11px] font-bold text-red-700">
+                      Ketik kata <span className="underline">RESET</span> untuk mengonfirmasi:
+                    </p>
+                    <input
+                      type="text"
+                      value={resetText}
+                      onChange={(e) => setResetText(e.target.value)}
+                      placeholder="RESET"
+                      className="w-full px-3 py-1.5 bg-white border border-red-300 rounded-lg text-xs font-bold text-red-700 focus:outline-none"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        disabled={resetText.trim() !== 'RESET'}
+                        onClick={() => {
+                          onResetAll();
+                        }}
+                        className="px-3 py-1.5 bg-red-600 text-white font-semibold text-xs rounded-lg disabled:opacity-40"
+                      >
+                        Hapus Permanen
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsResetConfirmOpen(false);
+                          setResetText('');
+                        }}
+                        className="px-3 py-1.5 bg-white text-slate-700 border border-slate-300 font-medium text-xs rounded-lg"
+                      >
+                        Batal
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // =========================================================================
+    // 8. MAIN DASHBOARD VIEW
+    // =========================================================================
+    const Dashboard = ({
+      name,
+      accounts,
+      transactions,
+      hideBalance,
+      onToggleHideBalance,
+      onLockApp,
+      onOpenSettings,
+      onOpenAccountsManager,
+      onOpenAddTransaction,
+      onDeleteTransaction
+    }) => {
+      const [selectedAccountId, setSelectedAccountId] = useState(null); // null = all accounts
+      const [filterType, setFilterType] = useState('ALL'); // ALL | EXPENSE | INCOME
+      const [searchQuery, setSearchQuery] = useState('');
+      const [detailTx, setDetailTx] = useState(null);
+
+      // Ledger Dynamic Calculation: Total Combined Balance
+      const totalBalance = useMemo(() => {
+        return Ledger.getTotalBalance(accounts, transactions);
+      }, [accounts, transactions]);
+
+      // Summary totals for selected account / all
+      const summary = useMemo(() => {
+        return Ledger.getSummaryTotals(transactions, selectedAccountId);
+      }, [transactions, selectedAccountId]);
+
+      // Filtered transactions
+      const filteredTransactions = useMemo(() => {
+        return transactions.filter(t => {
+          if (selectedAccountId && t.accountId !== selectedAccountId) return false;
+          if (filterType !== 'ALL' && t.type !== filterType) return false;
+          if (searchQuery.trim()) {
+            const query = searchQuery.toLowerCase();
+            const noteMatch = (t.notes || '').toLowerCase().includes(query);
+            const catObj = CATEGORIES.find(c => c.id === t.category);
+            const catMatch = (catObj?.label || '').toLowerCase().includes(query);
+            return noteMatch || catMatch;
+          }
+          return true;
+        });
+      }, [transactions, selectedAccountId, filterType, searchQuery]);
+
+      return (
+        <div className="min-h-screen pb-24 bg-white max-w-md mx-auto flex flex-col">
+          {/* Navigation Header */}
+          <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm border-b border-slate-100 px-5 py-3.5 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-brand-light flex items-center justify-center text-brand font-bold text-xs">
+                {(name || 'U').charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <span className="text-[11px] text-slate-400 block font-medium">Selamat datang,</span>
+                <h1 className="text-sm font-bold text-slate-900 leading-tight">Halo, {name || 'Pengguna'}</h1>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={onLockApp}
+                className="w-9 h-9 rounded-xl border border-slate-200 flex items-center justify-center text-slate-600 hover:text-slate-900 hover:bg-slate-50 active:bg-slate-100 transition-colors"
+                title="Kunci Aplikasi"
+                aria-label="Kunci Aplikasi"
+              >
+                <Icon name="lock" className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={onOpenSettings}
+                className="w-9 h-9 rounded-xl border border-slate-200 flex items-center justify-center text-slate-600 hover:text-slate-900 hover:bg-slate-50 active:bg-slate-100 transition-colors"
+                title="Pengaturan"
+                aria-label="Pengaturan"
+              >
+                <Icon name="settings" className="w-4 h-4" />
+              </button>
+            </div>
+          </header>
+
+          <main className="flex-1 px-5 pt-4 space-y-5">
+            {/* Total Combined Balance Card */}
+            <div className="bg-brand-soft border border-sky-100 rounded-2xl p-5 shadow-sm">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs font-semibold text-slate-600">Total Saldo Gabungan</span>
+                <button
+                  type="button"
+                  onClick={onToggleHideBalance}
+                  className="text-slate-400 hover:text-slate-600 p-1"
+                  aria-label="Toggle Sembunyikan Saldo"
+                >
+                  <Icon name={hideBalance ? 'eye-off' : 'eye'} className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="text-2xl font-extrabold text-slate-900 tracking-tight">
+                {hideBalance ? '••••••••' : formatIDR(totalBalance)}
+              </div>
+
+              {/* Monthly Ledger Flow Badges */}
+              <div className="mt-4 pt-3 border-t border-sky-200/60 grid grid-cols-2 gap-2 text-xs">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                    <Icon name="arrow-down-left" className="w-3.5 h-3.5" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-500 block">Total Masuk</span>
+                    <span className="font-bold text-emerald-600">
+                      {hideBalance ? '••••••' : formatIDR(summary.income)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-full bg-red-100 text-red-700 flex items-center justify-center">
+                    <Icon name="arrow-up-right" className="w-3.5 h-3.5" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-500 block">Total Keluar</span>
+                    <span className="font-bold text-red-600">
+                      {hideBalance ? '••••••' : formatIDR(summary.expense)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Action Buttons (Expense & Income) */}
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => onOpenAddTransaction('EXPENSE')}
+                className="py-3 px-4 rounded-xl border border-red-200 bg-red-50/70 hover:bg-red-100/80 active:bg-red-200 text-red-700 font-semibold text-xs flex items-center justify-center gap-2 transition-colors shadow-sm"
+              >
+                <div className="w-6 h-6 rounded-lg bg-red-200 text-red-700 flex items-center justify-center">
+                  <Icon name="arrow-up-right" className="w-3.5 h-3.5" />
+                </div>
+                <span>[-] Pengeluaran</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onOpenAddTransaction('INCOME')}
+                className="py-3 px-4 rounded-xl border border-emerald-200 bg-emerald-50/70 hover:bg-emerald-100/80 active:bg-emerald-200 text-emerald-700 font-semibold text-xs flex items-center justify-center gap-2 transition-colors shadow-sm"
+              >
+                <div className="w-6 h-6 rounded-lg bg-emerald-200 text-emerald-700 flex items-center justify-center">
+                  <Icon name="arrow-down-left" className="w-3.5 h-3.5" />
+                </div>
+                <span>[+] Pemasukan</span>
+              </button>
+            </div>
+
+            {/* Accounts Carousel / Grid (Blu Pocket Style) */}
+            <div>
+              <div className="flex items-center justify-between mb-2.5">
+                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  Kantong & Dompet ({accounts.length})
+                </h2>
+                <button
+                  type="button"
+                  onClick={onOpenAccountsManager}
+                  className="text-xs font-semibold text-brand hover:underline"
+                >
+                  Kelola Akun
+                </button>
+              </div>
+
+              {accounts.length === 0 ? (
+                <div className="p-5 bg-slate-50 rounded-xl border border-dashed border-slate-300 text-center">
+                  <p className="text-xs font-semibold text-slate-700">Belum ada akun, buat akun pertama kamu</p>
+                  <button
+                    type="button"
+                    onClick={onOpenAccountsManager}
+                    className="mt-2.5 px-3 py-1.5 bg-brand text-white text-xs font-semibold rounded-lg hover:bg-brand-hover"
+                  >
+                    + Buat Akun
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-2.5 overflow-x-auto pb-1 no-scrollbar -mx-1 px-1">
+                  {/* "Semua Akun" selector pill */}
+                  <button
+                    type="button"
+                    onClick={() => setSelectedAccountId(null)}
+                    className={`flex-shrink-0 min-w-[110px] p-3 rounded-xl border text-left transition-all ${
+                      selectedAccountId === null
+                        ? 'border-brand bg-brand-light text-slate-900 shadow-sm'
+                        : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                    }`}
+                  >
+                    <span className="text-[10px] font-bold block uppercase tracking-wider text-slate-400">Filter</span>
+                    <span className="text-xs font-bold block mt-0.5">Semua Akun</span>
+                    <span className="text-[11px] font-semibold text-brand mt-1 block">
+                      {hideBalance ? '••••' : formatIDR(totalBalance)}
+                    </span>
+                  </button>
+
+                  {/* Individual Account Cards */}
+                  {accounts.map(acc => {
+                    const bal = Ledger.getAccountBalance(acc.id, accounts, transactions);
+                    const isSelected = selectedAccountId === acc.id;
+
+                    return (
+                      <button
+                        key={acc.id}
+                        type="button"
+                        onClick={() => setSelectedAccountId(isSelected ? null : acc.id)}
+                        className={`flex-shrink-0 min-w-[130px] p-3 rounded-xl border text-left transition-all ${
+                          isSelected
+                            ? 'border-brand bg-brand-light text-slate-900 shadow-sm'
+                            : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-medium">
+                            {acc.type}
+                          </span>
+                          <Icon
+                            name={acc.type === 'Bank' ? 'bank' : acc.type === 'Cash' ? 'cash' : 'smartphone'}
+                            className="w-3.5 h-3.5 text-slate-400"
+                          />
+                        </div>
+                        <span className="text-xs font-bold block truncate">{acc.name}</span>
+                        <span className="text-[11px] font-semibold text-slate-900 mt-1 block">
+                          {hideBalance ? '••••' : formatIDR(bal)}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Recent Transactions Header & Filters */}
+            <div className="pt-2">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-1.5">
+                  <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                    Mutasi Transaksi
+                  </h2>
+                  {selectedAccountId && (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-brand-light text-brand font-semibold">
+                      {accounts.find(a => a.id === selectedAccountId)?.name}
+                    </span>
+                  )}
+                </div>
+                {selectedAccountId && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedAccountId(null)}
+                    className="text-[11px] text-slate-400 hover:text-slate-600"
+                  >
+                    Reset Filter
+                  </button>
+                )}
+              </div>
+
+              {/* Search and Type Filter Chips */}
+              <div className="space-y-2 mb-3">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Cari transaksi atau kategori..."
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-brand focus:bg-white"
+                />
+
+                <div className="flex gap-1.5">
+                  {[
+                    { id: 'ALL', label: 'Semua' },
+                    { id: 'EXPENSE', label: 'Pengeluaran' },
+                    { id: 'INCOME', label: 'Pemasukan' }
+                  ].map(f => (
+                    <button
+                      key={f.id}
+                      type="button"
+                      onClick={() => setFilterType(f.id)}
+                      className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
+                        filterType === f.id
+                          ? 'bg-slate-900 text-white'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Transactions List */}
+              {filteredTransactions.length === 0 ? (
+                <div className="p-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                  <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-2 text-slate-400">
+                    <Icon name="tag" className="w-5 h-5" />
+                  </div>
+                  <p className="text-xs font-semibold text-slate-700">
+                    {transactions.length === 0 ? 'Belum ada transaksi' : 'Tidak ada transaksi yang cocok'}
+                  </p>
+                  <p className="text-[11px] text-slate-400 mt-1 max-w-xs mx-auto">
+                    {transactions.length === 0
+                      ? 'Catat pengeluaran harian atau pemasukanmu lewat tombol di atas.'
+                      : 'Coba ubah kata kunci pencarian atau bersihkan filter.'}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {filteredTransactions.map(tx => {
+                    const catObj = CATEGORIES.find(c => c.id === tx.category);
+                    const accObj = accounts.find(a => a.id === tx.accountId);
+                    const isExpense = tx.type === 'EXPENSE';
+
+                    return (
+                      <div
+                        key={tx.id}
+                        onClick={() => setDetailTx(tx)}
+                        className="p-3 bg-white rounded-xl border border-slate-200 hover:border-slate-300 transition-colors flex items-center justify-between cursor-pointer active:bg-slate-50"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+                              isExpense ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'
+                            }`}
+                          >
+                            <Icon name={catObj?.icon || 'tag'} className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <span className="text-xs font-bold text-slate-900 block leading-tight">
+                              {catObj?.label || 'Transaksi'}
+                            </span>
+                            <div className="flex items-center gap-1.5 text-[11px] text-slate-400 mt-0.5">
+                              <span>{accObj?.name || 'Dompet'}</span>
+                              <span>•</span>
+                              <span>{formatDateID(tx.date)}</span>
+                            </div>
+                            {tx.notes && (
+                              <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">{tx.notes}</p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="text-right">
+                          <span
+                            className={`text-xs font-bold block ${
+                              isExpense ? 'text-red-600' : 'text-emerald-600'
+                            }`}
+                          >
+                            {isExpense ? '-' : '+'} {formatIDR(tx.amount)}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </main>
+
+          {/* Transaction Detail & Delete Modal */}
+          {detailTx && (
+            <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 p-0 sm:p-4">
+              <div className="w-full max-w-sm bg-white rounded-t-2xl sm:rounded-2xl p-5 shadow-xl border border-slate-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-bold text-slate-900">Rincian Transaksi</h3>
+                  <button
+                    type="button"
+                    onClick={() => setDetailTx(null)}
+                    className="text-slate-400 hover:text-slate-600 p-1"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  </button>
+                </div>
+
+                <div className="space-y-3 text-xs bg-slate-50 p-4 rounded-xl border border-slate-200 mb-4">
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Tipe Mutasi:</span>
+                    <span className={`font-bold ${detailTx.type === 'EXPENSE' ? 'text-red-600' : 'text-emerald-600'}`}>
+                      {detailTx.type === 'EXPENSE' ? 'Pengeluaran' : 'Pemasukan'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Nominal:</span>
+                    <span className="font-bold text-slate-900">{formatIDR(detailTx.amount)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Kategori:</span>
+                    <span className="font-medium text-slate-900">
+                      {CATEGORIES.find(c => c.id === detailTx.category)?.label || detailTx.category}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Dompet Asal:</span>
+                    <span className="font-medium text-slate-900">
+                      {accounts.find(a => a.id === detailTx.accountId)?.name || 'Akun'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Tanggal:</span>
+                    <span className="font-medium text-slate-900">{formatDateID(detailTx.date)}</span>
+                  </div>
+                  {detailTx.notes && (
+                    <div className="pt-2 border-t border-slate-200">
+                      <span className="text-slate-500 block mb-0.5">Catatan:</span>
+                      <p className="font-medium text-slate-800 italic">"{detailTx.notes}"</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (confirm('Hapus transaksi ini? Saldo dompet akan dihitung ulang secara otomatis.')) {
+                        onDeleteTransaction(detailTx.id);
+                        setDetailTx(null);
+                      }
+                    }}
+                    className="flex-1 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 font-semibold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors"
+                  >
+                    <Icon name="trash" className="w-4 h-4" />
+                    Hapus Transaksi
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDetailTx(null)}
+                    className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition-colors"
+                  >
+                    Tutup
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    // =========================================================================
+    // 9. ROOT APP COMPONENT (COORDINATOR & STATE MANAGER)
+    // =========================================================================
+    const App = () => {
+      // Auth & PIN State
+      const [storedPin, setStoredPin] = useState(() => StorageService.getPin());
+      const [isAuthenticated, setIsAuthenticated] = useState(false);
+      const [name, setName] = useState(() => StorageService.getName());
+
+      // Financial State
+      const [accounts, setAccounts] = useState(() => StorageService.getAccounts());
+      const [transactions, setTransactions] = useState(() => StorageService.getTransactions());
+      const [hideBalance, setHideBalance] = useState(() => StorageService.getHideBalance());
+
+      // Modals State
+      const [isTxModalOpen, setIsTxModalOpen] = useState(false);
+      const [txModalType, setTxModalType] = useState('EXPENSE');
+      const [isAccountsModalOpen, setIsAccountsModalOpen] = useState(false);
+      const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+
+      // Toast Notification State
+      const [toastMsg, setToastMsg] = useState('');
+
+      const showToast = (msg) => {
+        setToastMsg(msg);
+      };
+
+      // Check on startup if fresh user or returning
+      const isFreshUser = !storedPin;
+
+      // Handle Onboarding Completion
+      const handleOnboardingComplete = ({ pin, name, accounts, transactions }) => {
+        setStoredPin(pin);
+        setName(name);
+        setAccounts(accounts);
+        setTransactions(transactions);
+        setIsAuthenticated(true);
+        showToast('Akun & PIN berhasil dibuat. Selamat datang!');
+      };
+
+      // Handle Adding Transaction (Atomically Updates State & Storage)
+      const handleAddTransaction = (newTx) => {
+        setTransactions(prev => {
+          const updated = [newTx, ...prev];
+          StorageService.setTransactions(updated);
+          return updated;
+        });
+        showToast('Transaksi berhasil disimpan');
+      };
+
+      // Handle Deleting Transaction
+      const handleDeleteTransaction = (txId) => {
+        setTransactions(prev => {
+          const updated = prev.filter(t => t.id !== txId);
+          StorageService.setTransactions(updated);
+          return updated;
+        });
+        showToast('Transaksi berhasil dihapus');
+      };
+
+      // Handle Adding Account
+      const handleAddAccount = (newAcc) => {
+        setAccounts(prev => {
+          const updated = [...prev, newAcc];
+          StorageService.setAccounts(updated);
+          return updated;
+        });
+        showToast('Akun dompet berhasil ditambahkan');
+      };
+
+      // Handle Editing Account
+      const handleEditAccount = (accId, updatedFields) => {
+        setAccounts(prev => {
+          const updated = prev.map(a => (a.id === accId ? { ...a, ...updatedFields } : a));
+          StorageService.setAccounts(updated);
+          return updated;
+        });
+        showToast('Akun dompet berhasil diperbarui');
+      };
+
+      // Handle Deleting Account & its associated transactions
+      const handleDeleteAccount = (accId) => {
+        setAccounts(prev => {
+          const updatedAccs = prev.filter(a => a.id !== accId);
+          StorageService.setAccounts(updatedAccs);
+          return updatedAccs;
+        });
+        setTransactions(prev => {
+          const updatedTxs = prev.filter(t => t.accountId !== accId);
+          StorageService.setTransactions(updatedTxs);
+          return updatedTxs;
+        });
+        showToast('Akun dompet berhasil dihapus');
+      };
+
+      // Toggle Balance Visibility
+      const handleToggleHideBalance = () => {
+        const next = !hideBalance;
+        setHideBalance(next);
+        StorageService.setHideBalance(next);
+      };
+
+      // Lock App
+      const handleLockApp = () => {
+        setIsAuthenticated(false);
+      };
+
+      // Update PIN
+      const handleUpdatePin = (newPin) => {
+        StorageService.setPin(newPin);
+        setStoredPin(newPin);
+      };
+
+      // Update Profile Name
+      const handleUpdateName = (newName) => {
+        StorageService.setName(newName);
+        setName(newName);
+      };
+
+      // Import Backup Data
+      const handleImportData = (backupData) => {
+        if (backupData.name) {
+          StorageService.setName(backupData.name);
+          setName(backupData.name);
+        }
+        if (Array.isArray(backupData.accounts)) {
+          StorageService.setAccounts(backupData.accounts);
+          setAccounts(backupData.accounts);
+        }
+        if (Array.isArray(backupData.transactions)) {
+          StorageService.setTransactions(backupData.transactions);
+          setTransactions(backupData.transactions);
+        }
+      };
+
+      // Reset All Data Permanently
+      const handleResetAll = () => {
+        StorageService.clearAll();
+        setStoredPin(null);
+        setName('');
+        setAccounts([]);
+        setTransactions([]);
+        setIsAuthenticated(false);
+        setIsSettingsModalOpen(false);
+        showToast('Seluruh data berhasil direset');
+      };
+
+      // Render Flows:
+      // Flow A: Fresh User (Onboarding)
+      if (isFreshUser) {
+        return (
+          <>
+            <OnboardingFlow onComplete={handleOnboardingComplete} />
+            {toastMsg && <Toast message={toastMsg} onClose={() => setToastMsg('')} />}
+          </>
+        );
+      }
+
+      // Flow B: Returning User (PIN Lock Screen)
+      if (!isAuthenticated) {
+        return (
+          <>
+            <ReturningUserPinScreen
+              storedPin={storedPin}
+              onUnlock={() => setIsAuthenticated(true)}
+            />
+            {toastMsg && <Toast message={toastMsg} onClose={() => setToastMsg('')} />}
+          </>
+        );
+      }
+
+      // Flow C: Authenticated Main Dashboard
+      return (
+        <div className="relative">
+          <Dashboard
+            name={name}
+            accounts={accounts}
+            transactions={transactions}
+            hideBalance={hideBalance}
+            onToggleHideBalance={handleToggleHideBalance}
+            onLockApp={handleLockApp}
+            onOpenSettings={() => setIsSettingsModalOpen(true)}
+            onOpenAccountsManager={() => setIsAccountsModalOpen(true)}
+            onOpenAddTransaction={(type) => {
+              setTxModalType(type);
+              setIsTxModalOpen(true);
+            }}
+            onDeleteTransaction={handleDeleteTransaction}
+          />
+
+          {/* Transaction Creation Modal */}
+          <TransactionModal
+            isOpen={isTxModalOpen}
+            onClose={() => setIsTxModalOpen(false)}
+            initialType={txModalType}
+            accounts={accounts}
+            onAddTransaction={handleAddTransaction}
+          />
+
+          {/* Accounts & Wallets Manager Modal */}
+          <AccountsManagerModal
+            isOpen={isAccountsModalOpen}
+            onClose={() => setIsAccountsModalOpen(false)}
+            accounts={accounts}
+            transactions={transactions}
+            onAddAccount={handleAddAccount}
+            onDeleteAccount={handleDeleteAccount}
+            onEditAccount={handleEditAccount}
+          />
+
+          {/* Settings & Data Control Modal */}
+          <SettingsModal
+            isOpen={isSettingsModalOpen}
+            onClose={() => setIsSettingsModalOpen(false)}
+            storedName={name}
+            storedPin={storedPin}
+            accounts={accounts}
+            transactions={transactions}
+            onUpdateName={handleUpdateName}
+            onUpdatePin={handleUpdatePin}
+            onImportData={handleImportData}
+            onResetAll={handleResetAll}
+            showToast={showToast}
+          />
+
+          {/* Toast Notification */}
+          {toastMsg && <Toast message={toastMsg} onClose={() => setToastMsg('')} />}
+        </div>
+      );
+    };
+
+    const rootElement = document.getElementById('root');
+    const root = ReactDOM.createRoot(rootElement);
+    root.render(<App />);
+  </script>
+</body>
+</html>
