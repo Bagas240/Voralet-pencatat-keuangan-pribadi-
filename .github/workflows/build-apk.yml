@@ -41,6 +41,11 @@ jobs:
               -dname "CN=Debug, OU=Debug, O=Debug, L=Debug, S=Debug, C=US"
           fi
 
+      - name: Sync Web Assets to Android
+        run: |
+          mkdir -p app/src/main/assets
+          cp -f index.html app/src/main/assets/index.html
+
       - name: Build Debug APK
         run: gradle assembleDebug
 

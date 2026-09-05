@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "node server.ts",
     "start": "node server.ts",
-    "build": "node -e \"const fs=require('fs'); if(!fs.existsSync('dist')) fs.mkdirSync('dist'); fs.copyFileSync('index.html', 'dist/index.html');\""
+    "build": "node -e \"const fs=require('fs'); if(!fs.existsSync('dist')) fs.mkdirSync('dist'); fs.copyFileSync('index.html', 'dist/index.html'); if(!fs.existsSync('app/src/main/assets')) fs.mkdirSync('app/src/main/assets', {recursive:true}); fs.copyFileSync('index.html', 'app/src/main/assets/index.html');\""
   },
   "dependencies": {}
 }

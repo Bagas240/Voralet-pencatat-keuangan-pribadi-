@@ -61,6 +61,15 @@ android {
     includeInApk = false
     includeInBundle = true
   }
+
+  tasks.register<Copy>("syncHtmlAssets") {
+    from("${rootDir}/index.html")
+    into("${projectDir}/src/main/assets")
+  }
+
+  tasks.named("preBuild") {
+    dependsOn("syncHtmlAssets")
+  }
 }
 
 // Configure the Secrets Gradle Plugin to use .env and .env.example files
