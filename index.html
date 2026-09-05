@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>Voralet - Financial Tracker</title>
+  <meta name="description" content="Aplikasi pelacak keuangan dan kantong digital ala Blu by BCA dan GoPay dengan sistem 6-digit PIN lokal." />
+  <meta property="og:title" content="Voralet - Financial Tracker" />
+  <meta property="og:description" content="Aplikasi pelacak keuangan dan kantong digital ala Blu by BCA dan GoPay dengan sistem 6-digit PIN lokal." />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -93,6 +96,22 @@
     }
     .animate-shake {
       animation: shake 0.35s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+    }
+
+    /* iOS Splash Screen Animation */
+    @keyframes iosSplashLogo {
+      0% {
+        transform: scale(0.9);
+        opacity: 0;
+      }
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+    .animate-ios-splash-logo {
+      animation: iosSplashLogo 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      will-change: transform, opacity;
     }
 
     /* iOS Bottom Sheet Animations (Hardware Accelerated: transform & opacity only) */
@@ -446,11 +465,14 @@
     // Current Account Balance = Initial Deposit + Total Income - Total Expense
     const Ledger = {
       getAccountBalance: (accountId, accounts, transactions) => {
-        const acc = accounts.find(a => a.id === accountId);
+        if (!accountId) return 0;
+        const safeAccounts = Array.isArray(accounts) ? accounts : [];
+        const safeTx = Array.isArray(transactions) ? transactions : [];
+        const acc = safeAccounts.find(a => a && a.id === accountId);
         if (!acc) return 0;
         const initial = Number(acc.initialBalance) || 0;
-        const sumTx = transactions
-          .filter(t => t.accountId === accountId)
+        const sumTx = safeTx
+          .filter(t => t && t.accountId === accountId)
           .reduce((sum, t) => {
             const amt = Number(t.amount) || 0;
             return t.type === 'INCOME' ? sum + amt : sum - amt;
@@ -458,17 +480,22 @@
         return initial + sumTx;
       },
       getTotalBalance: (accounts, transactions) => {
-        return accounts.reduce((total, acc) => {
-          return total + Ledger.getAccountBalance(acc.id, accounts, transactions);
+        const safeAccounts = Array.isArray(accounts) ? accounts : [];
+        const safeTx = Array.isArray(transactions) ? transactions : [];
+        return safeAccounts.reduce((total, acc) => {
+          if (!acc) return total;
+          return total + Ledger.getAccountBalance(acc.id, safeAccounts, safeTx);
         }, 0);
       },
       getSummaryTotals: (transactions, filterAccountId = null) => {
+        const safeTx = Array.isArray(transactions) ? transactions : [];
         const filtered = filterAccountId
-          ? transactions.filter(t => t.accountId === filterAccountId)
-          : transactions;
+          ? safeTx.filter(t => t && t.accountId === filterAccountId)
+          : safeTx;
         let income = 0;
         let expense = 0;
         for (const t of filtered) {
+          if (!t) continue;
           const amt = Number(t.amount) || 0;
           if (t.type === 'INCOME') income += amt;
           else if (t.type === 'EXPENSE') expense += amt;
@@ -798,11 +825,57 @@
             className="p-1 text-slate-400 hover:text-white rounded-full hover:bg-slate-800 transition-colors shrink-0"
             aria-label="Tutup"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
             </svg>
           </button>
+        </div>
+      );
+    };
+
+    // =========================================================================
+    // 3B. NATIVE IOS-STYLE SPLASH SCREEN
+    // =========================================================================
+    const SplashScreen = ({ onFinish }) => {
+      const [isFadingOut, setIsFadingOut] = useState(false);
+
+      useEffect(() => {
+        // Hold for 1.2s then begin cross-fade exit (400ms duration)
+        const timerHold = setTimeout(() => {
+          setIsFadingOut(true);
+        }, 1200);
+
+        const timerDone = setTimeout(() => {
+          onFinish();
+        }, 1600);
+
+        return () => {
+          clearTimeout(timerHold);
+          clearTimeout(timerDone);
+        };
+      }, [onFinish]);
+
+      return (
+        <div
+          className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-white dark:bg-slate-900 transition-opacity duration-400 ease-out select-none ${
+            isFadingOut ? 'opacity-0 pointer-events-none' : 'opacity-100'
+          }`}
+          style={{ willChange: 'opacity' }}
+        >
+          <div className="flex flex-col items-center animate-ios-splash-logo text-center px-4">
+            <div className="w-20 h-20 rounded-2xl bg-brand flex items-center justify-center text-white shadow-lg shadow-sky-500/20 mb-4">
+              <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+              </svg>
+            </div>
+            <span className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+              Voralet
+            </span>
+            <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">
+              Keuangan Sehat, Impian Dekat
+            </span>
+          </div>
         </div>
       );
     };
@@ -1795,31 +1868,49 @@
       const [type, setType] = useState('Bank');
       const [initialBalance, setInitialBalance] = useState('');
       const [editingAcc, setEditingAcc] = useState(null);
+      const [isClosing, setIsClosing] = useState(false);
+
+      const safeAccounts = Array.isArray(accounts) ? accounts.filter(Boolean) : [];
+      const safeTransactions = Array.isArray(transactions) ? transactions.filter(Boolean) : [];
+
+      useEffect(() => {
+        if (!isOpen) {
+          setIsAdding(false);
+          setEditingAcc(null);
+          setName('');
+          setInitialBalance('');
+          setType('Bank');
+        }
+      }, [isOpen]);
 
       if (!isOpen) return null;
 
       const handleSaveNew = (e) => {
         e.preventDefault();
-        const trimmed = name.trim();
+        const trimmed = (name || '').trim();
         if (!trimmed) return;
         const bal = parseRawNumber(initialBalance);
 
-        if (editingAcc) {
-          onEditAccount(editingAcc.id, {
-            name: trimmed,
-            type,
-            initialBalance: bal
-          });
+        if (editingAcc && editingAcc.id) {
+          if (typeof onEditAccount === 'function') {
+            onEditAccount(editingAcc.id, {
+              name: trimmed,
+              type: type || 'Bank',
+              initialBalance: bal
+            });
+          }
           setEditingAcc(null);
         } else {
           const newAcc = {
             id: 'acc_' + Date.now(),
             name: trimmed,
-            type,
+            type: type || 'Bank',
             initialBalance: bal,
             createdAt: new Date().toISOString()
           };
-          onAddAccount(newAcc);
+          if (typeof onAddAccount === 'function') {
+            onAddAccount(newAcc);
+          }
         }
 
         setName('');
@@ -1827,8 +1918,6 @@
         setType('Bank');
         setIsAdding(false);
       };
-
-      const [isClosing, setIsClosing] = useState(false);
 
       const handleClose = () => {
         setIsClosing(true);
@@ -1839,10 +1928,11 @@
       };
 
       const startEdit = (acc) => {
+        if (!acc) return;
         setEditingAcc(acc);
-        setName(acc.name);
-        setType(acc.type);
-        setInitialBalance(acc.initialBalance.toString());
+        setName(acc.name || '');
+        setType(acc.type || 'Bank');
+        setInitialBalance(acc.initialBalance !== undefined && acc.initialBalance !== null ? String(acc.initialBalance) : '0');
         setIsAdding(true);
       };
 
@@ -1884,7 +1974,7 @@
                 <>
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                      Daftar Akun ({accounts.length})
+                      Daftar Akun ({safeAccounts.length})
                     </span>
                     <button
                       type="button"
@@ -1902,16 +1992,11 @@
                     </button>
                   </div>
 
-                  {accounts.length === 0 ? (
-                    <div className="p-6 text-center bg-slate-50 dark:bg-slate-900 rounded-xl border border-dashed border-slate-300 dark:border-slate-700">
-                      <Icon name="wallet" className="w-8 h-8 text-slate-400 mx-auto mb-2" />
-                      <p className="text-xs font-medium text-slate-600 dark:text-slate-400">Belum ada akun atau dompet.</p>
-                      <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">Buat akun pertama kamu untuk mulai mencatat.</p>
-                    </div>
-                  ) : (
+                  {safeAccounts && safeAccounts.length > 0 ? (
                     <div className="space-y-2">
-                      {accounts.map(acc => {
-                        const bal = Ledger.getAccountBalance(acc.id, accounts, transactions);
+                      {safeAccounts.map(acc => {
+                        if (!acc) return null;
+                        const bal = Ledger.getAccountBalance(acc.id, safeAccounts, safeTransactions);
                         return (
                           <div
                             key={acc.id}
@@ -1940,7 +2025,7 @@
                               </button>
                               <button
                                 type="button"
-                                onClick={() => onDeleteAccount(acc.id)}
+                                onClick={() => onDeleteAccount && onDeleteAccount(acc.id)}
                                 className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-lg transition-colors"
                                 title="Hapus Akun"
                               >
@@ -1950,6 +2035,12 @@
                           </div>
                         );
                       })}
+                    </div>
+                  ) : (
+                    <div className="p-6 text-center bg-slate-50 dark:bg-slate-900 rounded-xl border border-dashed border-slate-300 dark:border-slate-700">
+                      <Icon name="wallet" className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                      <p className="text-xs font-medium text-slate-600 dark:text-slate-400">Belum ada akun atau dompet.</p>
+                      <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">Buat akun pertama kamu untuk mulai mencatat.</p>
                     </div>
                   )}
                 </>
@@ -2515,8 +2606,11 @@
 
       const [adjustMode, setAdjustMode] = useState(null); // 'DEPOSIT' | 'WITHDRAW' | null
       const [adjustAmount, setAdjustAmount] = useState('');
-      const [adjustAccountId, setAdjustAccountId] = useState(accounts[0]?.id || '');
+      const [adjustAccountId, setAdjustAccountId] = useState('');
       const [isClosing, setIsClosing] = useState(false);
+      const modalContentRef = useRef(null);
+
+      const safeAccounts = Array.isArray(accounts) ? accounts.filter(Boolean) : [];
 
       const handleClose = () => {
         setIsClosing(true);
@@ -2524,6 +2618,15 @@
           setIsClosing(false);
           onClose();
         }, 260);
+      };
+
+      const handleInputFocus = (e) => {
+        const target = e.target;
+        setTimeout(() => {
+          if (target && modalContentRef.current) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 150);
       };
 
       useEffect(() => {
@@ -2539,7 +2642,9 @@
         setAdjustMode(null);
         setAdjustAmount('');
         setError('');
-        if (accounts.length > 0) setAdjustAccountId(accounts[0].id);
+        if (safeAccounts.length > 0) {
+          setAdjustAccountId(safeAccounts[0].id);
+        }
       }, [editingGoal, isOpen, accounts]);
 
       if (!isOpen) return null;
@@ -2594,7 +2699,8 @@
           }}
         >
           <div
-            className={`w-full max-w-md bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl p-5 shadow-xl border border-slate-200 dark:border-slate-700 transition-colors ${
+            ref={modalContentRef}
+            className={`w-full max-w-md bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl p-5 max-h-[85dvh] overflow-y-auto pb-28 no-scrollbar shadow-xl border border-slate-200 dark:border-slate-700 transition-colors ${
               isClosing ? 'animate-ios-sheet-exit' : 'animate-ios-sheet'
             }`}
           >
@@ -2680,8 +2786,9 @@
                     <input
                       type="text"
                       value={name}
+                      onFocus={handleInputFocus}
                       onChange={(e) => setName(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-xs text-slate-900 dark:text-white"
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-xs text-slate-900 dark:text-white focus:outline-none focus:border-brand"
                     />
                   </div>
                   <div>
@@ -2689,9 +2796,10 @@
                     <input
                       type="text"
                       inputMode="numeric"
+                      onFocus={handleInputFocus}
                       value={targetAmount ? formatIDR(parseRawNumber(targetAmount)) : ''}
                       onChange={(e) => setTargetAmount(parseRawNumber(e.target.value).toString())}
-                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-xs font-semibold text-slate-900 dark:text-white"
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-brand"
                     />
                   </div>
                   <div>
@@ -2699,8 +2807,9 @@
                     <input
                       type="date"
                       value={targetDate}
+                      onFocus={handleInputFocus}
                       onChange={(e) => setTargetDate(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-xs text-slate-900 dark:text-white"
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-xs text-slate-900 dark:text-white focus:outline-none focus:border-brand"
                     />
                   </div>
                   <button
@@ -2725,10 +2834,11 @@
                   </label>
                   <select
                     value={adjustAccountId}
+                    onFocus={handleInputFocus}
                     onChange={(e) => setAdjustAccountId(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-xs text-slate-900 dark:text-white"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-xs text-slate-900 dark:text-white focus:outline-none focus:border-brand"
                   >
-                    {accounts.map(acc => (
+                    {safeAccounts.map(acc => (
                       <option key={acc.id} value={acc.id}>
                         {acc.name} ({acc.type})
                       </option>
@@ -2744,10 +2854,11 @@
                     type="text"
                     inputMode="numeric"
                     autoFocus
+                    onFocus={handleInputFocus}
                     placeholder="Rp 0"
                     value={adjustAmount ? formatIDR(parseRawNumber(adjustAmount)) : ''}
                     onChange={(e) => setAdjustAmount(parseRawNumber(e.target.value).toString())}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-sm font-bold text-slate-900 dark:text-white"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:border-brand"
                   />
                 </div>
 
@@ -2778,9 +2889,10 @@
                     type="text"
                     placeholder="Contoh: Beli Laptop Baru / Dana Darurat"
                     value={name}
+                    onFocus={handleInputFocus}
                     onChange={(e) => setName(e.target.value)}
                     autoFocus
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-xs text-slate-900 dark:text-white"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-xs text-slate-900 dark:text-white focus:outline-none focus:border-brand"
                   />
                 </div>
 
@@ -2792,21 +2904,23 @@
                     type="text"
                     inputMode="numeric"
                     placeholder="Rp 0"
+                    onFocus={handleInputFocus}
                     value={targetAmount ? formatIDR(parseRawNumber(targetAmount)) : ''}
                     onChange={(e) => setTargetAmount(parseRawNumber(e.target.value).toString())}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-sm font-semibold text-slate-900 dark:text-white"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-brand"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Target Tercapai (Opsional)
+                    Target Tanggal (Opsional)
                   </label>
                   <input
                     type="date"
                     value={targetDate}
+                    onFocus={handleInputFocus}
                     onChange={(e) => setTargetDate(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-xs text-slate-900 dark:text-white"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-xs text-slate-900 dark:text-white focus:outline-none focus:border-brand"
                   />
                 </div>
 
@@ -2968,7 +3082,7 @@
     };
 
     // =========================================================================
-    // 7D. DETAILED ANALYTICS VIEW COMPONENT
+    // 7D. DETAILED ANALYTICS VIEW COMPONENT (INTERACTIVE SVG LINE CHART)
     // =========================================================================
     const AnalyticsView = ({ transactions, accounts }) => {
       const [period, setPeriod] = useState('MONTHLY'); // 'MONTHLY' | 'YEARLY'
@@ -2976,12 +3090,15 @@
       const currentYear = new Date().getFullYear();
       const currentMonth = new Date().getMonth(); // 0 - 11
 
+      const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
       const stats = useMemo(() => {
         let income = 0;
         let expense = 0;
         const catMap = {};
+        const safeTx = Array.isArray(transactions) ? transactions.filter(Boolean) : [];
 
-        (transactions || []).forEach(tx => {
+        safeTx.forEach(tx => {
           const d = new Date(tx.date);
           const txYear = d.getFullYear();
           const txMonth = d.getMonth();
@@ -2991,11 +3108,12 @@
             : (txYear === currentYear);
 
           if (match) {
+            const amt = Number(tx.amount) || 0;
             if (tx.type === 'INCOME') {
-              income += tx.amount;
+              income += amt;
             } else {
-              expense += tx.amount;
-              catMap[tx.category] = (catMap[tx.category] || 0) + tx.amount;
+              expense += amt;
+              catMap[tx.category] = (catMap[tx.category] || 0) + amt;
             }
           }
         });
@@ -3020,12 +3138,116 @@
         };
       }, [transactions, period, currentYear, currentMonth]);
 
+      // Interval data points for SVG line chart
+      const trendData = useMemo(() => {
+        const safeTx = Array.isArray(transactions) ? transactions.filter(Boolean) : [];
+        if (period === 'MONTHLY') {
+          const intervals = [
+            { label: 'Tgl 1-6', start: 1, end: 6 },
+            { label: 'Tgl 7-12', start: 7, end: 12 },
+            { label: 'Tgl 13-18', start: 13, end: 18 },
+            { label: 'Tgl 19-24', start: 19, end: 24 },
+            { label: 'Tgl 25-31', start: 25, end: 31 }
+          ];
+          return intervals.map(iv => {
+            let inc = 0;
+            let exp = 0;
+            safeTx.forEach(tx => {
+              const d = new Date(tx.date);
+              if (d.getFullYear() === currentYear && d.getMonth() === currentMonth) {
+                const day = d.getDate();
+                if (day >= iv.start && day <= iv.end) {
+                  const amt = Number(tx.amount) || 0;
+                  if (tx.type === 'INCOME') inc += amt;
+                  else if (tx.type === 'EXPENSE') exp += amt;
+                }
+              }
+            });
+            return { label: iv.label, income: inc, expense: exp };
+          });
+        } else {
+          const intervals = [
+            { label: 'Jan-Feb', months: [0, 1] },
+            { label: 'Mar-Apr', months: [2, 3] },
+            { label: 'Mei-Jun', months: [4, 5] },
+            { label: 'Jul-Agu', months: [6, 7] },
+            { label: 'Sep-Okt', months: [8, 9] },
+            { label: 'Nov-Des', months: [10, 11] }
+          ];
+          return intervals.map(iv => {
+            let inc = 0;
+            let exp = 0;
+            safeTx.forEach(tx => {
+              const d = new Date(tx.date);
+              if (d.getFullYear() === currentYear && iv.months.includes(d.getMonth())) {
+                const amt = Number(tx.amount) || 0;
+                if (tx.type === 'INCOME') inc += amt;
+                else if (tx.type === 'EXPENSE') exp += amt;
+              }
+            });
+            return { label: iv.label, income: inc, expense: exp };
+          });
+        }
+      }, [transactions, period, currentYear, currentMonth]);
+
+      const [selectedPointIndex, setSelectedPointIndex] = useState(0);
+
+      useEffect(() => {
+        if (trendData && trendData.length > 0) {
+          setSelectedPointIndex(trendData.length - 1);
+        }
+      }, [trendData]);
+
+      // SVG dimensions & math
+      const svgWidth = 340;
+      const svgHeight = 160;
+      const padLeft = 24;
+      const padRight = 24;
+      const padTop = 18;
+      const padBottom = 32;
+      const usableW = svgWidth - padLeft - padRight;
+      const usableH = svgHeight - padTop - padBottom;
+
+      const maxChartVal = useMemo(() => {
+        const peak = Math.max(...trendData.map(p => Math.max(p.income, p.expense)), 0);
+        return peak > 0 ? peak : 10000;
+      }, [trendData]);
+
+      const getPointsCoords = (key) => {
+        return trendData.map((pt, i) => {
+          const x = padLeft + (i / (trendData.length - 1)) * usableW;
+          const val = pt[key] || 0;
+          const y = padTop + usableH - (val / maxChartVal) * usableH;
+          return { x, y, val };
+        });
+      };
+
+      const incomeCoords = useMemo(() => getPointsCoords('income'), [trendData, maxChartVal]);
+      const expenseCoords = useMemo(() => getPointsCoords('expense'), [trendData, maxChartVal]);
+
+      const buildSmoothPath = (pts) => {
+        if (!pts || pts.length === 0) return '';
+        if (pts.length === 1) return `M ${pts[0].x},${pts[0].y}`;
+        let d = `M ${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)}`;
+        for (let i = 0; i < pts.length - 1; i++) {
+          const p0 = pts[i];
+          const p1 = pts[i + 1];
+          const midX = (p0.x + p1.x) / 2;
+          d += ` C ${midX.toFixed(1)},${p0.y.toFixed(1)} ${midX.toFixed(1)},${p1.y.toFixed(1)} ${p1.x.toFixed(1)},${p1.y.toFixed(1)}`;
+        }
+        return d;
+      };
+
+      const incomePath = useMemo(() => buildSmoothPath(incomeCoords), [incomeCoords]);
+      const expensePath = useMemo(() => buildSmoothPath(expenseCoords), [expenseCoords]);
+
+      const selectedPoint = trendData[selectedPointIndex] || trendData[0] || { label: '', income: 0, expense: 0 };
+      const selectedX = padLeft + (selectedPointIndex / (trendData.length - 1)) * usableW;
+
       // Comparison Bar Calculation
       const maxVal = Math.max(stats.income, stats.expense, 1);
       const incomePercent = Math.round((stats.income / maxVal) * 100);
       const expensePercent = Math.round((stats.expense / maxVal) * 100);
-
-      const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
       return (
         <div className="space-y-4">
@@ -3055,6 +3277,183 @@
             </button>
           </div>
 
+          {/* SVG Line Chart Card: Income vs Expense Trends */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm transition-colors">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block leading-none">
+                  Grafik Tren Arus Kas
+                </span>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white mt-0.5">
+                  Pemasukan vs Pengeluaran
+                </h3>
+              </div>
+              <div className="flex items-center gap-3 text-[11px] font-semibold">
+                <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                  Pemasukan
+                </span>
+                <span className="flex items-center gap-1.5 text-rose-600 dark:text-rose-400">
+                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+                  Pengeluaran
+                </span>
+              </div>
+            </div>
+
+            {/* Inline Interactive SVG Line Chart */}
+            <div className="w-full overflow-hidden">
+              <svg
+                viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+                className="w-full h-auto overflow-visible select-none"
+              >
+                {/* Horizontal reference grid lines */}
+                <line x1={padLeft} y1={padTop} x2={padLeft + usableW} y2={padTop} stroke="currentColor" className="text-slate-100 dark:text-slate-800" strokeWidth="1" strokeDasharray="3 3" />
+                <line x1={padLeft} y1={padTop + usableH / 2} x2={padLeft + usableW} y2={padTop + usableH / 2} stroke="currentColor" className="text-slate-100 dark:text-slate-800" strokeWidth="1" strokeDasharray="3 3" />
+                <line x1={padLeft} y1={padTop + usableH} x2={padLeft + usableW} y2={padTop + usableH} stroke="currentColor" className="text-slate-200 dark:text-slate-800" strokeWidth="1" />
+
+                {/* Vertical Active Guide Line */}
+                <line
+                  x1={selectedX}
+                  y1={padTop}
+                  x2={selectedX}
+                  y2={padTop + usableH}
+                  stroke="currentColor"
+                  className="text-slate-300 dark:text-slate-600"
+                  strokeWidth="1.5"
+                  strokeDasharray="2 2"
+                />
+
+                {/* Subtle Area Fills */}
+                {incomePath && (
+                  <path
+                    d={`${incomePath} L ${padLeft + usableW},${padTop + usableH} L ${padLeft},${padTop + usableH} Z`}
+                    fill="#10B981"
+                    fillOpacity="0.07"
+                  />
+                )}
+                {expensePath && (
+                  <path
+                    d={`${expensePath} L ${padLeft + usableW},${padTop + usableH} L ${padLeft},${padTop + usableH} Z`}
+                    fill="#F43F5E"
+                    fillOpacity="0.06"
+                  />
+                )}
+
+                {/* Income Curved Line */}
+                {incomePath && (
+                  <path
+                    d={incomePath}
+                    fill="none"
+                    stroke="#10B981"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                )}
+
+                {/* Expense Curved Line */}
+                {expensePath && (
+                  <path
+                    d={expensePath}
+                    fill="none"
+                    stroke="#F43F5E"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                )}
+
+                {/* Data Points & Touch Targets */}
+                {trendData.map((pt, i) => {
+                  const x = padLeft + (i / (trendData.length - 1)) * usableW;
+                  const incY = incomeCoords[i] ? incomeCoords[i].y : padTop + usableH;
+                  const expY = expenseCoords[i] ? expenseCoords[i].y : padTop + usableH;
+                  const isSelected = i === selectedPointIndex;
+
+                  return (
+                    <g key={i}>
+                      {/* Income Node */}
+                      <circle
+                        cx={x}
+                        cy={incY}
+                        r={isSelected ? 5 : 3.5}
+                        fill="#10B981"
+                        stroke="#FFFFFF"
+                        strokeWidth={isSelected ? 2.5 : 1.5}
+                        className="transition-all duration-150"
+                      />
+                      {/* Expense Node */}
+                      <circle
+                        cx={x}
+                        cy={expY}
+                        r={isSelected ? 5 : 3.5}
+                        fill="#F43F5E"
+                        stroke="#FFFFFF"
+                        strokeWidth={isSelected ? 2.5 : 1.5}
+                        className="transition-all duration-150"
+                      />
+                      {/* X-axis Label */}
+                      <text
+                        x={x}
+                        y={svgHeight - 10}
+                        textAnchor="middle"
+                        className={`text-[10px] font-semibold select-none ${
+                          isSelected
+                            ? 'fill-brand dark:fill-sky-400 font-bold'
+                            : 'fill-slate-400 dark:fill-slate-500'
+                        }`}
+                      >
+                        {pt.label}
+                      </text>
+                      {/* Generous Touch Target */}
+                      <rect
+                        x={x - usableW / (trendData.length * 2)}
+                        y={padTop}
+                        width={usableW / trendData.length}
+                        height={usableH + 20}
+                        fill="transparent"
+                        className="cursor-pointer"
+                        onClick={() => setSelectedPointIndex(i)}
+                      />
+                    </g>
+                  );
+                })}
+              </svg>
+            </div>
+
+            {/* Interactive Data Point Summary Pill */}
+            <div className="mt-2 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl">
+              <div>
+                <span className="text-[10px] uppercase font-bold text-slate-400 block leading-none">
+                  Periode Terpilih
+                </span>
+                <span className="font-bold text-slate-800 dark:text-slate-100 mt-0.5 block">
+                  {selectedPoint.label}
+                </span>
+              </div>
+              <div className="flex items-center gap-4 text-right">
+                <div>
+                  <span className="text-[10px] text-slate-400 block leading-none">Masuk</span>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                    {formatIDR(selectedPoint.income)}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-400 block leading-none">Keluar</span>
+                  <span className="font-bold text-rose-600 dark:text-rose-400">
+                    {formatIDR(selectedPoint.expense)}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-400 block leading-none">Selisih</span>
+                  <span className={`font-bold ${selectedPoint.income - selectedPoint.expense >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                    {selectedPoint.income - selectedPoint.expense >= 0 ? '+' : ''}{formatIDR(selectedPoint.income - selectedPoint.expense)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Net Balance Overview Card */}
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
             <span className="text-xs text-slate-400 font-semibold block mb-1">
@@ -3064,10 +3463,10 @@
               {stats.net >= 0 ? '+' : ''}{formatIDR(stats.net)}
             </span>
 
-            {/* Flat SVG Bar Chart: Income vs Expense */}
+            {/* Flat Bar Chart: Income vs Expense */}
             <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
-                Perbandingan Arus Kas
+                Perbandingan Total Arus Kas
               </span>
 
               {/* Income Row */}
@@ -3075,7 +3474,7 @@
                 <div className="flex justify-between text-xs mb-1 font-semibold">
                   <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
                     <Icon name="arrow-down-left" className="w-3.5 h-3.5" />
-                    Pemasukan
+                    Total Pemasukan
                   </span>
                   <span className="text-slate-800 dark:text-slate-200">{formatIDR(stats.income)}</span>
                 </div>
@@ -3092,7 +3491,7 @@
                 <div className="flex justify-between text-xs mb-1 font-semibold">
                   <span className="text-rose-600 dark:text-rose-400 flex items-center gap-1">
                     <Icon name="arrow-up-right" className="w-3.5 h-3.5" />
-                    Pengeluaran
+                    Total Pengeluaran
                   </span>
                   <span className="text-slate-800 dark:text-slate-200">{formatIDR(stats.expense)}</span>
                 </div>
@@ -3212,17 +3611,23 @@
         }`}>
           {/* Top Navigation Bar */}
           <header className="sticky top-0 z-30 shrink-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-5 py-3.5 flex items-center justify-between transition-colors">
-            <div className="flex items-center gap-2.5">
+            <button
+              type="button"
+              onClick={onOpenSettingsModal}
+              className="flex items-center gap-2.5 text-left rounded-xl p-1 -m-1 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors ios-btn-tap group focus:outline-none"
+              title="Buka Pengaturan Akun & Data"
+              aria-label="Pengaturan Pengguna"
+            >
               <Avatar avatar={avatar} name={userName} size="w-9 h-9" textSize="text-xs" />
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-brand dark:text-sky-400 block leading-none">
                   Voralet
                 </span>
-                <h1 className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+                <h1 className="text-sm font-bold text-slate-900 dark:text-white leading-tight group-hover:text-brand dark:group-hover:text-sky-400 transition-colors">
                   Halo, {userName || 'Teman'}
                 </h1>
               </div>
-            </div>
+            </button>
 
             <div className="flex items-center gap-1.5">
               <button
@@ -3242,15 +3647,6 @@
                 aria-label="Kunci Aplikasi"
               >
                 <Icon name="lock" className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                onClick={onOpenSettingsModal}
-                title="Pengaturan & Data"
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-brand dark:hover:text-sky-400 hover:bg-brand-light dark:hover:bg-slate-800 transition-colors"
-                aria-label="Pengaturan"
-              >
-                <Icon name="settings" className="w-4 h-4" />
               </button>
             </div>
           </header>
@@ -3678,6 +4074,9 @@
     // 9. ROOT APPLICATION COMPONENT
     // =========================================================================
     function App() {
+      // Launch Splash Screen
+      const [showSplash, setShowSplash] = useState(true);
+
       // Local state from storage (ZERO DEFAULT MOCK DATA)
       const [isUnlocked, setIsUnlocked] = useState(false);
       const [storedPin, setStoredPin] = useState(() => StorageService.getPin());
@@ -3972,6 +4371,7 @@
       if (!storedPin) {
         return (
           <>
+            {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
             {toastMsg && <Toast message={toastMsg} onClose={() => setToastMsg('')} />}
             <OnboardingFlow onComplete={handleOnboardingComplete} />
           </>
@@ -3982,6 +4382,7 @@
       if (!isUnlocked) {
         return (
           <>
+            {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
             {toastMsg && <Toast message={toastMsg} onClose={() => setToastMsg('')} />}
             <ReturningUserPinScreen
               storedPin={storedPin}
@@ -4002,6 +4403,7 @@
 
       return (
         <div className="relative w-full h-[100dvh] overflow-hidden bg-slate-950">
+          {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
           {toastMsg && <Toast message={toastMsg} onClose={() => setToastMsg('')} />}
 
           <MainDashboard

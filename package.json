@@ -1,0 +1,13 @@
+{
+  "name": "voralet",
+  "version": "1.0.0",
+  "description": "Aplikasi pelacak keuangan dan kantong digital ala Blu by BCA dan GoPay dengan sistem 6-digit PIN lokal.",
+  "type": "module",
+  "main": "server.ts",
+  "scripts": {
+    "dev": "node server.ts",
+    "start": "node server.ts",
+    "build": "node -e \"const fs=require('fs'); if(!fs.existsSync('dist')) fs.mkdirSync('dist'); fs.copyFileSync('index.html', 'dist/index.html');\""
+  },
+  "dependencies": {}
+}

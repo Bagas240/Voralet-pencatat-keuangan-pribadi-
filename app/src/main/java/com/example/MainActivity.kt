@@ -2,6 +2,7 @@ package com.example
 
 import android.annotation.SuppressLint
 import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
@@ -96,7 +97,12 @@ fun SakuCleanWebView(modifier: Modifier = Modifier) {
               view: WebView?,
               detail: RenderProcessGoneDetail?
             ): Boolean {
-              Log.e("WebView", "onRenderProcessGone: didCrash=${detail?.didCrash()}")
+              val didCrash = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                detail?.didCrash() ?: false
+              } else {
+                false
+              }
+              Log.e("WebView", "onRenderProcessGone: didCrash=$didCrash")
               view?.let { wv ->
                 (wv.parent as? ViewGroup)?.removeView(wv)
                 wv.destroy()
