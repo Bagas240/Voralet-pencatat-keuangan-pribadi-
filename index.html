@@ -12,6 +12,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           colors: {
@@ -66,6 +67,10 @@
       padding: 0;
       overscroll-behavior-y: none;
     }
+    html.dark body, body.dark {
+      background-color: #0F172A;
+      color: #FFFFFF;
+    }
     .no-scrollbar::-webkit-scrollbar {
       display: none;
     }
@@ -97,7 +102,9 @@
       NAME: 'voralet_name',
       ACCOUNTS: 'voralet_accounts',
       TRANSACTIONS: 'voralet_transactions',
-      HIDE_BALANCE: 'voralet_hide_balance'
+      HIDE_BALANCE: 'voralet_hide_balance',
+      THEME: 'voralet_theme',
+      AVATAR: 'voralet_avatar'
     };
 
     const StorageService = {
@@ -174,6 +181,36 @@
           localStorage.setItem(STORAGE_KEYS.HIDE_BALANCE, val ? 'true' : 'false');
         } catch (e) {}
       },
+      getTheme: () => {
+        try {
+          return localStorage.getItem(STORAGE_KEYS.THEME) || 'light';
+        } catch (e) {
+          return 'light';
+        }
+      },
+      setTheme: (theme) => {
+        try {
+          localStorage.setItem(STORAGE_KEYS.THEME, theme);
+        } catch (e) {}
+      },
+      getAvatar: () => {
+        try {
+          return localStorage.getItem(STORAGE_KEYS.AVATAR) || '';
+        } catch (e) {
+          return '';
+        }
+      },
+      setAvatar: (avatar) => {
+        try {
+          if (avatar) {
+            localStorage.setItem(STORAGE_KEYS.AVATAR, avatar);
+          } else {
+            localStorage.removeItem(STORAGE_KEYS.AVATAR);
+          }
+        } catch (e) {
+          console.error('Storage error saving Avatar', e);
+        }
+      },
       clearAll: () => {
         try {
           localStorage.removeItem(STORAGE_KEYS.PIN);
@@ -181,10 +218,81 @@
           localStorage.removeItem(STORAGE_KEYS.ACCOUNTS);
           localStorage.removeItem(STORAGE_KEYS.TRANSACTIONS);
           localStorage.removeItem(STORAGE_KEYS.HIDE_BALANCE);
+          localStorage.removeItem(STORAGE_KEYS.THEME);
+          localStorage.removeItem(STORAGE_KEYS.AVATAR);
         } catch (e) {
           console.error('Storage error clearing all', e);
         }
       }
+    };
+
+    // Client-side image compression: Scales down image (max 200x200px) and converts to Base64
+    const compressImage = (file, callback, onError) => {
+      if (!file || !file.type.startsWith('image/')) {
+        if (onError) onError('File harus berupa gambar');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          try {
+            const canvas = document.createElement('canvas');
+            const maxDim = 200;
+            let width = img.width;
+            let height = img.height;
+            if (width > height) {
+              if (width > maxDim) {
+                height = Math.round((height * maxDim) / width);
+                width = maxDim;
+              }
+            } else {
+              if (height > maxDim) {
+                width = Math.round((width * maxDim) / height);
+                height = maxDim;
+              }
+            }
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+            callback(dataUrl);
+          } catch (err) {
+            console.error('Canvas compression error', err);
+            if (onError) onError('Gagal memproses gambar');
+          }
+        };
+        img.onerror = () => {
+          if (onError) onError('Gagal memuat gambar');
+        };
+        img.src = e.target.result;
+      };
+      reader.onerror = () => {
+        if (onError) onError('Gagal membaca file gambar');
+      };
+      reader.readAsDataURL(file);
+    };
+
+    // Reusable Avatar Component (Photo with Fallback to Initials)
+    const Avatar = ({ avatar, name, size = "w-8 h-8", textSize = "text-xs", className = "" }) => {
+      if (avatar) {
+        return (
+          <img
+            src={avatar}
+            alt={name || "Foto Profil"}
+            className={`${size} rounded-full object-cover border border-slate-200 dark:border-slate-700 shrink-0 ${className}`}
+          />
+        );
+      }
+      const initial = (name ? name.trim().charAt(0) : 'V').toUpperCase();
+      return (
+        <div
+          className={`${size} rounded-full bg-brand text-white flex items-center justify-center font-bold ${textSize} shrink-0 ${className}`}
+        >
+          {initial}
+        </div>
+      );
     };
 
     // LEDGER SYSTEM: Single Source of Truth for Balances
@@ -446,6 +554,31 @@
               <path strokeLinecap="round" strokeLinejoin="round" d="M7 7h.01M7 3h5a1.99 1.99 0 011.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.99 1.99 0 013 12V7a4 4 0 014-4z" />
             </svg>
           );
+        case 'sun':
+          return (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+          );
+        case 'moon':
+          return (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+            </svg>
+          );
+        case 'camera':
+          return (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          );
+        case 'user':
+          return (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+          );
         default:
           return (
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -502,7 +635,7 @@
                   ? isError
                     ? 'bg-red-500 scale-110'
                     : 'bg-brand scale-110'
-                  : 'bg-slate-200'
+                  : 'bg-slate-200 dark:bg-slate-700'
               }`}
             />
           ))}
@@ -525,7 +658,7 @@
                   key={i}
                   type="button"
                   onClick={onBackspace}
-                  className="h-14 rounded-xl flex items-center justify-center text-slate-600 hover:bg-slate-100 active:bg-slate-200 transition-colors"
+                  className="h-14 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 active:bg-slate-200 dark:active:bg-slate-700 transition-colors"
                   aria-label="Hapus"
                 >
                   <Icon name="backspace" className="w-6 h-6" />
@@ -537,7 +670,7 @@
                 key={i}
                 type="button"
                 onClick={() => onKeyPress(k)}
-                className="h-14 rounded-xl flex items-center justify-center text-xl font-semibold text-slate-800 bg-white border border-slate-200 hover:bg-slate-50 active:bg-slate-100 transition-colors shadow-sm"
+                className="h-14 rounded-xl flex items-center justify-center text-xl font-semibold text-slate-800 dark:text-white bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 active:bg-slate-100 dark:active:bg-slate-600 transition-colors shadow-sm"
               >
                 {k}
               </button>
@@ -547,10 +680,183 @@
       );
     };
 
+    // Modal: Lupa PIN / Reset PIN Security Verification
+    const ForgotPinModal = ({ storedName, onClose, onResetPin }) => {
+      const [step, setStep] = useState(1); // 1: Verify Name, 2: Set New PIN
+      const [inputName, setInputName] = useState('');
+      const [verifyError, setVerifyError] = useState('');
+      const [newPin, setNewPin] = useState('');
+      const [confirmPin, setConfirmPin] = useState('');
+      const [pinError, setPinError] = useState('');
+
+      const handleVerifyName = (e) => {
+        e.preventDefault();
+        const trimmedInput = inputName.trim().toLowerCase();
+        const trimmedStored = (storedName || '').trim().toLowerCase();
+        if (!trimmedInput) {
+          setVerifyError('Harap masukkan nama panggilan');
+          return;
+        }
+        if (trimmedInput === trimmedStored) {
+          setVerifyError('');
+          setStep(2);
+        } else {
+          setVerifyError('Nama panggilan tidak sesuai dengan nama akun terdaftar.');
+        }
+      };
+
+      const handleSaveNewPin = (e) => {
+        e.preventDefault();
+        if (newPin.length !== 6 || !/^\d{6}$/.test(newPin)) {
+          setPinError('PIN harus berupa 6 angka');
+          return;
+        }
+        if (newPin !== confirmPin) {
+          setPinError('Konfirmasi PIN tidak cocok');
+          return;
+        }
+        onResetPin(newPin);
+      };
+
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 max-w-sm w-full shadow-xl border border-slate-200 dark:border-slate-700">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-brand-soft dark:bg-slate-700 text-brand flex items-center justify-center">
+                  <Icon name="lock" className="w-4 h-4" />
+                </div>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                  {step === 1 ? 'Verifikasi Lupa PIN' : 'Buat PIN Baru'}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={onClose}
+                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                aria-label="Tutup"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+
+            {step === 1 ? (
+              <form onSubmit={handleVerifyName} className="space-y-4">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Untuk keamanan offline, verifikasi <strong>Nama Panggilan</strong> terdaftar kamu. Dompet dan transaksi tetap aman dan tidak akan terhapus.
+                </p>
+                <div>
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">
+                    Nama Panggilan Akun
+                  </label>
+                  <input
+                    type="text"
+                    value={inputName}
+                    onChange={(e) => {
+                      setInputName(e.target.value);
+                      setVerifyError('');
+                    }}
+                    placeholder="Contoh: Alex"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-brand"
+                    autoFocus
+                  />
+                  {verifyError && (
+                    <p className="text-[11px] text-rose-500 font-semibold mt-1">{verifyError}</p>
+                  )}
+                </div>
+                <div className="flex gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="flex-1 py-2.5 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 py-2.5 bg-brand text-white text-xs font-semibold rounded-xl hover:bg-brand-hover transition-colors"
+                  >
+                    Verifikasi
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={handleSaveNewPin} className="space-y-4">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Identitas terverifikasi! Masukkan 6-digit PIN baru untuk brankas Voralet kamu.
+                </p>
+                <div>
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">
+                    6-Digit PIN Baru
+                  </label>
+                  <input
+                    type="password"
+                    maxLength={6}
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={newPin}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '').slice(0, 6);
+                      setNewPin(val);
+                      setPinError('');
+                    }}
+                    placeholder="••••••"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-center tracking-widest text-sm font-bold focus:outline-none focus:border-brand"
+                    autoFocus
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">
+                    Konfirmasi PIN Baru
+                  </label>
+                  <input
+                    type="password"
+                    maxLength={6}
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={confirmPin}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '').slice(0, 6);
+                      setConfirmPin(val);
+                      setPinError('');
+                    }}
+                    placeholder="••••••"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-center tracking-widest text-sm font-bold focus:outline-none focus:border-brand"
+                  />
+                  {pinError && (
+                    <p className="text-[11px] text-rose-500 font-semibold mt-1">{pinError}</p>
+                  )}
+                </div>
+                <div className="flex gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setStep(1)}
+                    className="flex-1 py-2.5 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                  >
+                    Kembali
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 py-2.5 bg-brand text-white text-xs font-semibold rounded-xl hover:bg-brand-hover transition-colors"
+                  >
+                    Simpan PIN Baru
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      );
+    };
+
     // Screen: Returning User PIN Keypad
-    const ReturningUserPinScreen = ({ storedPin, userName, onUnlock }) => {
+    const ReturningUserPinScreen = ({ storedPin, userName, avatar, theme, onToggleTheme, onUnlock, onResetPin }) => {
       const [pin, setPin] = useState('');
       const [error, setError] = useState(false);
+      const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
 
       const handlePress = (digit) => {
         if (pin.length < 6) {
@@ -579,29 +885,72 @@
       };
 
       return (
-        <div className="min-h-screen flex flex-col justify-between p-6 bg-white max-w-md mx-auto">
-          <div className="pt-8 text-center">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-light text-brand text-xs font-bold mb-4">
-              <Icon name="wallet" className="w-4 h-4" />
-              <span>Voralet</span>
+        <div className="min-h-screen flex flex-col justify-between p-6 bg-white dark:bg-slate-900 max-w-md mx-auto transition-colors">
+          <div>
+            {/* Top Bar with Quick Theme Toggle */}
+            <div className="flex items-center justify-between pt-2">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-light dark:bg-slate-800 text-brand dark:text-sky-300 text-xs font-bold">
+                <Icon name="wallet" className="w-4 h-4" />
+                <span>Voralet</span>
+              </div>
+              <button
+                type="button"
+                onClick={onToggleTheme}
+                title={theme === 'dark' ? 'Mode Terang' : 'Mode Gelap'}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-brand dark:hover:text-sky-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                aria-label="Toggle Theme"
+              >
+                <Icon name={theme === 'dark' ? 'sun' : 'moon'} className="w-4 h-4" />
+              </button>
             </div>
-            <div className="w-12 h-12 rounded-xl bg-brand-soft border border-brand-light flex items-center justify-center mx-auto mb-3 text-brand">
-              <Icon name="lock" className="w-6 h-6" />
-            </div>
-            <h1 className="text-xl font-bold text-slate-900">
-              {userName ? `Selamat Datang, ${userName}` : 'Masukkan PIN Keamanan'}
-            </h1>
-            <p className="text-xs text-slate-500 mt-1">Ketik 6-digit PIN untuk membuka brankas keuangan Voralet</p>
 
-            <PinDots count={6} filled={pin.length} isError={error} />
-            {error && (
-              <p className="text-xs font-semibold text-red-500 animate-pulse">PIN tidak sesuai. Silakan coba lagi.</p>
-            )}
+            <div className="pt-8 text-center flex flex-col items-center">
+              {avatar ? (
+                <div className="mb-3">
+                  <Avatar avatar={avatar} name={userName} size="w-16 h-16" textSize="text-xl" />
+                </div>
+              ) : (
+                <div className="w-14 h-14 rounded-2xl bg-brand-soft dark:bg-slate-800 border border-brand-light dark:border-slate-700 flex items-center justify-center mb-3 text-brand dark:text-sky-400">
+                  <Icon name="lock" className="w-7 h-7" />
+                </div>
+              )}
+              <h1 className="text-xl font-bold text-slate-900 dark:text-white">
+                {userName ? `Selamat Datang, ${userName}` : 'Masukkan PIN Keamanan'}
+              </h1>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Ketik 6-digit PIN untuk membuka brankas keuangan Voralet</p>
+
+              <PinDots count={6} filled={pin.length} isError={error} />
+              {error && (
+                <p className="text-xs font-semibold text-red-500 animate-pulse">PIN tidak sesuai. Silakan coba lagi.</p>
+              )}
+            </div>
           </div>
 
           <div className="pb-8">
             <Keypad onKeyPress={handlePress} onBackspace={handleBackspace} />
+            <div className="mt-4 text-center">
+              <button
+                type="button"
+                onClick={() => setIsForgotModalOpen(true)}
+                className="text-xs font-medium text-slate-400 hover:text-brand dark:text-slate-500 dark:hover:text-sky-400 transition-colors py-1.5 px-3"
+              >
+                Lupa PIN?
+              </button>
+            </div>
           </div>
+
+          {/* Forgot PIN Modal with Strict SVG X Close Button */}
+          {isForgotModalOpen && (
+            <ForgotPinModal
+              storedName={userName}
+              onClose={() => setIsForgotModalOpen(false)}
+              onResetPin={(newPin) => {
+                onResetPin(newPin);
+                setIsForgotModalOpen(false);
+                setPin('');
+              }}
+            />
+          )}
         </div>
       );
     };
@@ -613,6 +962,7 @@
       const [confirmPin, setConfirmPin] = useState('');
       const [error, setError] = useState(false);
       const [name, setName] = useState('');
+      const [avatar, setAvatar] = useState('');
 
       // First Wallet Form State
       const [walletName, setWalletName] = useState('Dompet Tunai');
@@ -669,19 +1019,23 @@
         // Save cleanly with zero mock data
         StorageService.setPin(newPin);
         StorageService.setName(trimmedName);
+        if (avatar) {
+          StorageService.setAvatar(avatar);
+        }
         StorageService.setAccounts([firstAccount]);
         StorageService.setTransactions([]);
 
         onComplete({
           pin: newPin,
           name: trimmedName,
+          avatar: avatar,
           accounts: [firstAccount],
           transactions: []
         });
       };
 
       return (
-        <div className="min-h-screen flex flex-col justify-between p-6 bg-white max-w-md mx-auto">
+        <div className="min-h-screen flex flex-col justify-between p-6 bg-white dark:bg-slate-900 max-w-md mx-auto transition-colors">
           {step === 1 && (
             <>
               <div className="pt-8 text-center">
@@ -689,14 +1043,14 @@
                   <Icon name="wallet" className="w-4 h-4" />
                   <span>Voralet</span>
                 </div>
-                <div className="w-12 h-12 rounded-xl bg-brand-soft border border-brand-light flex items-center justify-center mx-auto mb-3 text-brand">
+                <div className="w-12 h-12 rounded-xl bg-brand-soft dark:bg-slate-800 border border-brand-light dark:border-slate-700 flex items-center justify-center mx-auto mb-3 text-brand">
                   <Icon name="lock" className="w-6 h-6" />
                 </div>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-brand bg-brand-light px-2.5 py-1 rounded-full">
                   Langkah 1 dari 3
                 </span>
-                <h1 className="text-xl font-bold text-slate-900 mt-2">Buat 6-Digit PIN</h1>
-                <p className="text-xs text-slate-500 mt-1">PIN digunakan untuk mengamankan data keuangan offline kamu</p>
+                <h1 className="text-xl font-bold text-slate-900 dark:text-white mt-2">Buat 6-Digit PIN</h1>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">PIN digunakan untuk mengamankan data keuangan offline kamu</p>
                 <PinDots count={6} filled={newPin.length} />
               </div>
               <div className="pb-8">
@@ -715,14 +1069,14 @@
                   <Icon name="wallet" className="w-4 h-4" />
                   <span>Voralet</span>
                 </div>
-                <div className="w-12 h-12 rounded-xl bg-brand-soft border border-brand-light flex items-center justify-center mx-auto mb-3 text-brand">
+                <div className="w-12 h-12 rounded-xl bg-brand-soft dark:bg-slate-800 border border-brand-light dark:border-slate-700 flex items-center justify-center mx-auto mb-3 text-brand">
                   <Icon name="lock" className="w-6 h-6" />
                 </div>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-brand bg-brand-light px-2.5 py-1 rounded-full">
                   Langkah 1 dari 3
                 </span>
-                <h1 className="text-xl font-bold text-slate-900 mt-2">Konfirmasi PIN</h1>
-                <p className="text-xs text-slate-500 mt-1">Masukkan kembali 6-digit PIN yang baru saja kamu buat</p>
+                <h1 className="text-xl font-bold text-slate-900 dark:text-white mt-2">Konfirmasi PIN</h1>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Masukkan kembali 6-digit PIN yang baru saja kamu buat</p>
                 <PinDots count={6} filled={confirmPin.length} isError={error} />
                 {error && (
                   <p className="text-xs font-semibold text-red-500">PIN tidak cocok. Silakan ulangi konfirmasi.</p>
@@ -763,19 +1117,47 @@
                     Langkah 2 dari 3
                   </span>
                 </div>
-                <h1 className="text-xl font-bold text-slate-900 mt-2">Siapa Nama Panggilanmu?</h1>
-                <p className="text-xs text-slate-500 mt-1">Nama ini digunakan untuk sapaan di dashboard Voralet</p>
+                <h1 className="text-xl font-bold text-slate-900 dark:text-white mt-2">Siapa Nama Panggilanmu?</h1>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Nama ini digunakan untuk sapaan dan keamanan brankas</p>
               </div>
 
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 mb-6">
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Nama Panggilan</label>
+              <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5 mb-6">
+                <div className="flex flex-col items-center mb-4">
+                  <div className="relative">
+                    <Avatar avatar={avatar} name={name} size="w-20 h-20" textSize="text-2xl" />
+                    <label
+                      htmlFor="onboarding-avatar-upload"
+                      className="absolute bottom-0 right-0 w-7 h-7 bg-brand text-white rounded-full flex items-center justify-center cursor-pointer shadow hover:bg-brand-hover transition-colors"
+                      title="Unggah Foto Profil"
+                    >
+                      <Icon name="camera" className="w-4 h-4" />
+                    </label>
+                    <input
+                      id="onboarding-avatar-upload"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          compressImage(file, (dataUrl) => {
+                            setAvatar(dataUrl);
+                          });
+                        }
+                      }}
+                    />
+                  </div>
+                  <span className="text-[11px] text-slate-400 mt-2">Pasang foto profil (opsional)</span>
+                </div>
+
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Nama Panggilan</label>
                 <input
                   type="text"
                   maxLength={30}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Contoh: Bagas"
-                  className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-brand"
+                  className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white focus:outline-none focus:border-brand"
                   autoFocus
                 />
               </div>
@@ -786,7 +1168,7 @@
                   if (name.trim()) setStep(4);
                 }}
                 disabled={!name.trim()}
-                className="w-full py-3 bg-brand text-white font-semibold text-sm rounded-xl disabled:bg-slate-300 transition-colors shadow-sm"
+                className="w-full py-3 bg-brand text-white font-semibold text-sm rounded-xl disabled:bg-slate-300 dark:disabled:bg-slate-700 transition-colors shadow-sm"
               >
                 Lanjutkan
               </button>
@@ -805,25 +1187,25 @@
                     Langkah 3 dari 3
                   </span>
                 </div>
-                <h1 className="text-xl font-bold text-slate-900 mt-2">Tambah Dompet Pertama</h1>
-                <p className="text-xs text-slate-500 mt-1">Buat dompet awal untuk mulai mencatat keuanganmu di Voralet</p>
+                <h1 className="text-xl font-bold text-slate-900 dark:text-white mt-2">Tambah Dompet Pertama</h1>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Buat dompet awal untuk mulai mencatat keuanganmu di Voralet</p>
               </div>
 
-              <form onSubmit={handleFinishOnboarding} className="space-y-4 bg-slate-50 border border-slate-200 rounded-xl p-5">
+              <form onSubmit={handleFinishOnboarding} className="space-y-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Nama Dompet / Akun</label>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Nama Dompet / Akun</label>
                   <input
                     type="text"
                     required
                     value={walletName}
                     onChange={(e) => setWalletName(e.target.value)}
                     placeholder="Contoh: Dompet Tunai / Rekening BCA"
-                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-brand"
+                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white focus:outline-none focus:border-brand"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Kategori Akun</label>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Kategori Akun</label>
                   <div className="grid grid-cols-3 gap-2">
                     {[
                       { id: 'Cash', label: 'Tunai', icon: 'cash' },
@@ -836,8 +1218,8 @@
                         onClick={() => setWalletType(type.id)}
                         className={`py-2 px-1 text-center rounded-lg border text-xs font-medium flex flex-col items-center gap-1 transition-colors ${
                           walletType === type.id
-                            ? 'bg-brand-light border-brand text-brand font-semibold'
-                            : 'bg-white border-slate-200 text-slate-600'
+                            ? 'bg-brand-light dark:bg-slate-700 border-brand text-brand font-semibold'
+                            : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
                         }`}
                       >
                         <Icon name={type.icon} className="w-4 h-4" />
@@ -848,7 +1230,7 @@
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Saldo Awal (Rp)</label>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Saldo Awal (Rp)</label>
                   <input
                     type="text"
                     inputMode="numeric"
@@ -858,9 +1240,9 @@
                       setInitialBalance(num ? num.toString() : '');
                     }}
                     placeholder="Rp 0"
-                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-semibold text-slate-900 focus:outline-none focus:border-brand"
+                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-brand"
                   />
-                  <span className="text-[11px] text-slate-500 mt-1 block">Bisa diisi 0 jika baru akan diisi nanti.</span>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">Bisa diisi 0 jika baru akan diisi nanti.</span>
                 </div>
 
                 <div className="pt-2">
@@ -936,14 +1318,14 @@
 
       return (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 p-0 sm:p-4">
-          <div className="w-full max-w-md bg-white rounded-t-2xl sm:rounded-2xl max-h-[92vh] flex flex-col shadow-xl border border-slate-200 overflow-hidden">
+          <div className="w-full max-w-md bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl max-h-[92vh] flex flex-col shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden transition-colors">
             {/* Modal Header with Crisp Vector Close Icon */}
-            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-              <h2 className="text-base font-bold text-slate-900">Catat Transaksi</h2>
+            <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+              <h2 className="text-base font-bold text-slate-900 dark:text-white">Catat Transaksi</h2>
               <button
                 type="button"
                 onClick={onClose}
-                className="p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors"
+                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                 aria-label="Tutup"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -956,7 +1338,7 @@
             {/* Scrollable Form Body */}
             <form onSubmit={handleSubmit} className="overflow-y-auto p-5 space-y-4 no-scrollbar">
               {/* Type Switcher */}
-              <div className="grid grid-cols-2 p-1 bg-slate-100 rounded-xl">
+              <div className="grid grid-cols-2 p-1 bg-slate-100 dark:bg-slate-900 rounded-xl">
                 <button
                   type="button"
                   onClick={() => {
@@ -965,8 +1347,8 @@
                   }}
                   className={`py-2 rounded-lg text-xs font-semibold transition-all ${
                     type === 'EXPENSE'
-                      ? 'bg-white text-rose-600 shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900'
+                      ? 'bg-white dark:bg-slate-800 text-rose-600 dark:text-rose-400 shadow-sm'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
                   [-] Pengeluaran
@@ -979,8 +1361,8 @@
                   }}
                   className={`py-2 rounded-lg text-xs font-semibold transition-all ${
                     type === 'INCOME'
-                      ? 'bg-white text-emerald-600 shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900'
+                      ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
                   [+] Pemasukan
@@ -989,7 +1371,7 @@
 
               {/* Amount Input */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Nominal (IDR)</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Nominal (IDR)</label>
                 <div className="relative">
                   <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">Rp</span>
                   <input
@@ -1003,7 +1385,7 @@
                       setError('');
                     }}
                     placeholder="0"
-                    className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-lg font-bold text-slate-900 focus:outline-none focus:border-brand focus:bg-white"
+                    className="w-full pl-11 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl text-lg font-bold text-slate-900 dark:text-white focus:outline-none focus:border-brand focus:bg-white dark:focus:bg-slate-900"
                   />
                 </div>
                 {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
@@ -1015,7 +1397,7 @@
                       key={val}
                       type="button"
                       onClick={() => handleQuickAdd(val)}
-                      className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 rounded-md text-[11px] font-medium transition-colors"
+                      className="px-2.5 py-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 active:bg-slate-300 text-slate-700 dark:text-slate-300 rounded-md text-[11px] font-medium transition-colors"
                     >
                       +{val >= 1000 ? `${val / 1000}rb` : val}
                     </button>
@@ -1024,7 +1406,7 @@
                     <button
                       type="button"
                       onClick={() => setAmountStr('')}
-                      className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-md text-[11px] font-medium transition-colors ml-auto"
+                      className="px-2.5 py-1 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 rounded-md text-[11px] font-medium transition-colors ml-auto"
                     >
                       Reset
                     </button>
@@ -1034,16 +1416,16 @@
 
               {/* Source Account Selector */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Dompet / Akun</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Dompet / Akun</label>
                 {accounts.length === 0 ? (
-                  <p className="text-xs text-amber-600 bg-amber-50 p-2.5 rounded-lg border border-amber-200">
+                  <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 p-2.5 rounded-lg border border-amber-200 dark:border-amber-800">
                     Belum ada akun dompet. Buat akun di menu Akun terlebih dahulu.
                   </p>
                 ) : (
                   <select
                     value={accountId}
                     onChange={(e) => setAccountId(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm font-medium text-slate-800 focus:outline-none focus:border-brand"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl text-sm font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand"
                   >
                     {accounts.map(acc => (
                       <option key={acc.id} value={acc.id}>
@@ -1056,7 +1438,7 @@
 
               {/* Category Grid */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Kategori</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Kategori</label>
                 <div className="grid grid-cols-3 gap-2">
                   {filteredCategories.map(cat => (
                     <button
@@ -1065,8 +1447,8 @@
                       onClick={() => setCategory(cat.id)}
                       className={`p-2 rounded-xl border text-center flex flex-col items-center gap-1 transition-all ${
                         category === cat.id
-                          ? 'border-brand bg-brand-light text-brand font-semibold'
-                          : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                          ? 'border-brand bg-brand-light dark:bg-slate-700 text-brand dark:text-sky-300 font-semibold'
+                          : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
                       }`}
                     >
                       <Icon name={cat.icon} className="w-5 h-5" />
@@ -1079,23 +1461,23 @@
               {/* Date & Note */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Tanggal</label>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Tanggal</label>
                   <input
                     type="date"
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:border-brand"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Catatan (Opsional)</label>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Catatan (Opsional)</label>
                   <input
                     type="text"
                     maxLength={60}
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder="Contoh: Makan siang bareng tim"
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-brand"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand"
                   />
                 </div>
               </div>
@@ -1180,17 +1562,17 @@
 
       return (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 p-0 sm:p-4">
-          <div className="w-full max-w-md bg-white rounded-t-2xl sm:rounded-2xl max-h-[90vh] flex flex-col shadow-xl border border-slate-200 overflow-hidden">
+          <div className="w-full max-w-md bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl max-h-[90vh] flex flex-col shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden transition-colors">
             {/* Modal Header with Crisp Vector Close Icon */}
-            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+            <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
               <div>
-                <h2 className="text-base font-bold text-slate-900">Kelola Dompet & Akun</h2>
-                <p className="text-xs text-slate-500">Saldo dihitung otomatis dari deposit & mutasi</p>
+                <h2 className="text-base font-bold text-slate-900 dark:text-white">Kelola Dompet & Akun</h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Saldo dihitung otomatis dari deposit & mutasi</p>
               </div>
               <button
                 type="button"
                 onClick={onClose}
-                className="p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors"
+                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                 aria-label="Tutup"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -1204,7 +1586,7 @@
               {!isAdding ? (
                 <>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                       Daftar Akun ({accounts.length})
                     </span>
                     <button
@@ -1216,7 +1598,7 @@
                         setType('Bank');
                         setIsAdding(true);
                       }}
-                      className="px-3 py-1.5 bg-brand-light text-brand text-xs font-semibold rounded-lg hover:bg-sky-100 transition-colors flex items-center gap-1"
+                      className="px-3 py-1.5 bg-brand-light dark:bg-slate-700 text-brand dark:text-sky-300 text-xs font-semibold rounded-lg hover:bg-sky-100 dark:hover:bg-slate-600 transition-colors flex items-center gap-1"
                     >
                       <Icon name="plus" className="w-4 h-4" />
                       Tambah Akun
@@ -1224,10 +1606,10 @@
                   </div>
 
                   {accounts.length === 0 ? (
-                    <div className="p-6 text-center bg-slate-50 rounded-xl border border-dashed border-slate-300">
+                    <div className="p-6 text-center bg-slate-50 dark:bg-slate-900 rounded-xl border border-dashed border-slate-300 dark:border-slate-700">
                       <Icon name="wallet" className="w-8 h-8 text-slate-400 mx-auto mb-2" />
-                      <p className="text-xs font-medium text-slate-600">Belum ada akun atau dompet.</p>
-                      <p className="text-[11px] text-slate-400 mt-0.5">Buat akun pertama kamu untuk mulai mencatat.</p>
+                      <p className="text-xs font-medium text-slate-600 dark:text-slate-400">Belum ada akun atau dompet.</p>
+                      <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">Buat akun pertama kamu untuk mulai mencatat.</p>
                     </div>
                   ) : (
                     <div className="space-y-2">
@@ -1236,25 +1618,25 @@
                         return (
                           <div
                             key={acc.id}
-                            className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between"
+                            className="p-3.5 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between"
                           >
                             <div className="flex items-center gap-3">
-                              <div className="w-9 h-9 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-brand">
+                              <div className="w-9 h-9 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-brand">
                                 <Icon
                                   name={acc.type === 'Bank' ? 'bank' : acc.type === 'Cash' ? 'cash' : 'smartphone'}
                                   className="w-5 h-5"
                                 />
                               </div>
                               <div>
-                                <h4 className="text-xs font-bold text-slate-900 leading-snug">{acc.name}</h4>
-                                <span className="text-[11px] text-slate-500">{acc.type} • Saldo: {formatIDR(bal)}</span>
+                                <h4 className="text-xs font-bold text-slate-900 dark:text-white leading-snug">{acc.name}</h4>
+                                <span className="text-[11px] text-slate-500 dark:text-slate-400">{acc.type} • Saldo: {formatIDR(bal)}</span>
                               </div>
                             </div>
                             <div className="flex items-center gap-1">
                               <button
                                 type="button"
                                 onClick={() => startEdit(acc)}
-                                className="p-1.5 text-slate-500 hover:text-brand hover:bg-brand-light rounded-lg transition-colors"
+                                className="p-1.5 text-slate-500 hover:text-brand hover:bg-brand-light dark:hover:bg-slate-700 rounded-lg transition-colors"
                                 title="Edit Akun"
                               >
                                 <Icon name="edit" className="w-4 h-4" />
@@ -1262,7 +1644,7 @@
                               <button
                                 type="button"
                                 onClick={() => onDeleteAccount(acc.id)}
-                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-lg transition-colors"
                                 title="Hapus Akun"
                               >
                                 <Icon name="trash" className="w-4 h-4" />
@@ -1275,9 +1657,9 @@
                   )}
                 </>
               ) : (
-                <form onSubmit={handleSaveNew} className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <form onSubmit={handleSaveNew} className="space-y-3 bg-slate-50 dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-bold text-slate-800">
+                    <span className="text-xs font-bold text-slate-800 dark:text-white">
                       {editingAcc ? 'Edit Akun' : 'Tambah Akun Baru'}
                     </span>
                     <button
@@ -1293,19 +1675,19 @@
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">Nama Akun / Dompet</label>
+                    <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Nama Akun / Dompet</label>
                     <input
                       type="text"
                       required
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       placeholder="Contoh: Rekening BCA / Tabungan"
-                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-brand"
+                      className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-xs text-slate-900 dark:text-white focus:outline-none focus:border-brand"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">Kategori</label>
+                    <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Kategori</label>
                     <div className="grid grid-cols-3 gap-2">
                       {[
                         { id: 'Cash', label: 'Tunai', icon: 'cash' },
@@ -1318,8 +1700,8 @@
                           onClick={() => setType(item.id)}
                           className={`py-1.5 px-2 rounded-lg border text-xs font-medium flex items-center justify-center gap-1.5 ${
                             type === item.id
-                              ? 'bg-brand-light border-brand text-brand font-semibold'
-                              : 'bg-white border-slate-200 text-slate-600'
+                              ? 'bg-brand-light dark:bg-slate-700 border-brand text-brand dark:text-sky-300 font-semibold'
+                              : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
                           }`}
                         >
                           <Icon name={item.icon} className="w-4 h-4" />
@@ -1330,7 +1712,7 @@
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">Saldo Awal (Rp)</label>
+                    <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Saldo Awal (Rp)</label>
                     <input
                       type="text"
                       inputMode="numeric"
@@ -1340,7 +1722,7 @@
                         setInitialBalance(num ? num.toString() : '');
                       }}
                       placeholder="Rp 0"
-                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:outline-none focus:border-brand"
+                      className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-brand"
                     />
                   </div>
 
@@ -1366,6 +1748,10 @@
       onClose,
       currentPin,
       userName,
+      avatar,
+      onUpdateAvatar,
+      theme,
+      onToggleTheme,
       onUpdatePin,
       onExportData,
       onImportData,
@@ -1428,17 +1814,17 @@
 
       return (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 p-0 sm:p-4">
-          <div className="w-full max-w-md bg-white rounded-t-2xl sm:rounded-2xl max-h-[90vh] flex flex-col shadow-xl border border-slate-200 overflow-hidden">
+          <div className="w-full max-w-md bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl max-h-[90vh] flex flex-col shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden transition-colors">
             {/* Modal Header with Crisp Vector Close Icon */}
-            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+            <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
               <div>
-                <h2 className="text-base font-bold text-slate-900">Pengaturan & Data</h2>
-                <p className="text-xs text-slate-500">Privasi lokal & manajemen brankas Voralet</p>
+                <h2 className="text-base font-bold text-slate-900 dark:text-white">Pengaturan & Data</h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Privasi lokal & manajemen brankas Voralet</p>
               </div>
               <button
                 type="button"
                 onClick={onClose}
-                className="p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors"
+                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                 aria-label="Tutup"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -1449,44 +1835,129 @@
             </div>
 
             <div className="p-5 overflow-y-auto space-y-4 no-scrollbar">
+              {/* Profile & Avatar Box */}
+              <div className="p-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <Avatar avatar={avatar} name={userName} size="w-14 h-14" textSize="text-lg" />
+                    <label
+                      htmlFor="settings-avatar-upload"
+                      className="absolute -bottom-1 -right-1 w-6 h-6 bg-brand text-white rounded-full flex items-center justify-center cursor-pointer shadow hover:bg-brand-hover transition-colors"
+                      title="Ubah Foto Profil"
+                    >
+                      <Icon name="camera" className="w-3.5 h-3.5" />
+                    </label>
+                    <input
+                      id="settings-avatar-upload"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          compressImage(file, (dataUrl) => {
+                            onUpdateAvatar(dataUrl);
+                          });
+                        }
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">{userName}</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Pengguna Terdaftar</p>
+                    {avatar && (
+                      <button
+                        type="button"
+                        onClick={() => onUpdateAvatar('')}
+                        className="text-[11px] text-rose-500 hover:text-rose-600 dark:hover:text-rose-400 font-medium mt-0.5"
+                      >
+                        Hapus Foto
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Appearance / Flat Dark Mode Toggle */}
+              <div className="p-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-amber-500 dark:text-sky-400">
+                    <Icon name={theme === 'dark' ? 'moon' : 'sun'} className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900 dark:text-white">Tema Tampilan</h4>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                      {theme === 'dark' ? 'Flat Dark Mode aktif' : 'Mode Terang aktif'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex bg-slate-200 dark:bg-slate-800 p-1 rounded-xl border border-slate-300/60 dark:border-slate-700">
+                  <button
+                    type="button"
+                    onClick={() => onToggleTheme('light')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                      theme === 'light'
+                        ? 'bg-white text-slate-900 shadow-sm'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                  >
+                    <Icon name="sun" className="w-3.5 h-3.5" />
+                    <span>Terang</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onToggleTheme('dark')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                      theme === 'dark'
+                        ? 'bg-slate-700 text-sky-400 shadow-sm'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                  >
+                    <Icon name="moon" className="w-3.5 h-3.5" />
+                    <span>Gelap</span>
+                  </button>
+                </div>
+              </div>
+
               {/* Security Status Box */}
-              <div className="p-3.5 bg-brand-soft border border-brand-light rounded-xl flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-brand-light flex items-center justify-center text-brand shrink-0">
+              <div className="p-3.5 bg-brand-soft dark:bg-slate-900 border border-brand-light dark:border-slate-700 rounded-xl flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-brand-light dark:bg-slate-800 flex items-center justify-center text-brand dark:text-sky-400 shrink-0">
                   <Icon name="shield-check" className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-slate-900">Privasi Offline 100%</h4>
-                  <p className="text-[11px] text-slate-500 leading-snug">
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-white">Privasi Offline 100%</h4>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
                     Data keuangan tersimpan aman di peramban ini tanpa dikirim ke server.
                   </p>
                 </div>
               </div>
 
               {/* PIN Settings Accordion */}
-              <div className="border border-slate-200 rounded-xl overflow-hidden">
+              <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
                 <button
                   type="button"
                   onClick={() => setIsChangingPin(!isChangingPin)}
-                  className="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 flex items-center justify-between text-left transition-colors"
+                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-between text-left transition-colors"
                 >
-                  <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-800 dark:text-white">
                     <Icon name="lock" className="w-4 h-4 text-slate-500" />
                     <span>Ganti 6-Digit PIN</span>
                   </div>
-                  <span className="text-xs text-brand font-semibold">
+                  <span className="text-xs text-brand dark:text-sky-400 font-semibold">
                     {isChangingPin ? 'Tutup' : 'Ubah'}
                   </span>
                 </button>
 
                 {isChangingPin && (
-                  <form onSubmit={handleChangePinSubmit} className="p-4 space-y-3 bg-white border-t border-slate-200">
+                  <form onSubmit={handleChangePinSubmit} className="p-4 space-y-3 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700">
                     {pinMsg.text && (
-                      <p className={`text-xs font-semibold ${pinMsg.isError ? 'text-red-500' : 'text-emerald-600'}`}>
+                      <p className={`text-xs font-semibold ${pinMsg.isError ? 'text-red-500' : 'text-emerald-600 dark:text-emerald-400'}`}>
                         {pinMsg.text}
                       </p>
                     )}
                     <div>
-                      <label className="block text-[11px] font-medium text-slate-600 mb-1">PIN Saat Ini (6 Angka)</label>
+                      <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-300 mb-1">PIN Saat Ini (6 Angka)</label>
                       <input
                         type="password"
                         maxLength={6}
@@ -1494,12 +1965,12 @@
                         required
                         value={oldPin}
                         onChange={(e) => setOldPin(e.target.value.replace(/\D/g, ''))}
-                        className="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-300 rounded-lg text-slate-900"
+                        className="w-full px-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
                         placeholder="••••••"
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-medium text-slate-600 mb-1">PIN Baru (6 Angka)</label>
+                      <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-300 mb-1">PIN Baru (6 Angka)</label>
                       <input
                         type="password"
                         maxLength={6}
@@ -1507,12 +1978,12 @@
                         required
                         value={newPin}
                         onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ''))}
-                        className="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-300 rounded-lg text-slate-900"
+                        className="w-full px-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
                         placeholder="••••••"
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-medium text-slate-600 mb-1">Ulangi PIN Baru</label>
+                      <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-300 mb-1">Ulangi PIN Baru</label>
                       <input
                         type="password"
                         maxLength={6}
@@ -1520,13 +1991,13 @@
                         required
                         value={confirmNewPin}
                         onChange={(e) => setConfirmNewPin(e.target.value.replace(/\D/g, ''))}
-                        className="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-300 rounded-lg text-slate-900"
+                        className="w-full px-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
                         placeholder="••••••"
                       />
                     </div>
                     <button
                       type="submit"
-                      className="w-full py-2 bg-brand text-white font-semibold text-xs rounded-lg hover:bg-brand-hover"
+                      className="w-full py-2 bg-brand hover:bg-brand-hover text-white font-semibold text-xs rounded-lg"
                     >
                       Perbarui PIN
                     </button>
@@ -1536,16 +2007,16 @@
 
               {/* Data Export / Import Actions */}
               <div className="space-y-2 pt-1">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
                   Cadangan & Pulihkan
                 </span>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     onClick={onExportData}
-                    className="p-3 rounded-xl border border-slate-200 hover:bg-slate-50 flex flex-col items-center gap-1 text-slate-700 transition-colors"
+                    className="p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 flex flex-col items-center gap-1 text-slate-700 dark:text-slate-300 transition-colors"
                   >
-                    <Icon name="download" className="w-5 h-5 text-brand" />
+                    <Icon name="download" className="w-5 h-5 text-brand dark:text-sky-400" />
                     <span className="text-xs font-semibold">Ekspor JSON</span>
                     <span className="text-[10px] text-slate-400">voralet_backup.json</span>
                   </button>
@@ -1553,9 +2024,9 @@
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="p-3 rounded-xl border border-slate-200 hover:bg-slate-50 flex flex-col items-center gap-1 text-slate-700 transition-colors"
+                    className="p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 flex flex-col items-center gap-1 text-slate-700 dark:text-slate-300 transition-colors"
                   >
-                    <Icon name="upload" className="w-5 h-5 text-emerald-600" />
+                    <Icon name="upload" className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                     <span className="text-xs font-semibold">Impor JSON</span>
                     <span className="text-[10px] text-slate-400">Pulihkan Cadangan</span>
                   </button>
@@ -1570,20 +2041,20 @@
               </div>
 
               {/* Hard Reset Local Data */}
-              <div className="pt-2 border-t border-slate-100">
+              <div className="pt-2 border-t border-slate-100 dark:border-slate-700">
                 {!showResetConfirm ? (
                   <button
                     type="button"
                     onClick={() => setShowResetConfirm(true)}
-                    className="w-full py-2.5 px-3 rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
+                    className="w-full py-2.5 px-3 rounded-xl border border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
                   >
                     <Icon name="trash" className="w-4 h-4" />
                     <span>Reset Seluruh Data Aplikasi</span>
                   </button>
                 ) : (
-                  <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl space-y-2.5">
-                    <p className="text-xs font-bold text-rose-800">Konfirmasi Hapus Data</p>
-                    <p className="text-[11px] text-rose-600">
+                  <div className="p-3.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 rounded-xl space-y-2.5">
+                    <p className="text-xs font-bold text-rose-800 dark:text-rose-300">Konfirmasi Hapus Data</p>
+                    <p className="text-[11px] text-rose-600 dark:text-rose-400">
                       Tindakan ini akan menghapus PIN, nama pengguna, seluruh dompet, dan mutasi. Ketik <span className="font-bold">RESET</span> di bawah untuk melanjutkan:
                     </p>
                     <input
@@ -1591,7 +2062,7 @@
                       value={resetConfirmInput}
                       onChange={(e) => setResetConfirmInput(e.target.value)}
                       placeholder="Ketik RESET"
-                      className="w-full px-3 py-1.5 text-xs bg-white border border-rose-300 rounded-lg text-slate-900 focus:outline-none"
+                      className="w-full px-3 py-1.5 text-xs bg-white dark:bg-slate-900 border border-rose-300 dark:border-rose-700 rounded-lg text-slate-900 dark:text-white focus:outline-none"
                     />
                     <div className="flex gap-2">
                       <button
@@ -1600,7 +2071,7 @@
                           setShowResetConfirm(false);
                           setResetConfirmInput('');
                         }}
-                        className="flex-1 py-1.5 bg-white border border-slate-200 text-slate-700 rounded-lg text-xs font-medium"
+                        className="flex-1 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium"
                       >
                         Batal
                       </button>
@@ -1630,6 +2101,9 @@
     // =========================================================================
     const MainDashboard = ({
       userName,
+      avatar,
+      theme,
+      onToggleTheme,
       accounts,
       transactions,
       isBalanceHidden,
@@ -1668,18 +2142,16 @@
       const selectedAccount = accounts.find(a => a.id === selectedAccountId);
 
       return (
-        <div className="min-h-screen bg-slate-50 pb-20 max-w-md mx-auto">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-20 max-w-md mx-auto transition-colors">
           {/* Top Navigation Bar */}
-          <header className="sticky top-0 z-30 bg-white border-b border-slate-200 px-5 py-3.5 flex items-center justify-between">
+          <header className="sticky top-0 z-30 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-5 py-3.5 flex items-center justify-between transition-colors">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-brand text-white flex items-center justify-center font-bold text-sm shadow-sm">
-                <Icon name="wallet" className="w-4 h-4" />
-              </div>
+              <Avatar avatar={avatar} name={userName} size="w-9 h-9" textSize="text-xs" />
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-brand block leading-none">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-brand dark:text-sky-400 block leading-none">
                   Voralet
                 </span>
-                <h1 className="text-sm font-bold text-slate-900 leading-tight">
+                <h1 className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
                   Halo, {userName || 'Teman'}
                 </h1>
               </div>
@@ -1688,9 +2160,18 @@
             <div className="flex items-center gap-1.5">
               <button
                 type="button"
+                onClick={() => onToggleTheme(theme === 'dark' ? 'light' : 'dark')}
+                title={theme === 'dark' ? 'Ganti ke Mode Terang' : 'Ganti ke Mode Gelap'}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-brand dark:hover:text-sky-400 hover:bg-brand-light dark:hover:bg-slate-800 transition-colors"
+                aria-label="Toggle Theme"
+              >
+                <Icon name={theme === 'dark' ? 'sun' : 'moon'} className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
                 onClick={onLockApp}
                 title="Kunci Aplikasi"
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-brand hover:bg-brand-light transition-colors"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-brand dark:hover:text-sky-400 hover:bg-brand-light dark:hover:bg-slate-800 transition-colors"
                 aria-label="Kunci Aplikasi"
               >
                 <Icon name="lock" className="w-4 h-4" />
@@ -1699,7 +2180,7 @@
                 type="button"
                 onClick={onOpenSettingsModal}
                 title="Pengaturan & Data"
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-brand hover:bg-brand-light transition-colors"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-brand dark:hover:text-sky-400 hover:bg-brand-light dark:hover:bg-slate-800 transition-colors"
                 aria-label="Pengaturan"
               >
                 <Icon name="settings" className="w-4 h-4" />
@@ -1709,17 +2190,17 @@
 
           <main className="p-4 space-y-4">
             {/* Total Balance Card (Blu by BCA inspired) */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
-              <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm transition-colors">
+              <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
                 <div className="flex items-center gap-1.5">
-                  <span className="font-semibold text-slate-600">
+                  <span className="font-semibold text-slate-600 dark:text-slate-300">
                     {selectedAccount ? `Saldo ${selectedAccount.name}` : 'Total Saldo Gabungan'}
                   </span>
                   {selectedAccountId && (
                     <button
                       type="button"
                       onClick={() => setSelectedAccountId(null)}
-                      className="text-[10px] text-brand hover:underline"
+                      className="text-[10px] text-brand dark:text-sky-400 hover:underline"
                     >
                       (Lihat Total)
                     </button>
@@ -1728,7 +2209,7 @@
                 <button
                   type="button"
                   onClick={onToggleHideBalance}
-                  className="p-1 text-slate-400 hover:text-slate-600 transition-colors"
+                  className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
                   aria-label={isBalanceHidden ? 'Tampilkan Saldo' : 'Sembunyikan Saldo'}
                 >
                   <Icon name={isBalanceHidden ? 'eye-off' : 'eye'} className="w-4 h-4" />
@@ -1736,7 +2217,7 @@
               </div>
 
               <div className="py-1">
-                <span className="text-2xl font-bold tracking-tight text-slate-900">
+                <span className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
                   {isBalanceHidden
                     ? 'Rp ••••••••'
                     : formatIDR(
@@ -1748,26 +2229,26 @@
               </div>
 
               {/* Income & Expense Quick Summary Chips */}
-              <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-slate-100">
+              <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
                 <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-md bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                  <div className="w-6 h-6 rounded-md bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
                     <Icon name="arrow-down-left" className="w-3.5 h-3.5" />
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 block leading-none">Pemasukan</span>
-                    <span className="text-xs font-semibold text-slate-800">
+                    <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                       {isBalanceHidden ? '•••••' : formatIDR(summaryTotals.income)}
                     </span>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-md bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+                  <div className="w-6 h-6 rounded-md bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
                     <Icon name="arrow-up-right" className="w-3.5 h-3.5" />
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 block leading-none">Pengeluaran</span>
-                    <span className="text-xs font-semibold text-slate-800">
+                    <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                       {isBalanceHidden ? '•••••' : formatIDR(summaryTotals.expense)}
                     </span>
                   </div>
@@ -1780,9 +2261,9 @@
               <button
                 type="button"
                 onClick={() => onOpenTransactionModal('EXPENSE')}
-                className="py-3 px-4 bg-white border border-rose-200 hover:border-rose-400 active:bg-rose-50 text-rose-700 rounded-xl font-semibold text-xs flex items-center justify-center gap-2 shadow-sm transition-all"
+                className="py-3 px-4 bg-white dark:bg-slate-900 border border-rose-200 dark:border-rose-900/60 hover:border-rose-400 dark:hover:border-rose-600 active:bg-rose-50 dark:active:bg-rose-950/40 text-rose-700 dark:text-rose-400 rounded-xl font-semibold text-xs flex items-center justify-center gap-2 shadow-sm transition-all"
               >
-                <div className="w-5 h-5 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center">
+                <div className="w-5 h-5 rounded-full bg-rose-100 dark:bg-rose-950/80 text-rose-600 dark:text-rose-400 flex items-center justify-center">
                   <Icon name="arrow-up-right" className="w-3 h-3" />
                 </div>
                 <span>[-] Catat Pengeluaran</span>
@@ -1803,13 +2284,13 @@
             {/* Accounts Carousel / Grid (Blu Pocket Style) */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Kantong & Dompet ({accounts.length})
                 </span>
                 <button
                   type="button"
                   onClick={onOpenAccountsModal}
-                  className="text-xs font-semibold text-brand hover:underline flex items-center gap-0.5"
+                  className="text-xs font-semibold text-brand dark:text-sky-400 hover:underline flex items-center gap-0.5"
                 >
                   <Icon name="plus" className="w-3.5 h-3.5" />
                   <span>Kelola Akun</span>
@@ -1817,12 +2298,12 @@
               </div>
 
               {accounts.length === 0 ? (
-                <div className="p-4 bg-white border border-dashed border-slate-300 rounded-xl text-center">
-                  <p className="text-xs font-medium text-slate-600">Belum ada akun, buat akun pertama kamu</p>
+                <div className="p-4 bg-white dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-700 rounded-xl text-center">
+                  <p className="text-xs font-medium text-slate-600 dark:text-slate-400">Belum ada akun, buat akun pertama kamu</p>
                   <button
                     type="button"
                     onClick={onOpenAccountsModal}
-                    className="mt-2 text-xs font-semibold text-brand hover:underline"
+                    className="mt-2 text-xs font-semibold text-brand dark:text-sky-400 hover:underline"
                   >
                     + Tambah Akun
                   </button>
@@ -1836,7 +2317,7 @@
                     className={`min-w-[120px] p-3 rounded-xl border text-left flex flex-col justify-between transition-all shrink-0 ${
                       selectedAccountId === null
                         ? 'bg-brand text-white border-brand shadow-sm'
-                        : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
+                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700'
                     }`}
                   >
                     <div className="flex items-center justify-between mb-2">
@@ -1862,22 +2343,22 @@
                         onClick={() => setSelectedAccountId(isSelected ? null : acc.id)}
                         className={`min-w-[130px] p-3 rounded-xl border text-left flex flex-col justify-between transition-all shrink-0 ${
                           isSelected
-                            ? 'bg-brand-soft border-brand text-brand-dark shadow-sm'
-                            : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
+                            ? 'bg-brand-soft dark:bg-slate-800 border-brand text-brand-dark dark:text-sky-300 shadow-sm'
+                            : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700'
                         }`}
                       >
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                             {acc.type}
                           </span>
                           <Icon
                             name={acc.type === 'Bank' ? 'bank' : acc.type === 'Cash' ? 'cash' : 'smartphone'}
-                            className={`w-4 h-4 ${isSelected ? 'text-brand' : 'text-slate-400'}`}
+                            className={`w-4 h-4 ${isSelected ? 'text-brand dark:text-sky-400' : 'text-slate-400'}`}
                           />
                         </div>
                         <div>
-                          <span className="text-xs font-bold text-slate-900 block truncate">{acc.name}</span>
-                          <span className="text-[11px] font-semibold text-slate-600 block">
+                          <span className="text-xs font-bold text-slate-900 dark:text-white block truncate">{acc.name}</span>
+                          <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block">
                             {isBalanceHidden ? '••••••' : formatIDR(bal)}
                           </span>
                         </div>
@@ -1892,11 +2373,11 @@
             <div>
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                     Riwayat Transaksi
                   </span>
                   {selectedAccount && (
-                    <span className="text-[10px] font-bold px-2 py-0.5 bg-brand-light text-brand rounded-full">
+                    <span className="text-[10px] font-bold px-2 py-0.5 bg-brand-light dark:bg-slate-800 text-brand dark:text-sky-300 rounded-full">
                       {selectedAccount.name}
                     </span>
                   )}
@@ -1905,7 +2386,7 @@
                   <button
                     type="button"
                     onClick={() => setSelectedAccountId(null)}
-                    className="text-xs text-slate-500 hover:underline"
+                    className="text-xs text-slate-500 dark:text-slate-400 hover:underline"
                   >
                     Tampilkan Semua
                   </button>
@@ -1913,12 +2394,12 @@
               </div>
 
               {displayedTransactions.length === 0 ? (
-                <div className="p-8 bg-white border border-slate-200 rounded-2xl text-center">
-                  <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center mx-auto mb-2 text-slate-400">
+                <div className="p-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-center">
+                  <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-2 text-slate-400">
                     <Icon name="tag" className="w-6 h-6" />
                   </div>
-                  <h3 className="text-xs font-bold text-slate-700">Belum ada transaksi</h3>
-                  <p className="text-[11px] text-slate-400 mt-1 max-w-xs mx-auto">
+                  <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300">Belum ada transaksi</h3>
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1 max-w-xs mx-auto">
                     {selectedAccount
                       ? `Belum ada mutasi untuk dompet ${selectedAccount.name}.`
                       : 'Mulai catat pengeluaran dan pemasukan harianmu di Voralet.'}
@@ -1926,7 +2407,7 @@
                   <button
                     type="button"
                     onClick={() => onOpenTransactionModal('EXPENSE')}
-                    className="mt-3 px-3 py-1.5 bg-brand-light text-brand text-xs font-semibold rounded-lg hover:bg-sky-100 transition-colors"
+                    className="mt-3 px-3 py-1.5 bg-brand-light dark:bg-slate-800 text-brand dark:text-sky-300 text-xs font-semibold rounded-lg hover:bg-sky-100 dark:hover:bg-slate-700 transition-colors"
                   >
                     Catat Transaksi Sekarang
                   </button>
@@ -1944,26 +2425,28 @@
                     return (
                       <div
                         key={tx.id}
-                        className="p-3.5 bg-white border border-slate-200 rounded-xl flex items-center justify-between shadow-sm hover:border-slate-300 transition-colors"
+                        className="p-3.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl flex items-center justify-between shadow-sm hover:border-slate-300 dark:hover:border-slate-700 transition-colors"
                       >
                         <div className="flex items-center gap-3">
                           <div
                             className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                              isIncome ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'
+                              isIncome
+                                ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400'
+                                : 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400'
                             }`}
                           >
                             <Icon name={catObj.icon} className="w-4 h-4" />
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
-                              <h4 className="text-xs font-bold text-slate-900 leading-snug">{catObj.label}</h4>
+                              <h4 className="text-xs font-bold text-slate-900 dark:text-white leading-snug">{catObj.label}</h4>
                               {accObj && (
-                                <span className="text-[10px] font-medium px-1.5 py-0.2 bg-slate-100 text-slate-600 rounded">
+                                <span className="text-[10px] font-medium px-1.5 py-0.2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded">
                                   {accObj.name}
                                 </span>
                               )}
                             </div>
-                            <div className="flex items-center gap-2 text-[11px] text-slate-400">
+                            <div className="flex items-center gap-2 text-[11px] text-slate-400 dark:text-slate-500">
                               <span>{formatDateID(tx.date)}</span>
                               {tx.notes && <span>• {tx.notes}</span>}
                             </div>
@@ -1973,7 +2456,7 @@
                         <div className="flex items-center gap-2">
                           <span
                             className={`text-xs font-bold text-right ${
-                              isIncome ? 'text-emerald-600' : 'text-rose-600'
+                              isIncome ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
                             }`}
                           >
                             {isIncome ? '+' : '-'}{formatIDR(tx.amount)}
@@ -1981,7 +2464,7 @@
                           <button
                             type="button"
                             onClick={() => setDeleteTxConfirmId(tx.id)}
-                            className="p-1 text-slate-300 hover:text-rose-500 rounded transition-colors"
+                            className="p-1 text-slate-300 hover:text-rose-500 dark:text-slate-600 dark:hover:text-rose-400 rounded transition-colors"
                             title="Hapus Transaksi"
                           >
                             <Icon name="trash" className="w-3.5 h-3.5" />
@@ -1998,13 +2481,13 @@
           {/* Delete Transaction Confirmation Dialog with Crisp Close Icon */}
           {deleteTxConfirmId && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4">
-              <div className="bg-white rounded-2xl p-5 max-w-xs w-full shadow-xl border border-slate-200">
+              <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 max-w-xs w-full shadow-xl border border-slate-200 dark:border-slate-700">
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-bold text-slate-900">Hapus Transaksi?</h3>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">Hapus Transaksi?</h3>
                   <button
                     type="button"
                     onClick={() => setDeleteTxConfirmId(null)}
-                    className="p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors"
+                    className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                     aria-label="Tutup"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -2013,14 +2496,14 @@
                     </svg>
                   </button>
                 </div>
-                <p className="text-xs text-slate-500 mb-4">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
                   Saldo akun akan disesuaikan kembali secara otomatis setelah transaksi dihapus.
                 </p>
                 <div className="flex gap-2">
                   <button
                     type="button"
                     onClick={() => setDeleteTxConfirmId(null)}
-                    className="flex-1 py-2 bg-slate-100 text-slate-700 text-xs font-semibold rounded-lg hover:bg-slate-200"
+                    className="flex-1 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600"
                   >
                     Batal
                   </button>
@@ -2050,6 +2533,8 @@
       const [isUnlocked, setIsUnlocked] = useState(false);
       const [storedPin, setStoredPin] = useState(() => StorageService.getPin());
       const [userName, setUserName] = useState(() => StorageService.getName());
+      const [avatar, setAvatar] = useState(() => StorageService.getAvatar());
+      const [theme, setTheme] = useState(() => StorageService.getTheme());
       const [accounts, setAccounts] = useState(() => StorageService.getAccounts());
       const [transactions, setTransactions] = useState(() => StorageService.getTransactions());
       const [isBalanceHidden, setIsBalanceHidden] = useState(() => StorageService.getHideBalance());
@@ -2065,10 +2550,35 @@
         setToastMsg(msg);
       }, []);
 
+      // Synchronize theme with HTML root class
+      useEffect(() => {
+        if (theme === 'dark') {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+        StorageService.setTheme(theme);
+      }, [theme]);
+
+      const handleToggleTheme = (targetTheme) => {
+        if (typeof targetTheme === 'string') {
+          setTheme(targetTheme);
+        } else {
+          setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
+        }
+      };
+
+      const handleUpdateAvatar = (newAvatar) => {
+        setAvatar(newAvatar);
+        StorageService.setAvatar(newAvatar);
+        showToast(newAvatar ? 'Foto profil diperbarui' : 'Foto profil dihapus');
+      };
+
       // Handler for Onboarding Completion
       const handleOnboardingComplete = (data) => {
         setStoredPin(data.pin);
         setUserName(data.name);
+        if (data.avatar) setAvatar(data.avatar);
         setAccounts(data.accounts);
         setTransactions(data.transactions);
         setIsUnlocked(true);
@@ -2205,6 +2715,7 @@
         StorageService.clearAll();
         setStoredPin(null);
         setUserName('');
+        setAvatar('');
         setAccounts([]);
         setTransactions([]);
         setIsUnlocked(false);
@@ -2230,7 +2741,11 @@
             <ReturningUserPinScreen
               storedPin={storedPin}
               userName={userName}
+              avatar={avatar}
+              theme={theme}
+              onToggleTheme={handleToggleTheme}
               onUnlock={() => setIsUnlocked(true)}
+              onResetPin={handleUpdatePin}
             />
           </>
         );
@@ -2243,6 +2758,9 @@
 
           <MainDashboard
             userName={userName}
+            avatar={avatar}
+            theme={theme}
+            onToggleTheme={handleToggleTheme}
             accounts={accounts}
             transactions={transactions}
             isBalanceHidden={isBalanceHidden}
@@ -2283,6 +2801,10 @@
             onClose={() => setIsSettingsModalOpen(false)}
             currentPin={storedPin}
             userName={userName}
+            avatar={avatar}
+            onUpdateAvatar={handleUpdateAvatar}
+            theme={theme}
+            onToggleTheme={handleToggleTheme}
             onUpdatePin={handleUpdatePin}
             onExportData={handleExportData}
             onImportData={handleImportData}

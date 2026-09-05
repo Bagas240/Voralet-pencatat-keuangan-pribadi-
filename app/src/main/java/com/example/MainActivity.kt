@@ -3,7 +3,9 @@ package com.example
 import android.annotation.SuppressLint
 import android.graphics.Color
 import android.os.Bundle
+import android.view.View
 import android.view.ViewGroup
+import android.webkit.RenderProcessGoneDetail
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
@@ -61,7 +63,10 @@ fun SakuCleanWebView(modifier: Modifier = Modifier) {
           ViewGroup.LayoutParams.MATCH_PARENT,
           ViewGroup.LayoutParams.MATCH_PARENT
         )
-        setBackgroundColor(Color.WHITE)
+        setBackgroundColor(Color.TRANSPARENT)
+
+        // Software rendering avoids MESA OpenGL rendernode driver missing errors in emulators/containers
+        setLayerType(View.LAYER_TYPE_SOFTWARE, null)
 
         settings.apply {
           javaScriptEnabled = true
@@ -69,12 +74,26 @@ fun SakuCleanWebView(modifier: Modifier = Modifier) {
           databaseEnabled = true
           allowFileAccess = true
           allowContentAccess = true
+          allowFileAccessFromFileURLs = true
+          allowUniversalAccessFromFileURLs = true
           cacheMode = WebSettings.LOAD_DEFAULT
           useWideViewPort = true
           loadWithOverviewMode = true
+          mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
         }
 
-        webViewClient = object : WebViewClient() {}
+        webViewClient = object : WebViewClient() {
+          override fun onRenderProcessGone(
+            view: WebView?,
+            detail: RenderProcessGoneDetail?
+          ): Boolean {
+            // Prevent host application crash if renderer process fails
+            view?.let { wv ->
+              wv.destroy()
+            }
+            return true
+          }
+        }
         webChromeClient = object : WebChromeClient() {}
 
         loadUrl("file:///android_asset/index.html")
