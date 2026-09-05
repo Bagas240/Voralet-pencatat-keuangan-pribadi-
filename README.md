@@ -19,7 +19,7 @@ Aplikasi pencatat keuangan pribadi dan buku kas harian modern untuk Android. Did
 
 Untuk mencoba aplikasi ini langsung di ponsel Android Anda:
 
-1. Buka tab **[Releases]([https://github.com/Bagas240/Voralet/releases/tag/v1.0.0](https://github.com/Bagas240/Voralet-pencatat-keuangan-pribadi-/releases/tag/v1.0.0))** di repositori ini.
+1. Buka tab **[Releases](https://github.com/Bagas240/Voralet-pencatat-keuangan-pribadi-/releases/tag/v1.0.0)** di repositori ini.
 2. Unduh file **`Voralet v1.0.0.apk`** dari rilis versi terbaru.
 3. Buka file `.apk` yang telah diunduh di ponsel Android Anda untuk menginstalnya.
 4. Buka aplikasi dan buat 6-digit PIN awal Anda.
