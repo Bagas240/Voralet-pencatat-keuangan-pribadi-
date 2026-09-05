@@ -55,13 +55,20 @@
   <script>window.Babel || document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.4/babel.min.js"><\/script>')</script>
 
   <style>
+    :root {
+      --ios-ease: cubic-bezier(0.32, 0.72, 0, 1);
+      --ios-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
     * {
       -webkit-tap-highlight-color: transparent;
       box-sizing: border-box;
+      transition-property: background-color, border-color, color, fill, stroke;
+      transition-duration: 300ms;
+      transition-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
     }
     body {
-      font-family: 'Inter', sans-serif;
-      background-color: #F8FAFC;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #0F172A;
       color: #0F172A;
       margin: 0;
       padding: 0;
@@ -78,13 +85,118 @@
       -ms-overflow-style: none;
       scrollbar-width: none;
     }
+
     @keyframes shake {
       0%, 100% { transform: translateX(0); }
       20%, 60% { transform: translateX(-8px); }
       40%, 80% { transform: translateX(8px); }
     }
     .animate-shake {
-      animation: shake 0.35s ease-in-out;
+      animation: shake 0.35s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+    }
+
+    /* iOS Bottom Sheet Animations (Hardware Accelerated: transform & opacity only) */
+    @keyframes iosSheetEnter {
+      0% { transform: translateY(100%); }
+      100% { transform: translateY(0); }
+    }
+    @keyframes iosSheetExit {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(100%); }
+    }
+    @keyframes iosBackdropFadeIn {
+      0% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+    @keyframes iosBackdropFadeOut {
+      0% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    .animate-ios-sheet {
+      animation: iosSheetEnter 0.36s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+      will-change: transform;
+    }
+    .animate-ios-sheet-exit {
+      animation: iosSheetExit 0.26s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+      will-change: transform;
+    }
+    .animate-ios-backdrop {
+      animation: iosBackdropFadeIn 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+      will-change: opacity;
+    }
+    .animate-ios-backdrop-exit {
+      animation: iosBackdropFadeOut 0.24s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+      will-change: opacity;
+    }
+
+    /* iOS Spring Pop for Alerts & Overlays */
+    @keyframes iosSpringPopIn {
+      0% { transform: scale(0.92); opacity: 0; }
+      70% { transform: scale(1.02); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    @keyframes iosSpringPopOut {
+      0% { transform: scale(1); opacity: 1; }
+      100% { transform: scale(0.92); opacity: 0; }
+    }
+    .animate-ios-pop {
+      animation: iosSpringPopIn 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      transform-origin: center center;
+      will-change: transform, opacity;
+    }
+    .animate-ios-pop-exit {
+      animation: iosSpringPopOut 0.18s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+      transform-origin: center center;
+      will-change: transform, opacity;
+    }
+
+    /* Tab View Transition */
+    @keyframes iosTabFade {
+      0% { transform: translateY(6px); opacity: 0; }
+      100% { transform: translateY(0); opacity: 1; }
+    }
+    .animate-ios-tab-view {
+      animation: iosTabFade 0.25s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+      will-change: transform, opacity;
+    }
+
+    /* iOS Tactile Haptic Press */
+    .ios-btn-tap, .ios-touch-item, .ios-card-tap {
+      transition: transform 0.15s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.15s ease;
+      will-change: transform;
+    }
+    .ios-btn-tap:active, .ios-touch-item:active {
+      transform: scale(0.96);
+      opacity: 0.88;
+    }
+    .ios-card-tap:active {
+      transform: scale(0.98);
+    }
+    .ios-keypad-btn {
+      transition: transform 0.12s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.12s ease;
+      will-change: transform;
+    }
+    .ios-keypad-btn:active {
+      transform: scale(0.92);
+      opacity: 0.75;
+    }
+
+    /* iOS Modal Sheet Depth: Background Screen Scaled Morphing */
+    .ios-screen-container {
+      transition: transform 0.36s cubic-bezier(0.32, 0.72, 0, 1), border-radius 0.36s cubic-bezier(0.32, 0.72, 0, 1), filter 0.36s cubic-bezier(0.32, 0.72, 0, 1);
+      transform-origin: top center;
+      will-change: transform, border-radius, filter;
+    }
+    .ios-screen-scaled {
+      transform: scale(0.96) translateY(8px);
+      border-radius: 1.5rem !important;
+      filter: brightness(0.94);
+      overflow: hidden;
+      pointer-events: none;
+    }
+    .dark .ios-screen-scaled {
+      filter: brightness(0.82);
     }
   </style>
 </head>
@@ -100,8 +212,10 @@
     const STORAGE_KEYS = {
       PIN: 'voralet_pin',
       NAME: 'voralet_name',
+      USERNAME: 'voralet_username',
       ACCOUNTS: 'voralet_accounts',
       TRANSACTIONS: 'voralet_transactions',
+      SAVINGS_GOALS: 'voralet_savings_goals',
       HIDE_BALANCE: 'voralet_hide_balance',
       THEME: 'voralet_theme',
       AVATAR: 'voralet_avatar'
@@ -137,6 +251,21 @@
           console.error('Storage error setting Name', e);
         }
       },
+      getUsername: () => {
+        try {
+          return localStorage.getItem(STORAGE_KEYS.USERNAME) || '';
+        } catch (e) {
+          return '';
+        }
+      },
+      setUsername: (username) => {
+        try {
+          const clean = (username || '').toLowerCase().replace(/[^a-z0-9_]/g, '');
+          localStorage.setItem(STORAGE_KEYS.USERNAME, clean);
+        } catch (e) {
+          console.error('Storage error setting Username', e);
+        }
+      },
       getAccounts: () => {
         try {
           const data = localStorage.getItem(STORAGE_KEYS.ACCOUNTS);
@@ -167,6 +296,22 @@
           localStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify(transactions));
         } catch (e) {
           console.error('Storage error saving Transactions', e);
+        }
+      },
+      getSavingsGoals: () => {
+        try {
+          const data = localStorage.getItem(STORAGE_KEYS.SAVINGS_GOALS);
+          return data ? JSON.parse(data) : [];
+        } catch (e) {
+          console.error('Storage error getting Savings Goals', e);
+          return [];
+        }
+      },
+      setSavingsGoals: (goals) => {
+        try {
+          localStorage.setItem(STORAGE_KEYS.SAVINGS_GOALS, JSON.stringify(goals));
+        } catch (e) {
+          console.error('Storage error saving Savings Goals', e);
         }
       },
       getHideBalance: () => {
@@ -215,8 +360,10 @@
         try {
           localStorage.removeItem(STORAGE_KEYS.PIN);
           localStorage.removeItem(STORAGE_KEYS.NAME);
+          localStorage.removeItem(STORAGE_KEYS.USERNAME);
           localStorage.removeItem(STORAGE_KEYS.ACCOUNTS);
           localStorage.removeItem(STORAGE_KEYS.TRANSACTIONS);
+          localStorage.removeItem(STORAGE_KEYS.SAVINGS_GOALS);
           localStorage.removeItem(STORAGE_KEYS.HIDE_BALANCE);
           localStorage.removeItem(STORAGE_KEYS.THEME);
           localStorage.removeItem(STORAGE_KEYS.AVATAR);
@@ -579,6 +726,45 @@
               <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
           );
+        case 'target':
+          return (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth}>
+              <circle cx="12" cy="12" r="9" strokeLinecap="round" strokeLinejoin="round" />
+              <circle cx="12" cy="12" r="5" strokeLinecap="round" strokeLinejoin="round" />
+              <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+            </svg>
+          );
+        case 'chart-bar':
+          return (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+          );
+        case 'chevron-right':
+          return (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          );
+        case 'arrow-up':
+          return (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" />
+            </svg>
+          );
+        case 'arrow-down':
+          return (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+            </svg>
+          );
+        case 'pie-chart':
+          return (
+            <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+            </svg>
+          );
         default:
           return (
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -658,7 +844,7 @@
                   key={i}
                   type="button"
                   onClick={onBackspace}
-                  className="h-14 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 active:bg-slate-200 dark:active:bg-slate-700 transition-colors"
+                  className="h-14 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 active:bg-slate-200 dark:active:bg-slate-700 transition-colors ios-keypad-btn"
                   aria-label="Hapus"
                 >
                   <Icon name="backspace" className="w-6 h-6" />
@@ -670,7 +856,7 @@
                 key={i}
                 type="button"
                 onClick={() => onKeyPress(k)}
-                className="h-14 rounded-xl flex items-center justify-center text-xl font-semibold text-slate-800 dark:text-white bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 active:bg-slate-100 dark:active:bg-slate-600 transition-colors shadow-sm"
+                className="h-14 rounded-xl flex items-center justify-center text-xl font-semibold text-slate-800 dark:text-white bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 active:bg-slate-100 dark:active:bg-slate-600 transition-colors shadow-sm ios-keypad-btn"
               >
                 {k}
               </button>
@@ -681,27 +867,44 @@
     };
 
     // Modal: Lupa PIN / Reset PIN Security Verification
-    const ForgotPinModal = ({ storedName, onClose, onResetPin }) => {
-      const [step, setStep] = useState(1); // 1: Verify Name, 2: Set New PIN
-      const [inputName, setInputName] = useState('');
+    const ForgotPinModal = ({ storedUsername, storedName, onClose, onResetPin }) => {
+      const [step, setStep] = useState(1); // 1: Verify Username, 2: Set New PIN
+      const [inputUsername, setInputUsername] = useState('');
       const [verifyError, setVerifyError] = useState('');
       const [newPin, setNewPin] = useState('');
       const [confirmPin, setConfirmPin] = useState('');
       const [pinError, setPinError] = useState('');
+      const [isClosing, setIsClosing] = useState(false);
 
-      const handleVerifyName = (e) => {
+      const handleClose = () => {
+        setIsClosing(true);
+        setTimeout(() => {
+          setIsClosing(false);
+          onClose();
+        }, 200);
+      };
+
+      const handleVerifyUsername = (e) => {
         e.preventDefault();
-        const trimmedInput = inputName.trim().toLowerCase();
-        const trimmedStored = (storedName || '').trim().toLowerCase();
+        const trimmedInput = inputUsername.trim().toLowerCase().replace(/^@/, '');
+        const targetUsername = (storedUsername || '').trim().toLowerCase();
+        const targetName = (storedName || '').trim().toLowerCase();
+
         if (!trimmedInput) {
-          setVerifyError('Harap masukkan nama panggilan');
+          setVerifyError('Harap masukkan username terdaftar');
           return;
         }
-        if (trimmedInput === trimmedStored) {
+
+        // Verify against username (or fallback to name if username wasn't set in older data)
+        const isMatch = targetUsername 
+          ? (trimmedInput === targetUsername)
+          : (trimmedInput === targetName);
+
+        if (isMatch) {
           setVerifyError('');
           setStep(2);
         } else {
-          setVerifyError('Nama panggilan tidak sesuai dengan nama akun terdaftar.');
+          setVerifyError('Username tidak cocok dengan brankas akun Voralet.');
         }
       };
 
@@ -719,8 +922,19 @@
       };
 
       return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 max-w-sm w-full shadow-xl border border-slate-200 dark:border-slate-700">
+        <div
+          className={`fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 ${
+            isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'
+          }`}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) handleClose();
+          }}
+        >
+          <div
+            className={`bg-white dark:bg-slate-800 rounded-2xl p-5 max-w-sm w-full shadow-xl border border-slate-200 dark:border-slate-700 ${
+              isClosing ? 'animate-ios-pop-exit' : 'animate-ios-pop'
+            }`}
+          >
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-brand-soft dark:bg-slate-700 text-brand flex items-center justify-center">
@@ -732,8 +946,8 @@
               </div>
               <button
                 type="button"
-                onClick={onClose}
-                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                onClick={handleClose}
+                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors ios-btn-tap"
                 aria-label="Tutup"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -744,25 +958,28 @@
             </div>
 
             {step === 1 ? (
-              <form onSubmit={handleVerifyName} className="space-y-4">
+              <form onSubmit={handleVerifyUsername} className="space-y-4">
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Untuk keamanan offline, verifikasi <strong>Nama Panggilan</strong> terdaftar kamu. Dompet dan transaksi tetap aman dan tidak akan terhapus.
+                  Untuk keamanan offline, verifikasi <strong>Username (@id)</strong> brankas kamu. Data keuangan tetap aman dan tidak akan terhapus.
                 </p>
                 <div>
                   <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">
-                    Nama Panggilan Akun
+                    Username Akun (@id)
                   </label>
-                  <input
-                    type="text"
-                    value={inputName}
-                    onChange={(e) => {
-                      setInputName(e.target.value);
-                      setVerifyError('');
-                    }}
-                    placeholder="Contoh: Alex"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-brand"
-                    autoFocus
-                  />
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-mono font-bold">@</span>
+                    <input
+                      type="text"
+                      value={inputUsername}
+                      onChange={(e) => {
+                        setInputUsername(e.target.value);
+                        setVerifyError('');
+                      }}
+                      placeholder="username_kamu"
+                      className="w-full pl-8 pr-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-xs font-mono focus:outline-none focus:border-brand"
+                      autoFocus
+                    />
+                  </div>
                   {verifyError && (
                     <p className="text-[11px] text-rose-500 font-semibold mt-1">{verifyError}</p>
                   )}
@@ -853,7 +1070,7 @@
     };
 
     // Screen: Returning User PIN Keypad
-    const ReturningUserPinScreen = ({ storedPin, userName, avatar, theme, onToggleTheme, onUnlock, onResetPin }) => {
+    const ReturningUserPinScreen = ({ storedPin, userName, username, avatar, theme, onToggleTheme, onUnlock, onResetPin }) => {
       const [pin, setPin] = useState('');
       const [error, setError] = useState(false);
       const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
@@ -917,6 +1134,9 @@
               <h1 className="text-xl font-bold text-slate-900 dark:text-white">
                 {userName ? `Selamat Datang, ${userName}` : 'Masukkan PIN Keamanan'}
               </h1>
+              {username && (
+                <p className="text-[11px] font-mono text-brand dark:text-sky-400 font-semibold mt-0.5">@{username}</p>
+              )}
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Ketik 6-digit PIN untuk membuka brankas keuangan Voralet</p>
 
               <PinDots count={6} filled={pin.length} isError={error} />
@@ -942,6 +1162,7 @@
           {/* Forgot PIN Modal with Strict SVG X Close Button */}
           {isForgotModalOpen && (
             <ForgotPinModal
+              storedUsername={username}
               storedName={userName}
               onClose={() => setIsForgotModalOpen(false)}
               onResetPin={(newPin) => {
@@ -955,13 +1176,14 @@
       );
     };
 
-    // Screen: Onboarding Flow (Create PIN -> Confirm PIN -> Name -> First Wallet)
+    // Screen: Onboarding Flow (Create PIN -> Confirm PIN -> Identity [Name & Username] -> First Wallet)
     const OnboardingFlow = ({ onComplete }) => {
-      const [step, setStep] = useState(1); // 1: Create PIN, 2: Confirm PIN, 3: Set Name, 4: First Wallet
+      const [step, setStep] = useState(1); // 1: Create PIN, 2: Confirm PIN, 3: Set Identity, 4: First Wallet
       const [newPin, setNewPin] = useState('');
       const [confirmPin, setConfirmPin] = useState('');
       const [error, setError] = useState(false);
       const [name, setName] = useState('');
+      const [username, setUsername] = useState('');
       const [avatar, setAvatar] = useState('');
 
       // First Wallet Form State
@@ -1005,6 +1227,7 @@
       const handleFinishOnboarding = (e) => {
         e.preventDefault();
         const trimmedName = name.trim() || 'Teman Voralet';
+        const cleanUsername = (username.trim() || trimmedName.toLowerCase().replace(/[^a-z0-9_]/g, '') || 'voralet_user');
         const rawBalance = parseRawNumber(initialBalance);
         const trimmedWallet = walletName.trim() || 'Dompet Utama';
 
@@ -1019,18 +1242,22 @@
         // Save cleanly with zero mock data
         StorageService.setPin(newPin);
         StorageService.setName(trimmedName);
+        StorageService.setUsername(cleanUsername);
         if (avatar) {
           StorageService.setAvatar(avatar);
         }
         StorageService.setAccounts([firstAccount]);
         StorageService.setTransactions([]);
+        StorageService.setSavingsGoals([]);
 
         onComplete({
           pin: newPin,
           name: trimmedName,
+          username: cleanUsername,
           avatar: avatar,
           accounts: [firstAccount],
-          transactions: []
+          transactions: [],
+          savingsGoals: []
         });
       };
 
@@ -1117,12 +1344,12 @@
                     Langkah 2 dari 3
                   </span>
                 </div>
-                <h1 className="text-xl font-bold text-slate-900 dark:text-white mt-2">Siapa Nama Panggilanmu?</h1>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Nama ini digunakan untuk sapaan dan keamanan brankas</p>
+                <h1 className="text-xl font-bold text-slate-900 dark:text-white mt-2">Atur Identitas Akun</h1>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Nama tampilan dan username unik untuk perlindungan reset PIN offline</p>
               </div>
 
-              <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5 mb-6">
-                <div className="flex flex-col items-center mb-4">
+              <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5 mb-6 space-y-4">
+                <div className="flex flex-col items-center mb-2">
                   <div className="relative">
                     <Avatar avatar={avatar} name={name} size="w-20 h-20" textSize="text-2xl" />
                     <label
@@ -1150,25 +1377,54 @@
                   <span className="text-[11px] text-slate-400 mt-2">Pasang foto profil (opsional)</span>
                 </div>
 
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Nama Panggilan</label>
-                <input
-                  type="text"
-                  maxLength={30}
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Contoh: Bagas"
-                  className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white focus:outline-none focus:border-brand"
-                  autoFocus
-                />
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                    Nama Panggilan
+                  </label>
+                  <input
+                    type="text"
+                    maxLength={30}
+                    value={name}
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      if (!username) {
+                        setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''));
+                      }
+                    }}
+                    placeholder="Contoh: Bagas"
+                    className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white focus:outline-none focus:border-brand"
+                    autoFocus
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                    Username Unik (@id)
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-xs font-bold">@</span>
+                    <input
+                      type="text"
+                      maxLength={20}
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                      placeholder="bagas_fin"
+                      className="w-full pl-8 pr-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-sm font-mono text-slate-900 dark:text-white focus:outline-none focus:border-brand"
+                    />
+                  </div>
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 block">
+                    Gunakan huruf kecil, angka, atau underscore. Wajib diisi untuk kunci pemulihan PIN.
+                  </span>
+                </div>
               </div>
 
               <button
                 type="button"
                 onClick={() => {
-                  if (name.trim()) setStep(4);
+                  if (name.trim() && username.trim()) setStep(4);
                 }}
-                disabled={!name.trim()}
-                className="w-full py-3 bg-brand text-white font-semibold text-sm rounded-xl disabled:bg-slate-300 dark:disabled:bg-slate-700 transition-colors shadow-sm"
+                disabled={!name.trim() || !username.trim()}
+                className="w-full py-3 bg-brand text-white font-semibold text-sm rounded-xl disabled:bg-slate-300 dark:disabled:bg-slate-700 transition-colors shadow-sm ios-btn-tap"
               >
                 Lanjutkan
               </button>
@@ -1248,7 +1504,7 @@
                 <div className="pt-2">
                   <button
                     type="submit"
-                    className="w-full py-3 bg-brand hover:bg-brand-hover active:bg-brand-dark text-white font-semibold text-sm rounded-xl transition-colors shadow-sm"
+                    className="w-full py-3 bg-brand hover:bg-brand-hover active:bg-brand-dark text-white font-semibold text-sm rounded-xl transition-colors shadow-sm ios-btn-tap"
                   >
                     Buka Dashboard Voralet
                   </button>
@@ -1271,6 +1527,15 @@
       const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
       const [notes, setNotes] = useState('');
       const [error, setError] = useState('');
+      const [isClosing, setIsClosing] = useState(false);
+
+      const handleClose = () => {
+        setIsClosing(true);
+        setTimeout(() => {
+          setIsClosing(false);
+          onClose();
+        }, 260);
+      };
 
       useEffect(() => {
         setType(initialType);
@@ -1313,19 +1578,30 @@
         };
 
         onAddTransaction(newTx);
-        onClose();
+        handleClose();
       };
 
       return (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 p-0 sm:p-4">
-          <div className="w-full max-w-md bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl max-h-[92vh] flex flex-col shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden transition-colors">
+        <div
+          className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 p-0 sm:p-4 ${
+            isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'
+          }`}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) handleClose();
+          }}
+        >
+          <div
+            className={`w-full max-w-md bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl max-h-[92vh] flex flex-col shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden transition-colors ${
+              isClosing ? 'animate-ios-sheet-exit' : 'animate-ios-sheet'
+            }`}
+          >
             {/* Modal Header with Crisp Vector Close Icon */}
             <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
               <h2 className="text-base font-bold text-slate-900 dark:text-white">Catat Transaksi</h2>
               <button
                 type="button"
-                onClick={onClose}
-                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                onClick={handleClose}
+                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors ios-btn-tap"
                 aria-label="Tutup"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -1487,7 +1763,7 @@
                 <button
                   type="submit"
                   disabled={accounts.length === 0}
-                  className={`w-full py-3 text-white font-semibold text-sm rounded-xl transition-colors shadow-sm ${
+                  className={`w-full py-3 text-white font-semibold text-sm rounded-xl transition-colors shadow-sm ios-btn-tap ${
                     type === 'EXPENSE'
                       ? 'bg-rose-600 hover:bg-rose-700 active:bg-rose-800'
                       : 'bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800'
@@ -1552,6 +1828,16 @@
         setIsAdding(false);
       };
 
+      const [isClosing, setIsClosing] = useState(false);
+
+      const handleClose = () => {
+        setIsClosing(true);
+        setTimeout(() => {
+          setIsClosing(false);
+          onClose();
+        }, 260);
+      };
+
       const startEdit = (acc) => {
         setEditingAcc(acc);
         setName(acc.name);
@@ -1561,8 +1847,19 @@
       };
 
       return (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 p-0 sm:p-4">
-          <div className="w-full max-w-md bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl max-h-[90vh] flex flex-col shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden transition-colors">
+        <div
+          className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 p-0 sm:p-4 ${
+            isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'
+          }`}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) handleClose();
+          }}
+        >
+          <div
+            className={`w-full max-w-md bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl max-h-[90vh] flex flex-col shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden transition-colors ${
+              isClosing ? 'animate-ios-sheet-exit' : 'animate-ios-sheet'
+            }`}
+          >
             {/* Modal Header with Crisp Vector Close Icon */}
             <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
               <div>
@@ -1571,8 +1868,8 @@
               </div>
               <button
                 type="button"
-                onClick={onClose}
-                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                onClick={handleClose}
+                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors ios-btn-tap"
                 aria-label="Tutup"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -1748,7 +2045,9 @@
       onClose,
       currentPin,
       userName,
+      username,
       avatar,
+      onUpdateProfile,
       onUpdateAvatar,
       theme,
       onToggleTheme,
@@ -1762,11 +2061,49 @@
       const [newPin, setNewPin] = useState('');
       const [confirmNewPin, setConfirmNewPin] = useState('');
       const [pinMsg, setPinMsg] = useState({ text: '', isError: false });
+
+      // Profile Edit State
+      const [isEditingProfile, setIsEditingProfile] = useState(false);
+      const [editName, setEditName] = useState(userName || '');
+      const [editUsername, setEditUsername] = useState(username || '');
+      const [profileMsg, setProfileMsg] = useState('');
+
       const [showResetConfirm, setShowResetConfirm] = useState(false);
       const [resetConfirmInput, setResetConfirmInput] = useState('');
       const fileInputRef = useRef(null);
 
+      useEffect(() => {
+        setEditName(userName || '');
+        setEditUsername(username || '');
+      }, [userName, username]);
+
+      const [isClosing, setIsClosing] = useState(false);
+
+      const handleClose = () => {
+        setIsClosing(true);
+        setTimeout(() => {
+          setIsClosing(false);
+          onClose();
+        }, 260);
+      };
+
       if (!isOpen) return null;
+
+      const handleSaveProfile = (e) => {
+        e.preventDefault();
+        const trimmed = editName.trim();
+        const cleanUser = editUsername.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
+        if (!trimmed || !cleanUser) {
+          setProfileMsg('Nama dan username tidak boleh kosong');
+          return;
+        }
+        onUpdateProfile(trimmed, cleanUser);
+        setProfileMsg('Profil berhasil disimpan');
+        setTimeout(() => {
+          setIsEditingProfile(false);
+          setProfileMsg('');
+        }, 800);
+      };
 
       const handleChangePinSubmit = (e) => {
         e.preventDefault();
@@ -1813,8 +2150,19 @@
       };
 
       return (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 p-0 sm:p-4">
-          <div className="w-full max-w-md bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl max-h-[90vh] flex flex-col shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden transition-colors">
+        <div
+          className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 p-0 sm:p-4 ${
+            isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'
+          }`}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) handleClose();
+          }}
+        >
+          <div
+            className={`w-full max-w-md bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl max-h-[90vh] flex flex-col shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden transition-colors ${
+              isClosing ? 'animate-ios-sheet-exit' : 'animate-ios-sheet'
+            }`}
+          >
             {/* Modal Header with Crisp Vector Close Icon */}
             <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
               <div>
@@ -1823,8 +2171,8 @@
               </div>
               <button
                 type="button"
-                onClick={onClose}
-                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                onClick={handleClose}
+                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors ios-btn-tap"
                 aria-label="Tutup"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -1836,46 +2184,106 @@
 
             <div className="p-5 overflow-y-auto space-y-4 no-scrollbar">
               {/* Profile & Avatar Box */}
-              <div className="p-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="relative">
-                    <Avatar avatar={avatar} name={userName} size="w-14 h-14" textSize="text-lg" />
-                    <label
-                      htmlFor="settings-avatar-upload"
-                      className="absolute -bottom-1 -right-1 w-6 h-6 bg-brand text-white rounded-full flex items-center justify-center cursor-pointer shadow hover:bg-brand-hover transition-colors"
-                      title="Ubah Foto Profil"
-                    >
-                      <Icon name="camera" className="w-3.5 h-3.5" />
-                    </label>
-                    <input
-                      id="settings-avatar-upload"
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          compressImage(file, (dataUrl) => {
-                            onUpdateAvatar(dataUrl);
-                          });
-                        }
-                      }}
-                    />
+              <div className="p-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="relative">
+                      <Avatar avatar={avatar} name={userName} size="w-14 h-14" textSize="text-lg" />
+                      <label
+                        htmlFor="settings-avatar-upload"
+                        className="absolute -bottom-1 -right-1 w-6 h-6 bg-brand text-white rounded-full flex items-center justify-center cursor-pointer shadow hover:bg-brand-hover transition-colors"
+                        title="Ubah Foto Profil"
+                      >
+                        <Icon name="camera" className="w-3.5 h-3.5" />
+                      </label>
+                      <input
+                        id="settings-avatar-upload"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            compressImage(file, (dataUrl) => {
+                              onUpdateAvatar(dataUrl);
+                            });
+                          }
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-900 dark:text-white leading-tight">{userName}</h3>
+                      <p className="text-xs font-mono text-brand dark:text-sky-400 font-medium">@{username || 'user'}</p>
+                      {avatar && (
+                        <button
+                          type="button"
+                          onClick={() => onUpdateAvatar('')}
+                          className="text-[11px] text-rose-500 hover:text-rose-600 dark:hover:text-rose-400 font-medium mt-0.5 block"
+                        >
+                          Hapus Foto
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">{userName}</h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Pengguna Terdaftar</p>
-                    {avatar && (
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingProfile(!isEditingProfile)}
+                    className="p-1.5 text-slate-400 hover:text-brand dark:hover:text-sky-400 rounded-lg transition-colors"
+                    title="Ubah Nama & Username"
+                  >
+                    <Icon name="edit" className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {isEditingProfile && (
+                  <form onSubmit={handleSaveProfile} className="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-2.5">
+                    {profileMsg && (
+                      <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">{profileMsg}</p>
+                    )}
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                        Nama Panggilan
+                      </label>
+                      <input
+                        type="text"
+                        maxLength={30}
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        className="w-full px-3 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                        Username Unik (@id)
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-xs">@</span>
+                        <input
+                          type="text"
+                          maxLength={20}
+                          value={editUsername}
+                          onChange={(e) => setEditUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                          className="w-full pl-6 pr-3 py-1.5 text-xs font-mono bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-2 pt-1">
                       <button
                         type="button"
-                        onClick={() => onUpdateAvatar('')}
-                        className="text-[11px] text-rose-500 hover:text-rose-600 dark:hover:text-rose-400 font-medium mt-0.5"
+                        onClick={() => setIsEditingProfile(false)}
+                        className="flex-1 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-lg"
                       >
-                        Hapus Foto
+                        Batal
                       </button>
-                    )}
-                  </div>
-                </div>
+                      <button
+                        type="submit"
+                        className="flex-1 py-1.5 bg-brand text-white text-xs font-semibold rounded-lg hover:bg-brand-hover ios-btn-tap"
+                      >
+                        Simpan Identitas
+                      </button>
+                    </div>
+                  </form>
+                )}
               </div>
 
               {/* Appearance / Flat Dark Mode Toggle */}
@@ -2097,25 +2505,682 @@
     };
 
     // =========================================================================
+    // 7B. SAVINGS GOAL MODAL (ADD / DEPOSIT / WITHDRAW / EDIT)
+    // =========================================================================
+    const SavingsGoalModal = ({ isOpen, onClose, accounts, editingGoal, onSaveGoal, onAdjustGoal }) => {
+      const [name, setName] = useState('');
+      const [targetAmount, setTargetAmount] = useState('');
+      const [targetDate, setTargetDate] = useState('');
+      const [error, setError] = useState('');
+
+      const [adjustMode, setAdjustMode] = useState(null); // 'DEPOSIT' | 'WITHDRAW' | null
+      const [adjustAmount, setAdjustAmount] = useState('');
+      const [adjustAccountId, setAdjustAccountId] = useState(accounts[0]?.id || '');
+      const [isClosing, setIsClosing] = useState(false);
+
+      const handleClose = () => {
+        setIsClosing(true);
+        setTimeout(() => {
+          setIsClosing(false);
+          onClose();
+        }, 260);
+      };
+
+      useEffect(() => {
+        if (editingGoal) {
+          setName(editingGoal.name || '');
+          setTargetAmount(editingGoal.targetAmount ? editingGoal.targetAmount.toString() : '');
+          setTargetDate(editingGoal.targetDate || '');
+        } else {
+          setName('');
+          setTargetAmount('');
+          setTargetDate('');
+        }
+        setAdjustMode(null);
+        setAdjustAmount('');
+        setError('');
+        if (accounts.length > 0) setAdjustAccountId(accounts[0].id);
+      }, [editingGoal, isOpen, accounts]);
+
+      if (!isOpen) return null;
+
+      const handleSaveGoal = (e) => {
+        e.preventDefault();
+        const trimmed = name.trim();
+        const target = parseRawNumber(targetAmount);
+        if (!trimmed) {
+          setError('Nama impian wajib diisi');
+          return;
+        }
+        if (target <= 0) {
+          setError('Target nominal harus lebih dari 0');
+          return;
+        }
+
+        onSaveGoal({
+          id: editingGoal ? editingGoal.id : 'goal_' + Date.now(),
+          name: trimmed,
+          targetAmount: target,
+          savedAmount: editingGoal ? editingGoal.savedAmount : 0,
+          targetDate: targetDate || null,
+          createdAt: editingGoal ? editingGoal.createdAt : new Date().toISOString()
+        });
+        handleClose();
+      };
+
+      const handleExecuteAdjust = (e) => {
+        e.preventDefault();
+        const amount = parseRawNumber(adjustAmount);
+        if (amount <= 0) {
+          setError('Nominal harus lebih dari 0');
+          return;
+        }
+        if (!adjustAccountId) {
+          setError('Pilih sumber dompet');
+          return;
+        }
+
+        onAdjustGoal(editingGoal.id, adjustMode, amount, adjustAccountId);
+        handleClose();
+      };
+
+      return (
+        <div
+          className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 p-0 sm:p-4 ${
+            isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'
+          }`}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) handleClose();
+          }}
+        >
+          <div
+            className={`w-full max-w-md bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl p-5 shadow-xl border border-slate-200 dark:border-slate-700 transition-colors ${
+              isClosing ? 'animate-ios-sheet-exit' : 'animate-ios-sheet'
+            }`}
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-700 mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-brand-light dark:bg-slate-700 text-brand dark:text-sky-300 flex items-center justify-center">
+                  <Icon name="target" className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                    {adjustMode
+                      ? (adjustMode === 'DEPOSIT' ? 'Nabung ke Impian' : 'Tarik dari Impian')
+                      : (editingGoal ? 'Edit Target Impian' : 'Buat Kantong Impian')}
+                  </h3>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    {adjustMode ? editingGoal?.name : 'Alokasikan simpanan untuk tujuan masa depan'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleClose}
+                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors ios-btn-tap"
+                aria-label="Tutup"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+
+            {error && (
+              <p className="text-xs font-semibold text-rose-500 mb-3 bg-rose-50 dark:bg-rose-950/40 p-2 rounded-lg border border-rose-200 dark:border-rose-900/50">
+                {error}
+              </p>
+            )}
+
+            {editingGoal && !adjustMode ? (
+              <div className="space-y-4">
+                <div className="p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-xs font-bold text-slate-900 dark:text-white">{editingGoal.name}</span>
+                    <span className="text-xs font-mono font-bold text-brand dark:text-sky-400">
+                      {Math.min(100, Math.round((editingGoal.savedAmount / editingGoal.targetAmount) * 100))}%
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400 flex justify-between">
+                    <span>Terkumpul: {formatIDR(editingGoal.savedAmount)}</span>
+                    <span>Target: {formatIDR(editingGoal.targetAmount)}</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAdjustMode('DEPOSIT');
+                      setError('');
+                    }}
+                    className="py-2.5 bg-brand hover:bg-brand-hover text-white text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 ios-btn-tap"
+                  >
+                    <Icon name="arrow-up" className="w-3.5 h-3.5" />
+                    <span>+ Tambah Tabungan</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAdjustMode('WITHDRAW');
+                      setError('');
+                    }}
+                    className="py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 ios-btn-tap"
+                  >
+                    <Icon name="arrow-down" className="w-3.5 h-3.5" />
+                    <span>- Tarik Tabungan</span>
+                  </button>
+                </div>
+
+                <form onSubmit={handleSaveGoal} className="pt-3 border-t border-slate-100 dark:border-slate-700 space-y-3">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">Edit Parameter Target</span>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Nama Impian</label>
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-xs text-slate-900 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Target Nominal (Rp)</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={targetAmount ? formatIDR(parseRawNumber(targetAmount)) : ''}
+                      onChange={(e) => setTargetAmount(parseRawNumber(e.target.value).toString())}
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-xs font-semibold text-slate-900 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Target Tanggal (Opsional)</label>
+                    <input
+                      type="date"
+                      value={targetDate}
+                      onChange={(e) => setTargetDate(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-xs text-slate-900 dark:text-white"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full py-2 bg-slate-800 hover:bg-slate-900 text-white dark:bg-slate-700 dark:hover:bg-slate-600 text-xs font-semibold rounded-xl transition-colors ios-btn-tap"
+                  >
+                    Simpan Perubahan
+                  </button>
+                </form>
+              </div>
+            ) : adjustMode ? (
+              <form onSubmit={handleExecuteAdjust} className="space-y-3">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {adjustMode === 'DEPOSIT'
+                    ? 'Saldo akan dipindahkan dari dompet pilihan ke kantong impian ini.'
+                    : 'Dana tabungan impian akan dicairkan kembali ke dompet pilihan.'}
+                </p>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    {adjustMode === 'DEPOSIT' ? 'Dari Dompet' : 'Cairkan Ke Dompet'}
+                  </label>
+                  <select
+                    value={adjustAccountId}
+                    onChange={(e) => setAdjustAccountId(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-xs text-slate-900 dark:text-white"
+                  >
+                    {accounts.map(acc => (
+                      <option key={acc.id} value={acc.id}>
+                        {acc.name} ({acc.type})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Nominal {adjustMode === 'DEPOSIT' ? 'Setor (Rp)' : 'Tarik (Rp)'}
+                  </label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    autoFocus
+                    placeholder="Rp 0"
+                    value={adjustAmount ? formatIDR(parseRawNumber(adjustAmount)) : ''}
+                    onChange={(e) => setAdjustAmount(parseRawNumber(e.target.value).toString())}
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-sm font-bold text-slate-900 dark:text-white"
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setAdjustMode(null)}
+                    className="flex-1 py-2.5 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl"
+                  >
+                    Kembali
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 py-2.5 bg-brand hover:bg-brand-hover text-white text-xs font-semibold rounded-xl shadow-sm ios-btn-tap"
+                  >
+                    Konfirmasi {adjustMode === 'DEPOSIT' ? 'Setor' : 'Tarik'}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              // Create New Goal Form
+              <form onSubmit={handleSaveGoal} className="space-y-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Nama Kantong Impian
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Contoh: Beli Laptop Baru / Dana Darurat"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    autoFocus
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-xs text-slate-900 dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Target Nominal (Rp)
+                  </label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="Rp 0"
+                    value={targetAmount ? formatIDR(parseRawNumber(targetAmount)) : ''}
+                    onChange={(e) => setTargetAmount(parseRawNumber(e.target.value).toString())}
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-sm font-semibold text-slate-900 dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Target Tercapai (Opsional)
+                  </label>
+                  <input
+                    type="date"
+                    value={targetDate}
+                    onChange={(e) => setTargetDate(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-xs text-slate-900 dark:text-white"
+                  />
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    type="submit"
+                    className="w-full py-3 bg-brand hover:bg-brand-hover text-white text-xs font-semibold rounded-xl transition-colors shadow-sm ios-btn-tap"
+                  >
+                    Buat Kantong Impian
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      );
+    };
+
+    // =========================================================================
+    // 7C. SAVINGS GOALS VIEW COMPONENT (KANTONG IMPIAN)
+    // =========================================================================
+    const SavingsGoalsView = ({ goals, accounts, isBalanceHidden, onOpenAddGoal, onSelectGoal, onDeleteGoal }) => {
+      const totalSaved = useMemo(() => {
+        return (goals || []).reduce((sum, g) => sum + (g.savedAmount || 0), 0);
+      }, [goals]);
+
+      const totalTarget = useMemo(() => {
+        return (goals || []).reduce((sum, g) => sum + (g.targetAmount || 0), 0);
+      }, [goals]);
+
+      return (
+        <div className="space-y-4">
+          {/* Header Card for Savings */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
+            <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
+              <span className="font-semibold text-slate-700 dark:text-slate-300">Total Terkumpul di Impian</span>
+              <span className="text-[10px] bg-brand-light dark:bg-slate-800 text-brand dark:text-sky-300 font-bold px-2 py-0.5 rounded-full">
+                {(goals || []).length} Kantong
+              </span>
+            </div>
+            <div className="py-1">
+              <span className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                {isBalanceHidden ? 'Rp ••••••••' : formatIDR(totalSaved)}
+              </span>
+            </div>
+            <div className="mt-2 text-xs text-slate-400 dark:text-slate-500 flex justify-between items-center">
+              <span>Dari total target: {isBalanceHidden ? '••••••' : formatIDR(totalTarget)}</span>
+              <span className="font-bold text-brand dark:text-sky-400">
+                {totalTarget > 0 ? Math.min(100, Math.round((totalSaved / totalTarget) * 100)) : 0}%
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              Daftar Target Impian
+            </span>
+            <button
+              type="button"
+              onClick={onOpenAddGoal}
+              className="text-xs font-semibold text-brand dark:text-sky-400 hover:underline flex items-center gap-1 ios-btn-tap"
+            >
+              <Icon name="plus" className="w-3.5 h-3.5" />
+              <span>Tambah Impian</span>
+            </button>
+          </div>
+
+          {(!goals || goals.length === 0) ? (
+            <div className="p-8 bg-white dark:bg-slate-900 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl text-center">
+              <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-2 text-slate-400">
+                <Icon name="target" className="w-6 h-6" />
+              </div>
+              <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300">Belum ada Kantong Impian</h3>
+              <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1 max-w-xs mx-auto">
+                Mulai sisihkan tabungan untuk rencana masa depan seperti liburan, gawai baru, atau dana darurat.
+              </p>
+              <button
+                type="button"
+                onClick={onOpenAddGoal}
+                className="mt-3 px-3 py-1.5 bg-brand-light dark:bg-slate-800 text-brand dark:text-sky-300 text-xs font-semibold rounded-lg hover:bg-sky-100 dark:hover:bg-slate-700 transition-colors ios-btn-tap"
+              >
+                + Buat Target Sekarang
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-2.5">
+              {goals.map(goal => {
+                const percent = Math.min(100, Math.round(((goal.savedAmount || 0) / (goal.targetAmount || 1)) * 100));
+                const remaining = Math.max(0, (goal.targetAmount || 0) - (goal.savedAmount || 0));
+
+                return (
+                  <div
+                    key={goal.id}
+                    className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm hover:border-slate-300 dark:hover:border-slate-700 transition-colors ios-card-tap"
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-9 h-9 rounded-xl bg-sky-50 dark:bg-sky-950/50 text-brand dark:text-sky-400 flex items-center justify-center shrink-0">
+                          <Icon name="target" className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-bold text-slate-900 dark:text-white leading-snug">{goal.name}</h4>
+                          {goal.targetDate && (
+                            <span className="text-[10px] text-slate-400 dark:text-slate-500">
+                              Target: {formatDateID(goal.targetDate)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => onSelectGoal(goal)}
+                          className="px-2.5 py-1 bg-brand-light dark:bg-slate-800 text-brand dark:text-sky-300 text-[11px] font-bold rounded-lg hover:bg-sky-100 transition-colors ios-btn-tap"
+                        >
+                          Kelola
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onDeleteGoal(goal.id)}
+                          className="p-1.5 text-slate-300 hover:text-rose-500 dark:text-slate-600 dark:hover:text-rose-400 rounded transition-colors ios-btn-tap"
+                          title="Hapus Impian"
+                        >
+                          <Icon name="trash" className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Progress Bar (Flat Minimalist) */}
+                    <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden my-2">
+                      <div
+                        className="bg-brand dark:bg-sky-400 h-full rounded-full transition-all duration-300"
+                        style={{ width: `${percent}%` }}
+                      />
+                    </div>
+
+                    <div className="flex justify-between items-center text-xs">
+                      <div>
+                        <span className="text-slate-400 text-[10px] block leading-none">Terkumpul</span>
+                        <span className="font-bold text-slate-900 dark:text-white">
+                          {isBalanceHidden ? '••••••' : formatIDR(goal.savedAmount || 0)}
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-slate-400 text-[10px] block leading-none">
+                          {percent >= 100 ? 'Target Terpenuhi!' : `Sisa ${isBalanceHidden ? '••••••' : formatIDR(remaining)}`}
+                        </span>
+                        <span className="font-bold text-brand dark:text-sky-400">{percent}%</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    // =========================================================================
+    // 7D. DETAILED ANALYTICS VIEW COMPONENT
+    // =========================================================================
+    const AnalyticsView = ({ transactions, accounts }) => {
+      const [period, setPeriod] = useState('MONTHLY'); // 'MONTHLY' | 'YEARLY'
+
+      const currentYear = new Date().getFullYear();
+      const currentMonth = new Date().getMonth(); // 0 - 11
+
+      const stats = useMemo(() => {
+        let income = 0;
+        let expense = 0;
+        const catMap = {};
+
+        (transactions || []).forEach(tx => {
+          const d = new Date(tx.date);
+          const txYear = d.getFullYear();
+          const txMonth = d.getMonth();
+
+          const match = period === 'MONTHLY'
+            ? (txYear === currentYear && txMonth === currentMonth)
+            : (txYear === currentYear);
+
+          if (match) {
+            if (tx.type === 'INCOME') {
+              income += tx.amount;
+            } else {
+              expense += tx.amount;
+              catMap[tx.category] = (catMap[tx.category] || 0) + tx.amount;
+            }
+          }
+        });
+
+        // Top categories sorted descending
+        const topCategories = Object.keys(catMap).map(catId => {
+          const catObj = CATEGORIES.find(c => c.id === catId) || { label: catId, icon: 'tag' };
+          return {
+            id: catId,
+            label: catObj.label,
+            icon: catObj.icon,
+            amount: catMap[catId],
+            percent: expense > 0 ? Math.round((catMap[catId] / expense) * 100) : 0
+          };
+        }).sort((a, b) => b.amount - a.amount);
+
+        return {
+          income,
+          expense,
+          net: income - expense,
+          topCategories
+        };
+      }, [transactions, period, currentYear, currentMonth]);
+
+      // Comparison Bar Calculation
+      const maxVal = Math.max(stats.income, stats.expense, 1);
+      const incomePercent = Math.round((stats.income / maxVal) * 100);
+      const expensePercent = Math.round((stats.expense / maxVal) * 100);
+
+      const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+      return (
+        <div className="space-y-4">
+          {/* Period Selector Tabs */}
+          <div className="flex bg-slate-200 dark:bg-slate-800 p-1 rounded-xl border border-slate-300/60 dark:border-slate-700">
+            <button
+              type="button"
+              onClick={() => setPeriod('MONTHLY')}
+              className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                period === 'MONTHLY'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              Bulanan ({monthNames[currentMonth]} {currentYear})
+            </button>
+            <button
+              type="button"
+              onClick={() => setPeriod('YEARLY')}
+              className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                period === 'YEARLY'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              Tahunan ({currentYear})
+            </button>
+          </div>
+
+          {/* Net Balance Overview Card */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
+            <span className="text-xs text-slate-400 font-semibold block mb-1">
+              Selisih Bersih (Cash Flow {period === 'MONTHLY' ? 'Bulan Ini' : 'Tahun Ini'})
+            </span>
+            <span className={`text-2xl font-bold tracking-tight ${stats.net >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+              {stats.net >= 0 ? '+' : ''}{formatIDR(stats.net)}
+            </span>
+
+            {/* Flat SVG Bar Chart: Income vs Expense */}
+            <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                Perbandingan Arus Kas
+              </span>
+
+              {/* Income Row */}
+              <div>
+                <div className="flex justify-between text-xs mb-1 font-semibold">
+                  <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                    <Icon name="arrow-down-left" className="w-3.5 h-3.5" />
+                    Pemasukan
+                  </span>
+                  <span className="text-slate-800 dark:text-slate-200">{formatIDR(stats.income)}</span>
+                </div>
+                <div className="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                  <div
+                    className="bg-emerald-500 h-full rounded-full transition-all duration-500"
+                    style={{ width: `${incomePercent}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Expense Row */}
+              <div>
+                <div className="flex justify-between text-xs mb-1 font-semibold">
+                  <span className="text-rose-600 dark:text-rose-400 flex items-center gap-1">
+                    <Icon name="arrow-up-right" className="w-3.5 h-3.5" />
+                    Pengeluaran
+                  </span>
+                  <span className="text-slate-800 dark:text-slate-200">{formatIDR(stats.expense)}</span>
+                </div>
+                <div className="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                  <div
+                    className="bg-rose-500 h-full rounded-full transition-all duration-500"
+                    style={{ width: `${expensePercent}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Top Spending Categories Breakdown */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-3">
+              Distribusi Pengeluaran Terbesar
+            </span>
+
+            {stats.topCategories.length === 0 ? (
+              <p className="text-xs text-slate-400 text-center py-4">Belum ada pengeluaran pada periode ini.</p>
+            ) : (
+              <div className="space-y-3">
+                {stats.topCategories.map(cat => (
+                  <div key={cat.id}>
+                    <div className="flex justify-between items-center text-xs mb-1 font-semibold">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-md bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400">
+                          <Icon name={cat.icon} className="w-3 h-3" />
+                        </div>
+                        <span className="text-slate-800 dark:text-slate-200">{cat.label}</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-slate-900 dark:text-white mr-1.5">{formatIDR(cat.amount)}</span>
+                        <span className="text-[10px] text-slate-400">({cat.percent}%)</span>
+                      </div>
+                    </div>
+                    <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                      <div
+                        className="bg-slate-700 dark:bg-slate-300 h-full rounded-full transition-all duration-300"
+                        style={{ width: `${cat.percent}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    };
+
+    // =========================================================================
     // 8. MAIN DASHBOARD VIEW
     // =========================================================================
     const MainDashboard = ({
+      isAnyModalOpen = false,
       userName,
+      username,
       avatar,
       theme,
       onToggleTheme,
       accounts,
       transactions,
+      savingsGoals,
       isBalanceHidden,
       onToggleHideBalance,
       onOpenTransactionModal,
       onOpenAccountsModal,
       onOpenSettingsModal,
+      onOpenSavingsModal,
+      onSelectGoal,
+      onDeleteGoal,
       onLockApp,
       onDeleteTransaction
     }) => {
+      const [currentTab, setCurrentTab] = useState('DASHBOARD'); // 'DASHBOARD' | 'SAVINGS' | 'ANALYTICS'
       const [selectedAccountId, setSelectedAccountId] = useState(null); // null means All Accounts
       const [deleteTxConfirmId, setDeleteTxConfirmId] = useState(null);
+      const [isClosingDelete, setIsClosingDelete] = useState(false);
+
+      const handleCloseDelete = () => {
+        setIsClosingDelete(true);
+        setTimeout(() => {
+          setIsClosingDelete(false);
+          setDeleteTxConfirmId(null);
+        }, 200);
+      };
 
       // Calculations via Ledger (Single Source of Truth)
       const totalBalance = useMemo(() => {
@@ -2142,9 +3207,11 @@
       const selectedAccount = accounts.find(a => a.id === selectedAccountId);
 
       return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-20 max-w-md mx-auto transition-colors">
+        <div className={`min-h-screen flex flex-col justify-between bg-slate-50 dark:bg-slate-950 max-w-md mx-auto overflow-hidden ios-screen-container ${
+          isAnyModalOpen ? 'ios-screen-scaled' : ''
+        }`}>
           {/* Top Navigation Bar */}
-          <header className="sticky top-0 z-30 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-5 py-3.5 flex items-center justify-between transition-colors">
+          <header className="sticky top-0 z-30 shrink-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-5 py-3.5 flex items-center justify-between transition-colors">
             <div className="flex items-center gap-2.5">
               <Avatar avatar={avatar} name={userName} size="w-9 h-9" textSize="text-xs" />
               <div>
@@ -2188,306 +3255,386 @@
             </div>
           </header>
 
-          <main className="p-4 space-y-4">
-            {/* Total Balance Card (Blu by BCA inspired) */}
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm transition-colors">
-              <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
-                <div className="flex items-center gap-1.5">
-                  <span className="font-semibold text-slate-600 dark:text-slate-300">
-                    {selectedAccount ? `Saldo ${selectedAccount.name}` : 'Total Saldo Gabungan'}
-                  </span>
-                  {selectedAccountId && (
+          {/* Isolated Scrollable Main Viewport (Keyboard Safe) */}
+          <main className="flex-1 overflow-y-auto p-4 space-y-4 pb-6">
+            {currentTab === 'DASHBOARD' && (
+              <div key="DASHBOARD" className="animate-ios-tab-view space-y-4">
+                {/* Total Balance Card (Blu by BCA inspired) */}
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm transition-colors">
+                  <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-semibold text-slate-600 dark:text-slate-300">
+                        {selectedAccount ? `Saldo ${selectedAccount.name}` : 'Total Saldo Gabungan'}
+                      </span>
+                      {selectedAccountId && (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedAccountId(null)}
+                          className="text-[10px] text-brand dark:text-sky-400 hover:underline"
+                        >
+                          (Lihat Total)
+                        </button>
+                      )}
+                    </div>
                     <button
                       type="button"
-                      onClick={() => setSelectedAccountId(null)}
-                      className="text-[10px] text-brand dark:text-sky-400 hover:underline"
+                      onClick={onToggleHideBalance}
+                      className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                      aria-label={isBalanceHidden ? 'Tampilkan Saldo' : 'Sembunyikan Saldo'}
                     >
-                      (Lihat Total)
+                      <Icon name={isBalanceHidden ? 'eye-off' : 'eye'} className="w-4 h-4" />
                     </button>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  onClick={onToggleHideBalance}
-                  className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
-                  aria-label={isBalanceHidden ? 'Tampilkan Saldo' : 'Sembunyikan Saldo'}
-                >
-                  <Icon name={isBalanceHidden ? 'eye-off' : 'eye'} className="w-4 h-4" />
-                </button>
-              </div>
-
-              <div className="py-1">
-                <span className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-                  {isBalanceHidden
-                    ? 'Rp ••••••••'
-                    : formatIDR(
-                        selectedAccountId
-                          ? Ledger.getAccountBalance(selectedAccountId, accounts, transactions)
-                          : totalBalance
-                      )}
-                </span>
-              </div>
-
-              {/* Income & Expense Quick Summary Chips */}
-              <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-md bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                    <Icon name="arrow-down-left" className="w-3.5 h-3.5" />
                   </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 block leading-none">Pemasukan</span>
-                    <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
-                      {isBalanceHidden ? '•••••' : formatIDR(summaryTotals.income)}
+
+                  <div className="py-1">
+                    <span className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                      {isBalanceHidden
+                        ? 'Rp ••••••••'
+                        : formatIDR(
+                            selectedAccountId
+                              ? Ledger.getAccountBalance(selectedAccountId, accounts, transactions)
+                              : totalBalance
+                          )}
                     </span>
                   </div>
+
+                  {/* Income & Expense Quick Summary Chips */}
+                  <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-md bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                        <Icon name="arrow-down-left" className="w-3.5 h-3.5" />
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block leading-none">Pemasukan</span>
+                        <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                          {isBalanceHidden ? '•••••' : formatIDR(summaryTotals.income)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-md bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+                        <Icon name="arrow-up-right" className="w-3.5 h-3.5" />
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block leading-none">Pengeluaran</span>
+                        <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                          {isBalanceHidden ? '•••••' : formatIDR(summaryTotals.expense)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-md bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
-                    <Icon name="arrow-up-right" className="w-3.5 h-3.5" />
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 block leading-none">Pengeluaran</span>
-                    <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
-                      {isBalanceHidden ? '•••••' : formatIDR(summaryTotals.expense)}
+                {/* Quick Action Buttons */}
+                <div className="grid grid-cols-2 gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => onOpenTransactionModal('EXPENSE')}
+                    className="py-3 px-4 bg-white dark:bg-slate-900 border border-rose-200 dark:border-rose-900/60 hover:border-rose-400 dark:hover:border-rose-600 active:bg-rose-50 dark:active:bg-rose-950/40 text-rose-700 dark:text-rose-400 rounded-xl font-semibold text-xs flex items-center justify-center gap-2 shadow-sm transition-all ios-btn-tap"
+                  >
+                    <div className="w-5 h-5 rounded-full bg-rose-100 dark:bg-rose-950/80 text-rose-600 dark:text-rose-400 flex items-center justify-center">
+                      <Icon name="arrow-up-right" className="w-3 h-3" />
+                    </div>
+                    <span>[-] Catat Pengeluaran</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => onOpenTransactionModal('INCOME')}
+                    className="py-3 px-4 bg-brand hover:bg-brand-hover active:bg-brand-dark text-white rounded-xl font-semibold text-xs flex items-center justify-center gap-2 shadow-sm transition-all ios-btn-tap"
+                  >
+                    <div className="w-5 h-5 rounded-full bg-white/20 text-white flex items-center justify-center">
+                      <Icon name="arrow-down-left" className="w-3 h-3" />
+                    </div>
+                    <span>[+] Catat Pemasukan</span>
+                  </button>
+                </div>
+
+                {/* Accounts Carousel / Grid (Blu Pocket Style) */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                      Kantong & Dompet ({accounts.length})
                     </span>
+                    <button
+                      type="button"
+                      onClick={onOpenAccountsModal}
+                      className="text-xs font-semibold text-brand dark:text-sky-400 hover:underline flex items-center gap-0.5"
+                    >
+                      <Icon name="plus" className="w-3.5 h-3.5" />
+                      <span>Kelola Akun</span>
+                    </button>
                   </div>
-                </div>
-              </div>
-            </div>
 
-            {/* Quick Action Buttons */}
-            <div className="grid grid-cols-2 gap-2.5">
-              <button
-                type="button"
-                onClick={() => onOpenTransactionModal('EXPENSE')}
-                className="py-3 px-4 bg-white dark:bg-slate-900 border border-rose-200 dark:border-rose-900/60 hover:border-rose-400 dark:hover:border-rose-600 active:bg-rose-50 dark:active:bg-rose-950/40 text-rose-700 dark:text-rose-400 rounded-xl font-semibold text-xs flex items-center justify-center gap-2 shadow-sm transition-all"
-              >
-                <div className="w-5 h-5 rounded-full bg-rose-100 dark:bg-rose-950/80 text-rose-600 dark:text-rose-400 flex items-center justify-center">
-                  <Icon name="arrow-up-right" className="w-3 h-3" />
-                </div>
-                <span>[-] Catat Pengeluaran</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => onOpenTransactionModal('INCOME')}
-                className="py-3 px-4 bg-brand hover:bg-brand-hover active:bg-brand-dark text-white rounded-xl font-semibold text-xs flex items-center justify-center gap-2 shadow-sm transition-all"
-              >
-                <div className="w-5 h-5 rounded-full bg-white/20 text-white flex items-center justify-center">
-                  <Icon name="arrow-down-left" className="w-3 h-3" />
-                </div>
-                <span>[+] Catat Pemasukan</span>
-              </button>
-            </div>
-
-            {/* Accounts Carousel / Grid (Blu Pocket Style) */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  Kantong & Dompet ({accounts.length})
-                </span>
-                <button
-                  type="button"
-                  onClick={onOpenAccountsModal}
-                  className="text-xs font-semibold text-brand dark:text-sky-400 hover:underline flex items-center gap-0.5"
-                >
-                  <Icon name="plus" className="w-3.5 h-3.5" />
-                  <span>Kelola Akun</span>
-                </button>
-              </div>
-
-              {accounts.length === 0 ? (
-                <div className="p-4 bg-white dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-700 rounded-xl text-center">
-                  <p className="text-xs font-medium text-slate-600 dark:text-slate-400">Belum ada akun, buat akun pertama kamu</p>
-                  <button
-                    type="button"
-                    onClick={onOpenAccountsModal}
-                    className="mt-2 text-xs font-semibold text-brand dark:text-sky-400 hover:underline"
-                  >
-                    + Tambah Akun
-                  </button>
-                </div>
-              ) : (
-                <div className="flex gap-2.5 overflow-x-auto pb-1 no-scrollbar">
-                  {/* "Semua Akun" Pill */}
-                  <button
-                    type="button"
-                    onClick={() => setSelectedAccountId(null)}
-                    className={`min-w-[120px] p-3 rounded-xl border text-left flex flex-col justify-between transition-all shrink-0 ${
-                      selectedAccountId === null
-                        ? 'bg-brand text-white border-brand shadow-sm'
-                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-[10px] font-bold uppercase tracking-wider opacity-80">Semua</span>
-                      <Icon name="wallet" className="w-4 h-4 opacity-80" />
-                    </div>
-                    <div>
-                      <span className="text-xs font-bold block truncate">Total Dompet</span>
-                      <span className="text-[11px] font-medium opacity-90">
-                        {isBalanceHidden ? '••••••' : formatIDR(totalBalance)}
-                      </span>
-                    </div>
-                  </button>
-
-                  {/* Individual Wallet Pockets */}
-                  {accounts.map(acc => {
-                    const isSelected = selectedAccountId === acc.id;
-                    const bal = Ledger.getAccountBalance(acc.id, accounts, transactions);
-                    return (
+                  {accounts.length === 0 ? (
+                    <div className="p-4 bg-white dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-700 rounded-xl text-center">
+                      <p className="text-xs font-medium text-slate-600 dark:text-slate-400">Belum ada akun, buat akun pertama kamu</p>
                       <button
-                        key={acc.id}
                         type="button"
-                        onClick={() => setSelectedAccountId(isSelected ? null : acc.id)}
-                        className={`min-w-[130px] p-3 rounded-xl border text-left flex flex-col justify-between transition-all shrink-0 ${
-                          isSelected
-                            ? 'bg-brand-soft dark:bg-slate-800 border-brand text-brand-dark dark:text-sky-300 shadow-sm'
+                        onClick={onOpenAccountsModal}
+                        className="mt-2 text-xs font-semibold text-brand dark:text-sky-400 hover:underline"
+                      >
+                        + Tambah Akun
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2.5 overflow-x-auto pb-1 no-scrollbar">
+                      {/* "Semua Akun" Pill */}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedAccountId(null)}
+                        className={`min-w-[120px] p-3 rounded-xl border text-left flex flex-col justify-between transition-all shrink-0 ios-btn-tap ${
+                          selectedAccountId === null
+                            ? 'bg-brand text-white border-brand shadow-sm'
                             : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700'
                         }`}
                       >
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                            {acc.type}
-                          </span>
-                          <Icon
-                            name={acc.type === 'Bank' ? 'bank' : acc.type === 'Cash' ? 'cash' : 'smartphone'}
-                            className={`w-4 h-4 ${isSelected ? 'text-brand dark:text-sky-400' : 'text-slate-400'}`}
-                          />
+                          <span className="text-[10px] font-bold uppercase tracking-wider opacity-80">Semua</span>
+                          <Icon name="wallet" className="w-4 h-4 opacity-80" />
                         </div>
                         <div>
-                          <span className="text-xs font-bold text-slate-900 dark:text-white block truncate">{acc.name}</span>
-                          <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block">
-                            {isBalanceHidden ? '••••••' : formatIDR(bal)}
+                          <span className="text-xs font-bold block truncate">Total Dompet</span>
+                          <span className="text-[11px] font-medium opacity-90">
+                            {isBalanceHidden ? '••••••' : formatIDR(totalBalance)}
                           </span>
                         </div>
                       </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
 
-            {/* Recent Transactions Stream */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                    Riwayat Transaksi
-                  </span>
-                  {selectedAccount && (
-                    <span className="text-[10px] font-bold px-2 py-0.5 bg-brand-light dark:bg-slate-800 text-brand dark:text-sky-300 rounded-full">
-                      {selectedAccount.name}
-                    </span>
+                      {/* Individual Wallet Pockets */}
+                      {accounts.map(acc => {
+                        const isSelected = selectedAccountId === acc.id;
+                        const bal = Ledger.getAccountBalance(acc.id, accounts, transactions);
+                        return (
+                          <button
+                            key={acc.id}
+                            type="button"
+                            onClick={() => setSelectedAccountId(isSelected ? null : acc.id)}
+                            className={`min-w-[130px] p-3 rounded-xl border text-left flex flex-col justify-between transition-all shrink-0 ios-btn-tap ${
+                              isSelected
+                                ? 'bg-brand-soft dark:bg-slate-800 border-brand text-brand-dark dark:text-sky-300 shadow-sm'
+                                : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                                {acc.type}
+                              </span>
+                              <Icon
+                                name={acc.type === 'Bank' ? 'bank' : acc.type === 'Cash' ? 'cash' : 'smartphone'}
+                                className={`w-4 h-4 ${isSelected ? 'text-brand dark:text-sky-400' : 'text-slate-400'}`}
+                              />
+                            </div>
+                            <div>
+                              <span className="text-xs font-bold text-slate-900 dark:text-white block truncate">{acc.name}</span>
+                              <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block">
+                                {isBalanceHidden ? '••••••' : formatIDR(bal)}
+                              </span>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
                   )}
                 </div>
-                {selectedAccountId && (
-                  <button
-                    type="button"
-                    onClick={() => setSelectedAccountId(null)}
-                    className="text-xs text-slate-500 dark:text-slate-400 hover:underline"
-                  >
-                    Tampilkan Semua
-                  </button>
-                )}
-              </div>
 
-              {displayedTransactions.length === 0 ? (
-                <div className="p-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-center">
-                  <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-2 text-slate-400">
-                    <Icon name="tag" className="w-6 h-6" />
-                  </div>
-                  <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300">Belum ada transaksi</h3>
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1 max-w-xs mx-auto">
-                    {selectedAccount
-                      ? `Belum ada mutasi untuk dompet ${selectedAccount.name}.`
-                      : 'Mulai catat pengeluaran dan pemasukan harianmu di Voralet.'}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => onOpenTransactionModal('EXPENSE')}
-                    className="mt-3 px-3 py-1.5 bg-brand-light dark:bg-slate-800 text-brand dark:text-sky-300 text-xs font-semibold rounded-lg hover:bg-sky-100 dark:hover:bg-slate-700 transition-colors"
-                  >
-                    Catat Transaksi Sekarang
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {displayedTransactions.map(tx => {
-                    const catObj = CATEGORIES.find(c => c.id === tx.category) || {
-                      label: tx.category || 'Lainnya',
-                      icon: 'tag'
-                    };
-                    const accObj = accounts.find(a => a.id === tx.accountId);
-                    const isIncome = tx.type === 'INCOME';
-
-                    return (
-                      <div
-                        key={tx.id}
-                        className="p-3.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl flex items-center justify-between shadow-sm hover:border-slate-300 dark:hover:border-slate-700 transition-colors"
+                {/* Recent Transactions Stream */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                        Riwayat Transaksi
+                      </span>
+                      {selectedAccount && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 bg-brand-light dark:bg-slate-800 text-brand dark:text-sky-300 rounded-full">
+                          {selectedAccount.name}
+                        </span>
+                      )}
+                    </div>
+                    {selectedAccountId && (
+                      <button
+                        type="button"
+                        onClick={() => setSelectedAccountId(null)}
+                        className="text-xs text-slate-500 dark:text-slate-400 hover:underline"
                       >
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                              isIncome
-                                ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400'
-                                : 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400'
-                            }`}
-                          >
-                            <Icon name={catObj.icon} className="w-4 h-4" />
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h4 className="text-xs font-bold text-slate-900 dark:text-white leading-snug">{catObj.label}</h4>
-                              {accObj && (
-                                <span className="text-[10px] font-medium px-1.5 py-0.2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded">
-                                  {accObj.name}
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-2 text-[11px] text-slate-400 dark:text-slate-500">
-                              <span>{formatDateID(tx.date)}</span>
-                              {tx.notes && <span>• {tx.notes}</span>}
-                            </div>
-                          </div>
-                        </div>
+                        Tampilkan Semua
+                      </button>
+                    )}
+                  </div>
 
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`text-xs font-bold text-right ${
-                              isIncome ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
-                            }`}
-                          >
-                            {isIncome ? '+' : '-'}{formatIDR(tx.amount)}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => setDeleteTxConfirmId(tx.id)}
-                            className="p-1 text-slate-300 hover:text-rose-500 dark:text-slate-600 dark:hover:text-rose-400 rounded transition-colors"
-                            title="Hapus Transaksi"
-                          >
-                            <Icon name="trash" className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
+                  {displayedTransactions.length === 0 ? (
+                    <div className="p-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-center">
+                      <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-2 text-slate-400">
+                        <Icon name="tag" className="w-6 h-6" />
                       </div>
-                    );
-                  })}
+                      <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300">Belum ada transaksi</h3>
+                      <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1 max-w-xs mx-auto">
+                        {selectedAccount
+                          ? `Belum ada mutasi untuk dompet ${selectedAccount.name}.`
+                          : 'Mulai catat pengeluaran dan pemasukan harianmu di Voralet.'}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => onOpenTransactionModal('EXPENSE')}
+                        className="mt-3 px-3 py-1.5 bg-brand-light dark:bg-slate-800 text-brand dark:text-sky-300 text-xs font-semibold rounded-lg hover:bg-sky-100 dark:hover:bg-slate-700 transition-colors ios-btn-tap"
+                      >
+                        Catat Transaksi Sekarang
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {displayedTransactions.map(tx => {
+                        const catObj = CATEGORIES.find(c => c.id === tx.category) || {
+                          label: tx.category || 'Lainnya',
+                          icon: 'tag'
+                        };
+                        const accObj = accounts.find(a => a.id === tx.accountId);
+                        const isIncome = tx.type === 'INCOME';
+
+                        return (
+                          <div
+                            key={tx.id}
+                            className="p-3.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl flex items-center justify-between shadow-sm hover:border-slate-300 dark:hover:border-slate-700 transition-colors"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div
+                                className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                                  isIncome
+                                    ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400'
+                                    : 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400'
+                                }`}
+                              >
+                                <Icon name={catObj.icon} className="w-4 h-4" />
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <h4 className="text-xs font-bold text-slate-900 dark:text-white leading-snug">{catObj.label}</h4>
+                                  {accObj && (
+                                    <span className="text-[10px] font-medium px-1.5 py-0.2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded">
+                                      {accObj.name}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-2 text-[11px] text-slate-400 dark:text-slate-500">
+                                  <span>{formatDateID(tx.date)}</span>
+                                  {tx.notes && <span>• {tx.notes}</span>}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`text-xs font-bold text-right ${
+                                  isIncome ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+                                }`}
+                              >
+                                {isIncome ? '+' : '-'}{formatIDR(tx.amount)}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => setDeleteTxConfirmId(tx.id)}
+                                className="p-1 text-slate-300 hover:text-rose-500 dark:text-slate-600 dark:hover:text-rose-400 rounded transition-colors"
+                                title="Hapus Transaksi"
+                              >
+                                <Icon name="trash" className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
+
+            {currentTab === 'SAVINGS' && (
+              <div key="SAVINGS" className="animate-ios-tab-view space-y-4">
+                <SavingsGoalsView
+                  goals={savingsGoals}
+                  accounts={accounts}
+                  isBalanceHidden={isBalanceHidden}
+                  onOpenAddGoal={onOpenSavingsModal}
+                  onSelectGoal={onSelectGoal}
+                  onDeleteGoal={onDeleteGoal}
+                />
+              </div>
+            )}
+
+            {currentTab === 'ANALYTICS' && (
+              <div key="ANALYTICS" className="animate-ios-tab-view space-y-4">
+                <AnalyticsView
+                  transactions={transactions}
+                  accounts={accounts}
+                />
+              </div>
+            )}
           </main>
+
+          {/* Fixed Static Bottom Navigation Menu (Keyboard Distortion Protected) */}
+          <nav className="shrink-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-6 py-2.5 flex items-center justify-around z-30 transition-colors">
+            <button
+              type="button"
+              onClick={() => setCurrentTab('DASHBOARD')}
+              className={`flex flex-col items-center gap-1 py-1 px-3 rounded-lg transition-colors ios-btn-tap ${
+                currentTab === 'DASHBOARD'
+                  ? 'text-brand dark:text-sky-400 font-bold'
+                  : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 font-medium'
+              }`}
+            >
+              <Icon name="wallet" className={`w-5 h-5 transition-transform duration-200 ${currentTab === 'DASHBOARD' ? 'scale-110' : 'scale-100'}`} />
+              <span className="text-[10px]">Dashboard</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setCurrentTab('SAVINGS')}
+              className={`flex flex-col items-center gap-1 py-1 px-3 rounded-lg transition-colors ios-btn-tap ${
+                currentTab === 'SAVINGS'
+                  ? 'text-brand dark:text-sky-400 font-bold'
+                  : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 font-medium'
+              }`}
+            >
+              <Icon name="target" className={`w-5 h-5 transition-transform duration-200 ${currentTab === 'SAVINGS' ? 'scale-110' : 'scale-100'}`} />
+              <span className="text-[10px]">Impian</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setCurrentTab('ANALYTICS')}
+              className={`flex flex-col items-center gap-1 py-1 px-3 rounded-lg transition-colors ios-btn-tap ${
+                currentTab === 'ANALYTICS'
+                  ? 'text-brand dark:text-sky-400 font-bold'
+                  : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 font-medium'
+              }`}
+            >
+              <Icon name="pie-chart" className={`w-5 h-5 transition-transform duration-200 ${currentTab === 'ANALYTICS' ? 'scale-110' : 'scale-100'}`} />
+              <span className="text-[10px]">Analisis</span>
+            </button>
+          </nav>
 
           {/* Delete Transaction Confirmation Dialog with Crisp Close Icon */}
           {deleteTxConfirmId && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4">
-              <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 max-w-xs w-full shadow-xl border border-slate-200 dark:border-slate-700">
+            <div
+              className={`fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 ${
+                isClosingDelete ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'
+              }`}
+              onClick={(e) => {
+                if (e.target === e.currentTarget) handleCloseDelete();
+              }}
+            >
+              <div
+                className={`bg-white dark:bg-slate-800 rounded-2xl p-5 max-w-xs w-full shadow-xl border border-slate-200 dark:border-slate-700 ${
+                  isClosingDelete ? 'animate-ios-pop-exit' : 'animate-ios-pop'
+                }`}
+              >
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white">Hapus Transaksi?</h3>
                   <button
                     type="button"
-                    onClick={() => setDeleteTxConfirmId(null)}
-                    className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                    onClick={handleCloseDelete}
+                    className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors ios-btn-tap"
                     aria-label="Tutup"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -2502,8 +3649,8 @@
                 <div className="flex gap-2">
                   <button
                     type="button"
-                    onClick={() => setDeleteTxConfirmId(null)}
-                    className="flex-1 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600"
+                    onClick={handleCloseDelete}
+                    className="flex-1 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 ios-btn-tap"
                   >
                     Batal
                   </button>
@@ -2511,9 +3658,9 @@
                     type="button"
                     onClick={() => {
                       onDeleteTransaction(deleteTxConfirmId);
-                      setDeleteTxConfirmId(null);
+                      handleCloseDelete();
                     }}
-                    className="flex-1 py-2 bg-rose-600 text-white text-xs font-semibold rounded-lg hover:bg-rose-700"
+                    className="flex-1 py-2 bg-rose-600 text-white text-xs font-semibold rounded-lg hover:bg-rose-700 ios-btn-tap"
                   >
                     Hapus
                   </button>
@@ -2526,6 +3673,8 @@
     };
 
     // =========================================================================
+
+    // =========================================================================
     // 9. ROOT APPLICATION COMPONENT
     // =========================================================================
     function App() {
@@ -2533,10 +3682,12 @@
       const [isUnlocked, setIsUnlocked] = useState(false);
       const [storedPin, setStoredPin] = useState(() => StorageService.getPin());
       const [userName, setUserName] = useState(() => StorageService.getName());
+      const [username, setUsername] = useState(() => StorageService.getUsername());
       const [avatar, setAvatar] = useState(() => StorageService.getAvatar());
       const [theme, setTheme] = useState(() => StorageService.getTheme());
       const [accounts, setAccounts] = useState(() => StorageService.getAccounts());
       const [transactions, setTransactions] = useState(() => StorageService.getTransactions());
+      const [savingsGoals, setSavingsGoals] = useState(() => StorageService.getSavingsGoals());
       const [isBalanceHidden, setIsBalanceHidden] = useState(() => StorageService.getHideBalance());
 
       // Modals State
@@ -2544,6 +3695,8 @@
       const [txModalType, setTxModalType] = useState('EXPENSE');
       const [isAccountsModalOpen, setIsAccountsModalOpen] = useState(false);
       const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+      const [isSavingsModalOpen, setIsSavingsModalOpen] = useState(false);
+      const [selectedGoal, setSelectedGoal] = useState(null);
       const [toastMsg, setToastMsg] = useState('');
 
       const showToast = useCallback((msg) => {
@@ -2574,13 +3727,23 @@
         showToast(newAvatar ? 'Foto profil diperbarui' : 'Foto profil dihapus');
       };
 
+      const handleUpdateProfile = (newName, newUsername) => {
+        setUserName(newName);
+        setUsername(newUsername);
+        StorageService.setName(newName);
+        StorageService.setUsername(newUsername);
+        showToast('Profil pengguna diperbarui');
+      };
+
       // Handler for Onboarding Completion
       const handleOnboardingComplete = (data) => {
         setStoredPin(data.pin);
         setUserName(data.name);
+        if (data.username) setUsername(data.username);
         if (data.avatar) setAvatar(data.avatar);
         setAccounts(data.accounts);
         setTransactions(data.transactions);
+        if (data.savingsGoals) setSavingsGoals(data.savingsGoals);
         setIsUnlocked(true);
         showToast('Akun Voralet berhasil disiapkan!');
       };
@@ -2640,6 +3803,78 @@
         showToast('Akun berhasil dihapus');
       };
 
+      // Savings Goals Handlers
+      const handleSaveGoal = (goalData) => {
+        let nextGoals;
+        const exists = savingsGoals.some(g => g.id === goalData.id);
+        if (exists) {
+          nextGoals = savingsGoals.map(g => (g.id === goalData.id ? { ...g, ...goalData } : g));
+          showToast('Target impian diperbarui');
+        } else {
+          nextGoals = [...savingsGoals, goalData];
+          showToast('Kantong impian baru dibuat');
+        }
+        setSavingsGoals(nextGoals);
+        StorageService.setSavingsGoals(nextGoals);
+      };
+
+      const handleAdjustGoal = (goalId, mode, amount, accountId) => {
+        const targetGoal = savingsGoals.find(g => g.id === goalId);
+        if (!targetGoal) return;
+
+        const currentSaved = targetGoal.savedAmount || 0;
+        let newSaved = currentSaved;
+
+        if (mode === 'DEPOSIT') {
+          newSaved = currentSaved + amount;
+          // Record an expense transaction from wallet to represent allocation into savings
+          const autoTx = {
+            id: 'tx_sav_' + Date.now(),
+            accountId: accountId,
+            amount: amount,
+            type: 'EXPENSE',
+            category: 'other',
+            date: new Date().toISOString().split('T')[0],
+            notes: `Tabungan Impian: ${targetGoal.name}`,
+            createdAt: new Date().toISOString()
+          };
+          const nextTx = [autoTx, ...transactions];
+          setTransactions(nextTx);
+          StorageService.setTransactions(nextTx);
+          showToast(`Berhasil menabung Rp ${amount.toLocaleString('id-ID')} ke ${targetGoal.name}`);
+        } else {
+          newSaved = Math.max(0, currentSaved - amount);
+          // Record an income transaction back to wallet
+          const autoTx = {
+            id: 'tx_sav_' + Date.now(),
+            accountId: accountId,
+            amount: amount,
+            type: 'INCOME',
+            category: 'other',
+            date: new Date().toISOString().split('T')[0],
+            notes: `Pencairan Tabungan: ${targetGoal.name}`,
+            createdAt: new Date().toISOString()
+          };
+          const nextTx = [autoTx, ...transactions];
+          setTransactions(nextTx);
+          StorageService.setTransactions(nextTx);
+          showToast(`Berhasil mencairkan Rp ${amount.toLocaleString('id-ID')} ke dompet`);
+        }
+
+        const nextGoals = savingsGoals.map(g => (g.id === goalId ? { ...g, savedAmount: newSaved } : g));
+        setSavingsGoals(nextGoals);
+        StorageService.setSavingsGoals(nextGoals);
+      };
+
+      const handleDeleteGoal = (goalId) => {
+        const confirmDel = window.confirm('Hapus kantong impian ini?');
+        if (!confirmDel) return;
+        const nextGoals = savingsGoals.filter(g => g.id !== goalId);
+        setSavingsGoals(nextGoals);
+        StorageService.setSavingsGoals(nextGoals);
+        showToast('Kantong impian telah dihapus');
+      };
+
       // Handler for PIN Update
       const handleUpdatePin = (newPin) => {
         StorageService.setPin(newPin);
@@ -2662,10 +3897,12 @@
             version: '1.0.0',
             exportedAt: new Date().toISOString(),
             user: {
-              name: userName
+              name: userName,
+              username: username
             },
             accounts,
-            transactions
+            transactions,
+            savingsGoals
           };
           const blob = new Blob([JSON.stringify(exportPayload, null, 2)], {
             type: 'application/json'
@@ -2694,14 +3931,20 @@
           const importedAccounts = parsedPayload.accounts;
           const importedTransactions = parsedPayload.transactions;
           const importedName = parsedPayload.user?.name || userName || 'Teman Voralet';
+          const importedUsername = parsedPayload.user?.username || username || '';
+          const importedSavings = Array.isArray(parsedPayload.savingsGoals) ? parsedPayload.savingsGoals : [];
 
           setAccounts(importedAccounts);
           setTransactions(importedTransactions);
+          setSavingsGoals(importedSavings);
           setUserName(importedName);
+          if (importedUsername) setUsername(importedUsername);
 
           StorageService.setAccounts(importedAccounts);
           StorageService.setTransactions(importedTransactions);
+          StorageService.setSavingsGoals(importedSavings);
           StorageService.setName(importedName);
+          if (importedUsername) StorageService.setUsername(importedUsername);
 
           setIsSettingsModalOpen(false);
           showToast('Data cadangan berhasil dipulihkan!');
@@ -2715,9 +3958,11 @@
         StorageService.clearAll();
         setStoredPin(null);
         setUserName('');
+        setUsername('');
         setAvatar('');
         setAccounts([]);
         setTransactions([]);
+        setSavingsGoals([]);
         setIsUnlocked(false);
         setIsSettingsModalOpen(false);
         showToast('Seluruh data Voralet telah dibersihkan');
@@ -2741,6 +3986,7 @@
             <ReturningUserPinScreen
               storedPin={storedPin}
               userName={userName}
+              username={username}
               avatar={avatar}
               theme={theme}
               onToggleTheme={handleToggleTheme}
@@ -2752,17 +3998,22 @@
       }
 
       // UNLOCKED: Main Dashboard
+      const isAnyModalOpen = isTxModalOpen || isAccountsModalOpen || isSavingsModalOpen || isSettingsModalOpen;
+
       return (
-        <>
+        <div className="relative w-full h-[100dvh] overflow-hidden bg-slate-950">
           {toastMsg && <Toast message={toastMsg} onClose={() => setToastMsg('')} />}
 
           <MainDashboard
+            isAnyModalOpen={isAnyModalOpen}
             userName={userName}
+            username={username}
             avatar={avatar}
             theme={theme}
             onToggleTheme={handleToggleTheme}
             accounts={accounts}
             transactions={transactions}
+            savingsGoals={savingsGoals}
             isBalanceHidden={isBalanceHidden}
             onToggleHideBalance={handleToggleHideBalance}
             onOpenTransactionModal={(type) => {
@@ -2771,6 +4022,15 @@
             }}
             onOpenAccountsModal={() => setIsAccountsModalOpen(true)}
             onOpenSettingsModal={() => setIsSettingsModalOpen(true)}
+            onOpenSavingsModal={() => {
+              setSelectedGoal(null);
+              setIsSavingsModalOpen(true);
+            }}
+            onSelectGoal={(goal) => {
+              setSelectedGoal(goal);
+              setIsSavingsModalOpen(true);
+            }}
+            onDeleteGoal={handleDeleteGoal}
             onLockApp={() => setIsUnlocked(false)}
             onDeleteTransaction={handleDeleteTransaction}
           />
@@ -2795,13 +4055,28 @@
             onEditAccount={handleEditAccount}
           />
 
+          {/* Savings Goal Modal with Crisp X Icon */}
+          <SavingsGoalModal
+            isOpen={isSavingsModalOpen}
+            onClose={() => {
+              setIsSavingsModalOpen(false);
+              setSelectedGoal(null);
+            }}
+            accounts={accounts}
+            editingGoal={selectedGoal}
+            onSaveGoal={handleSaveGoal}
+            onAdjustGoal={handleAdjustGoal}
+          />
+
           {/* Settings & Data Control Panel Modal with Crisp X Icon */}
           <SettingsModal
             isOpen={isSettingsModalOpen}
             onClose={() => setIsSettingsModalOpen(false)}
             currentPin={storedPin}
             userName={userName}
+            username={username}
             avatar={avatar}
+            onUpdateProfile={handleUpdateProfile}
             onUpdateAvatar={handleUpdateAvatar}
             theme={theme}
             onToggleTheme={handleToggleTheme}
@@ -2810,7 +4085,7 @@
             onImportData={handleImportData}
             onResetAll={handleResetAll}
           />
-        </>
+        </div>
       );
     }
 
