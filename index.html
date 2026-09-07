@@ -71,7 +71,7 @@
     }
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background-color: #0F172A;
+      background-color: #F8FAFC;
       color: #0F172A;
       margin: 0;
       padding: 0;
@@ -217,6 +217,83 @@
     .dark .ios-screen-scaled {
       filter: brightness(0.82);
     }
+
+    /* Mobile Virtual Keyboard & Viewport Fixes */
+    html, body {
+      height: 100%;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      overscroll-behavior: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    #root {
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    /* Modal Backdrop container ensuring coverage of visible viewport */
+    .ios-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      background-color: rgba(15, 23, 42, 0.6);
+      overscroll-behavior: contain;
+      padding: 0;
+    }
+    @media (min-width: 640px) {
+      .ios-modal-backdrop {
+        align-items: center;
+        padding: 1rem;
+      }
+    }
+
+    .ios-modal-card {
+      width: 100%;
+      max-width: 28rem;
+      max-height: 88dvh;
+      display: flex;
+      flex-direction: column;
+      border-top-left-radius: 1.25rem;
+      border-top-right-radius: 1.25rem;
+      overflow: hidden;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+    @media (min-width: 640px) {
+      .ios-modal-card {
+        border-radius: 1.25rem;
+        max-height: 85vh;
+      }
+    }
+
+    /* Modal header stays fixed/non-squashable at top of modal */
+    .ios-modal-header {
+      flex-shrink: 0;
+      z-index: 10;
+    }
+
+    /* Isolated scrollable modal body with keyboard clearance */
+    .ios-modal-body {
+      flex: 1 1 auto;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+      padding-bottom: 8rem !important; /* pb-32 clearance */
+    }
+
+    /* PIN Lock Screen: 100% fixed, zero shifts or scroll */
+    .pin-keypad-screen {
+      height: 100dvh;
+      max-height: 100dvh;
+      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
   </style>
 </head>
 <body>
@@ -224,6 +301,43 @@
 
   <script type="text/babel">
     const { useState, useEffect, useMemo, useCallback, useRef } = React;
+
+    // =========================================================================
+    // MOBILE KEYBOARD & VIEWPORT MANAGEMENT
+    // =========================================================================
+    const handleGlobalInputFocus = (e) => {
+      const target = e.target;
+      if (!target) return;
+      const tag = target.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') {
+        if (target.closest('.pin-keypad-screen')) return;
+        setTimeout(() => {
+          if (target && typeof target.scrollIntoView === 'function') {
+            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 220);
+      }
+    };
+
+    const handleGlobalInputBlur = () => {
+      setTimeout(() => {
+        const active = document.activeElement;
+        const isInput = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT');
+        if (!isInput) {
+          window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+        }
+      }, 120);
+    };
+
+    const setupKeyboardViewportHandler = () => {
+      window.addEventListener('focusin', handleGlobalInputFocus);
+      window.addEventListener('focusout', handleGlobalInputBlur);
+
+      return () => {
+        window.removeEventListener('focusin', handleGlobalInputFocus);
+        window.removeEventListener('focusout', handleGlobalInputBlur);
+      };
+    };
 
     // =========================================================================
     // 1. DATA LAYER (LOCAL STORAGE SERVICE & LEDGER UTILITIES)
@@ -996,7 +1110,7 @@
 
       return (
         <div
-          className={`fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 ${
+          className={`fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 overscroll-contain ${
             isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'
           }`}
           onClick={(e) => {
@@ -1004,11 +1118,11 @@
           }}
         >
           <div
-            className={`bg-white dark:bg-slate-800 rounded-2xl p-5 max-w-sm w-full shadow-xl border border-slate-200 dark:border-slate-700 ${
+            className={`bg-white dark:bg-slate-800 rounded-2xl p-5 max-w-sm w-full max-h-[88dvh] flex flex-col shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden ${
               isClosing ? 'animate-ios-pop-exit' : 'animate-ios-pop'
             }`}
           >
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-3 shrink-0">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-brand-soft dark:bg-slate-700 text-brand flex items-center justify-center">
                   <Icon name="lock" className="w-4 h-4" />
@@ -1031,7 +1145,7 @@
             </div>
 
             {step === 1 ? (
-              <form onSubmit={handleVerifyUsername} className="space-y-4">
+              <form onSubmit={handleVerifyUsername} className="flex-1 overflow-y-auto space-y-4 pb-4 no-scrollbar overscroll-contain">
                 <p className="text-xs text-slate-500 dark:text-slate-400">
                   Untuk keamanan offline, verifikasi <strong>Username (@id)</strong> brankas kamu. Data keuangan tetap aman dan tidak akan terhapus.
                 </p>
@@ -1044,6 +1158,8 @@
                     <input
                       type="text"
                       value={inputUsername}
+                      onFocus={handleGlobalInputFocus}
+                      onBlur={handleGlobalInputBlur}
                       onChange={(e) => {
                         setInputUsername(e.target.value);
                         setVerifyError('');
@@ -1074,7 +1190,7 @@
                 </div>
               </form>
             ) : (
-              <form onSubmit={handleSaveNewPin} className="space-y-4">
+              <form onSubmit={handleSaveNewPin} className="flex-1 overflow-y-auto space-y-4 pb-4 no-scrollbar overscroll-contain">
                 <p className="text-xs text-slate-500 dark:text-slate-400">
                   Identitas terverifikasi! Masukkan 6-digit PIN baru untuk brankas Voralet kamu.
                 </p>
@@ -1088,6 +1204,8 @@
                     inputMode="numeric"
                     pattern="[0-9]*"
                     value={newPin}
+                    onFocus={handleGlobalInputFocus}
+                    onBlur={handleGlobalInputBlur}
                     onChange={(e) => {
                       const val = e.target.value.replace(/\D/g, '').slice(0, 6);
                       setNewPin(val);
@@ -1108,6 +1226,8 @@
                     inputMode="numeric"
                     pattern="[0-9]*"
                     value={confirmPin}
+                    onFocus={handleGlobalInputFocus}
+                    onBlur={handleGlobalInputBlur}
                     onChange={(e) => {
                       const val = e.target.value.replace(/\D/g, '').slice(0, 6);
                       setConfirmPin(val);
@@ -1175,7 +1295,7 @@
       };
 
       return (
-        <div className="min-h-screen flex flex-col justify-between p-6 bg-white dark:bg-slate-900 max-w-md mx-auto transition-colors">
+        <div className="pin-keypad-screen flex flex-col justify-between p-6 bg-white dark:bg-slate-900 max-w-md mx-auto transition-colors">
           <div>
             {/* Top Bar with Quick Theme Toggle */}
             <div className="flex items-center justify-between pt-2">
@@ -1335,7 +1455,7 @@
       };
 
       return (
-        <div className="min-h-screen flex flex-col justify-between p-6 bg-white dark:bg-slate-900 max-w-md mx-auto transition-colors">
+        <div className={`${step <= 2 ? 'pin-keypad-screen' : 'min-h-screen'} flex flex-col justify-between p-6 bg-white dark:bg-slate-900 max-w-md mx-auto transition-colors ${step > 2 ? 'overflow-y-auto pb-32 no-scrollbar' : ''}`}>
           {step === 1 && (
             <>
               <div className="pt-8 text-center">
@@ -1458,6 +1578,8 @@
                     type="text"
                     maxLength={30}
                     value={name}
+                    onFocus={handleGlobalInputFocus}
+                    onBlur={handleGlobalInputBlur}
                     onChange={(e) => {
                       setName(e.target.value);
                       if (!username) {
@@ -1480,6 +1602,8 @@
                       type="text"
                       maxLength={20}
                       value={username}
+                      onFocus={handleGlobalInputFocus}
+                      onBlur={handleGlobalInputBlur}
                       onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
                       placeholder="bagas_fin"
                       className="w-full pl-8 pr-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-sm font-mono text-slate-900 dark:text-white focus:outline-none focus:border-brand"
@@ -1527,6 +1651,8 @@
                     type="text"
                     required
                     value={walletName}
+                    onFocus={handleGlobalInputFocus}
+                    onBlur={handleGlobalInputBlur}
                     onChange={(e) => setWalletName(e.target.value)}
                     placeholder="Contoh: Dompet Tunai / Rekening BCA"
                     className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white focus:outline-none focus:border-brand"
@@ -1564,6 +1690,8 @@
                     type="text"
                     inputMode="numeric"
                     value={initialBalance ? formatIDR(parseRawNumber(initialBalance)) : ''}
+                    onFocus={handleGlobalInputFocus}
+                    onBlur={handleGlobalInputBlur}
                     onChange={(e) => {
                       const num = parseRawNumber(e.target.value);
                       setInitialBalance(num ? num.toString() : '');
@@ -1608,6 +1736,15 @@
           setIsClosing(false);
           onClose();
         }, 260);
+      };
+
+      const handleInputFocus = (e) => {
+        const target = e.target;
+        setTimeout(() => {
+          if (target) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 150);
       };
 
       useEffect(() => {
@@ -1656,7 +1793,7 @@
 
       return (
         <div
-          className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 p-0 sm:p-4 ${
+          className={`ios-modal-backdrop bg-slate-900/60 ${
             isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'
           }`}
           onClick={(e) => {
@@ -1664,12 +1801,12 @@
           }}
         >
           <div
-            className={`w-full max-w-md bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl max-h-[92vh] flex flex-col shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden transition-colors ${
+            className={`ios-modal-card bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors ${
               isClosing ? 'animate-ios-sheet-exit' : 'animate-ios-sheet'
             }`}
           >
             {/* Modal Header with Crisp Vector Close Icon */}
-            <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+            <div className="ios-modal-header px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800">
               <h2 className="text-base font-bold text-slate-900 dark:text-white">Catat Transaksi</h2>
               <button
                 type="button"
@@ -1684,8 +1821,8 @@
               </button>
             </div>
 
-            {/* Scrollable Form Body */}
-            <form onSubmit={handleSubmit} className="overflow-y-auto p-5 space-y-4 no-scrollbar">
+            {/* Scrollable Form Body with Keyboard Safe Padding */}
+            <form onSubmit={handleSubmit} className="ios-modal-body p-4 sm:p-5 space-y-4 no-scrollbar">
               {/* Type Switcher */}
               <div className="grid grid-cols-2 p-1 bg-slate-100 dark:bg-slate-900 rounded-xl">
                 <button
@@ -1727,6 +1864,8 @@
                     type="text"
                     inputMode="numeric"
                     required
+                    onFocus={handleGlobalInputFocus}
+                    onBlur={handleGlobalInputBlur}
                     value={amountStr ? new Intl.NumberFormat('id-ID').format(parseRawNumber(amountStr)) : ''}
                     onChange={(e) => {
                       const num = parseRawNumber(e.target.value);
@@ -1773,6 +1912,8 @@
                 ) : (
                   <select
                     value={accountId}
+                    onFocus={handleGlobalInputFocus}
+                    onBlur={handleGlobalInputBlur}
                     onChange={(e) => setAccountId(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl text-sm font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand"
                   >
@@ -1814,6 +1955,8 @@
                   <input
                     type="date"
                     value={date}
+                    onFocus={handleGlobalInputFocus}
+                    onBlur={handleGlobalInputBlur}
                     onChange={(e) => setDate(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand"
                   />
@@ -1824,6 +1967,8 @@
                     type="text"
                     maxLength={60}
                     value={notes}
+                    onFocus={handleGlobalInputFocus}
+                    onBlur={handleGlobalInputBlur}
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder="Contoh: Makan siang bareng tim"
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand"
@@ -1927,6 +2072,15 @@
         }, 260);
       };
 
+      const handleInputFocus = (e) => {
+        const target = e.target;
+        setTimeout(() => {
+          if (target) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 150);
+      };
+
       const startEdit = (acc) => {
         if (!acc) return;
         setEditingAcc(acc);
@@ -1938,7 +2092,7 @@
 
       return (
         <div
-          className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 p-0 sm:p-4 ${
+          className={`ios-modal-backdrop bg-slate-900/60 ${
             isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'
           }`}
           onClick={(e) => {
@@ -1946,12 +2100,12 @@
           }}
         >
           <div
-            className={`w-full max-w-md bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl max-h-[90vh] flex flex-col shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden transition-colors ${
+            className={`ios-modal-card bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors ${
               isClosing ? 'animate-ios-sheet-exit' : 'animate-ios-sheet'
             }`}
           >
             {/* Modal Header with Crisp Vector Close Icon */}
-            <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+            <div className="ios-modal-header px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800">
               <div>
                 <h2 className="text-base font-bold text-slate-900 dark:text-white">Kelola Dompet & Akun</h2>
                 <p className="text-xs text-slate-500 dark:text-slate-400">Saldo dihitung otomatis dari deposit & mutasi</p>
@@ -1969,7 +2123,7 @@
               </button>
             </div>
 
-            <div className="p-5 overflow-y-auto space-y-4 no-scrollbar">
+            <div className="ios-modal-body p-4 sm:p-5 space-y-4 no-scrollbar">
               {!isAdding ? (
                 <>
                   <div className="flex items-center justify-between">
@@ -2068,6 +2222,8 @@
                       type="text"
                       required
                       value={name}
+                      onFocus={handleGlobalInputFocus}
+                      onBlur={handleGlobalInputBlur}
                       onChange={(e) => setName(e.target.value)}
                       placeholder="Contoh: Rekening BCA / Tabungan"
                       className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-xs text-slate-900 dark:text-white focus:outline-none focus:border-brand"
@@ -2104,6 +2260,8 @@
                     <input
                       type="text"
                       inputMode="numeric"
+                      onFocus={handleGlobalInputFocus}
+                      onBlur={handleGlobalInputBlur}
                       value={initialBalance ? formatIDR(parseRawNumber(initialBalance)) : ''}
                       onChange={(e) => {
                         const num = parseRawNumber(e.target.value);
@@ -2178,6 +2336,15 @@
         }, 260);
       };
 
+      const handleInputFocus = (e) => {
+        const target = e.target;
+        setTimeout(() => {
+          if (target) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 150);
+      };
+
       if (!isOpen) return null;
 
       const handleSaveProfile = (e) => {
@@ -2242,7 +2409,7 @@
 
       return (
         <div
-          className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 p-0 sm:p-4 ${
+          className={`ios-modal-backdrop bg-slate-900/60 ${
             isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'
           }`}
           onClick={(e) => {
@@ -2250,12 +2417,12 @@
           }}
         >
           <div
-            className={`w-full max-w-md bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl max-h-[90vh] flex flex-col shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden transition-colors ${
+            className={`ios-modal-card bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors ${
               isClosing ? 'animate-ios-sheet-exit' : 'animate-ios-sheet'
             }`}
           >
             {/* Modal Header with Crisp Vector Close Icon */}
-            <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+            <div className="ios-modal-header px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800">
               <div>
                 <h2 className="text-base font-bold text-slate-900 dark:text-white">Pengaturan & Data</h2>
                 <p className="text-xs text-slate-500 dark:text-slate-400">Privasi lokal & manajemen brankas Voralet</p>
@@ -2273,7 +2440,7 @@
               </button>
             </div>
 
-            <div className="p-5 overflow-y-auto space-y-4 no-scrollbar">
+            <div className="ios-modal-body p-4 sm:p-5 space-y-4 no-scrollbar">
               {/* Profile & Avatar Box */}
               <div className="p-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl space-y-3">
                 <div className="flex items-center justify-between">
@@ -2339,6 +2506,8 @@
                         type="text"
                         maxLength={30}
                         value={editName}
+                        onFocus={handleGlobalInputFocus}
+                        onBlur={handleGlobalInputBlur}
                         onChange={(e) => setEditName(e.target.value)}
                         className="w-full px-3 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
                       />
@@ -2353,6 +2522,8 @@
                           type="text"
                           maxLength={20}
                           value={editUsername}
+                          onFocus={handleGlobalInputFocus}
+                          onBlur={handleGlobalInputBlur}
                           onChange={(e) => setEditUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
                           className="w-full pl-6 pr-3 py-1.5 text-xs font-mono bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
                         />
@@ -2463,6 +2634,8 @@
                         inputMode="numeric"
                         required
                         value={oldPin}
+                        onFocus={handleGlobalInputFocus}
+                        onBlur={handleGlobalInputBlur}
                         onChange={(e) => setOldPin(e.target.value.replace(/\D/g, ''))}
                         className="w-full px-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
                         placeholder="••••••"
@@ -2476,6 +2649,8 @@
                         inputMode="numeric"
                         required
                         value={newPin}
+                        onFocus={handleGlobalInputFocus}
+                        onBlur={handleGlobalInputBlur}
                         onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ''))}
                         className="w-full px-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
                         placeholder="••••••"
@@ -2489,6 +2664,8 @@
                         inputMode="numeric"
                         required
                         value={confirmNewPin}
+                        onFocus={handleGlobalInputFocus}
+                        onBlur={handleGlobalInputBlur}
                         onChange={(e) => setConfirmNewPin(e.target.value.replace(/\D/g, ''))}
                         className="w-full px-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
                         placeholder="••••••"
@@ -2559,6 +2736,8 @@
                     <input
                       type="text"
                       value={resetConfirmInput}
+                      onFocus={handleGlobalInputFocus}
+                      onBlur={handleGlobalInputBlur}
                       onChange={(e) => setResetConfirmInput(e.target.value)}
                       placeholder="Ketik RESET"
                       className="w-full px-3 py-1.5 text-xs bg-white dark:bg-slate-900 border border-rose-300 dark:border-rose-700 rounded-lg text-slate-900 dark:text-white focus:outline-none"
@@ -2691,7 +2870,7 @@
 
       return (
         <div
-          className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 p-0 sm:p-4 ${
+          className={`ios-modal-backdrop bg-slate-900/60 ${
             isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'
           }`}
           onClick={(e) => {
@@ -2699,12 +2878,12 @@
           }}
         >
           <div
-            ref={modalContentRef}
-            className={`w-full max-w-md bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl p-5 max-h-[85dvh] overflow-y-auto pb-28 no-scrollbar shadow-xl border border-slate-200 dark:border-slate-700 transition-colors ${
+            className={`ios-modal-card bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors ${
               isClosing ? 'animate-ios-sheet-exit' : 'animate-ios-sheet'
             }`}
           >
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-700 mb-4">
+            {/* Modal Header */}
+            <div className="ios-modal-header px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-brand-light dark:bg-slate-700 text-brand dark:text-sky-300 flex items-center justify-center">
                   <Icon name="target" className="w-4 h-4" />
@@ -2732,6 +2911,12 @@
                 </svg>
               </button>
             </div>
+
+            {/* Flexible Scrollable Body */}
+            <div
+              ref={modalContentRef}
+              className="ios-modal-body p-4 sm:p-5 space-y-4 no-scrollbar"
+            >
 
             {error && (
               <p className="text-xs font-semibold text-rose-500 mb-3 bg-rose-50 dark:bg-rose-950/40 p-2 rounded-lg border border-rose-200 dark:border-rose-900/50">
@@ -2786,7 +2971,8 @@
                     <input
                       type="text"
                       value={name}
-                      onFocus={handleInputFocus}
+                      onFocus={handleGlobalInputFocus}
+                      onBlur={handleGlobalInputBlur}
                       onChange={(e) => setName(e.target.value)}
                       className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-xs text-slate-900 dark:text-white focus:outline-none focus:border-brand"
                     />
@@ -2796,7 +2982,8 @@
                     <input
                       type="text"
                       inputMode="numeric"
-                      onFocus={handleInputFocus}
+                      onFocus={handleGlobalInputFocus}
+                      onBlur={handleGlobalInputBlur}
                       value={targetAmount ? formatIDR(parseRawNumber(targetAmount)) : ''}
                       onChange={(e) => setTargetAmount(parseRawNumber(e.target.value).toString())}
                       className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-brand"
@@ -2807,7 +2994,8 @@
                     <input
                       type="date"
                       value={targetDate}
-                      onFocus={handleInputFocus}
+                      onFocus={handleGlobalInputFocus}
+                      onBlur={handleGlobalInputBlur}
                       onChange={(e) => setTargetDate(e.target.value)}
                       className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-xs text-slate-900 dark:text-white focus:outline-none focus:border-brand"
                     />
@@ -2834,7 +3022,8 @@
                   </label>
                   <select
                     value={adjustAccountId}
-                    onFocus={handleInputFocus}
+                    onFocus={handleGlobalInputFocus}
+                    onBlur={handleGlobalInputBlur}
                     onChange={(e) => setAdjustAccountId(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-xs text-slate-900 dark:text-white focus:outline-none focus:border-brand"
                   >
@@ -2854,7 +3043,8 @@
                     type="text"
                     inputMode="numeric"
                     autoFocus
-                    onFocus={handleInputFocus}
+                    onFocus={handleGlobalInputFocus}
+                    onBlur={handleGlobalInputBlur}
                     placeholder="Rp 0"
                     value={adjustAmount ? formatIDR(parseRawNumber(adjustAmount)) : ''}
                     onChange={(e) => setAdjustAmount(parseRawNumber(e.target.value).toString())}
@@ -2889,7 +3079,8 @@
                     type="text"
                     placeholder="Contoh: Beli Laptop Baru / Dana Darurat"
                     value={name}
-                    onFocus={handleInputFocus}
+                    onFocus={handleGlobalInputFocus}
+                    onBlur={handleGlobalInputBlur}
                     onChange={(e) => setName(e.target.value)}
                     autoFocus
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-xs text-slate-900 dark:text-white focus:outline-none focus:border-brand"
@@ -2904,7 +3095,8 @@
                     type="text"
                     inputMode="numeric"
                     placeholder="Rp 0"
-                    onFocus={handleInputFocus}
+                    onFocus={handleGlobalInputFocus}
+                    onBlur={handleGlobalInputBlur}
                     value={targetAmount ? formatIDR(parseRawNumber(targetAmount)) : ''}
                     onChange={(e) => setTargetAmount(parseRawNumber(e.target.value).toString())}
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-brand"
@@ -2918,7 +3110,8 @@
                   <input
                     type="date"
                     value={targetDate}
-                    onFocus={handleInputFocus}
+                    onFocus={handleGlobalInputFocus}
+                    onBlur={handleGlobalInputBlur}
                     onChange={(e) => setTargetDate(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-xs text-slate-900 dark:text-white focus:outline-none focus:border-brand"
                   />
@@ -2934,6 +3127,7 @@
                 </div>
               </form>
             )}
+            </div>
           </div>
         </div>
       );
