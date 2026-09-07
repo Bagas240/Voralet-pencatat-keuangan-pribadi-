@@ -63,7 +63,10 @@ android {
   }
 
   tasks.register<Copy>("syncHtmlAssets") {
-    from("${rootDir}/index.html")
+    from("${rootDir}") {
+      include("index.html")
+      include("*.js")
+    }
     into("${projectDir}/src/main/assets")
   }
 
