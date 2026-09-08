@@ -19,29 +19,37 @@ PART7_VIEWS = """
       };
 
       return (
-        <div className="space-y-4 pb-28">
-          <div className="flex items-center justify-between">
+        <div className="space-y-4 pb-28 animate-ios-tab-view">
+          <div className="flex items-center justify-between pt-1">
             <div>
-              <h2 className="text-base font-bold text-slate-900 dark:text-white">Kantong Impian</h2>
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">Kantong Impian</h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">Wujudkan target tabungan kamu</p>
             </div>
             <button
               type="button"
               onClick={onOpenNewGoal}
-              className="px-3.5 py-1.5 bg-brand text-white text-xs font-semibold rounded-xl hover:bg-brand-hover flex items-center gap-1.5 shadow-sm ios-btn-tap"
+              className="px-4 py-2.5 bg-brand hover:bg-brand-hover text-white text-xs font-bold rounded-2xl flex items-center gap-2 shadow-sm transition-all ios-btn-tap"
             >
-              <Icon name="plus" className="w-4 h-4" />
+              <Icon name="plus" className="w-4 h-4" strokeWidth={2.4} />
               <span>Target Baru</span>
             </button>
           </div>
 
           {safeGoals.length === 0 ? (
             <div className="ios-inset-group text-center py-10">
-              <IconBadge icon="target" className="w-12 h-12 rounded-2xl bg-sky-50 dark:bg-slate-800 text-brand mx-auto mb-2" iconClass="w-6 h-6" />
+              <IconBadge icon="target" className="w-14 h-14 rounded-2xl bg-sky-50 dark:bg-slate-800 text-brand mx-auto mb-3" iconClass="w-7 h-7" />
               <h3 className="text-sm font-bold text-slate-800 dark:text-white">Belum Ada Target Impian</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xs mx-auto">
-                Beli gadget baru, liburan, atau dana darurat? Buat target impian pertamamu sekarang.
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xs mx-auto mb-4">
+                Beli gadget baru, liburan, motor, atau dana darurat? Buat target impian pertamamu sekarang.
               </p>
+              <button
+                type="button"
+                onClick={onOpenNewGoal}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand hover:bg-brand-hover text-white text-xs font-bold rounded-xl shadow-sm transition-colors ios-btn-tap mx-auto"
+              >
+                <Icon name="plus" className="w-4 h-4" />
+                <span>Buat Target Impian Baru</span>
+              </button>
             </div>
           ) : (
             <div className="space-y-3">
@@ -302,7 +310,7 @@ PART7_VIEWS = """
       const totals = useMemo(() => Ledger.getSummaryTotals(safeTxs), [safeTxs]);
 
       return (
-        <div className="space-y-4 pb-28">
+        <div className="space-y-4 pb-28 animate-ios-tab-view">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-base font-bold text-slate-900 dark:text-white">Analisis & Tren Keuangan</h2>
@@ -474,141 +482,41 @@ PART7_VIEWS = """
         { id: 'analytics', label: 'Statistik', icon: 'pie-chart' }
       ];
 
-      const navRef = useRef(null);
-      const isDraggingRef = useRef(false);
-      const [isDragging, setIsDragging] = useState(false);
-      const tabRefs = useRef({});
-      const [pillBounds, setPillBounds] = useState({ left: 8, width: 80 });
-
-      const updatePillPosition = useCallback(() => {
-        const activeEl = tabRefs.current[currentTab];
-        if (activeEl && navRef.current) {
-          const navRect = navRef.current.getBoundingClientRect();
-          const tabRect = activeEl.getBoundingClientRect();
-          setPillBounds({
-            left: tabRect.left - navRect.left,
-            width: tabRect.width
-          });
-        }
-      }, [currentTab]);
-
-      useEffect(() => {
-        updatePillPosition();
-        const timer = setTimeout(updatePillPosition, 50);
-        window.addEventListener('resize', updatePillPosition);
-        return () => {
-          clearTimeout(timer);
-          window.removeEventListener('resize', updatePillPosition);
-        };
-      }, [updatePillPosition]);
-
-      const handlePointerMove = (clientX) => {
-        if (!navRef.current) return;
-        const rect = navRef.current.getBoundingClientRect();
-        if (rect.width <= 0) return;
-        const relativeX = clientX - rect.left;
-        const fraction = Math.max(0, Math.min(0.999, relativeX / rect.width));
-        const index = Math.floor(fraction * tabs.length);
-        const targetTab = tabs[index];
-        if (targetTab && targetTab.id !== currentTab) {
-          onSelectTab(targetTab.id);
-        }
-      };
-
-      const handleTouchStart = (e) => {
-        isDraggingRef.current = true;
-        setIsDragging(true);
-        if (e.touches && e.touches[0]) {
-          handlePointerMove(e.touches[0].clientX);
-        }
-      };
-
-      const handleTouchMove = (e) => {
-        if (!isDraggingRef.current) return;
-        if (e.cancelable) {
-          e.preventDefault();
-        }
-        if (e.touches && e.touches[0]) {
-          handlePointerMove(e.touches[0].clientX);
-        }
-      };
-
-      const handleTouchEnd = () => {
-        isDraggingRef.current = false;
-        setIsDragging(false);
-      };
-
-      const handleMouseDown = (e) => {
-        isDraggingRef.current = true;
-        setIsDragging(true);
-        handlePointerMove(e.clientX);
-      };
-
-      const handleMouseMove = (e) => {
-        if (!isDraggingRef.current) return;
-        handlePointerMove(e.clientX);
-      };
-
-      const handleMouseUp = () => {
-        isDraggingRef.current = false;
-        setIsDragging(false);
-      };
-
-      useEffect(() => {
-        const onGlobalMouseUp = () => {
-          if (isDraggingRef.current) {
-            isDraggingRef.current = false;
-            setIsDragging(false);
-          }
-        };
-        window.addEventListener('mouseup', onGlobalMouseUp);
-        return () => window.removeEventListener('mouseup', onGlobalMouseUp);
-      }, []);
+      const activeIndex = Math.max(0, tabs.findIndex(t => t.id === currentTab));
 
       return (
         <nav
-          ref={navRef}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-          onTouchCancel={handleTouchEnd}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          className={`relative w-[88%] max-w-[360px] h-14 rounded-full mx-auto fixed bottom-5 left-0 right-0 z-50 bg-white dark:bg-[#1E293B] border border-[#E0F2FE] dark:border-[#334155] shadow-md flex items-center justify-around px-2 select-none cursor-grab active:cursor-grabbing transition-transform duration-200 ${
-            isDragging ? 'scale-[0.98]' : ''
-          }`}
-          style={{ touchAction: 'none' }}
+          className="fixed bottom-5 left-0 right-0 z-50 w-[92%] max-w-[360px] h-14 mx-auto rounded-full bg-white/95 backdrop-blur-md dark:bg-[#1E293B]/95 border border-slate-200/90 dark:border-[#334155] shadow-[0_8px_30px_rgba(15,23,42,0.12)] flex items-center p-1.5 select-none"
         >
-          {/* Liquid Physics Gliding Active Pill */}
+          {/* Active Sliding Pill - Smooth Apple Spring Curve */}
           <div
-            className="absolute top-2 bottom-2 rounded-full bg-[#E0F2FE] dark:bg-[#334155] pointer-events-none transition-all duration-300"
+            className="absolute top-1.5 bottom-1.5 rounded-full bg-[#0284C7] dark:bg-[#38BDF8] shadow-sm pointer-events-none transition-all duration-300"
             style={{
-              left: `${pillBounds.left}px`,
-              width: `${pillBounds.width}px`,
+              left: `calc(${activeIndex * 25}% + 4px)`,
+              width: 'calc(25% - 8px)',
               transitionTimingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)'
             }}
           />
 
-          {tabs.map((t) => {
-            const isActive = currentTab === t.id;
+          {tabs.map((t, idx) => {
+            const isActive = idx === activeIndex;
             return (
               <button
                 key={t.id}
-                ref={(el) => { tabRefs.current[t.id] = el; }}
                 type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSelectTab(t.id);
-                }}
-                className={`relative z-10 transition-colors duration-200 ios-btn-tap ${
-                  isActive
-                    ? 'text-[#0284C7] dark:text-[#38BDF8] rounded-full px-3 py-1.5 font-bold text-xs flex items-center gap-1.5'
-                    : 'text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#F8FAFC] p-2 rounded-full flex items-center gap-1'
-                }`}
+                onClick={() => onSelectTab(t.id)}
+                className="flex-1 h-full relative z-10 flex items-center justify-center rounded-full transition-colors duration-200 ios-btn-tap"
               >
-                <Icon name={t.icon} className="w-5 h-5 flex-shrink-0 aspect-square" strokeWidth={2} />
-                {isActive && <span className="whitespace-nowrap font-bold text-xs">{t.label}</span>}
+                <Icon
+                  name={t.icon}
+                  className={`w-5 h-5 flex-shrink-0 aspect-square ${isActive ? 'text-white dark:text-[#0F172A]' : 'text-slate-500 dark:text-slate-400'}`}
+                  strokeWidth={isActive ? 2.4 : 1.8}
+                />
+                {isActive && (
+                  <span className="whitespace-nowrap font-bold text-xs text-white dark:text-[#0F172A] ml-1.5 hidden min-[320px]:inline">
+                    {t.label}
+                  </span>
+                )}
               </button>
             );
           })}

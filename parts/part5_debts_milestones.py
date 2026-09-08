@@ -461,7 +461,26 @@ PART5_DEBTS_MILESTONES = """
       }, [safeDebts, filterTab]);
 
       return (
-        <div className="space-y-4 pb-28">
+        <div className="space-y-4 pb-28 animate-ios-tab-view">
+          {/* Page Title & Add Button */}
+          <div className="flex items-center justify-between pt-1">
+            <div>
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">Hutang & Piutang</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Kelola pinjaman dan jatuh tempo</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedDebt(null);
+                setIsModalOpen(true);
+              }}
+              className="px-4 py-2.5 bg-brand hover:bg-brand-hover text-white text-xs font-bold rounded-2xl flex items-center gap-2 shadow-sm transition-all ios-btn-tap"
+            >
+              <Icon name="plus" className="w-4 h-4" strokeWidth={2.4} />
+              <span>Catat Baru</span>
+            </button>
+          </div>
+
           {/* Header Summary */}
           <div className="grid grid-cols-2 gap-3">
             <div className="ios-inset-group">
@@ -482,7 +501,7 @@ PART5_DEBTS_MILESTONES = """
             </div>
           </div>
 
-          {/* Action Bar */}
+          {/* Action Bar & Filter */}
           <div className="flex items-center justify-between gap-2">
             <div className="flex p-1 bg-slate-100 dark:bg-slate-800 rounded-xl text-xs font-semibold">
               {['ALL', 'HUTANG', 'PIUTANG'].map(tab => (
@@ -490,9 +509,9 @@ PART5_DEBTS_MILESTONES = """
                   key={tab}
                   type="button"
                   onClick={() => setFilterTab(tab)}
-                  className={`px-3 py-1.5 rounded-lg transition-colors ios-btn-tap ${
+                  className={`px-3.5 py-1.5 rounded-lg transition-colors ios-btn-tap ${
                     filterTab === tab
-                      ? 'bg-white dark:bg-slate-700 text-brand dark:text-white shadow-sm'
+                      ? 'bg-white dark:bg-slate-700 text-brand dark:text-white shadow-sm font-bold'
                       : 'text-slate-500 dark:text-slate-400'
                   }`}
                 >
@@ -507,9 +526,9 @@ PART5_DEBTS_MILESTONES = """
                 setSelectedDebt(null);
                 setIsModalOpen(true);
               }}
-              className="px-3.5 py-2 bg-brand text-white text-xs font-semibold rounded-xl hover:bg-brand-hover flex items-center gap-1.5 shadow-sm ios-btn-tap"
+              className="px-3 py-1.5 bg-sky-50 dark:bg-slate-800 text-brand dark:text-sky-400 text-xs font-bold rounded-xl border border-sky-200/60 dark:border-slate-700 flex items-center gap-1.5 shadow-sm ios-btn-tap hover:bg-sky-100"
             >
-              <Icon name="plus" className="w-4 h-4" />
+              <Icon name="plus" className="w-3.5 h-3.5" />
               <span>Tambah</span>
             </button>
           </div>
@@ -517,11 +536,22 @@ PART5_DEBTS_MILESTONES = """
           {/* Debt List */}
           {filteredList.length === 0 ? (
             <div className="ios-inset-group text-center py-10">
-              <IconBadge icon="receipt" className="w-12 h-12 rounded-2xl bg-sky-50 dark:bg-slate-800 text-brand mx-auto mb-2" iconClass="w-6 h-6" />
+              <IconBadge icon="receipt" className="w-14 h-14 rounded-2xl bg-sky-50 dark:bg-slate-800 text-brand mx-auto mb-3" iconClass="w-7 h-7" />
               <h3 className="text-sm font-bold text-slate-800 dark:text-white">Belum Ada Catatan Hutang / Piutang</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xs mx-auto">
-                Catat pinjaman atau uang yang dipinjam teman agar tidak terlewat tanggal jatuh tempo.
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xs mx-auto mb-4">
+                Catat pinjaman pribadi atau uang yang sedang dipinjam rekan agar tertata rapi.
               </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedDebt(null);
+                  setIsModalOpen(true);
+                }}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand hover:bg-brand-hover text-white text-xs font-bold rounded-xl shadow-sm transition-colors ios-btn-tap mx-auto"
+              >
+                <Icon name="plus" className="w-4 h-4" />
+                <span>Mulai Buat Catatan</span>
+              </button>
             </div>
           ) : (
             <div className="ios-inset-group space-y-3">

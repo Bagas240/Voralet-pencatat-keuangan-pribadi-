@@ -37,21 +37,21 @@
               800: '#075985',
               900: '#0C4A6E'
             },
-            // Map dark slate to true OLED black and sleek dark surfaces
+            // Tailwind Slate mapped to strict Dark Mode palette
             slate: {
-              950: '#000000',
-              900: '#000000', // Pure black for dark mode canvas
-              850: '#0A0A0C',
-              800: '#121212', // Pure deep dark surface for cards
-              750: '#18181B',
-              700: '#27272A', // Crisp border in dark mode
-              600: '#52525B',
-              500: '#71717A',
-              400: '#A1A1AA',
+              950: '#020617',
+              900: '#0F172A', // Dark Mode Main Background
+              850: '#151F32',
+              800: '#1E293B', // Dark Mode Cards / Containers
+              750: '#293548',
+              700: '#334155', // Dark Mode Borders
+              600: '#475569',
+              500: '#64748B', // Secondary Text Light Mode
+              400: '#94A3B8', // Secondary Text Dark Mode
               300: '#CBD5E1',
               200: '#E2E8F0',
               100: '#F1F5F9',
-              50: '#F8FAFC'
+              50: '#F8FAFC'  // Primary Text Dark Mode
             }
           },
           fontFamily: {
@@ -104,48 +104,50 @@
       overscroll-behavior: none;
       -webkit-overflow-scrolling: touch;
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
-      background-color: #FFFFFF;
+      background-color: #F8FAFC;
       color: #0F172A;
-      transition: background-color 350ms cubic-bezier(0.32, 0.72, 0, 1), color 350ms cubic-bezier(0.32, 0.72, 0, 1);
+      transition: background-color 300ms ease-in-out, color 300ms ease-in-out;
     }
     html.dark body, body.dark {
-      background-color: #000000 !important;
-      color: #FFFFFF !important;
+      background-color: #0F172A !important;
+      color: #F8FAFC !important;
     }
     #root {
       height: 100%;
       width: 100%;
       overflow: hidden;
-      background-color: #FFFFFF;
+      background-color: #F8FAFC;
       color: #0F172A;
-      transition: background-color 350ms cubic-bezier(0.32, 0.72, 0, 1), color 350ms cubic-bezier(0.32, 0.72, 0, 1);
+      transition: background-color 300ms ease-in-out, color 300ms ease-in-out;
     }
     html.dark #root {
-      background-color: #000000 !important;
-      color: #FFFFFF !important;
+      background-color: #0F172A !important;
+      color: #F8FAFC !important;
     }
 
     /* iOS Inset Grouped Block */
     .ios-inset-group {
       border-radius: 22px;
-      background-color: #F8FAFC;
+      background-color: #FFFFFF;
       padding: 1rem;
       border: 1px solid #E2E8F0;
-      transition: background-color 350ms cubic-bezier(0.32, 0.72, 0, 1), border-color 350ms cubic-bezier(0.32, 0.72, 0, 1), color 350ms cubic-bezier(0.32, 0.72, 0, 1);
+      box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.05);
+      transition: background-color 300ms ease-in-out, border-color 300ms ease-in-out, color 300ms ease-in-out;
     }
     .dark .ios-inset-group {
-      background-color: #121212 !important;
-      border-color: #27272A !important;
-      color: #FFFFFF !important;
+      background-color: #1E293B !important;
+      border-color: #334155 !important;
+      box-shadow: none;
+      color: #F8FAFC !important;
     }
 
     /* Hairline Divider */
     .ios-hairline {
       border-bottom: 1px solid #E2E8F0;
-      transition: border-color 350ms cubic-bezier(0.32, 0.72, 0, 1);
+      transition: border-color 300ms ease-in-out;
     }
     .dark .ios-hairline {
-      border-bottom: 1px solid #27272A !important;
+      border-bottom: 1px solid #334155 !important;
     }
 
     /* Scrollbar hide */
@@ -217,6 +219,22 @@
       will-change: opacity;
     }
 
+    /* iOS Page View Transition Animation */
+    @keyframes iosTabFadeIn {
+      0% {
+        opacity: 0;
+        transform: translate3d(0, 10px, 0) scale(0.985);
+      }
+      100% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1);
+      }
+    }
+    .animate-ios-tab-view {
+      animation: iosTabFadeIn 0.28s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+      will-change: opacity, transform;
+    }
+
     /* iOS Spring Banner Toast */
     @keyframes iosToastSpringDown {
       0% { transform: translate3d(-50%, -100%, 0) scale(0.9); opacity: 0; }
@@ -264,12 +282,12 @@
       box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
       background-color: #FFFFFF;
       color: #0F172A;
-      transition: background-color 350ms cubic-bezier(0.32, 0.72, 0, 1), color 350ms cubic-bezier(0.32, 0.72, 0, 1);
+      transition: background-color 300ms ease-in-out, color 300ms ease-in-out;
     }
     .dark .ios-modal-card {
-      background-color: #121212 !important;
-      color: #FFFFFF !important;
-      border-color: #27272A !important;
+      background-color: #1E293B !important;
+      color: #F8FAFC !important;
+      border: 1px solid #334155 !important;
     }
     @media (min-width: 640px) {
       .ios-modal-card {
@@ -1140,7 +1158,7 @@
                     ? 'border-2 border-rose-500 bg-rose-500/10 scale-105'
                     : isFilled
                       ? 'border-2 border-[#0284C7] dark:border-[#38BDF8] bg-transparent'
-                      : 'border-2 border-slate-300 dark:border-zinc-700 bg-slate-100/90 dark:bg-zinc-900 shadow-inner'
+                      : 'border-2 border-slate-300 dark:border-slate-700 bg-slate-100/90 dark:bg-slate-800'
                 }`}
               >
                 {isFilled && (
@@ -1148,7 +1166,7 @@
                     className={`w-2.5 h-2.5 rounded-full transition-all duration-200 ${
                       isError
                         ? 'bg-rose-500'
-                        : 'bg-[#0284C7] dark:bg-[#38BDF8] shadow-[0_0_8px_rgba(2,132,199,0.5)] dark:shadow-[0_0_10px_rgba(56,189,248,0.6)]'
+                        : 'bg-[#0284C7] dark:bg-[#38BDF8]'
                     } ${isLatest && !isError ? 'animate-ios-pin-pop' : ''}`}
                   />
                 )}
@@ -1172,7 +1190,7 @@
                   key={i}
                   type="button"
                   onClick={onBackspace}
-                  className="h-14 rounded-2xl flex items-center justify-center text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-[#181818] active:bg-slate-200 dark:active:bg-[#222222] transition-colors ios-keypad-btn"
+                  className="h-14 rounded-2xl flex items-center justify-center text-slate-600 dark:text-[#94A3B8] hover:bg-slate-100 dark:hover:bg-[#1E293B] active:bg-slate-200 dark:active:bg-[#334155] transition-colors ios-keypad-btn"
                   aria-label="Hapus"
                 >
                   <Icon name="backspace" className="w-6 h-6" strokeWidth={1.8} />
@@ -1184,7 +1202,7 @@
                 key={i}
                 type="button"
                 onClick={() => onKeyPress(k)}
-                className="h-14 rounded-2xl flex items-center justify-center text-xl font-semibold text-slate-800 dark:text-white bg-white dark:bg-[#141414] border border-slate-200 dark:border-[#27272A] hover:bg-slate-50 dark:hover:bg-[#1C1C1C] transition-colors shadow-sm ios-keypad-btn"
+                className="h-14 rounded-2xl flex items-center justify-center text-xl font-semibold text-[#0F172A] dark:text-[#F8FAFC] bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155] hover:bg-slate-50 dark:hover:bg-[#273549] transition-colors shadow-sm ios-keypad-btn"
               >
                 {k}
               </button>
@@ -1415,17 +1433,17 @@
       };
 
       return (
-        <div className="pin-keypad-screen flex flex-col justify-between p-6 bg-white dark:bg-black max-w-md mx-auto transition-colors duration-300 ease-in-out">
+        <div className="pin-keypad-screen flex flex-col justify-between p-6 bg-white dark:bg-[#0F172A] max-w-md mx-auto transition-colors duration-300 ease-in-out">
           <div>
             <div className="flex items-center justify-between pt-2">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-100 dark:bg-[#141414] border border-sky-200 dark:border-[#27272A] text-brand dark:text-sky-400 text-xs font-bold">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E0F2FE] dark:bg-[#1E293B] border border-[#BAE6FD] dark:border-[#334155] text-[#0284C7] dark:text-[#38BDF8] text-xs font-bold">
                 <Icon name="wallet" className="w-4 h-4" />
                 <span>Voralet</span>
               </div>
               <button
                 type="button"
                 onClick={onToggleTheme}
-                className="w-9 h-9 rounded-full flex items-center justify-center text-slate-500 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-[#181818] transition-colors ios-btn-tap"
+                className="w-9 h-9 rounded-full flex items-center justify-center text-[#64748B] dark:text-[#94A3B8] hover:bg-slate-100 dark:hover:bg-[#1E293B] transition-colors ios-btn-tap"
                 aria-label="Mode Gelap / Terang"
               >
                 <Icon name={theme === 'dark' ? 'sun' : 'moon'} className="w-5 h-5" />
@@ -1438,17 +1456,17 @@
                   <Avatar avatar={avatar} name={userName} size="w-16 h-16" textSize="text-xl" />
                 </div>
               ) : (
-                <div className="w-16 h-16 rounded-[22px] bg-sky-50 dark:bg-[#121212] border border-sky-100 dark:border-[#27272A] flex items-center justify-center mb-3 text-brand dark:text-sky-400">
+                <div className="w-16 h-16 rounded-[22px] bg-[#F0F9FF] dark:bg-[#1E293B] border border-[#E0F2FE] dark:border-[#334155] flex items-center justify-center mb-3 text-[#0284C7] dark:text-[#38BDF8]">
                   <Icon name="lock" className="w-7 h-7" strokeWidth={1.8} />
                 </div>
               )}
-              <h1 className="text-xl font-bold text-slate-900 dark:text-white">
+              <h1 className="text-xl font-bold text-[#0F172A] dark:text-[#F8FAFC]">
                 {userName ? `Hai, ${userName}` : 'Kunci Brankas'}
               </h1>
               {username && (
-                <p className="text-xs font-mono text-brand dark:text-sky-400 font-semibold mt-0.5">@{username}</p>
+                <p className="text-xs font-mono text-[#0284C7] dark:text-[#38BDF8] font-semibold mt-0.5">@{username}</p>
               )}
-              <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">Masukkan 6-digit PIN untuk akses brankas</p>
+              <p className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-1">Masukkan 6-digit PIN untuk akses brankas</p>
 
               <PinDots count={6} filled={pin.length} isError={error} />
               {error && (
@@ -1463,7 +1481,7 @@
               <button
                 type="button"
                 onClick={() => setIsForgotModalOpen(true)}
-                className="text-xs font-medium text-slate-400 hover:text-brand dark:text-zinc-500 dark:hover:text-sky-400 transition-colors py-1 px-3"
+                className="text-xs font-medium text-[#64748B] hover:text-[#0284C7] dark:text-[#94A3B8] dark:hover:text-[#38BDF8] transition-colors py-1 px-3"
               >
                 Lupa PIN?
               </button>
@@ -1578,21 +1596,21 @@
       };
 
       return (
-        <div className="min-h-[100dvh] w-full flex flex-col justify-between p-6 bg-white dark:bg-black max-w-md mx-auto transition-colors duration-300 ease-in-out text-[#0F172A] dark:text-white">
+        <div className="min-h-[100dvh] w-full flex flex-col justify-between p-6 bg-white dark:bg-[#0F172A] max-w-md mx-auto transition-colors duration-300 ease-in-out text-[#0F172A] dark:text-[#F8FAFC]">
           {/* STEP 1: Buat 6-Digit PIN Security */}
           {onboardingStep === 1 && (
             <div className="pin-keypad-screen flex flex-col justify-between w-full">
               <div className="pt-6 text-center">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E0F2FE] dark:bg-[#141414] border border-[#BAE6FD] dark:border-[#27272A] text-[#0284C7] dark:text-[#38BDF8] text-xs font-bold mb-4">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E0F2FE] dark:bg-[#1E293B] border border-[#BAE6FD] dark:border-[#334155] text-[#0284C7] dark:text-[#38BDF8] text-xs font-bold mb-4">
                   <span>Langkah 1 dari 3</span>
                 </div>
-                <div className="w-16 h-16 rounded-[22px] bg-[#F0F9FF] dark:bg-[#121212] border border-[#E0F2FE] dark:border-[#27272A] flex items-center justify-center mx-auto mb-3 text-[#0284C7] dark:text-[#38BDF8]">
+                <div className="w-16 h-16 rounded-[22px] bg-[#F0F9FF] dark:bg-[#1E293B] border border-[#E0F2FE] dark:border-[#334155] flex items-center justify-center mx-auto mb-3 text-[#0284C7] dark:text-[#38BDF8]">
                   <Icon name="lock" className="w-7 h-7" strokeWidth={1.8} />
                 </div>
-                <h1 className="text-xl font-bold text-[#0F172A] dark:text-white">
+                <h1 className="text-xl font-bold text-[#0F172A] dark:text-[#F8FAFC]">
                   Buat 6-Digit PIN Security
                 </h1>
-                <p className="text-xs text-[#64748B] dark:text-zinc-400 mt-1">
+                <p className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-1">
                   PIN digunakan untuk mengamankan brankas lokal kamu
                 </p>
 
@@ -1619,7 +1637,7 @@
                   className={`w-full py-3.5 rounded-xl font-bold text-sm transition-all ios-btn-tap ${
                     newPin.length === 6
                       ? 'bg-[#0284C7] hover:bg-[#0369A1] text-white shadow-sm cursor-pointer'
-                      : 'bg-slate-100 dark:bg-[#141414] border border-transparent dark:border-[#27272A] text-[#64748B] dark:text-zinc-500 opacity-60 cursor-not-allowed'
+                      : 'bg-slate-100 dark:bg-[#1E293B] border border-transparent dark:border-[#334155] text-[#64748B] dark:text-[#94A3B8] opacity-60 cursor-not-allowed'
                   }`}
                 >
                   Lanjut
@@ -1633,11 +1651,11 @@
             <div className="flex-1 flex flex-col justify-between w-full py-4 overflow-y-auto no-scrollbar">
               <div className="pt-4">
                 <div className="text-center mb-6">
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E0F2FE] dark:bg-[#141414] border border-[#BAE6FD] dark:border-[#27272A] text-[#0284C7] dark:text-[#38BDF8] text-xs font-bold mb-3">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E0F2FE] dark:bg-[#1E293B] border border-[#BAE6FD] dark:border-[#334155] text-[#0284C7] dark:text-[#38BDF8] text-xs font-bold mb-3">
                     <span>Langkah 2 dari 3</span>
                   </div>
-                  <h1 className="text-xl font-bold text-[#0F172A] dark:text-white">Atur Profil Kamu</h1>
-                  <p className="text-xs text-[#64748B] dark:text-zinc-400 mt-1">
+                  <h1 className="text-xl font-bold text-[#0F172A] dark:text-[#F8FAFC]">Atur Profil Kamu</h1>
+                  <p className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-1">
                     Atur nama dan username untuk brankas keuanganmu
                   </p>
                 </div>
@@ -1663,12 +1681,12 @@
                       }}
                     />
                   </div>
-                  <span className="text-[11px] text-[#64748B] dark:text-zinc-400 mt-2">Foto Profil (Opsional)</span>
+                  <span className="text-[11px] text-[#64748B] dark:text-[#94A3B8] mt-2">Foto Profil (Opsional)</span>
                 </div>
 
-                <form id="step2-form" onSubmit={handleStep2Next} className="space-y-4 ios-inset-group bg-[#F8FAFC] dark:bg-[#121212] border border-[#E2E8F0] dark:border-[#27272A] rounded-[22px] p-4">
+                <form id="step2-form" onSubmit={handleStep2Next} className="space-y-4 ios-inset-group bg-[#F0F9FF] dark:bg-[#1E293B] border border-[#E0F2FE] dark:border-[#334155] rounded-[22px] p-4">
                   <div>
-                    <label className="block text-xs font-semibold text-[#0F172A] dark:text-white mb-1.5">
+                    <label className="block text-xs font-semibold text-[#0F172A] dark:text-[#F8FAFC] mb-1.5">
                       Nama Panggilan <span className="text-rose-500">*</span>
                     </label>
                     <input
@@ -1687,17 +1705,17 @@
                         }
                       }}
                       placeholder="Misal: Bagas"
-                      className="w-full px-3.5 py-3 bg-white dark:bg-[#181818] border border-slate-200 dark:border-[#27272A] rounded-xl text-sm font-medium text-[#0F172A] dark:text-white focus:outline-none focus:border-[#0284C7] dark:focus:border-sky-400 transition-colors"
+                      className="w-full px-3.5 py-3 bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-xl text-sm font-medium text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:border-[#0284C7] dark:focus:border-[#38BDF8] transition-colors"
                       autoFocus
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-[#0F172A] dark:text-white mb-1.5">
+                    <label className="block text-xs font-semibold text-[#0F172A] dark:text-[#F8FAFC] mb-1.5">
                       Username
                     </label>
                     <div className="relative">
-                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#64748B] dark:text-zinc-400 font-mono text-sm font-bold">@</span>
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#64748B] dark:text-[#94A3B8] font-mono text-sm font-bold">@</span>
                       <input
                         type="text"
                         required
@@ -1710,10 +1728,10 @@
                           setIdentityError('');
                         }}
                         placeholder="bagas"
-                        className="w-full pl-8 pr-3.5 py-3 bg-white dark:bg-[#181818] border border-slate-200 dark:border-[#27272A] rounded-xl text-sm font-mono text-[#0F172A] dark:text-white focus:outline-none focus:border-[#0284C7] dark:focus:border-sky-400 transition-colors"
+                        className="w-full pl-8 pr-3.5 py-3 bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-xl text-sm font-mono text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:border-[#0284C7] dark:focus:border-[#38BDF8] transition-colors"
                       />
                     </div>
-                    <span className="text-[11px] text-[#64748B] dark:text-zinc-400 mt-1 block">
+                    <span className="text-[11px] text-[#64748B] dark:text-[#94A3B8] mt-1 block">
                       Contoh: @bagas (digunakan untuk verifikasi pemulihan PIN)
                     </span>
                   </div>
@@ -1728,7 +1746,7 @@
                 <button
                   type="button"
                   onClick={() => setOnboardingStep(1)}
-                  className="py-3 px-4 bg-[#F8FAFC] dark:bg-[#141414] border border-[#E2E8F0] dark:border-[#27272A] text-[#0F172A] dark:text-white text-sm font-semibold rounded-xl hover:bg-slate-100 dark:hover:bg-[#1C1C1C] transition-colors ios-btn-tap shrink-0"
+                  className="py-3 px-4 bg-[#F0F9FF] dark:bg-[#1E293B] border border-[#E0F2FE] dark:border-[#334155] text-[#0F172A] dark:text-[#F8FAFC] text-sm font-semibold rounded-xl hover:bg-sky-50 dark:hover:bg-[#273549] transition-colors ios-btn-tap shrink-0"
                 >
                   Kembali
                 </button>
@@ -1748,19 +1766,19 @@
             <div className="flex-1 flex flex-col justify-between w-full py-4 overflow-y-auto no-scrollbar">
               <div className="pt-4">
                 <div className="text-center mb-6">
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E0F2FE] dark:bg-[#141414] border border-[#BAE6FD] dark:border-[#27272A] text-[#0284C7] dark:text-[#38BDF8] text-xs font-bold mb-3">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E0F2FE] dark:bg-[#1E293B] border border-[#BAE6FD] dark:border-[#334155] text-[#0284C7] dark:text-[#38BDF8] text-xs font-bold mb-3">
                     <span>Langkah 3 dari 3</span>
                   </div>
-                  <h1 className="text-xl font-bold text-[#0F172A] dark:text-white">Buat Dompet Pertama</h1>
-                  <p className="text-xs text-[#64748B] dark:text-zinc-400 mt-1">
+                  <h1 className="text-xl font-bold text-[#0F172A] dark:text-[#F8FAFC]">Buat Dompet Pertama</h1>
+                  <p className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-1">
                     Atur sumber dana awal untuk mencatat keuanganmu
                   </p>
                 </div>
 
-                <form id="step3-form" onSubmit={handleFinishOnboarding} className="space-y-4 ios-inset-group bg-[#F8FAFC] dark:bg-[#121212] border border-[#E2E8F0] dark:border-[#27272A] rounded-[22px] p-4">
+                <form id="step3-form" onSubmit={handleFinishOnboarding} className="space-y-4 ios-inset-group bg-[#F0F9FF] dark:bg-[#1E293B] border border-[#E0F2FE] dark:border-[#334155] rounded-[22px] p-4">
                   {/* Field 1: Nama Dompet */}
                   <div>
-                    <label className="block text-xs font-semibold text-[#0F172A] dark:text-white mb-1.5">
+                    <label className="block text-xs font-semibold text-[#0F172A] dark:text-[#F8FAFC] mb-1.5">
                       Nama Dompet <span className="text-rose-500">*</span>
                     </label>
                     <input
@@ -1771,14 +1789,14 @@
                       onBlur={handleGlobalInputBlur}
                       onChange={(e) => setWalletName(e.target.value)}
                       placeholder="e.g. BCA Utama, Cash"
-                      className="w-full px-3.5 py-3 bg-white dark:bg-[#181818] border border-slate-200 dark:border-[#27272A] rounded-xl text-sm font-medium text-[#0F172A] dark:text-white focus:outline-none focus:border-[#0284C7] dark:focus:border-sky-400 transition-colors"
+                      className="w-full px-3.5 py-3 bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-xl text-sm font-medium text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:border-[#0284C7] dark:focus:border-[#38BDF8] transition-colors"
                       autoFocus
                     />
                   </div>
 
                   {/* Field 2: Kategori (3 Segmented Buttons: [Tunai] [Bank] [E-Wallet]) */}
                   <div>
-                    <label className="block text-xs font-semibold text-[#0F172A] dark:text-white mb-1.5">
+                    <label className="block text-xs font-semibold text-[#0F172A] dark:text-[#F8FAFC] mb-1.5">
                       Kategori
                     </label>
                     <div className="grid grid-cols-3 gap-2">
@@ -1795,8 +1813,8 @@
                             onClick={() => setWalletType(item.id)}
                             className={`py-2.5 px-2 text-center rounded-xl border text-xs font-medium flex flex-col items-center gap-1.5 transition-all ios-btn-tap ${
                               isSelected
-                                ? 'bg-[#E0F2FE] dark:bg-[#141414] border-[#0284C7] dark:border-[#38BDF8] text-[#0284C7] dark:text-[#38BDF8] font-bold shadow-sm'
-                                : 'bg-white dark:bg-[#181818] border-slate-200 dark:border-[#27272A] text-[#64748B] dark:text-zinc-400 hover:bg-slate-50 dark:hover:bg-[#202022]'
+                                ? 'bg-[#E0F2FE] dark:bg-[#1E293B] border-[#0284C7] dark:border-[#38BDF8] text-[#0284C7] dark:text-[#38BDF8] font-bold shadow-sm'
+                                : 'bg-white dark:bg-[#0F172A] border-slate-200 dark:border-[#334155] text-[#64748B] dark:text-[#94A3B8] hover:bg-slate-50 dark:hover:bg-[#1E293B]'
                             }`}
                           >
                             <Icon name={item.icon} className="w-5 h-5 flex-shrink-0 aspect-square" />
@@ -1809,7 +1827,7 @@
 
                   {/* Field 3: Saldo Awal */}
                   <div>
-                    <label className="block text-xs font-semibold text-[#0F172A] dark:text-white mb-1.5">
+                    <label className="block text-xs font-semibold text-[#0F172A] dark:text-[#F8FAFC] mb-1.5">
                       Saldo Awal
                     </label>
                     <div className="relative">
@@ -1824,10 +1842,10 @@
                           setInitialBalance(num ? num.toString() : '');
                         }}
                         placeholder="Rp 0"
-                        className="w-full px-3.5 py-3 bg-white dark:bg-[#181818] border border-slate-200 dark:border-[#27272A] rounded-xl text-base font-bold text-[#0F172A] dark:text-white focus:outline-none focus:border-[#0284C7] dark:focus:border-sky-400 transition-colors"
+                        className="w-full px-3.5 py-3 bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-xl text-base font-bold text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:border-[#0284C7] dark:focus:border-[#38BDF8] transition-colors"
                       />
                     </div>
-                    <span className="text-[11px] text-[#64748B] dark:text-zinc-400 mt-1 block">
+                    <span className="text-[11px] text-[#64748B] dark:text-[#94A3B8] mt-1 block">
                       Jumlah saldo yang kamu miliki saat ini
                     </span>
                   </div>
@@ -1839,7 +1857,7 @@
                 <button
                   type="button"
                   onClick={() => setOnboardingStep(2)}
-                  className="py-3 px-4 bg-[#F8FAFC] dark:bg-[#141414] border border-[#E2E8F0] dark:border-[#27272A] text-[#0F172A] dark:text-white text-sm font-semibold rounded-xl hover:bg-slate-100 dark:hover:bg-[#1C1C1C] transition-colors ios-btn-tap shrink-0"
+                  className="py-3 px-4 bg-[#F0F9FF] dark:bg-[#1E293B] border border-[#E0F2FE] dark:border-[#334155] text-[#0F172A] dark:text-[#F8FAFC] text-sm font-semibold rounded-xl hover:bg-sky-50 dark:hover:bg-[#273549] transition-colors ios-btn-tap shrink-0"
                 >
                   Kembali
                 </button>
@@ -2319,7 +2337,26 @@
       }, [safeDebts, filterTab]);
 
       return (
-        <div className="space-y-4 pb-28">
+        <div className="space-y-4 pb-28 animate-ios-tab-view">
+          {/* Page Title & Add Button */}
+          <div className="flex items-center justify-between pt-1">
+            <div>
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">Hutang & Piutang</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Kelola pinjaman dan jatuh tempo</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedDebt(null);
+                setIsModalOpen(true);
+              }}
+              className="px-4 py-2.5 bg-brand hover:bg-brand-hover text-white text-xs font-bold rounded-2xl flex items-center gap-2 shadow-sm transition-all ios-btn-tap"
+            >
+              <Icon name="plus" className="w-4 h-4" strokeWidth={2.4} />
+              <span>Catat Baru</span>
+            </button>
+          </div>
+
           {/* Header Summary */}
           <div className="grid grid-cols-2 gap-3">
             <div className="ios-inset-group">
@@ -2340,7 +2377,7 @@
             </div>
           </div>
 
-          {/* Action Bar */}
+          {/* Action Bar & Filter */}
           <div className="flex items-center justify-between gap-2">
             <div className="flex p-1 bg-slate-100 dark:bg-slate-800 rounded-xl text-xs font-semibold">
               {['ALL', 'HUTANG', 'PIUTANG'].map(tab => (
@@ -2348,9 +2385,9 @@
                   key={tab}
                   type="button"
                   onClick={() => setFilterTab(tab)}
-                  className={`px-3 py-1.5 rounded-lg transition-colors ios-btn-tap ${
+                  className={`px-3.5 py-1.5 rounded-lg transition-colors ios-btn-tap ${
                     filterTab === tab
-                      ? 'bg-white dark:bg-slate-700 text-brand dark:text-white shadow-sm'
+                      ? 'bg-white dark:bg-slate-700 text-brand dark:text-white shadow-sm font-bold'
                       : 'text-slate-500 dark:text-slate-400'
                   }`}
                 >
@@ -2365,9 +2402,9 @@
                 setSelectedDebt(null);
                 setIsModalOpen(true);
               }}
-              className="px-3.5 py-2 bg-brand text-white text-xs font-semibold rounded-xl hover:bg-brand-hover flex items-center gap-1.5 shadow-sm ios-btn-tap"
+              className="px-3 py-1.5 bg-sky-50 dark:bg-slate-800 text-brand dark:text-sky-400 text-xs font-bold rounded-xl border border-sky-200/60 dark:border-slate-700 flex items-center gap-1.5 shadow-sm ios-btn-tap hover:bg-sky-100"
             >
-              <Icon name="plus" className="w-4 h-4" />
+              <Icon name="plus" className="w-3.5 h-3.5" />
               <span>Tambah</span>
             </button>
           </div>
@@ -2375,11 +2412,22 @@
           {/* Debt List */}
           {filteredList.length === 0 ? (
             <div className="ios-inset-group text-center py-10">
-              <IconBadge icon="receipt" className="w-12 h-12 rounded-2xl bg-sky-50 dark:bg-slate-800 text-brand mx-auto mb-2" iconClass="w-6 h-6" />
+              <IconBadge icon="receipt" className="w-14 h-14 rounded-2xl bg-sky-50 dark:bg-slate-800 text-brand mx-auto mb-3" iconClass="w-7 h-7" />
               <h3 className="text-sm font-bold text-slate-800 dark:text-white">Belum Ada Catatan Hutang / Piutang</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xs mx-auto">
-                Catat pinjaman atau uang yang dipinjam teman agar tidak terlewat tanggal jatuh tempo.
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xs mx-auto mb-4">
+                Catat pinjaman pribadi atau uang yang sedang dipinjam rekan agar tertata rapi.
               </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedDebt(null);
+                  setIsModalOpen(true);
+                }}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand hover:bg-brand-hover text-white text-xs font-bold rounded-xl shadow-sm transition-colors ios-btn-tap mx-auto"
+              >
+                <Icon name="plus" className="w-4 h-4" />
+                <span>Mulai Buat Catatan</span>
+              </button>
             </div>
           ) : (
             <div className="ios-inset-group space-y-3">
@@ -3421,29 +3469,37 @@
       };
 
       return (
-        <div className="space-y-4 pb-28">
-          <div className="flex items-center justify-between">
+        <div className="space-y-4 pb-28 animate-ios-tab-view">
+          <div className="flex items-center justify-between pt-1">
             <div>
-              <h2 className="text-base font-bold text-slate-900 dark:text-white">Kantong Impian</h2>
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">Kantong Impian</h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">Wujudkan target tabungan kamu</p>
             </div>
             <button
               type="button"
               onClick={onOpenNewGoal}
-              className="px-3.5 py-1.5 bg-brand text-white text-xs font-semibold rounded-xl hover:bg-brand-hover flex items-center gap-1.5 shadow-sm ios-btn-tap"
+              className="px-4 py-2.5 bg-brand hover:bg-brand-hover text-white text-xs font-bold rounded-2xl flex items-center gap-2 shadow-sm transition-all ios-btn-tap"
             >
-              <Icon name="plus" className="w-4 h-4" />
+              <Icon name="plus" className="w-4 h-4" strokeWidth={2.4} />
               <span>Target Baru</span>
             </button>
           </div>
 
           {safeGoals.length === 0 ? (
             <div className="ios-inset-group text-center py-10">
-              <IconBadge icon="target" className="w-12 h-12 rounded-2xl bg-sky-50 dark:bg-slate-800 text-brand mx-auto mb-2" iconClass="w-6 h-6" />
+              <IconBadge icon="target" className="w-14 h-14 rounded-2xl bg-sky-50 dark:bg-slate-800 text-brand mx-auto mb-3" iconClass="w-7 h-7" />
               <h3 className="text-sm font-bold text-slate-800 dark:text-white">Belum Ada Target Impian</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xs mx-auto">
-                Beli gadget baru, liburan, atau dana darurat? Buat target impian pertamamu sekarang.
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xs mx-auto mb-4">
+                Beli gadget baru, liburan, motor, atau dana darurat? Buat target impian pertamamu sekarang.
               </p>
+              <button
+                type="button"
+                onClick={onOpenNewGoal}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand hover:bg-brand-hover text-white text-xs font-bold rounded-xl shadow-sm transition-colors ios-btn-tap mx-auto"
+              >
+                <Icon name="plus" className="w-4 h-4" />
+                <span>Buat Target Impian Baru</span>
+              </button>
             </div>
           ) : (
             <div className="space-y-3">
@@ -3704,7 +3760,7 @@
       const totals = useMemo(() => Ledger.getSummaryTotals(safeTxs), [safeTxs]);
 
       return (
-        <div className="space-y-4 pb-28">
+        <div className="space-y-4 pb-28 animate-ios-tab-view">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-base font-bold text-slate-900 dark:text-white">Analisis & Tren Keuangan</h2>
@@ -3876,141 +3932,41 @@
         { id: 'analytics', label: 'Statistik', icon: 'pie-chart' }
       ];
 
-      const navRef = useRef(null);
-      const isDraggingRef = useRef(false);
-      const [isDragging, setIsDragging] = useState(false);
-      const tabRefs = useRef({});
-      const [pillBounds, setPillBounds] = useState({ left: 8, width: 80 });
-
-      const updatePillPosition = useCallback(() => {
-        const activeEl = tabRefs.current[currentTab];
-        if (activeEl && navRef.current) {
-          const navRect = navRef.current.getBoundingClientRect();
-          const tabRect = activeEl.getBoundingClientRect();
-          setPillBounds({
-            left: tabRect.left - navRect.left,
-            width: tabRect.width
-          });
-        }
-      }, [currentTab]);
-
-      useEffect(() => {
-        updatePillPosition();
-        const timer = setTimeout(updatePillPosition, 50);
-        window.addEventListener('resize', updatePillPosition);
-        return () => {
-          clearTimeout(timer);
-          window.removeEventListener('resize', updatePillPosition);
-        };
-      }, [updatePillPosition]);
-
-      const handlePointerMove = (clientX) => {
-        if (!navRef.current) return;
-        const rect = navRef.current.getBoundingClientRect();
-        if (rect.width <= 0) return;
-        const relativeX = clientX - rect.left;
-        const fraction = Math.max(0, Math.min(0.999, relativeX / rect.width));
-        const index = Math.floor(fraction * tabs.length);
-        const targetTab = tabs[index];
-        if (targetTab && targetTab.id !== currentTab) {
-          onSelectTab(targetTab.id);
-        }
-      };
-
-      const handleTouchStart = (e) => {
-        isDraggingRef.current = true;
-        setIsDragging(true);
-        if (e.touches && e.touches[0]) {
-          handlePointerMove(e.touches[0].clientX);
-        }
-      };
-
-      const handleTouchMove = (e) => {
-        if (!isDraggingRef.current) return;
-        if (e.cancelable) {
-          e.preventDefault();
-        }
-        if (e.touches && e.touches[0]) {
-          handlePointerMove(e.touches[0].clientX);
-        }
-      };
-
-      const handleTouchEnd = () => {
-        isDraggingRef.current = false;
-        setIsDragging(false);
-      };
-
-      const handleMouseDown = (e) => {
-        isDraggingRef.current = true;
-        setIsDragging(true);
-        handlePointerMove(e.clientX);
-      };
-
-      const handleMouseMove = (e) => {
-        if (!isDraggingRef.current) return;
-        handlePointerMove(e.clientX);
-      };
-
-      const handleMouseUp = () => {
-        isDraggingRef.current = false;
-        setIsDragging(false);
-      };
-
-      useEffect(() => {
-        const onGlobalMouseUp = () => {
-          if (isDraggingRef.current) {
-            isDraggingRef.current = false;
-            setIsDragging(false);
-          }
-        };
-        window.addEventListener('mouseup', onGlobalMouseUp);
-        return () => window.removeEventListener('mouseup', onGlobalMouseUp);
-      }, []);
+      const activeIndex = Math.max(0, tabs.findIndex(t => t.id === currentTab));
 
       return (
         <nav
-          ref={navRef}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-          onTouchCancel={handleTouchEnd}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          className={`relative w-[88%] max-w-[360px] h-14 rounded-full mx-auto fixed bottom-5 left-0 right-0 z-50 bg-white dark:bg-[#1E293B] border border-[#E0F2FE] dark:border-[#334155] shadow-md flex items-center justify-around px-2 select-none cursor-grab active:cursor-grabbing transition-transform duration-200 ${
-            isDragging ? 'scale-[0.98]' : ''
-          }`}
-          style={{ touchAction: 'none' }}
+          className="fixed bottom-5 left-0 right-0 z-50 w-[92%] max-w-[360px] h-14 mx-auto rounded-full bg-white/95 backdrop-blur-md dark:bg-[#1E293B]/95 border border-slate-200/90 dark:border-[#334155] shadow-[0_8px_30px_rgba(15,23,42,0.12)] flex items-center p-1.5 select-none"
         >
-          {/* Liquid Physics Gliding Active Pill */}
+          {/* Active Sliding Pill - Smooth Apple Spring Curve */}
           <div
-            className="absolute top-2 bottom-2 rounded-full bg-[#E0F2FE] dark:bg-[#334155] pointer-events-none transition-all duration-300"
+            className="absolute top-1.5 bottom-1.5 rounded-full bg-[#0284C7] dark:bg-[#38BDF8] shadow-sm pointer-events-none transition-all duration-300"
             style={{
-              left: `${pillBounds.left}px`,
-              width: `${pillBounds.width}px`,
+              left: `calc(${activeIndex * 25}% + 4px)`,
+              width: 'calc(25% - 8px)',
               transitionTimingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)'
             }}
           />
 
-          {tabs.map((t) => {
-            const isActive = currentTab === t.id;
+          {tabs.map((t, idx) => {
+            const isActive = idx === activeIndex;
             return (
               <button
                 key={t.id}
-                ref={(el) => { tabRefs.current[t.id] = el; }}
                 type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSelectTab(t.id);
-                }}
-                className={`relative z-10 transition-colors duration-200 ios-btn-tap ${
-                  isActive
-                    ? 'text-[#0284C7] dark:text-[#38BDF8] rounded-full px-3 py-1.5 font-bold text-xs flex items-center gap-1.5'
-                    : 'text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#F8FAFC] p-2 rounded-full flex items-center gap-1'
-                }`}
+                onClick={() => onSelectTab(t.id)}
+                className="flex-1 h-full relative z-10 flex items-center justify-center rounded-full transition-colors duration-200 ios-btn-tap"
               >
-                <Icon name={t.icon} className="w-5 h-5 flex-shrink-0 aspect-square" strokeWidth={2} />
-                {isActive && <span className="whitespace-nowrap font-bold text-xs">{t.label}</span>}
+                <Icon
+                  name={t.icon}
+                  className={`w-5 h-5 flex-shrink-0 aspect-square ${isActive ? 'text-white dark:text-[#0F172A]' : 'text-slate-500 dark:text-slate-400'}`}
+                  strokeWidth={isActive ? 2.4 : 1.8}
+                />
+                {isActive && (
+                  <span className="whitespace-nowrap font-bold text-xs text-white dark:text-[#0F172A] ml-1.5 hidden min-[320px]:inline">
+                    {t.label}
+                  </span>
+                )}
               </button>
             );
           })}
@@ -4246,7 +4202,7 @@
       }, [safeTransactions, filterType, selectedAccountFilter, selectedCategoryFilter, searchQuery]);
 
       return (
-        <div className="space-y-4 pb-28">
+        <div className="space-y-4 pb-28 animate-ios-tab-view">
           {/* iOS Profile Header Bar - Direct Route to Settings on Tap */}
           <div className="flex items-center justify-between pt-1">
             <div
@@ -4279,42 +4235,42 @@
           </div>
 
           {/* Hero Balance Card - Solid Sky Blue Color Lock (Strictly NO Gradients) */}
-          <div className="ios-inset-group bg-brand text-white dark:bg-[#1E293B] border-none dark:border dark:border-slate-700/60 shadow-md transition-colors duration-300 ease-in-out">
-            <div className="flex items-center justify-between text-sky-100 dark:text-slate-400 mb-1">
-              <span className="text-[11px] font-bold uppercase tracking-wider">Total Saldo Brankas</span>
+          <div className="rounded-[22px] p-5 bg-[#0284C7] dark:bg-[#1E293B] text-white border border-[#0369A1] dark:border-[#334155] shadow-md transition-colors duration-300 ease-in-out">
+            <div className="flex items-center justify-between text-sky-100 dark:text-slate-400 mb-1.5">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-sky-100 dark:text-slate-400">Total Saldo Brankas</span>
               <button
                 type="button"
                 onClick={onToggleHideBalance}
                 className="p-1 text-sky-100 dark:text-slate-400 hover:text-white transition-colors ios-btn-tap"
                 aria-label="Sensor Saldo"
               >
-                <Icon name={hideBalance ? 'eye-off' : 'eye'} className="w-4 h-4" />
+                <Icon name={hideBalance ? 'eye-off' : 'eye'} className="w-4 h-4 text-sky-100 dark:text-slate-400" />
               </button>
             </div>
 
-            <div className="text-2xl whitespace-nowrap truncate font-bold tracking-tight mb-4 text-white">
+            <div className="text-2xl whitespace-nowrap truncate font-extrabold tracking-tight mb-4 text-white">
               {hideBalance ? 'Rp ••••••••' : formatIDR(totalBalance)}
             </div>
 
-            <div className="grid grid-cols-2 gap-2 pt-3 border-t border-sky-400/40 dark:border-slate-700/60">
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-200 flex items-center justify-center">
-                  <Icon name="arrow-down-left" className="w-4 h-4" />
+            <div className="grid grid-cols-2 gap-2 pt-3 border-t border-sky-400/50 dark:border-slate-700/60">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-emerald-500/25 text-emerald-100 flex items-center justify-center shrink-0">
+                  <Icon name="arrow-down-left" className="w-4 h-4 text-emerald-200" strokeWidth={2.5} />
                 </div>
                 <div className="min-w-0">
-                  <span className="text-[10px] text-sky-100 dark:text-slate-400 block leading-tight">Masuk (Bln Ini)</span>
+                  <span className="text-[10px] text-sky-100 dark:text-slate-400 block leading-tight font-medium">Masuk (Bln Ini)</span>
                   <span className="text-xs whitespace-nowrap truncate font-bold text-white block">
                     {hideBalance ? 'Rp ••••••' : formatIDR(monthSummary.income)}
                   </span>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-rose-500/20 text-rose-200 flex items-center justify-center">
-                  <Icon name="arrow-up-right" className="w-4 h-4" />
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-rose-500/25 text-rose-100 flex items-center justify-center shrink-0">
+                  <Icon name="arrow-up-right" className="w-4 h-4 text-rose-200" strokeWidth={2.5} />
                 </div>
                 <div className="min-w-0">
-                  <span className="text-[10px] text-sky-100 dark:text-slate-400 block leading-tight">Keluar (Bln Ini)</span>
+                  <span className="text-[10px] text-sky-100 dark:text-slate-400 block leading-tight font-medium">Keluar (Bln Ini)</span>
                   <span className="text-xs whitespace-nowrap truncate font-bold text-white block">
                     {hideBalance ? 'Rp ••••••' : formatIDR(monthSummary.expense)}
                   </span>
@@ -4323,23 +4279,39 @@
             </div>
           </div>
 
-          {/* Quick Action Button Bar */}
-          <div className="grid grid-cols-2 gap-2">
+          {/* Quick Action Button Bar: Catat, Dompet, Hutang, & Impian */}
+          <div className="grid grid-cols-4 gap-2">
             <button
               type="button"
               onClick={onOpenAddTx}
-              className="py-3 px-4 bg-brand hover:bg-brand-hover text-white text-xs font-bold rounded-2xl flex items-center justify-center gap-2 shadow-sm transition-colors ios-btn-tap"
+              className="py-2.5 px-2 bg-brand hover:bg-brand-hover text-white rounded-2xl flex flex-col items-center justify-center gap-1 shadow-sm transition-all ios-btn-tap"
             >
-              <Icon name="plus" className="w-4 h-4" strokeWidth={2.2} />
-              <span>Catat Mutasi</span>
+              <Icon name="plus" className="w-4 h-4" strokeWidth={2.4} />
+              <span className="text-[11px] font-bold whitespace-nowrap">Catat</span>
             </button>
             <button
               type="button"
               onClick={onOpenAccounts}
-              className="py-3 px-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold rounded-2xl flex items-center justify-center gap-2 shadow-sm transition-colors ios-btn-tap"
+              className="py-2.5 px-2 bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-2xl flex flex-col items-center justify-center gap-1 shadow-sm transition-all ios-btn-tap hover:border-brand/40"
             >
               <Icon name="wallet" className="w-4 h-4 text-brand dark:text-sky-400" />
-              <span>Dompet ({safeAccounts.length})</span>
+              <span className="text-[11px] font-bold whitespace-nowrap">Dompet</span>
+            </button>
+            <button
+              type="button"
+              onClick={onOpenDebts}
+              className="py-2.5 px-2 bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-2xl flex flex-col items-center justify-center gap-1 shadow-sm transition-all ios-btn-tap hover:border-brand/40"
+            >
+              <Icon name="receipt" className="w-4 h-4 text-amber-500" />
+              <span className="text-[11px] font-bold whitespace-nowrap">Hutang</span>
+            </button>
+            <button
+              type="button"
+              onClick={onOpenSavings}
+              className="py-2.5 px-2 bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-2xl flex flex-col items-center justify-center gap-1 shadow-sm transition-all ios-btn-tap hover:border-brand/40"
+            >
+              <Icon name="target" className="w-4 h-4 text-emerald-500" />
+              <span className="text-[11px] font-bold whitespace-nowrap">Impian</span>
             </button>
           </div>
 
@@ -4879,7 +4851,7 @@
       }
 
       return (
-        <div className="h-[100dvh] flex flex-col bg-white dark:bg-[#0F172A] text-[#0F172A] dark:text-[#F8FAFC] overflow-hidden select-none transition-colors duration-300 ease-in-out">
+        <div className="h-[100dvh] flex flex-col bg-slate-50 dark:bg-[#0F172A] text-[#0F172A] dark:text-[#F8FAFC] overflow-hidden select-none transition-colors duration-300 ease-in-out">
           {toastMsg && <Toast message={toastMsg} onClose={() => setToastMsg('')} />}
 
           <main

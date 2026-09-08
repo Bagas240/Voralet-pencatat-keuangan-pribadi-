@@ -47,7 +47,7 @@ PART4_AUTH_PIN = """
                     ? 'border-2 border-rose-500 bg-rose-500/10 scale-105'
                     : isFilled
                       ? 'border-2 border-[#0284C7] dark:border-[#38BDF8] bg-transparent'
-                      : 'border-2 border-slate-300 dark:border-zinc-700 bg-slate-100/90 dark:bg-zinc-900 shadow-inner'
+                      : 'border-2 border-slate-300 dark:border-slate-700 bg-slate-100/90 dark:bg-slate-800'
                 }`}
               >
                 {isFilled && (
@@ -55,7 +55,7 @@ PART4_AUTH_PIN = """
                     className={`w-2.5 h-2.5 rounded-full transition-all duration-200 ${
                       isError
                         ? 'bg-rose-500'
-                        : 'bg-[#0284C7] dark:bg-[#38BDF8] shadow-[0_0_8px_rgba(2,132,199,0.5)] dark:shadow-[0_0_10px_rgba(56,189,248,0.6)]'
+                        : 'bg-[#0284C7] dark:bg-[#38BDF8]'
                     } ${isLatest && !isError ? 'animate-ios-pin-pop' : ''}`}
                   />
                 )}
@@ -79,7 +79,7 @@ PART4_AUTH_PIN = """
                   key={i}
                   type="button"
                   onClick={onBackspace}
-                  className="h-14 rounded-2xl flex items-center justify-center text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-[#181818] active:bg-slate-200 dark:active:bg-[#222222] transition-colors ios-keypad-btn"
+                  className="h-14 rounded-2xl flex items-center justify-center text-slate-600 dark:text-[#94A3B8] hover:bg-slate-100 dark:hover:bg-[#1E293B] active:bg-slate-200 dark:active:bg-[#334155] transition-colors ios-keypad-btn"
                   aria-label="Hapus"
                 >
                   <Icon name="backspace" className="w-6 h-6" strokeWidth={1.8} />
@@ -91,7 +91,7 @@ PART4_AUTH_PIN = """
                 key={i}
                 type="button"
                 onClick={() => onKeyPress(k)}
-                className="h-14 rounded-2xl flex items-center justify-center text-xl font-semibold text-slate-800 dark:text-white bg-white dark:bg-[#141414] border border-slate-200 dark:border-[#27272A] hover:bg-slate-50 dark:hover:bg-[#1C1C1C] transition-colors shadow-sm ios-keypad-btn"
+                className="h-14 rounded-2xl flex items-center justify-center text-xl font-semibold text-[#0F172A] dark:text-[#F8FAFC] bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155] hover:bg-slate-50 dark:hover:bg-[#273549] transition-colors shadow-sm ios-keypad-btn"
               >
                 {k}
               </button>
@@ -322,17 +322,17 @@ PART4_AUTH_PIN = """
       };
 
       return (
-        <div className="pin-keypad-screen flex flex-col justify-between p-6 bg-white dark:bg-black max-w-md mx-auto transition-colors duration-300 ease-in-out">
+        <div className="pin-keypad-screen flex flex-col justify-between p-6 bg-white dark:bg-[#0F172A] max-w-md mx-auto transition-colors duration-300 ease-in-out">
           <div>
             <div className="flex items-center justify-between pt-2">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-100 dark:bg-[#141414] border border-sky-200 dark:border-[#27272A] text-brand dark:text-sky-400 text-xs font-bold">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E0F2FE] dark:bg-[#1E293B] border border-[#BAE6FD] dark:border-[#334155] text-[#0284C7] dark:text-[#38BDF8] text-xs font-bold">
                 <Icon name="wallet" className="w-4 h-4" />
                 <span>Voralet</span>
               </div>
               <button
                 type="button"
                 onClick={onToggleTheme}
-                className="w-9 h-9 rounded-full flex items-center justify-center text-slate-500 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-[#181818] transition-colors ios-btn-tap"
+                className="w-9 h-9 rounded-full flex items-center justify-center text-[#64748B] dark:text-[#94A3B8] hover:bg-slate-100 dark:hover:bg-[#1E293B] transition-colors ios-btn-tap"
                 aria-label="Mode Gelap / Terang"
               >
                 <Icon name={theme === 'dark' ? 'sun' : 'moon'} className="w-5 h-5" />
@@ -345,17 +345,17 @@ PART4_AUTH_PIN = """
                   <Avatar avatar={avatar} name={userName} size="w-16 h-16" textSize="text-xl" />
                 </div>
               ) : (
-                <div className="w-16 h-16 rounded-[22px] bg-sky-50 dark:bg-[#121212] border border-sky-100 dark:border-[#27272A] flex items-center justify-center mb-3 text-brand dark:text-sky-400">
+                <div className="w-16 h-16 rounded-[22px] bg-[#F0F9FF] dark:bg-[#1E293B] border border-[#E0F2FE] dark:border-[#334155] flex items-center justify-center mb-3 text-[#0284C7] dark:text-[#38BDF8]">
                   <Icon name="lock" className="w-7 h-7" strokeWidth={1.8} />
                 </div>
               )}
-              <h1 className="text-xl font-bold text-slate-900 dark:text-white">
+              <h1 className="text-xl font-bold text-[#0F172A] dark:text-[#F8FAFC]">
                 {userName ? `Hai, ${userName}` : 'Kunci Brankas'}
               </h1>
               {username && (
-                <p className="text-xs font-mono text-brand dark:text-sky-400 font-semibold mt-0.5">@{username}</p>
+                <p className="text-xs font-mono text-[#0284C7] dark:text-[#38BDF8] font-semibold mt-0.5">@{username}</p>
               )}
-              <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">Masukkan 6-digit PIN untuk akses brankas</p>
+              <p className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-1">Masukkan 6-digit PIN untuk akses brankas</p>
 
               <PinDots count={6} filled={pin.length} isError={error} />
               {error && (
@@ -370,7 +370,7 @@ PART4_AUTH_PIN = """
               <button
                 type="button"
                 onClick={() => setIsForgotModalOpen(true)}
-                className="text-xs font-medium text-slate-400 hover:text-brand dark:text-zinc-500 dark:hover:text-sky-400 transition-colors py-1 px-3"
+                className="text-xs font-medium text-[#64748B] hover:text-[#0284C7] dark:text-[#94A3B8] dark:hover:text-[#38BDF8] transition-colors py-1 px-3"
               >
                 Lupa PIN?
               </button>
@@ -485,21 +485,21 @@ PART4_AUTH_PIN = """
       };
 
       return (
-        <div className="min-h-[100dvh] w-full flex flex-col justify-between p-6 bg-white dark:bg-black max-w-md mx-auto transition-colors duration-300 ease-in-out text-[#0F172A] dark:text-white">
+        <div className="min-h-[100dvh] w-full flex flex-col justify-between p-6 bg-white dark:bg-[#0F172A] max-w-md mx-auto transition-colors duration-300 ease-in-out text-[#0F172A] dark:text-[#F8FAFC]">
           {/* STEP 1: Buat 6-Digit PIN Security */}
           {onboardingStep === 1 && (
             <div className="pin-keypad-screen flex flex-col justify-between w-full">
               <div className="pt-6 text-center">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E0F2FE] dark:bg-[#141414] border border-[#BAE6FD] dark:border-[#27272A] text-[#0284C7] dark:text-[#38BDF8] text-xs font-bold mb-4">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E0F2FE] dark:bg-[#1E293B] border border-[#BAE6FD] dark:border-[#334155] text-[#0284C7] dark:text-[#38BDF8] text-xs font-bold mb-4">
                   <span>Langkah 1 dari 3</span>
                 </div>
-                <div className="w-16 h-16 rounded-[22px] bg-[#F0F9FF] dark:bg-[#121212] border border-[#E0F2FE] dark:border-[#27272A] flex items-center justify-center mx-auto mb-3 text-[#0284C7] dark:text-[#38BDF8]">
+                <div className="w-16 h-16 rounded-[22px] bg-[#F0F9FF] dark:bg-[#1E293B] border border-[#E0F2FE] dark:border-[#334155] flex items-center justify-center mx-auto mb-3 text-[#0284C7] dark:text-[#38BDF8]">
                   <Icon name="lock" className="w-7 h-7" strokeWidth={1.8} />
                 </div>
-                <h1 className="text-xl font-bold text-[#0F172A] dark:text-white">
+                <h1 className="text-xl font-bold text-[#0F172A] dark:text-[#F8FAFC]">
                   Buat 6-Digit PIN Security
                 </h1>
-                <p className="text-xs text-[#64748B] dark:text-zinc-400 mt-1">
+                <p className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-1">
                   PIN digunakan untuk mengamankan brankas lokal kamu
                 </p>
 
@@ -526,7 +526,7 @@ PART4_AUTH_PIN = """
                   className={`w-full py-3.5 rounded-xl font-bold text-sm transition-all ios-btn-tap ${
                     newPin.length === 6
                       ? 'bg-[#0284C7] hover:bg-[#0369A1] text-white shadow-sm cursor-pointer'
-                      : 'bg-slate-100 dark:bg-[#141414] border border-transparent dark:border-[#27272A] text-[#64748B] dark:text-zinc-500 opacity-60 cursor-not-allowed'
+                      : 'bg-slate-100 dark:bg-[#1E293B] border border-transparent dark:border-[#334155] text-[#64748B] dark:text-[#94A3B8] opacity-60 cursor-not-allowed'
                   }`}
                 >
                   Lanjut
@@ -540,11 +540,11 @@ PART4_AUTH_PIN = """
             <div className="flex-1 flex flex-col justify-between w-full py-4 overflow-y-auto no-scrollbar">
               <div className="pt-4">
                 <div className="text-center mb-6">
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E0F2FE] dark:bg-[#141414] border border-[#BAE6FD] dark:border-[#27272A] text-[#0284C7] dark:text-[#38BDF8] text-xs font-bold mb-3">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E0F2FE] dark:bg-[#1E293B] border border-[#BAE6FD] dark:border-[#334155] text-[#0284C7] dark:text-[#38BDF8] text-xs font-bold mb-3">
                     <span>Langkah 2 dari 3</span>
                   </div>
-                  <h1 className="text-xl font-bold text-[#0F172A] dark:text-white">Atur Profil Kamu</h1>
-                  <p className="text-xs text-[#64748B] dark:text-zinc-400 mt-1">
+                  <h1 className="text-xl font-bold text-[#0F172A] dark:text-[#F8FAFC]">Atur Profil Kamu</h1>
+                  <p className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-1">
                     Atur nama dan username untuk brankas keuanganmu
                   </p>
                 </div>
@@ -570,12 +570,12 @@ PART4_AUTH_PIN = """
                       }}
                     />
                   </div>
-                  <span className="text-[11px] text-[#64748B] dark:text-zinc-400 mt-2">Foto Profil (Opsional)</span>
+                  <span className="text-[11px] text-[#64748B] dark:text-[#94A3B8] mt-2">Foto Profil (Opsional)</span>
                 </div>
 
-                <form id="step2-form" onSubmit={handleStep2Next} className="space-y-4 ios-inset-group bg-[#F8FAFC] dark:bg-[#121212] border border-[#E2E8F0] dark:border-[#27272A] rounded-[22px] p-4">
+                <form id="step2-form" onSubmit={handleStep2Next} className="space-y-4 ios-inset-group bg-[#F0F9FF] dark:bg-[#1E293B] border border-[#E0F2FE] dark:border-[#334155] rounded-[22px] p-4">
                   <div>
-                    <label className="block text-xs font-semibold text-[#0F172A] dark:text-white mb-1.5">
+                    <label className="block text-xs font-semibold text-[#0F172A] dark:text-[#F8FAFC] mb-1.5">
                       Nama Panggilan <span className="text-rose-500">*</span>
                     </label>
                     <input
@@ -594,17 +594,17 @@ PART4_AUTH_PIN = """
                         }
                       }}
                       placeholder="Misal: Bagas"
-                      className="w-full px-3.5 py-3 bg-white dark:bg-[#181818] border border-slate-200 dark:border-[#27272A] rounded-xl text-sm font-medium text-[#0F172A] dark:text-white focus:outline-none focus:border-[#0284C7] dark:focus:border-sky-400 transition-colors"
+                      className="w-full px-3.5 py-3 bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-xl text-sm font-medium text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:border-[#0284C7] dark:focus:border-[#38BDF8] transition-colors"
                       autoFocus
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-[#0F172A] dark:text-white mb-1.5">
+                    <label className="block text-xs font-semibold text-[#0F172A] dark:text-[#F8FAFC] mb-1.5">
                       Username
                     </label>
                     <div className="relative">
-                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#64748B] dark:text-zinc-400 font-mono text-sm font-bold">@</span>
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#64748B] dark:text-[#94A3B8] font-mono text-sm font-bold">@</span>
                       <input
                         type="text"
                         required
@@ -617,10 +617,10 @@ PART4_AUTH_PIN = """
                           setIdentityError('');
                         }}
                         placeholder="bagas"
-                        className="w-full pl-8 pr-3.5 py-3 bg-white dark:bg-[#181818] border border-slate-200 dark:border-[#27272A] rounded-xl text-sm font-mono text-[#0F172A] dark:text-white focus:outline-none focus:border-[#0284C7] dark:focus:border-sky-400 transition-colors"
+                        className="w-full pl-8 pr-3.5 py-3 bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-xl text-sm font-mono text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:border-[#0284C7] dark:focus:border-[#38BDF8] transition-colors"
                       />
                     </div>
-                    <span className="text-[11px] text-[#64748B] dark:text-zinc-400 mt-1 block">
+                    <span className="text-[11px] text-[#64748B] dark:text-[#94A3B8] mt-1 block">
                       Contoh: @bagas (digunakan untuk verifikasi pemulihan PIN)
                     </span>
                   </div>
@@ -635,7 +635,7 @@ PART4_AUTH_PIN = """
                 <button
                   type="button"
                   onClick={() => setOnboardingStep(1)}
-                  className="py-3 px-4 bg-[#F8FAFC] dark:bg-[#141414] border border-[#E2E8F0] dark:border-[#27272A] text-[#0F172A] dark:text-white text-sm font-semibold rounded-xl hover:bg-slate-100 dark:hover:bg-[#1C1C1C] transition-colors ios-btn-tap shrink-0"
+                  className="py-3 px-4 bg-[#F0F9FF] dark:bg-[#1E293B] border border-[#E0F2FE] dark:border-[#334155] text-[#0F172A] dark:text-[#F8FAFC] text-sm font-semibold rounded-xl hover:bg-sky-50 dark:hover:bg-[#273549] transition-colors ios-btn-tap shrink-0"
                 >
                   Kembali
                 </button>
@@ -655,19 +655,19 @@ PART4_AUTH_PIN = """
             <div className="flex-1 flex flex-col justify-between w-full py-4 overflow-y-auto no-scrollbar">
               <div className="pt-4">
                 <div className="text-center mb-6">
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E0F2FE] dark:bg-[#141414] border border-[#BAE6FD] dark:border-[#27272A] text-[#0284C7] dark:text-[#38BDF8] text-xs font-bold mb-3">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E0F2FE] dark:bg-[#1E293B] border border-[#BAE6FD] dark:border-[#334155] text-[#0284C7] dark:text-[#38BDF8] text-xs font-bold mb-3">
                     <span>Langkah 3 dari 3</span>
                   </div>
-                  <h1 className="text-xl font-bold text-[#0F172A] dark:text-white">Buat Dompet Pertama</h1>
-                  <p className="text-xs text-[#64748B] dark:text-zinc-400 mt-1">
+                  <h1 className="text-xl font-bold text-[#0F172A] dark:text-[#F8FAFC]">Buat Dompet Pertama</h1>
+                  <p className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-1">
                     Atur sumber dana awal untuk mencatat keuanganmu
                   </p>
                 </div>
 
-                <form id="step3-form" onSubmit={handleFinishOnboarding} className="space-y-4 ios-inset-group bg-[#F8FAFC] dark:bg-[#121212] border border-[#E2E8F0] dark:border-[#27272A] rounded-[22px] p-4">
+                <form id="step3-form" onSubmit={handleFinishOnboarding} className="space-y-4 ios-inset-group bg-[#F0F9FF] dark:bg-[#1E293B] border border-[#E0F2FE] dark:border-[#334155] rounded-[22px] p-4">
                   {/* Field 1: Nama Dompet */}
                   <div>
-                    <label className="block text-xs font-semibold text-[#0F172A] dark:text-white mb-1.5">
+                    <label className="block text-xs font-semibold text-[#0F172A] dark:text-[#F8FAFC] mb-1.5">
                       Nama Dompet <span className="text-rose-500">*</span>
                     </label>
                     <input
@@ -678,14 +678,14 @@ PART4_AUTH_PIN = """
                       onBlur={handleGlobalInputBlur}
                       onChange={(e) => setWalletName(e.target.value)}
                       placeholder="e.g. BCA Utama, Cash"
-                      className="w-full px-3.5 py-3 bg-white dark:bg-[#181818] border border-slate-200 dark:border-[#27272A] rounded-xl text-sm font-medium text-[#0F172A] dark:text-white focus:outline-none focus:border-[#0284C7] dark:focus:border-sky-400 transition-colors"
+                      className="w-full px-3.5 py-3 bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-xl text-sm font-medium text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:border-[#0284C7] dark:focus:border-[#38BDF8] transition-colors"
                       autoFocus
                     />
                   </div>
 
                   {/* Field 2: Kategori (3 Segmented Buttons: [Tunai] [Bank] [E-Wallet]) */}
                   <div>
-                    <label className="block text-xs font-semibold text-[#0F172A] dark:text-white mb-1.5">
+                    <label className="block text-xs font-semibold text-[#0F172A] dark:text-[#F8FAFC] mb-1.5">
                       Kategori
                     </label>
                     <div className="grid grid-cols-3 gap-2">
@@ -702,8 +702,8 @@ PART4_AUTH_PIN = """
                             onClick={() => setWalletType(item.id)}
                             className={`py-2.5 px-2 text-center rounded-xl border text-xs font-medium flex flex-col items-center gap-1.5 transition-all ios-btn-tap ${
                               isSelected
-                                ? 'bg-[#E0F2FE] dark:bg-[#141414] border-[#0284C7] dark:border-[#38BDF8] text-[#0284C7] dark:text-[#38BDF8] font-bold shadow-sm'
-                                : 'bg-white dark:bg-[#181818] border-slate-200 dark:border-[#27272A] text-[#64748B] dark:text-zinc-400 hover:bg-slate-50 dark:hover:bg-[#202022]'
+                                ? 'bg-[#E0F2FE] dark:bg-[#1E293B] border-[#0284C7] dark:border-[#38BDF8] text-[#0284C7] dark:text-[#38BDF8] font-bold shadow-sm'
+                                : 'bg-white dark:bg-[#0F172A] border-slate-200 dark:border-[#334155] text-[#64748B] dark:text-[#94A3B8] hover:bg-slate-50 dark:hover:bg-[#1E293B]'
                             }`}
                           >
                             <Icon name={item.icon} className="w-5 h-5 flex-shrink-0 aspect-square" />
@@ -716,7 +716,7 @@ PART4_AUTH_PIN = """
 
                   {/* Field 3: Saldo Awal */}
                   <div>
-                    <label className="block text-xs font-semibold text-[#0F172A] dark:text-white mb-1.5">
+                    <label className="block text-xs font-semibold text-[#0F172A] dark:text-[#F8FAFC] mb-1.5">
                       Saldo Awal
                     </label>
                     <div className="relative">
@@ -731,10 +731,10 @@ PART4_AUTH_PIN = """
                           setInitialBalance(num ? num.toString() : '');
                         }}
                         placeholder="Rp 0"
-                        className="w-full px-3.5 py-3 bg-white dark:bg-[#181818] border border-slate-200 dark:border-[#27272A] rounded-xl text-base font-bold text-[#0F172A] dark:text-white focus:outline-none focus:border-[#0284C7] dark:focus:border-sky-400 transition-colors"
+                        className="w-full px-3.5 py-3 bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-xl text-base font-bold text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:border-[#0284C7] dark:focus:border-[#38BDF8] transition-colors"
                       />
                     </div>
-                    <span className="text-[11px] text-[#64748B] dark:text-zinc-400 mt-1 block">
+                    <span className="text-[11px] text-[#64748B] dark:text-[#94A3B8] mt-1 block">
                       Jumlah saldo yang kamu miliki saat ini
                     </span>
                   </div>
@@ -746,7 +746,7 @@ PART4_AUTH_PIN = """
                 <button
                   type="button"
                   onClick={() => setOnboardingStep(2)}
-                  className="py-3 px-4 bg-[#F8FAFC] dark:bg-[#141414] border border-[#E2E8F0] dark:border-[#27272A] text-[#0F172A] dark:text-white text-sm font-semibold rounded-xl hover:bg-slate-100 dark:hover:bg-[#1C1C1C] transition-colors ios-btn-tap shrink-0"
+                  className="py-3 px-4 bg-[#F0F9FF] dark:bg-[#1E293B] border border-[#E0F2FE] dark:border-[#334155] text-[#0F172A] dark:text-[#F8FAFC] text-sm font-semibold rounded-xl hover:bg-sky-50 dark:hover:bg-[#273549] transition-colors ios-btn-tap shrink-0"
                 >
                   Kembali
                 </button>

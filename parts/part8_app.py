@@ -227,7 +227,7 @@ PART8_APP = """
       }, [safeTransactions, filterType, selectedAccountFilter, selectedCategoryFilter, searchQuery]);
 
       return (
-        <div className="space-y-4 pb-28">
+        <div className="space-y-4 pb-28 animate-ios-tab-view">
           {/* iOS Profile Header Bar - Direct Route to Settings on Tap */}
           <div className="flex items-center justify-between pt-1">
             <div
@@ -260,42 +260,42 @@ PART8_APP = """
           </div>
 
           {/* Hero Balance Card - Solid Sky Blue Color Lock (Strictly NO Gradients) */}
-          <div className="ios-inset-group bg-brand text-white dark:bg-[#1E293B] border-none dark:border dark:border-slate-700/60 shadow-md transition-colors duration-300 ease-in-out">
-            <div className="flex items-center justify-between text-sky-100 dark:text-slate-400 mb-1">
-              <span className="text-[11px] font-bold uppercase tracking-wider">Total Saldo Brankas</span>
+          <div className="rounded-[22px] p-5 bg-[#0284C7] dark:bg-[#1E293B] text-white border border-[#0369A1] dark:border-[#334155] shadow-md transition-colors duration-300 ease-in-out">
+            <div className="flex items-center justify-between text-sky-100 dark:text-slate-400 mb-1.5">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-sky-100 dark:text-slate-400">Total Saldo Brankas</span>
               <button
                 type="button"
                 onClick={onToggleHideBalance}
                 className="p-1 text-sky-100 dark:text-slate-400 hover:text-white transition-colors ios-btn-tap"
                 aria-label="Sensor Saldo"
               >
-                <Icon name={hideBalance ? 'eye-off' : 'eye'} className="w-4 h-4" />
+                <Icon name={hideBalance ? 'eye-off' : 'eye'} className="w-4 h-4 text-sky-100 dark:text-slate-400" />
               </button>
             </div>
 
-            <div className="text-2xl whitespace-nowrap truncate font-bold tracking-tight mb-4 text-white">
+            <div className="text-2xl whitespace-nowrap truncate font-extrabold tracking-tight mb-4 text-white">
               {hideBalance ? 'Rp ••••••••' : formatIDR(totalBalance)}
             </div>
 
-            <div className="grid grid-cols-2 gap-2 pt-3 border-t border-sky-400/40 dark:border-slate-700/60">
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-200 flex items-center justify-center">
-                  <Icon name="arrow-down-left" className="w-4 h-4" />
+            <div className="grid grid-cols-2 gap-2 pt-3 border-t border-sky-400/50 dark:border-slate-700/60">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-emerald-500/25 text-emerald-100 flex items-center justify-center shrink-0">
+                  <Icon name="arrow-down-left" className="w-4 h-4 text-emerald-200" strokeWidth={2.5} />
                 </div>
                 <div className="min-w-0">
-                  <span className="text-[10px] text-sky-100 dark:text-slate-400 block leading-tight">Masuk (Bln Ini)</span>
+                  <span className="text-[10px] text-sky-100 dark:text-slate-400 block leading-tight font-medium">Masuk (Bln Ini)</span>
                   <span className="text-xs whitespace-nowrap truncate font-bold text-white block">
                     {hideBalance ? 'Rp ••••••' : formatIDR(monthSummary.income)}
                   </span>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-rose-500/20 text-rose-200 flex items-center justify-center">
-                  <Icon name="arrow-up-right" className="w-4 h-4" />
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-rose-500/25 text-rose-100 flex items-center justify-center shrink-0">
+                  <Icon name="arrow-up-right" className="w-4 h-4 text-rose-200" strokeWidth={2.5} />
                 </div>
                 <div className="min-w-0">
-                  <span className="text-[10px] text-sky-100 dark:text-slate-400 block leading-tight">Keluar (Bln Ini)</span>
+                  <span className="text-[10px] text-sky-100 dark:text-slate-400 block leading-tight font-medium">Keluar (Bln Ini)</span>
                   <span className="text-xs whitespace-nowrap truncate font-bold text-white block">
                     {hideBalance ? 'Rp ••••••' : formatIDR(monthSummary.expense)}
                   </span>
@@ -304,23 +304,39 @@ PART8_APP = """
             </div>
           </div>
 
-          {/* Quick Action Button Bar */}
-          <div className="grid grid-cols-2 gap-2">
+          {/* Quick Action Button Bar: Catat, Dompet, Hutang, & Impian */}
+          <div className="grid grid-cols-4 gap-2">
             <button
               type="button"
               onClick={onOpenAddTx}
-              className="py-3 px-4 bg-brand hover:bg-brand-hover text-white text-xs font-bold rounded-2xl flex items-center justify-center gap-2 shadow-sm transition-colors ios-btn-tap"
+              className="py-2.5 px-2 bg-brand hover:bg-brand-hover text-white rounded-2xl flex flex-col items-center justify-center gap-1 shadow-sm transition-all ios-btn-tap"
             >
-              <Icon name="plus" className="w-4 h-4" strokeWidth={2.2} />
-              <span>Catat Mutasi</span>
+              <Icon name="plus" className="w-4 h-4" strokeWidth={2.4} />
+              <span className="text-[11px] font-bold whitespace-nowrap">Catat</span>
             </button>
             <button
               type="button"
               onClick={onOpenAccounts}
-              className="py-3 px-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold rounded-2xl flex items-center justify-center gap-2 shadow-sm transition-colors ios-btn-tap"
+              className="py-2.5 px-2 bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-2xl flex flex-col items-center justify-center gap-1 shadow-sm transition-all ios-btn-tap hover:border-brand/40"
             >
               <Icon name="wallet" className="w-4 h-4 text-brand dark:text-sky-400" />
-              <span>Dompet ({safeAccounts.length})</span>
+              <span className="text-[11px] font-bold whitespace-nowrap">Dompet</span>
+            </button>
+            <button
+              type="button"
+              onClick={onOpenDebts}
+              className="py-2.5 px-2 bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-2xl flex flex-col items-center justify-center gap-1 shadow-sm transition-all ios-btn-tap hover:border-brand/40"
+            >
+              <Icon name="receipt" className="w-4 h-4 text-amber-500" />
+              <span className="text-[11px] font-bold whitespace-nowrap">Hutang</span>
+            </button>
+            <button
+              type="button"
+              onClick={onOpenSavings}
+              className="py-2.5 px-2 bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-2xl flex flex-col items-center justify-center gap-1 shadow-sm transition-all ios-btn-tap hover:border-brand/40"
+            >
+              <Icon name="target" className="w-4 h-4 text-emerald-500" />
+              <span className="text-[11px] font-bold whitespace-nowrap">Impian</span>
             </button>
           </div>
 
@@ -860,7 +876,7 @@ PART8_APP = """
       }
 
       return (
-        <div className="h-[100dvh] flex flex-col bg-white dark:bg-[#0F172A] text-[#0F172A] dark:text-[#F8FAFC] overflow-hidden select-none transition-colors duration-300 ease-in-out">
+        <div className="h-[100dvh] flex flex-col bg-slate-50 dark:bg-[#0F172A] text-[#0F172A] dark:text-[#F8FAFC] overflow-hidden select-none transition-colors duration-300 ease-in-out">
           {toastMsg && <Toast message={toastMsg} onClose={() => setToastMsg('')} />}
 
           <main

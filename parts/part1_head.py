@@ -37,21 +37,21 @@ HTML_HEAD = """<!DOCTYPE html>
               800: '#075985',
               900: '#0C4A6E'
             },
-            // Map dark slate to true OLED black and sleek dark surfaces
+            // Tailwind Slate mapped to strict Dark Mode palette
             slate: {
-              950: '#000000',
-              900: '#000000', // Pure black for dark mode canvas
-              850: '#0A0A0C',
-              800: '#121212', // Pure deep dark surface for cards
-              750: '#18181B',
-              700: '#27272A', // Crisp border in dark mode
-              600: '#52525B',
-              500: '#71717A',
-              400: '#A1A1AA',
+              950: '#020617',
+              900: '#0F172A', // Dark Mode Main Background
+              850: '#151F32',
+              800: '#1E293B', // Dark Mode Cards / Containers
+              750: '#293548',
+              700: '#334155', // Dark Mode Borders
+              600: '#475569',
+              500: '#64748B', // Secondary Text Light Mode
+              400: '#94A3B8', // Secondary Text Dark Mode
               300: '#CBD5E1',
               200: '#E2E8F0',
               100: '#F1F5F9',
-              50: '#F8FAFC'
+              50: '#F8FAFC'  // Primary Text Dark Mode
             }
           },
           fontFamily: {
@@ -104,48 +104,50 @@ HTML_HEAD = """<!DOCTYPE html>
       overscroll-behavior: none;
       -webkit-overflow-scrolling: touch;
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
-      background-color: #FFFFFF;
+      background-color: #F8FAFC;
       color: #0F172A;
-      transition: background-color 350ms cubic-bezier(0.32, 0.72, 0, 1), color 350ms cubic-bezier(0.32, 0.72, 0, 1);
+      transition: background-color 300ms ease-in-out, color 300ms ease-in-out;
     }
     html.dark body, body.dark {
-      background-color: #000000 !important;
-      color: #FFFFFF !important;
+      background-color: #0F172A !important;
+      color: #F8FAFC !important;
     }
     #root {
       height: 100%;
       width: 100%;
       overflow: hidden;
-      background-color: #FFFFFF;
+      background-color: #F8FAFC;
       color: #0F172A;
-      transition: background-color 350ms cubic-bezier(0.32, 0.72, 0, 1), color 350ms cubic-bezier(0.32, 0.72, 0, 1);
+      transition: background-color 300ms ease-in-out, color 300ms ease-in-out;
     }
     html.dark #root {
-      background-color: #000000 !important;
-      color: #FFFFFF !important;
+      background-color: #0F172A !important;
+      color: #F8FAFC !important;
     }
 
     /* iOS Inset Grouped Block */
     .ios-inset-group {
       border-radius: 22px;
-      background-color: #F8FAFC;
+      background-color: #FFFFFF;
       padding: 1rem;
       border: 1px solid #E2E8F0;
-      transition: background-color 350ms cubic-bezier(0.32, 0.72, 0, 1), border-color 350ms cubic-bezier(0.32, 0.72, 0, 1), color 350ms cubic-bezier(0.32, 0.72, 0, 1);
+      box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.05);
+      transition: background-color 300ms ease-in-out, border-color 300ms ease-in-out, color 300ms ease-in-out;
     }
     .dark .ios-inset-group {
-      background-color: #121212 !important;
-      border-color: #27272A !important;
-      color: #FFFFFF !important;
+      background-color: #1E293B !important;
+      border-color: #334155 !important;
+      box-shadow: none;
+      color: #F8FAFC !important;
     }
 
     /* Hairline Divider */
     .ios-hairline {
       border-bottom: 1px solid #E2E8F0;
-      transition: border-color 350ms cubic-bezier(0.32, 0.72, 0, 1);
+      transition: border-color 300ms ease-in-out;
     }
     .dark .ios-hairline {
-      border-bottom: 1px solid #27272A !important;
+      border-bottom: 1px solid #334155 !important;
     }
 
     /* Scrollbar hide */
@@ -217,6 +219,22 @@ HTML_HEAD = """<!DOCTYPE html>
       will-change: opacity;
     }
 
+    /* iOS Page View Transition Animation */
+    @keyframes iosTabFadeIn {
+      0% {
+        opacity: 0;
+        transform: translate3d(0, 10px, 0) scale(0.985);
+      }
+      100% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1);
+      }
+    }
+    .animate-ios-tab-view {
+      animation: iosTabFadeIn 0.28s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+      will-change: opacity, transform;
+    }
+
     /* iOS Spring Banner Toast */
     @keyframes iosToastSpringDown {
       0% { transform: translate3d(-50%, -100%, 0) scale(0.9); opacity: 0; }
@@ -264,12 +282,12 @@ HTML_HEAD = """<!DOCTYPE html>
       box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
       background-color: #FFFFFF;
       color: #0F172A;
-      transition: background-color 350ms cubic-bezier(0.32, 0.72, 0, 1), color 350ms cubic-bezier(0.32, 0.72, 0, 1);
+      transition: background-color 300ms ease-in-out, color 300ms ease-in-out;
     }
     .dark .ios-modal-card {
-      background-color: #121212 !important;
-      color: #FFFFFF !important;
-      border-color: #27272A !important;
+      background-color: #1E293B !important;
+      color: #F8FAFC !important;
+      border: 1px solid #334155 !important;
     }
     @media (min-width: 640px) {
       .ios-modal-card {

@@ -7,6 +7,11 @@ import android.view.View
 import android.view.ViewGroup
 import android.util.Log
 import android.webkit.ConsoleMessage
+import android.content.Intent
+import android.net.Uri
+import android.webkit.ValueCallback
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import android.webkit.RenderProcessGoneDetail
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
@@ -65,6 +70,25 @@ fun SakuCleanWebView(
 ) {
   var reloadKey by remember { mutableIntStateOf(0) }
   var webViewRef by remember { mutableStateOf<WebView?>(null) }
+  var fileUploadCallback by remember { mutableStateOf<ValueCallback<Array<Uri>>?>(null) }
+
+  val fileChooserLauncher = rememberLauncherForActivityResult(
+    contract = ActivityResultContracts.StartActivityForResult()
+  ) { result ->
+    val uri = result.data?.data
+    if (uri != null) {
+      fileUploadCallback?.onReceiveValue(arrayOf(uri))
+    } else {
+      val clipData = result.data?.clipData
+      if (clipData != null && clipData.itemCount > 0) {
+        val uris = Array(clipData.itemCount) { i -> clipData.getItemAt(i).uri }
+        fileUploadCallback?.onReceiveValue(uris)
+      } else {
+        fileUploadCallback?.onReceiveValue(null)
+      }
+    }
+    fileUploadCallback = null
+  }
 
   BackHandler(enabled = true) {
     if (webViewRef?.canGoBack() == true) {
@@ -132,6 +156,26 @@ fun SakuCleanWebView(
             override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
               Log.d("WebViewConsole", "${consoleMessage?.message()} [line ${consoleMessage?.lineNumber()}]")
               return true
+            }
+
+            override fun onShowFileChooser(
+              webView: WebView?,
+              filePathCallback: ValueCallback<Array<Uri>>?,
+              fileChooserParams: FileChooserParams?
+            ): Boolean {
+              fileUploadCallback?.onReceiveValue(null)
+              fileUploadCallback = filePathCallback
+              val intent = fileChooserParams?.createIntent() ?: Intent(Intent.ACTION_GET_CONTENT).apply {
+                type = "*/*"
+              }
+              return try {
+                fileChooserLauncher.launch(intent)
+                true
+              } catch (e: Exception) {
+                fileUploadCallback?.onReceiveValue(null)
+                fileUploadCallback = null
+                false
+              }
             }
           }
 
