@@ -3,6 +3,7 @@ package com.example
 import android.annotation.SuppressLint
 import android.os.Build
 import android.os.Bundle
+import android.view.View
 import android.view.ViewGroup
 import android.util.Log
 import android.webkit.ConsoleMessage
@@ -59,7 +60,7 @@ class MainActivity : ComponentActivity() {
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
 fun SakuCleanWebView(
-  backgroundColor: Int,
+  backgroundColor: Int = android.graphics.Color.WHITE,
   modifier: Modifier = Modifier
 ) {
   var reloadKey by remember { mutableIntStateOf(0) }
@@ -82,6 +83,7 @@ fun SakuCleanWebView(
           )
           setBackgroundColor(backgroundColor)
 
+          @Suppress("DEPRECATION")
           settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
