@@ -317,7 +317,8 @@ PART5_DEBTS_MILESTONES = """
         <div className={`ios-modal-backdrop ${isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'}`}
              onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}>
           <div className={`ios-modal-card bg-white dark:bg-slate-800 ${isClosing ? 'animate-ios-sheet-exit' : 'animate-ios-sheet'}`}>
-            <div className="ios-modal-header px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800">
+            <ModalDragHandle onDismiss={handleClose} />
+            <div className="ios-modal-header px-5 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800">
               <h2 className="text-base font-bold text-slate-900 dark:text-white">
                 {debtToEdit ? 'Edit Catatan' : 'Catat Hutang / Piutang'}
               </h2>
@@ -435,10 +436,16 @@ PART5_DEBTS_MILESTONES = """
       );
     };
 
-    const DebtsView = ({ debts, onAddDebt, onToggleStatus, onDeleteDebt, hideBalance, onEditDebt }) => {
+    const DebtsView = ({ debts, onAddDebt, onToggleStatus, onDeleteDebt, hideBalance, onEditDebt, onModalChange }) => {
       const [filterTab, setFilterTab] = useState('ALL'); // ALL | HUTANG | PIUTANG
       const [isModalOpen, setIsModalOpen] = useState(false);
       const [selectedDebt, setSelectedDebt] = useState(null);
+
+      useEffect(() => {
+        if (typeof onModalChange === 'function') {
+          onModalChange(isModalOpen);
+        }
+      }, [isModalOpen, onModalChange]);
 
       const safeDebts = Array.isArray(debts) ? debts : [];
 

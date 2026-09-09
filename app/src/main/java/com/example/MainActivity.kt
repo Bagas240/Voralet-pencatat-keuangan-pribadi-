@@ -107,6 +107,16 @@ fun SakuCleanWebView(
           )
           setBackgroundColor(backgroundColor)
 
+          // Fallback to software layer if DRM render nodes are unavailable (prevents E/MESA rendernode failure)
+          val hasDriRenderNode = try {
+            java.io.File("/dev/dri").exists()
+          } catch (_: Throwable) {
+            false
+          }
+          if (!hasDriRenderNode) {
+            setLayerType(View.LAYER_TYPE_SOFTWARE, null)
+          }
+
           @Suppress("DEPRECATION")
           settings.apply {
             javaScriptEnabled = true

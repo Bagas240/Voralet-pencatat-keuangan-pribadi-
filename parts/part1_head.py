@@ -6,6 +6,13 @@ HTML_HEAD = """<!DOCTYPE html>
   <title>Voralet - Authentic iOS Personal Finance</title>
   <meta name="description" content="Aplikasi pencatat keuangan pribadi modern ala iOS dengan brankas PIN lokal dan pelacak hutang piutang." />
   
+  <!-- Apple HIG & PWA Pure White Card Home Screen Icons (NO outer blue frame) -->
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180' width='180' height='180'%3E%3Crect width='180' height='180' fill='%23FFFFFF'/%3E%3Cpath d='M 32 72 C 44 44, 66 32, 88 32 C 110 32, 120 54, 132 78 C 142 98, 154 74, 164 50' fill='none' stroke='%2302A9FF' stroke-width='12' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M 54 94 C 62 76, 76 66, 88 66 C 100 66, 110 88, 122 108 C 136 128, 152 98, 164 50' fill='none' stroke='%2302A9FF' stroke-width='12' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ctext x='90' y='152' text-anchor='middle' fill='%2302A9FF' font-family='-apple-system, BlinkMacSystemFont, Inter, sans-serif' font-weight='800' font-size='34'%3EVoralet%3C/text%3E%3C/svg%3E" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180' width='180' height='180'%3E%3Crect width='180' height='180' fill='%23FFFFFF'/%3E%3Cpath d='M 32 72 C 44 44, 66 32, 88 32 C 110 32, 120 54, 132 78 C 142 98, 154 74, 164 50' fill='none' stroke='%2302A9FF' stroke-width='12' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M 54 94 C 62 76, 76 66, 88 66 C 100 66, 110 88, 122 108 C 136 128, 152 98, 164 50' fill='none' stroke='%2302A9FF' stroke-width='12' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ctext x='90' y='152' text-anchor='middle' fill='%2302A9FF' font-family='-apple-system, BlinkMacSystemFont, Inter, sans-serif' font-weight='800' font-size='34'%3EVoralet%3C/text%3E%3C/svg%3E" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="theme-color" content="#FFFFFF" />
+  
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -208,30 +215,68 @@ HTML_HEAD = """<!DOCTYPE html>
       scrollbar-width: none;
     }
 
-    /* Tactile Touch Animation */
-    .ios-btn-tap, .ios-touch-item, .ios-card-tap {
-      transition: transform 0.15s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.15s ease-out;
+    /* Tactile Touch Animation (SwiftUI Bouncy Spring Compression) */
+    .ios-btn-tap, .ios-touch-item {
+      transition: transform 150ms ease-out, opacity 150ms ease-out;
       will-change: transform;
       user-select: none;
       -webkit-user-select: none;
     }
     .ios-btn-tap:active, .ios-touch-item:active {
-      transform: scale3d(0.96, 0.96, 1);
+      transform: scale3d(0.94, 0.94, 1) !important;
       opacity: 0.86;
     }
+    .ios-card-tap {
+      transition: transform 150ms ease-out, opacity 150ms ease-out;
+      will-change: transform;
+      user-select: none;
+      -webkit-user-select: none;
+    }
     .ios-card-tap:active {
-      transform: scale3d(0.98, 0.98, 1);
+      transform: scale3d(0.96, 0.96, 1) !important;
       opacity: 0.92;
     }
 
     /* Keypad Button */
     .ios-keypad-btn {
-      transition: transform 0.12s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.12s ease-out, background-color 0.15s ease;
+      transition: transform 150ms ease-out, opacity 150ms ease-out, background-color 150ms ease;
       will-change: transform;
     }
     .ios-keypad-btn:active {
-      transform: scale3d(0.92, 0.92, 1);
-      opacity: 0.78;
+      transform: scale3d(0.92, 0.92, 1) !important;
+      opacity: 0.76;
+    }
+
+    /* iOS Native Modal Sheet Depth Stacking Effect */
+    .ios-modal-depth-layer {
+      transition: transform 350ms cubic-bezier(0.32, 0.72, 0, 1), border-radius 350ms cubic-bezier(0.32, 0.72, 0, 1), filter 350ms ease-out;
+      will-change: transform, border-radius;
+      transform-origin: center top;
+    }
+    .ios-modal-depth-stacked {
+      transform: scale(0.96) !important;
+      border-radius: 28px !important;
+      overflow: hidden !important;
+      filter: brightness(0.95);
+    }
+    html.dark .ios-modal-depth-stacked, .dark .ios-modal-depth-stacked {
+      filter: brightness(0.88);
+    }
+
+    /* SwiftUI Bouncy Elastic Curve for Dialogs, Popovers & Toasts */
+    @keyframes iosSpringPop {
+      0% {
+        transform: scale(0.85);
+        opacity: 0;
+      }
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+    .animate-ios-spring-pop {
+      animation: iosSpringPop 0.38s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      will-change: transform, opacity;
     }
 
     /* iOS Bottom Sheet Animations */
@@ -423,6 +468,6 @@ HTML_HEAD = """<!DOCTYPE html>
 <body>
   <div id="root"></div>
 
-  <script type="text/babel">
+  <script type="text/babel" data-presets="env,react">
     const { useState, useEffect, useMemo, useCallback, useRef } = React;
 """

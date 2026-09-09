@@ -78,7 +78,8 @@ PART6_MODALS = """
         <div className={`ios-modal-backdrop ${isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'}`}
              onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}>
           <div className={`ios-modal-card bg-white dark:bg-slate-800 ${isClosing ? 'animate-ios-sheet-exit' : 'animate-ios-sheet'}`}>
-            <div className="ios-modal-header px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800">
+            <ModalDragHandle onDismiss={handleClose} />
+            <div className="ios-modal-header px-5 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800">
               <h2 className="text-base font-bold text-slate-900 dark:text-white">Catat Transaksi</h2>
               <button
                 type="button"
@@ -309,7 +310,8 @@ PART6_MODALS = """
         <div className={`ios-modal-backdrop ${isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'}`}
              onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}>
           <div className={`ios-modal-card bg-white dark:bg-slate-800 ${isClosing ? 'animate-ios-sheet-exit' : 'animate-ios-sheet'}`}>
-            <div className="ios-modal-header px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800">
+            <ModalDragHandle onDismiss={handleClose} />
+            <div className="ios-modal-header px-5 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800">
               <div>
                 <h2 className="text-base font-bold text-slate-900 dark:text-white">Kelola Dompet & Akun</h2>
                 <p className="text-xs text-slate-500 dark:text-slate-400">Saldo sinkron otomatis dari mutasi</p>
@@ -530,7 +532,8 @@ PART6_MODALS = """
         <div className={`ios-modal-backdrop ${isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'}`}
              onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}>
           <div className={`ios-modal-card bg-white dark:bg-slate-800 ${isClosing ? 'animate-ios-sheet-exit' : 'animate-ios-sheet'}`}>
-            <div className="ios-modal-header px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800">
+            <ModalDragHandle onDismiss={handleClose} />
+            <div className="ios-modal-header px-5 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800">
               <h2 className="text-base font-bold text-slate-900 dark:text-white">
                 {goalToEdit ? 'Edit Kantong Impian' : 'Target Impian Baru'}
               </h2>
@@ -716,7 +719,8 @@ PART6_MODALS = """
         <div className={`ios-modal-backdrop ${isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'}`}
              onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}>
           <div className={`ios-modal-card bg-white dark:bg-slate-800 ${isClosing ? 'animate-ios-sheet-exit' : 'animate-ios-sheet'}`}>
-            <div className="ios-modal-header px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800">
+            <ModalDragHandle onDismiss={handleClose} />
+            <div className="ios-modal-header px-5 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800">
               <h2 className="text-base font-bold text-slate-900 dark:text-white">Pengaturan & Profil</h2>
               <button
                 type="button"
@@ -930,6 +934,17 @@ PART6_MODALS = """
                     <input type="file" accept=".json" className="hidden" onChange={handleFileImport} />
                   </label>
                 </div>
+              </div>
+
+              {/* Profile / About Section with Brand Logo */}
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-700 flex flex-col items-center text-center space-y-1.5 select-none">
+                <VoraletLogo size="md" className="mb-1" />
+                <p className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                  Voralet iOS Edition • Versi 2.0
+                </p>
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 max-w-xs leading-relaxed">
+                  Keuangan Sehat • Impian Dekat. 100% Offline & Terenkripsi Lokal di Perangkat Anda.
+                </p>
               </div>
 
               {/* Reset Data */}

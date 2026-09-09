@@ -346,6 +346,201 @@ PART2_ICONS = """
       );
     };
 
+    // Dynamic Brand Logo Configuration (Voralet Brand Mark & Badge from 2.jpg)
+    const APP_LOGO_SRC = ""; // Set image path, base64 or URL if custom logo asset is supplied
+
+    // The signature double-wave mark from the Voralet logo in 2.jpg
+    const VoraletWaves = ({ className = "w-full h-full", color = "#0099FF" }) => (
+      <svg
+        viewBox="0 0 100 80"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className={className}
+      >
+        {/* Upper flowing crest wave */}
+        <path
+          d="M 18 36 C 26 20, 36 14, 46 14 C 56 14, 62 26, 68 37 C 74 48, 80 36, 86 24"
+          stroke={color}
+          strokeWidth="8.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        {/* Lower nested fluid return wave */}
+        <path
+          d="M 29 47 C 32 38, 38 34, 42 34 C 48 34, 53 44, 60 54 C 67 64, 78 50, 86 24"
+          stroke={color}
+          strokeWidth="8.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    );
+
+    // Exact Voralet App Icon Squircle Badge as shown in 2.jpg (White squircle card with blue waves & blue Voralet text)
+    const VoraletLogo = ({ 
+      size = "md", 
+      className = "", 
+      rounded = "rounded-[28%]", 
+      shadow = "shadow-[0_12px_36px_rgba(0,0,0,0.14)]" 
+    }) => {
+      const sizeMap = {
+        xs: { card: "w-9 h-9 rounded-xl", waveStroke: "11", text: "text-[9px] font-black" },
+        sm: { card: "w-11 h-11 rounded-2xl", waveStroke: "11.5", text: "text-[11px] font-black" },
+        md: { card: "w-16 h-16 rounded-[20px]", waveStroke: "12", text: "text-xs font-black" },
+        lg: { card: "w-24 h-24 rounded-[26px]", waveStroke: "12", text: "text-base font-black" },
+        xl: { card: "w-32 h-32 rounded-[32px]", waveStroke: "12", text: "text-xl font-black" },
+        splash: { card: "w-44 h-44 sm:w-48 sm:h-48 rounded-[44px]", waveStroke: "12", text: "text-2xl sm:text-3xl font-black" }
+      };
+      const cfg = sizeMap[size] || sizeMap.md;
+
+      return (
+        <div className={`relative aspect-square flex flex-col items-center justify-center bg-[#FFFFFF] ${shadow} overflow-hidden select-none ${cfg.card} ${className}`}>
+          {/* Wave mark container */}
+          <div className="w-[68%] h-[46%] flex items-center justify-center -mt-1 text-[#02A9FF]">
+            <svg
+              viewBox="0 0 100 70"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              className="w-full h-full"
+            >
+              {/* Upper flowing crest wave */}
+              <path
+                d="M 16 32 C 24 16, 36 10, 48 10 C 60 10, 66 22, 72 34 C 78 46, 84 32, 90 20"
+                stroke="#02A9FF"
+                strokeWidth={cfg.waveStroke}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              {/* Lower nested fluid return wave */}
+              <path
+                d="M 28 44 C 32 34, 40 28, 46 28 C 52 28, 58 40, 64 50 C 72 62, 82 46, 90 20"
+                stroke="#02A9FF"
+                strokeWidth={cfg.waveStroke}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+          {/* Voralet text in rounded bold font */}
+          <div className="w-full text-center mt-1">
+            <span className={`text-[#02A9FF] font-['Inter',system-ui,sans-serif] tracking-tight leading-none select-none ${cfg.text}`}>
+              Voralet
+            </span>
+          </div>
+        </div>
+      );
+    };
+
+    // VoraletBadge backwards-compatible wrapper pointing to official VoraletLogo
+    const VoraletBadge = ({ className = "w-32 h-32", rounded = "rounded-[32%]", shadow = "shadow-[0_16px_48px_rgba(0,0,0,0.16)]" }) => (
+      <VoraletLogo size="xl" className={className} rounded={rounded} shadow={shadow} />
+    );
+
+    const AppLogo = ({ 
+      size = "md", 
+      showText = true, 
+      variant = "auto", // "auto" | "badge" | "mark"
+      className = "", 
+      textColor = "text-[#0099FF] dark:text-[#38BDF8]" 
+    }) => {
+      const sizeMap = {
+        sm: { icon: "w-6 h-6", text: "text-base font-bold tracking-tight", badge: "w-9 h-9 rounded-xl" },
+        md: { icon: "w-8 h-8", text: "text-lg font-bold tracking-tight", badge: "w-11 h-11 rounded-2xl" },
+        lg: { icon: "w-12 h-12", text: "text-2xl font-extrabold tracking-tight", badge: "w-16 h-16 rounded-[20px]" },
+        xl: { icon: "w-16 h-16", text: "text-3xl font-black tracking-tight", badge: "w-32 h-32 rounded-[32px]" }
+      };
+      const cfg = sizeMap[size] || sizeMap.md;
+
+      if (variant === "badge" || (variant === "auto" && size === "xl" && !showText)) {
+        return (
+          <div className={`inline-flex items-center justify-center ${className}`}>
+            <VoraletLogo size={size} className={cfg.badge} />
+          </div>
+        );
+      }
+
+      return (
+        <div className={`inline-flex items-center gap-2 select-none ${className}`}>
+          {APP_LOGO_SRC ? (
+            <img src={APP_LOGO_SRC} alt="Voralet Logo" className={`${cfg.icon} object-contain`} />
+          ) : (
+            <div className={`${cfg.icon} flex-shrink-0 flex items-center justify-center text-[#02A9FF] dark:text-[#38BDF8] transition-transform duration-200`}>
+              <VoraletWaves color="currentColor" />
+            </div>
+          )}
+          {showText && (
+            <span className={`${cfg.text} ${textColor} font-['Inter',sans-serif]`}>
+              Voralet
+            </span>
+          )}
+        </div>
+      );
+    };
+
+    // iOS Interactive Swipe-to-Dismiss Handle for Bottom Sheets
+    const ModalDragHandle = ({ onDismiss }) => {
+      const startY = useRef(0);
+      const isDragging = useRef(false);
+      const handleRef = useRef(null);
+
+      const handleTouchStart = (e) => {
+        if (!e.touches || e.touches.length === 0) return;
+        startY.current = e.touches[0].clientY;
+        isDragging.current = true;
+        const card = (handleRef.current && handleRef.current.closest) ? handleRef.current.closest('.ios-modal-card') : null;
+        if (card) {
+          card.style.transition = 'none';
+        }
+      };
+
+      const handleTouchMove = (e) => {
+        if (!isDragging.current || !e.touches || e.touches.length === 0) return;
+        const delta = e.touches[0].clientY - startY.current;
+        if (delta > 0) {
+          const card = (handleRef.current && handleRef.current.closest) ? handleRef.current.closest('.ios-modal-card') : null;
+          if (card) {
+            card.style.transform = `translate3d(0, ${delta}px, 0)`;
+          }
+        }
+      };
+
+      const handleTouchEnd = (e) => {
+        if (!isDragging.current) return;
+        isDragging.current = false;
+        const card = (handleRef.current && handleRef.current.closest) ? handleRef.current.closest('.ios-modal-card') : null;
+        const endY = e.changedTouches && e.changedTouches[0] ? e.changedTouches[0].clientY : startY.current;
+        const delta = endY - startY.current;
+
+        if (card) {
+          if (delta > 70) {
+            card.style.transition = 'transform 0.22s cubic-bezier(0.32, 0.72, 0, 1)';
+            card.style.transform = 'translate3d(0, 100%, 0)';
+            setTimeout(() => {
+              if (typeof onDismiss === 'function') onDismiss();
+            }, 200);
+          } else {
+            card.style.transition = 'transform 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+            card.style.transform = 'translate3d(0, 0, 0)';
+          }
+        } else if (delta > 70) {
+          if (typeof onDismiss === 'function') onDismiss();
+        }
+      };
+
+      return (
+        <div
+          ref={handleRef}
+          className="w-full pt-2 pb-1 flex justify-center items-center cursor-grab active:cursor-grabbing touch-none select-none"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          title="Geser ke bawah untuk menutup"
+        >
+          <div className="w-12 h-1.5 bg-slate-300 dark:bg-slate-600 rounded-full mx-auto my-2 transition-colors" />
+        </div>
+      );
+    };
+
     // Apple-Style Modal Close Button with exact inline SVG
     const ModalCloseButton = ({ onClick, ariaLabel = "Tutup" }) => {
       return (

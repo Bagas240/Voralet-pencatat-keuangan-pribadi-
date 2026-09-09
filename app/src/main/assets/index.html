@@ -6,6 +6,13 @@
   <title>Voralet - Authentic iOS Personal Finance</title>
   <meta name="description" content="Aplikasi pencatat keuangan pribadi modern ala iOS dengan brankas PIN lokal dan pelacak hutang piutang." />
   
+  <!-- Apple HIG & PWA Pure White Card Home Screen Icons (NO outer blue frame) -->
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180' width='180' height='180'%3E%3Crect width='180' height='180' fill='%23FFFFFF'/%3E%3Cpath d='M 32 72 C 44 44, 66 32, 88 32 C 110 32, 120 54, 132 78 C 142 98, 154 74, 164 50' fill='none' stroke='%2302A9FF' stroke-width='12' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M 54 94 C 62 76, 76 66, 88 66 C 100 66, 110 88, 122 108 C 136 128, 152 98, 164 50' fill='none' stroke='%2302A9FF' stroke-width='12' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ctext x='90' y='152' text-anchor='middle' fill='%2302A9FF' font-family='-apple-system, BlinkMacSystemFont, Inter, sans-serif' font-weight='800' font-size='34'%3EVoralet%3C/text%3E%3C/svg%3E" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180' width='180' height='180'%3E%3Crect width='180' height='180' fill='%23FFFFFF'/%3E%3Cpath d='M 32 72 C 44 44, 66 32, 88 32 C 110 32, 120 54, 132 78 C 142 98, 154 74, 164 50' fill='none' stroke='%2302A9FF' stroke-width='12' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M 54 94 C 62 76, 76 66, 88 66 C 100 66, 110 88, 122 108 C 136 128, 152 98, 164 50' fill='none' stroke='%2302A9FF' stroke-width='12' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ctext x='90' y='152' text-anchor='middle' fill='%2302A9FF' font-family='-apple-system, BlinkMacSystemFont, Inter, sans-serif' font-weight='800' font-size='34'%3EVoralet%3C/text%3E%3C/svg%3E" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="theme-color" content="#FFFFFF" />
+  
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -208,30 +215,68 @@
       scrollbar-width: none;
     }
 
-    /* Tactile Touch Animation */
-    .ios-btn-tap, .ios-touch-item, .ios-card-tap {
-      transition: transform 0.15s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.15s ease-out;
+    /* Tactile Touch Animation (SwiftUI Bouncy Spring Compression) */
+    .ios-btn-tap, .ios-touch-item {
+      transition: transform 150ms ease-out, opacity 150ms ease-out;
       will-change: transform;
       user-select: none;
       -webkit-user-select: none;
     }
     .ios-btn-tap:active, .ios-touch-item:active {
-      transform: scale3d(0.96, 0.96, 1);
+      transform: scale3d(0.94, 0.94, 1) !important;
       opacity: 0.86;
     }
+    .ios-card-tap {
+      transition: transform 150ms ease-out, opacity 150ms ease-out;
+      will-change: transform;
+      user-select: none;
+      -webkit-user-select: none;
+    }
     .ios-card-tap:active {
-      transform: scale3d(0.98, 0.98, 1);
+      transform: scale3d(0.96, 0.96, 1) !important;
       opacity: 0.92;
     }
 
     /* Keypad Button */
     .ios-keypad-btn {
-      transition: transform 0.12s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.12s ease-out, background-color 0.15s ease;
+      transition: transform 150ms ease-out, opacity 150ms ease-out, background-color 150ms ease;
       will-change: transform;
     }
     .ios-keypad-btn:active {
-      transform: scale3d(0.92, 0.92, 1);
-      opacity: 0.78;
+      transform: scale3d(0.92, 0.92, 1) !important;
+      opacity: 0.76;
+    }
+
+    /* iOS Native Modal Sheet Depth Stacking Effect */
+    .ios-modal-depth-layer {
+      transition: transform 350ms cubic-bezier(0.32, 0.72, 0, 1), border-radius 350ms cubic-bezier(0.32, 0.72, 0, 1), filter 350ms ease-out;
+      will-change: transform, border-radius;
+      transform-origin: center top;
+    }
+    .ios-modal-depth-stacked {
+      transform: scale(0.96) !important;
+      border-radius: 28px !important;
+      overflow: hidden !important;
+      filter: brightness(0.95);
+    }
+    html.dark .ios-modal-depth-stacked, .dark .ios-modal-depth-stacked {
+      filter: brightness(0.88);
+    }
+
+    /* SwiftUI Bouncy Elastic Curve for Dialogs, Popovers & Toasts */
+    @keyframes iosSpringPop {
+      0% {
+        transform: scale(0.85);
+        opacity: 0;
+      }
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+    .animate-ios-spring-pop {
+      animation: iosSpringPop 0.38s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      will-change: transform, opacity;
     }
 
     /* iOS Bottom Sheet Animations */
@@ -423,7 +468,7 @@
 <body>
   <div id="root"></div>
 
-  <script type="text/babel">
+  <script type="text/babel" data-presets="env,react">
     const { useState, useEffect, useMemo, useCallback, useRef } = React;
 
     // =========================================================================
@@ -769,6 +814,201 @@
       return (
         <div className={`flex items-center justify-center ${className}`}>
           <Icon name={icon} className={iconClass} strokeWidth={strokeWidth} />
+        </div>
+      );
+    };
+
+    // Dynamic Brand Logo Configuration (Voralet Brand Mark & Badge from 2.jpg)
+    const APP_LOGO_SRC = ""; // Set image path, base64 or URL if custom logo asset is supplied
+
+    // The signature double-wave mark from the Voralet logo in 2.jpg
+    const VoraletWaves = ({ className = "w-full h-full", color = "#0099FF" }) => (
+      <svg
+        viewBox="0 0 100 80"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className={className}
+      >
+        {/* Upper flowing crest wave */}
+        <path
+          d="M 18 36 C 26 20, 36 14, 46 14 C 56 14, 62 26, 68 37 C 74 48, 80 36, 86 24"
+          stroke={color}
+          strokeWidth="8.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        {/* Lower nested fluid return wave */}
+        <path
+          d="M 29 47 C 32 38, 38 34, 42 34 C 48 34, 53 44, 60 54 C 67 64, 78 50, 86 24"
+          stroke={color}
+          strokeWidth="8.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    );
+
+    // Exact Voralet App Icon Squircle Badge as shown in 2.jpg (White squircle card with blue waves & blue Voralet text)
+    const VoraletLogo = ({ 
+      size = "md", 
+      className = "", 
+      rounded = "rounded-[28%]", 
+      shadow = "shadow-[0_12px_36px_rgba(0,0,0,0.14)]" 
+    }) => {
+      const sizeMap = {
+        xs: { card: "w-9 h-9 rounded-xl", waveStroke: "11", text: "text-[9px] font-black" },
+        sm: { card: "w-11 h-11 rounded-2xl", waveStroke: "11.5", text: "text-[11px] font-black" },
+        md: { card: "w-16 h-16 rounded-[20px]", waveStroke: "12", text: "text-xs font-black" },
+        lg: { card: "w-24 h-24 rounded-[26px]", waveStroke: "12", text: "text-base font-black" },
+        xl: { card: "w-32 h-32 rounded-[32px]", waveStroke: "12", text: "text-xl font-black" },
+        splash: { card: "w-44 h-44 sm:w-48 sm:h-48 rounded-[44px]", waveStroke: "12", text: "text-2xl sm:text-3xl font-black" }
+      };
+      const cfg = sizeMap[size] || sizeMap.md;
+
+      return (
+        <div className={`relative aspect-square flex flex-col items-center justify-center bg-[#FFFFFF] ${shadow} overflow-hidden select-none ${cfg.card} ${className}`}>
+          {/* Wave mark container */}
+          <div className="w-[68%] h-[46%] flex items-center justify-center -mt-1 text-[#02A9FF]">
+            <svg
+              viewBox="0 0 100 70"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              className="w-full h-full"
+            >
+              {/* Upper flowing crest wave */}
+              <path
+                d="M 16 32 C 24 16, 36 10, 48 10 C 60 10, 66 22, 72 34 C 78 46, 84 32, 90 20"
+                stroke="#02A9FF"
+                strokeWidth={cfg.waveStroke}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              {/* Lower nested fluid return wave */}
+              <path
+                d="M 28 44 C 32 34, 40 28, 46 28 C 52 28, 58 40, 64 50 C 72 62, 82 46, 90 20"
+                stroke="#02A9FF"
+                strokeWidth={cfg.waveStroke}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+          {/* Voralet text in rounded bold font */}
+          <div className="w-full text-center mt-1">
+            <span className={`text-[#02A9FF] font-['Inter',system-ui,sans-serif] tracking-tight leading-none select-none ${cfg.text}`}>
+              Voralet
+            </span>
+          </div>
+        </div>
+      );
+    };
+
+    // VoraletBadge backwards-compatible wrapper pointing to official VoraletLogo
+    const VoraletBadge = ({ className = "w-32 h-32", rounded = "rounded-[32%]", shadow = "shadow-[0_16px_48px_rgba(0,0,0,0.16)]" }) => (
+      <VoraletLogo size="xl" className={className} rounded={rounded} shadow={shadow} />
+    );
+
+    const AppLogo = ({ 
+      size = "md", 
+      showText = true, 
+      variant = "auto", // "auto" | "badge" | "mark"
+      className = "", 
+      textColor = "text-[#0099FF] dark:text-[#38BDF8]" 
+    }) => {
+      const sizeMap = {
+        sm: { icon: "w-6 h-6", text: "text-base font-bold tracking-tight", badge: "w-9 h-9 rounded-xl" },
+        md: { icon: "w-8 h-8", text: "text-lg font-bold tracking-tight", badge: "w-11 h-11 rounded-2xl" },
+        lg: { icon: "w-12 h-12", text: "text-2xl font-extrabold tracking-tight", badge: "w-16 h-16 rounded-[20px]" },
+        xl: { icon: "w-16 h-16", text: "text-3xl font-black tracking-tight", badge: "w-32 h-32 rounded-[32px]" }
+      };
+      const cfg = sizeMap[size] || sizeMap.md;
+
+      if (variant === "badge" || (variant === "auto" && size === "xl" && !showText)) {
+        return (
+          <div className={`inline-flex items-center justify-center ${className}`}>
+            <VoraletLogo size={size} className={cfg.badge} />
+          </div>
+        );
+      }
+
+      return (
+        <div className={`inline-flex items-center gap-2 select-none ${className}`}>
+          {APP_LOGO_SRC ? (
+            <img src={APP_LOGO_SRC} alt="Voralet Logo" className={`${cfg.icon} object-contain`} />
+          ) : (
+            <div className={`${cfg.icon} flex-shrink-0 flex items-center justify-center text-[#02A9FF] dark:text-[#38BDF8] transition-transform duration-200`}>
+              <VoraletWaves color="currentColor" />
+            </div>
+          )}
+          {showText && (
+            <span className={`${cfg.text} ${textColor} font-['Inter',sans-serif]`}>
+              Voralet
+            </span>
+          )}
+        </div>
+      );
+    };
+
+    // iOS Interactive Swipe-to-Dismiss Handle for Bottom Sheets
+    const ModalDragHandle = ({ onDismiss }) => {
+      const startY = useRef(0);
+      const isDragging = useRef(false);
+      const handleRef = useRef(null);
+
+      const handleTouchStart = (e) => {
+        if (!e.touches || e.touches.length === 0) return;
+        startY.current = e.touches[0].clientY;
+        isDragging.current = true;
+        const card = (handleRef.current && handleRef.current.closest) ? handleRef.current.closest('.ios-modal-card') : null;
+        if (card) {
+          card.style.transition = 'none';
+        }
+      };
+
+      const handleTouchMove = (e) => {
+        if (!isDragging.current || !e.touches || e.touches.length === 0) return;
+        const delta = e.touches[0].clientY - startY.current;
+        if (delta > 0) {
+          const card = (handleRef.current && handleRef.current.closest) ? handleRef.current.closest('.ios-modal-card') : null;
+          if (card) {
+            card.style.transform = `translate3d(0, ${delta}px, 0)`;
+          }
+        }
+      };
+
+      const handleTouchEnd = (e) => {
+        if (!isDragging.current) return;
+        isDragging.current = false;
+        const card = (handleRef.current && handleRef.current.closest) ? handleRef.current.closest('.ios-modal-card') : null;
+        const endY = e.changedTouches && e.changedTouches[0] ? e.changedTouches[0].clientY : startY.current;
+        const delta = endY - startY.current;
+
+        if (card) {
+          if (delta > 70) {
+            card.style.transition = 'transform 0.22s cubic-bezier(0.32, 0.72, 0, 1)';
+            card.style.transform = 'translate3d(0, 100%, 0)';
+            setTimeout(() => {
+              if (typeof onDismiss === 'function') onDismiss();
+            }, 200);
+          } else {
+            card.style.transition = 'transform 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+            card.style.transform = 'translate3d(0, 0, 0)';
+          }
+        } else if (delta > 70) {
+          if (typeof onDismiss === 'function') onDismiss();
+        }
+      };
+
+      return (
+        <div
+          ref={handleRef}
+          className="w-full pt-2 pb-1 flex justify-center items-center cursor-grab active:cursor-grabbing touch-none select-none"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          title="Geser ke bawah untuk menutup"
+        >
+          <div className="w-12 h-1.5 bg-slate-300 dark:bg-slate-600 rounded-full mx-auto my-2 transition-colors" />
         </div>
       );
     };
@@ -1596,8 +1836,8 @@
       const [isFadingOut, setIsFadingOut] = useState(false);
 
       useEffect(() => {
-        const timerHold = setTimeout(() => setIsFadingOut(true), 900);
-        const timerDone = setTimeout(() => onFinish(), 1300);
+        const timerHold = setTimeout(() => setIsFadingOut(true), 1300);
+        const timerDone = setTimeout(() => onFinish(), 1700);
         return () => {
           clearTimeout(timerHold);
           clearTimeout(timerDone);
@@ -1605,19 +1845,11 @@
       }, [onFinish]);
 
       return (
-        <div className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-white dark:bg-black transition-all duration-400 ease-out select-none ${
+        <div className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#0099FF] transition-all duration-400 ease-out select-none ${
           isFadingOut ? 'opacity-0 scale-95 pointer-events-none' : 'opacity-100 scale-100'
         }`}>
-          <div className="flex flex-col items-center text-center px-4">
-            <div className="w-20 h-20 rounded-[24px] bg-[#0284C7] text-white flex items-center justify-center shadow-md mb-4">
-              <Icon name="wallet" className="w-10 h-10" strokeWidth={2} />
-            </div>
-            <h1 className="text-2xl font-bold tracking-tight text-[#0F172A] dark:text-white">
-              Voralet
-            </h1>
-            <p className="text-xs text-[#64748B] dark:text-zinc-400 mt-1 font-medium">
-              Keuangan Sehat • Impian Dekat
-            </p>
+          <div className="flex flex-col items-center text-center px-6 animate-ios-spring-pop">
+            <VoraletLogo size="splash" />
           </div>
         </div>
       );
@@ -1919,10 +2151,7 @@
         <div className="pin-keypad-screen flex flex-col justify-between p-6 bg-white dark:bg-[#0F172A] max-w-md mx-auto transition-colors duration-300 ease-in-out">
           <div>
             <div className="flex items-center justify-between pt-2">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E0F2FE] dark:bg-[#1E293B] border border-[#BAE6FD] dark:border-[#334155] text-[#0284C7] dark:text-[#38BDF8] text-xs font-bold">
-                <Icon name="wallet" className="w-4 h-4" />
-                <span>Voralet</span>
-              </div>
+              <AppLogo size="sm" showText={true} />
               <button
                 type="button"
                 onClick={onToggleTheme}
@@ -2110,7 +2339,8 @@
                 )}
               </div>
 
-              <div className="pb-4 space-y-4">
+              {/* Elevated Button Container with generous bottom safe-area padding */}
+              <div className="pb-10 mb-8 pt-2 space-y-4">
                 <Keypad
                   onKeyPress={handleDigitPress}
                   onBackspace={handleBackspace}
@@ -2119,13 +2349,13 @@
                   type="button"
                   onClick={handleStep1Next}
                   disabled={newPin.length < 6}
-                  className={`w-full py-3.5 rounded-xl font-bold text-sm transition-all ios-btn-tap ${
+                  className={`w-full py-4 rounded-2xl font-bold text-sm transition-all ios-btn-tap ${
                     newPin.length === 6
-                      ? 'bg-[#0284C7] hover:bg-[#0369A1] text-white shadow-sm cursor-pointer'
+                      ? 'bg-[#0284C7] hover:bg-[#0369A1] text-white shadow-md cursor-pointer'
                       : 'bg-slate-100 dark:bg-[#1E293B] border border-transparent dark:border-[#334155] text-[#64748B] dark:text-[#94A3B8] opacity-60 cursor-not-allowed'
                   }`}
                 >
-                  Lanjut
+                  Lanjutkan
                 </button>
               </div>
             </div>
@@ -2349,7 +2579,7 @@
                 <button
                   type="button"
                   onClick={handleFinishOnboarding}
-                  className="flex-1 py-3.5 bg-[#0284C7] hover:bg-[#0369A1] text-white text-sm font-bold rounded-xl shadow-md transition-all active:scale-95 ios-btn-tap text-center"
+                  className="flex-1 py-3.5 bg-[#0099FF] hover:bg-[#008CE8] text-white text-sm font-bold rounded-xl shadow-md transition-all active:scale-95 ios-btn-tap text-center"
                 >
                   Mulai Gunakan Voralet
                 </button>
@@ -2678,7 +2908,8 @@
         <div className={`ios-modal-backdrop ${isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'}`}
              onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}>
           <div className={`ios-modal-card bg-white dark:bg-slate-800 ${isClosing ? 'animate-ios-sheet-exit' : 'animate-ios-sheet'}`}>
-            <div className="ios-modal-header px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800">
+            <ModalDragHandle onDismiss={handleClose} />
+            <div className="ios-modal-header px-5 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800">
               <h2 className="text-base font-bold text-slate-900 dark:text-white">
                 {debtToEdit ? 'Edit Catatan' : 'Catat Hutang / Piutang'}
               </h2>
@@ -2796,10 +3027,16 @@
       );
     };
 
-    const DebtsView = ({ debts, onAddDebt, onToggleStatus, onDeleteDebt, hideBalance, onEditDebt }) => {
+    const DebtsView = ({ debts, onAddDebt, onToggleStatus, onDeleteDebt, hideBalance, onEditDebt, onModalChange }) => {
       const [filterTab, setFilterTab] = useState('ALL'); // ALL | HUTANG | PIUTANG
       const [isModalOpen, setIsModalOpen] = useState(false);
       const [selectedDebt, setSelectedDebt] = useState(null);
+
+      useEffect(() => {
+        if (typeof onModalChange === 'function') {
+          onModalChange(isModalOpen);
+        }
+      }, [isModalOpen, onModalChange]);
 
       const safeDebts = Array.isArray(debts) ? debts : [];
 
@@ -3072,7 +3309,8 @@
         <div className={`ios-modal-backdrop ${isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'}`}
              onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}>
           <div className={`ios-modal-card bg-white dark:bg-slate-800 ${isClosing ? 'animate-ios-sheet-exit' : 'animate-ios-sheet'}`}>
-            <div className="ios-modal-header px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800">
+            <ModalDragHandle onDismiss={handleClose} />
+            <div className="ios-modal-header px-5 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800">
               <h2 className="text-base font-bold text-slate-900 dark:text-white">Catat Transaksi</h2>
               <button
                 type="button"
@@ -3303,7 +3541,8 @@
         <div className={`ios-modal-backdrop ${isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'}`}
              onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}>
           <div className={`ios-modal-card bg-white dark:bg-slate-800 ${isClosing ? 'animate-ios-sheet-exit' : 'animate-ios-sheet'}`}>
-            <div className="ios-modal-header px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800">
+            <ModalDragHandle onDismiss={handleClose} />
+            <div className="ios-modal-header px-5 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800">
               <div>
                 <h2 className="text-base font-bold text-slate-900 dark:text-white">Kelola Dompet & Akun</h2>
                 <p className="text-xs text-slate-500 dark:text-slate-400">Saldo sinkron otomatis dari mutasi</p>
@@ -3524,7 +3763,8 @@
         <div className={`ios-modal-backdrop ${isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'}`}
              onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}>
           <div className={`ios-modal-card bg-white dark:bg-slate-800 ${isClosing ? 'animate-ios-sheet-exit' : 'animate-ios-sheet'}`}>
-            <div className="ios-modal-header px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800">
+            <ModalDragHandle onDismiss={handleClose} />
+            <div className="ios-modal-header px-5 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800">
               <h2 className="text-base font-bold text-slate-900 dark:text-white">
                 {goalToEdit ? 'Edit Kantong Impian' : 'Target Impian Baru'}
               </h2>
@@ -3710,7 +3950,8 @@
         <div className={`ios-modal-backdrop ${isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'}`}
              onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}>
           <div className={`ios-modal-card bg-white dark:bg-slate-800 ${isClosing ? 'animate-ios-sheet-exit' : 'animate-ios-sheet'}`}>
-            <div className="ios-modal-header px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800">
+            <ModalDragHandle onDismiss={handleClose} />
+            <div className="ios-modal-header px-5 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800">
               <h2 className="text-base font-bold text-slate-900 dark:text-white">Pengaturan & Profil</h2>
               <button
                 type="button"
@@ -3924,6 +4165,17 @@
                     <input type="file" accept=".json" className="hidden" onChange={handleFileImport} />
                   </label>
                 </div>
+              </div>
+
+              {/* Profile / About Section with Brand Logo */}
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-700 flex flex-col items-center text-center space-y-1.5 select-none">
+                <VoraletLogo size="md" className="mb-1" />
+                <p className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                  Voralet iOS Edition • Versi 2.0
+                </p>
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 max-w-xs leading-relaxed">
+                  Keuangan Sehat • Impian Dekat. 100% Offline & Terenkripsi Lokal di Perangkat Anda.
+                </p>
               </div>
 
               {/* Reset Data */}
@@ -4164,19 +4416,33 @@
     };
 
     // =========================================================================
-    // ANALYTICS VIEW WITH RESPONSIVE INLINE SVG LINE GRAPH & TREND CHARTS
+    // ANALYTICS VIEW WITH RESPONSIVE INLINE SVG CHARTS & COMPREHENSIVE STATS
     // =========================================================================
-    const AnalyticsView = ({ transactions, accounts, hideBalance }) => {
-      const [trendMode, setTrendMode] = useState('MONTHLY'); // MONTHLY (last 6 months) | YEARLY
-      const safeTxs = Array.isArray(transactions) ? transactions : [];
+    const DONUT_COLORS = [
+      '#0284C7', // Sky brand
+      '#38BDF8', // Light sky
+      '#0D9488', // Teal
+      '#F59E0B', // Amber
+      '#6366F1', // Indigo
+      '#EC4899', // Pink
+      '#8B5CF6', // Purple
+      '#10B981', // Emerald
+      '#64748B'  // Slate
+    ];
 
-      // Compute Trend Data for last 6 months or 5 years
+    const AnalyticsView = ({ transactions = [], accounts = [], debts = [], savingsGoals = [], hideBalance }) => {
+      const [trendMode, setTrendMode] = useState('MONTHLY'); // MONTHLY (last 6 months) | YEARLY
+      const [selectedCatId, setSelectedCatId] = useState(null);
+      const safeTxs = Array.isArray(transactions) ? transactions : [];
+      const safeDebts = Array.isArray(debts) ? debts : [];
+      const safeGoals = Array.isArray(savingsGoals) ? savingsGoals : [];
+
+      // Compute Trend Data for last 6 months or 4 years
       const trendData = useMemo(() => {
         const now = new Date();
         const periods = [];
 
         if (trendMode === 'MONTHLY') {
-          // Last 6 months
           for (let i = 5; i >= 0; i--) {
             const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
             const prefix = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -4184,7 +4450,6 @@
             periods.push({ key: prefix, label, income: 0, expense: 0 });
           }
         } else {
-          // Last 4 years
           for (let i = 3; i >= 0; i--) {
             const yr = now.getFullYear() - i;
             const prefix = String(yr);
@@ -4216,7 +4481,7 @@
         return m > 0 ? m * 1.15 : 100000;
       }, [trendData]);
 
-      // SVG dimensions
+      // SVG line chart dimensions
       const chartW = 320;
       const chartH = 140;
       const padX = 24;
@@ -4237,41 +4502,148 @@
       const incomePoints = useMemo(() => getPoints('income'), [getPoints]);
       const expensePoints = useMemo(() => getPoints('expense'), [getPoints]);
 
-      // Category breakdown for current selected period
-      const categoryBreakdown = useMemo(() => {
+      // Category breakdown for current transactions
+      const { categoryBreakdown, totalExpense } = useMemo(() => {
         const map = {};
-        let sumExpense = 0;
+        let sum = 0;
 
         safeTxs.forEach(t => {
           if (!t || t.type !== 'EXPENSE') return;
           const amt = Number(t.amount) || 0;
-          sumExpense += amt;
+          sum += amt;
           map[t.category] = (map[t.category] || 0) + amt;
         });
 
-        const list = Object.entries(map).map(([catId, amount]) => {
+        const list = Object.entries(map).map(([catId, amount], idx) => {
           const catInfo = CATEGORIES.find(c => c.id === catId) || { label: catId, icon: 'tag' };
-          const pct = sumExpense > 0 ? Math.round((amount / sumExpense) * 100) : 0;
+          const pct = sum > 0 ? Math.round((amount / sum) * 100) : 0;
           return {
             id: catId,
             label: catInfo.label,
             icon: catInfo.icon,
             amount,
-            percentage: pct
+            percentage: pct,
+            color: DONUT_COLORS[idx % DONUT_COLORS.length]
           };
         });
 
-        return list.sort((a, b) => b.amount - a.amount);
+        return {
+          categoryBreakdown: list.sort((a, b) => b.amount - a.amount),
+          totalExpense: sum
+        };
       }, [safeTxs]);
 
+      // Donut Chart SVG Segments
+      const donutSegments = useMemo(() => {
+        const r = 38;
+        const circumference = 2 * Math.PI * r;
+        let cumulativePct = 0;
+
+        return categoryBreakdown.map(item => {
+          const strokeDasharray = `${(item.percentage / 100) * circumference} ${circumference}`;
+          const strokeDashoffset = -((cumulativePct / 100) * circumference);
+          cumulativePct += item.percentage;
+
+          return {
+            ...item,
+            strokeDasharray,
+            strokeDashoffset,
+            r
+          };
+        });
+      }, [categoryBreakdown]);
+
+      // Selected or Top Category for Donut Center
+      const activeDonutInfo = useMemo(() => {
+        if (selectedCatId) {
+          const found = categoryBreakdown.find(c => c.id === selectedCatId);
+          if (found) return { label: found.label, amount: found.amount, percentage: found.percentage, color: found.color };
+        }
+        return { label: 'Total Keluar', amount: totalExpense, percentage: 100, color: '#0284C7' };
+      }, [selectedCatId, categoryBreakdown, totalExpense]);
+
+      // Cashflow Summary Totals
       const totals = useMemo(() => Ledger.getSummaryTotals(safeTxs), [safeTxs]);
 
+      // Debt & Receivable Statistics
+      const debtStats = useMemo(() => {
+        let totalHutang = 0;
+        let totalPiutang = 0;
+        let settledCount = 0;
+        let pendingCount = 0;
+        let settledAmount = 0;
+        let pendingAmount = 0;
+
+        safeDebts.forEach(d => {
+          const amt = Number(d.amount) || 0;
+          if (d.type === 'HUTANG') totalHutang += amt;
+          else if (d.type === 'PIUTANG') totalPiutang += amt;
+
+          if (d.status === 'LUNAS') {
+            settledCount++;
+            settledAmount += amt;
+          } else {
+            pendingCount++;
+            pendingAmount += amt;
+          }
+        });
+
+        const totalAll = totalHutang + totalPiutang;
+        const repaymentRate = totalAll > 0 ? Math.round((settledAmount / totalAll) * 100) : 0;
+
+        return {
+          totalHutang,
+          totalPiutang,
+          settledCount,
+          pendingCount,
+          settledAmount,
+          pendingAmount,
+          totalCount: safeDebts.length,
+          repaymentRate
+        };
+      }, [safeDebts]);
+
+      // Savings & Goals Statistics
+      const savingsStats = useMemo(() => {
+        let totalSaved = 0;
+        let totalTarget = 0;
+        let completedCount = 0;
+        let earliestDate = Date.now();
+
+        safeGoals.forEach(g => {
+          const cur = Number(g.currentAmount) || 0;
+          const tgt = Number(g.targetAmount) || 0;
+          totalSaved += cur;
+          totalTarget += tgt;
+          if (tgt > 0 && cur >= tgt) completedCount++;
+
+          if (g.createdAt) {
+            const t = new Date(g.createdAt).getTime();
+            if (!isNaN(t) && t < earliestDate) earliestDate = t;
+          }
+        });
+
+        const overallRate = totalTarget > 0 ? Math.min(100, Math.round((totalSaved / totalTarget) * 100)) : 0;
+        const daysElapsed = Math.max(1, Math.round((Date.now() - earliestDate) / (1000 * 60 * 60 * 24)));
+        const monthsElapsed = Math.max(1, Math.round(daysElapsed / 30.4));
+        const monthlyVelocity = totalSaved > 0 ? Math.round(totalSaved / monthsElapsed) : 0;
+
+        return {
+          totalSaved,
+          totalTarget,
+          completedCount,
+          activeCount: safeGoals.length - completedCount,
+          overallRate,
+          monthlyVelocity
+        };
+      }, [safeGoals]);
+
       return (
-        <div className="space-y-4 pb-28 animate-ios-tab-view">
+        <div className="space-y-4 pb-28 animate-ios-tab-view select-none">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-base font-bold text-slate-900 dark:text-white">Analisis & Tren Keuangan</h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Pantau arus kas dan pertumbuhan saldo</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Statistik arus kas, hutang, dan impian</p>
             </div>
           </div>
 
@@ -4290,7 +4662,7 @@
           <div className="ios-inset-group">
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                Grafik Arus Kas (Pemasukan vs Pengeluaran)
+                Tren Pemasukan vs Pengeluaran
               </span>
               <div className="flex items-center gap-3 text-[11px] font-semibold">
                 <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
@@ -4304,7 +4676,7 @@
               </div>
             </div>
 
-            {/* Inline SVG Chart */}
+            {/* Inline SVG Line Chart */}
             <div className="w-full overflow-hidden">
               <svg viewBox={`0 0 ${chartW} ${chartH}`} className="w-full h-40 overflow-visible">
                 {/* Baseline Grid lines */}
@@ -4347,7 +4719,6 @@
                     <g key={d.key}>
                       <circle cx={x} cy={yInc} r="3.5" fill="#10B981" stroke="#FFFFFF" strokeWidth="1.5" />
                       <circle cx={x} cy={yExp} r="3.5" fill="#F43F5E" stroke="#FFFFFF" strokeWidth="1.5" />
-                      {/* Label */}
                       <text
                         x={x}
                         y={chartH - 4}
@@ -4380,56 +4751,234 @@
               </div>
             </div>
             <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-brand block mb-1">Arus Bersih</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#0284C7] dark:text-[#38BDF8] block mb-1">Arus Bersih</span>
               <div className={`text-xs font-bold ${totals.net >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
                 {hideBalance ? 'Rp ••••••' : formatIDR(totals.net)}
               </div>
             </div>
           </div>
 
-          {/* Category Breakdown */}
+          {/* INTERACTIVE SVG PIE / DONUT CHART FOR EXPENSES */}
           <div className="ios-inset-group">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">
-              Rincian Kategori Pengeluaran
-            </h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Proporsi Kategori Pengeluaran
+              </h3>
+              {selectedCatId && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedCatId(null)}
+                  className="text-[11px] font-semibold text-[#0284C7] dark:text-[#38BDF8] hover:underline"
+                >
+                  Lihat Semua
+                </button>
+              )}
+            </div>
 
             {categoryBreakdown.length === 0 ? (
-              <p className="text-xs text-slate-400 text-center py-6">Belum ada data pengeluaran.</p>
+              <p className="text-xs text-slate-400 text-center py-8">Belum ada pengeluaran yang tercatat.</p>
             ) : (
-              <div className="space-y-3">
-                {categoryBreakdown.map(item => (
-                  <div key={item.id} className="space-y-1">
-                    <div className="flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-lg bg-sky-50 dark:bg-slate-700 text-brand dark:text-sky-400 flex items-center justify-center">
-                          <Icon name={item.icon} className="w-3.5 h-3.5" />
-                        </div>
-                        <span className="font-semibold text-slate-800 dark:text-slate-200">{item.label}</span>
-                      </div>
-                      <div className="text-right">
-                        <span className="font-bold text-slate-900 dark:text-white">
-                          {hideBalance ? 'Rp ••••••' : formatIDR(item.amount)}
-                        </span>
-                        <span className="text-slate-400 text-[10px] ml-1.5">({item.percentage}%)</span>
-                      </div>
-                    </div>
-                    <div className="w-full h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-brand rounded-full transition-all duration-300"
-                        style={{ width: `${item.percentage}%` }}
-                      />
-                    </div>
+              <div>
+                {/* Inline SVG Donut Chart */}
+                <div className="relative flex items-center justify-center my-3">
+                  <svg viewBox="0 0 100 100" className="w-44 h-44 -rotate-90 transform">
+                    {/* Background Track */}
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="38"
+                      fill="none"
+                      stroke="#E2E8F0"
+                      strokeWidth="12"
+                      className="dark:stroke-slate-700"
+                    />
+                    {/* Donut Segments */}
+                    {donutSegments.map(seg => {
+                      const isSelected = selectedCatId === seg.id;
+                      return (
+                        <circle
+                          key={seg.id}
+                          cx="50"
+                          cy="50"
+                          r="38"
+                          fill="none"
+                          stroke={seg.color}
+                          strokeWidth={isSelected ? "14" : "12"}
+                          strokeDasharray={seg.strokeDasharray}
+                          strokeDashoffset={seg.strokeDashoffset}
+                          className="cursor-pointer transition-all duration-300 hover:opacity-90"
+                          onClick={() => setSelectedCatId(seg.id === selectedCatId ? null : seg.id)}
+                        />
+                      );
+                    })}
+                  </svg>
+
+                  {/* Donut Center Display */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none p-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 line-clamp-1">
+                      {activeDonutInfo.label}
+                    </span>
+                    <span className="text-xs font-black text-slate-900 dark:text-white mt-0.5">
+                      {hideBalance ? 'Rp ••••••' : formatIDR(activeDonutInfo.amount)}
+                    </span>
+                    <span className="text-[10px] font-bold text-[#0284C7] dark:text-[#38BDF8] mt-0.5">
+                      {activeDonutInfo.percentage}%
+                    </span>
                   </div>
-                ))}
+                </div>
+
+                {/* Category Breakdown List */}
+                <div className="space-y-2.5 mt-4 pt-3 border-t border-slate-100 dark:border-slate-700/60">
+                  {categoryBreakdown.map(item => {
+                    const isSelected = selectedCatId === item.id;
+                    return (
+                      <div
+                        key={item.id}
+                        onClick={() => setSelectedCatId(isSelected ? null : item.id)}
+                        className={`p-2 rounded-xl transition-all cursor-pointer ${
+                          isSelected ? 'bg-sky-50 dark:bg-slate-700/80 border border-sky-200 dark:border-sky-500/50' : 'hover:bg-slate-50 dark:hover:bg-slate-700/40'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between text-xs mb-1.5">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className="w-3 h-3 rounded-full flex-shrink-0"
+                              style={{ backgroundColor: item.color }}
+                            />
+                            <span className="font-bold text-slate-800 dark:text-slate-200">{item.label}</span>
+                          </div>
+                          <div className="text-right flex items-center gap-2">
+                            <span className="font-extrabold text-slate-900 dark:text-white">
+                              {hideBalance ? 'Rp ••••••' : formatIDR(item.amount)}
+                            </span>
+                            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded-full">
+                              {item.percentage}%
+                            </span>
+                          </div>
+                        </div>
+                        <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full transition-all duration-300"
+                            style={{ width: `${item.percentage}%`, backgroundColor: item.color }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
+          </div>
+
+          {/* STATISTIK HUTANG & PIUTANG (DEBTS & RECEIVABLES SUITE) */}
+          <div className="ios-inset-group space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Statistik Hutang & Piutang
+              </h3>
+              <span className="text-[10px] font-bold text-slate-400">
+                {debtStats.totalCount} Catatan Total
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 text-center">
+              <div className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-100 dark:border-rose-900/50">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400 block mb-0.5">
+                  Total Hutang
+                </span>
+                <div className="text-xs font-extrabold text-rose-700 dark:text-rose-300">
+                  {hideBalance ? 'Rp ••••••' : formatIDR(debtStats.totalHutang)}
+                </div>
+              </div>
+              <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 block mb-0.5">
+                  Total Piutang
+                </span>
+                <div className="text-xs font-extrabold text-emerald-700 dark:text-emerald-300">
+                  {hideBalance ? 'Rp ••••••' : formatIDR(debtStats.totalPiutang)}
+                </div>
+              </div>
+            </div>
+
+            {/* Repayment Breakdown Card */}
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-700/60 space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-semibold text-slate-600 dark:text-slate-300">Tingkat Kelunasan</span>
+                <span className="font-bold text-[#0284C7] dark:text-[#38BDF8]">{debtStats.repaymentRate}%</span>
+              </div>
+              <div className="w-full h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-[#0284C7] dark:bg-[#38BDF8] rounded-full transition-all duration-300"
+                  style={{ width: `${debtStats.repaymentRate}%` }}
+                />
+              </div>
+              <div className="flex justify-between text-[11px] text-slate-500 dark:text-slate-400 pt-0.5">
+                <span>{debtStats.settledCount} Lunas ({hideBalance ? '••••' : formatIDR(debtStats.settledAmount)})</span>
+                <span>{debtStats.pendingCount} Belum Lunas ({hideBalance ? '••••' : formatIDR(debtStats.pendingAmount)})</span>
+              </div>
+            </div>
+          </div>
+
+          {/* STATISTIK KANTONG IMPIAN (SAVINGS & GOALS VELOCITY) */}
+          <div className="ios-inset-group space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Statistik Kantong Impian
+              </h3>
+              <span className="text-[10px] font-bold text-slate-400">
+                {savingsStats.completedCount} / {safeGoals.length} Tercapai
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 text-center">
+              <div className="p-2.5 rounded-xl bg-sky-50 dark:bg-slate-700/60 border border-sky-100 dark:border-slate-600">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#0284C7] dark:text-[#38BDF8] block mb-0.5">
+                  Terkumpul
+                </span>
+                <div className="text-xs font-extrabold text-slate-900 dark:text-white">
+                  {hideBalance ? 'Rp ••••••' : formatIDR(savingsStats.totalSaved)}
+                </div>
+              </div>
+              <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-700/60 border border-slate-200/80 dark:border-slate-600">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-0.5">
+                  Target Total
+                </span>
+                <div className="text-xs font-extrabold text-slate-900 dark:text-white">
+                  {hideBalance ? 'Rp ••••••' : formatIDR(savingsStats.totalTarget)}
+                </div>
+              </div>
+            </div>
+
+            {/* Overall Progress Meter */}
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-700/60 space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-semibold text-slate-600 dark:text-slate-300">Pencapaian Target Keseluruhan</span>
+                <span className="font-bold text-[#0284C7] dark:text-[#38BDF8]">{savingsStats.overallRate}%</span>
+              </div>
+              <div className="w-full h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-[#0284C7] dark:bg-[#38BDF8] rounded-full transition-all duration-300"
+                  style={{ width: `${savingsStats.overallRate}%` }}
+                />
+              </div>
+              <div className="flex justify-between text-[11px] text-slate-500 dark:text-slate-400 pt-0.5">
+                <span>{savingsStats.activeCount} Impian Aktif Berjalan</span>
+                <span>{savingsStats.completedCount} Target Tercapai</span>
+              </div>
+              <div className="flex justify-between items-center text-[11px] text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-700/50">
+                <span>Kecepatan Setoran Rata-rata:</span>
+                <span className="font-bold text-[#0284C7] dark:text-[#38BDF8]">
+                  {hideBalance ? '••••' : formatIDR(savingsStats.monthlyVelocity)} / bulan
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       );
     };
 
     // =========================================================================
-    // 8. FLOATING CAPSULE NAVIGATION (APPLE-STYLE FIXED CAPSULE NAV BAR)
+    // 8. FLOATING CAPSULE NAVIGATION (WITH TOUCH DRAG MECHANICS)
     // =========================================================================
     const FloatingCapsuleNav = ({ currentTab, onSelectTab }) => {
       const tabs = [
@@ -4439,11 +4988,60 @@
         { id: 'analytics', label: 'Statistik', icon: 'pie-chart' }
       ];
 
+      const navRef = useRef(null);
+      const isDragging = useRef(false);
       const activeIndex = Math.max(0, tabs.findIndex(t => t.id === currentTab));
+
+      const updateTabFromCoord = (clientX) => {
+        if (!navRef.current) return;
+        const rect = navRef.current.getBoundingClientRect();
+        const relX = clientX - rect.left;
+        const fraction = Math.max(0, Math.min(0.999, relX / rect.width));
+        const tabIndex = Math.floor(fraction * tabs.length);
+        if (tabs[tabIndex] && tabs[tabIndex].id !== currentTab) {
+          onSelectTab(tabs[tabIndex].id);
+        }
+      };
+
+      const handleTouchStart = (e) => {
+        if (!e.touches || e.touches.length === 0) return;
+        isDragging.current = true;
+        updateTabFromCoord(e.touches[0].clientX);
+      };
+
+      const handleTouchMove = (e) => {
+        if (!isDragging.current || !e.touches || e.touches.length === 0) return;
+        updateTabFromCoord(e.touches[0].clientX);
+      };
+
+      const handleTouchEnd = () => {
+        isDragging.current = false;
+      };
+
+      const handleMouseDown = (e) => {
+        isDragging.current = true;
+        updateTabFromCoord(e.clientX);
+      };
+
+      const handleMouseMove = (e) => {
+        if (!isDragging.current) return;
+        updateTabFromCoord(e.clientX);
+      };
+
+      const handleMouseUp = () => {
+        isDragging.current = false;
+      };
 
       return (
         <nav
-          className="fixed bottom-5 left-0 right-0 z-50 w-[92%] max-w-[360px] h-14 mx-auto rounded-full bg-white/95 backdrop-blur-md dark:bg-[#1E293B]/95 border border-slate-200/90 dark:border-slate-700 shadow-[0_14px_36px_rgba(15,23,42,0.22),0_4px_12px_rgba(15,23,42,0.08)] dark:shadow-[0_18px_42px_rgba(0,0,0,0.75),0_0_0_1px_rgba(255,255,255,0.08)] flex items-center p-1.5 select-none"
+          ref={navRef}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          className="fixed bottom-5 left-0 right-0 z-50 w-[92%] max-w-[360px] h-14 mx-auto rounded-full bg-[#FFFFFF] dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155] shadow-[0_12px_32px_rgba(15,23,42,0.18)] dark:shadow-[0_16px_36px_rgba(0,0,0,0.6)] flex items-center p-1.5 select-none touch-none"
         >
           {/* Active Sliding Pill - Smooth Apple Spring Curve */}
           <div
@@ -4744,7 +5342,8 @@
               </div>
             </div>
 
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
+              <VoraletLogo size="xs" shadow="shadow-sm" />
               <button
                 type="button"
                 onClick={onOpenAccounts}
@@ -5116,6 +5715,7 @@
       const [isSavingsModalOpen, setIsSavingsModalOpen] = useState(false);
       const [savingsGoalToEdit, setSavingsGoalToEdit] = useState(null);
       const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+      const [isDebtModalOpen, setIsDebtModalOpen] = useState(false);
 
       const showToast = useCallback((msg) => {
         setToastMsg(msg);
@@ -5496,15 +6096,21 @@
         );
       }
 
+      const isAnyModalOpen = isTxModalOpen || isAccModalOpen || isSavingsModalOpen || isSettingsModalOpen || isDebtModalOpen;
+
       return (
         <div className={`h-[100dvh] flex flex-col ${theme === 'dark' ? 'dark bg-[#0F172A] text-[#F8FAFC]' : 'bg-slate-50 text-[#0F172A]'} overflow-hidden select-none transition-colors duration-300 ease-in-out`}>
           {toastMsg && <Toast message={toastMsg} onClose={() => setToastMsg('')} />}
 
-          <main
-            onTouchStart={handleScreenTouchStart}
-            onTouchEnd={handleScreenTouchEnd}
-            className="flex-1 w-full max-w-md mx-auto px-4 pt-3 pb-28 overflow-y-auto no-scrollbar"
-          >
+          {/* iOS Background Depth Stacking Layer */}
+          <div className={`ios-modal-depth-layer flex-1 flex flex-col w-full h-full overflow-hidden ${
+            isAnyModalOpen ? 'ios-modal-depth-stacked' : ''
+          }`}>
+            <main
+              onTouchStart={handleScreenTouchStart}
+              onTouchEnd={handleScreenTouchEnd}
+              className="flex-1 w-full max-w-md mx-auto px-4 pt-3 pb-28 overflow-y-auto no-scrollbar"
+            >
             <ErrorBoundary>
               {activeTab === 'dashboard' && (
                 <MainDashboard
@@ -5551,6 +6157,7 @@
                   onToggleStatus={handleToggleDebtStatus}
                   onDeleteDebt={handleDeleteDebt}
                   hideBalance={hideBalance}
+                  onModalChange={setIsDebtModalOpen}
                 />
               )}
 
@@ -5575,6 +6182,8 @@
                 <AnalyticsView
                   transactions={transactions}
                   accounts={accounts}
+                  debts={debts}
+                  savingsGoals={savingsGoals}
                   hideBalance={hideBalance}
                 />
               )}
@@ -5583,6 +6192,7 @@
 
           {/* Floating Capsule Bottom Navigation with Fluid Active Pill */}
           <FloatingCapsuleNav currentTab={activeTab} onSelectTab={setActiveTab} />
+        </div>
 
           {/* Modals with Apple-style sheets and strict close icons */}
           <TransactionModal

@@ -262,7 +262,8 @@ PART8_APP = """
               </div>
             </div>
 
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
+              <VoraletLogo size="xs" shadow="shadow-sm" />
               <button
                 type="button"
                 onClick={onOpenAccounts}
@@ -634,6 +635,7 @@ PART8_APP = """
       const [isSavingsModalOpen, setIsSavingsModalOpen] = useState(false);
       const [savingsGoalToEdit, setSavingsGoalToEdit] = useState(null);
       const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+      const [isDebtModalOpen, setIsDebtModalOpen] = useState(false);
 
       const showToast = useCallback((msg) => {
         setToastMsg(msg);
@@ -1014,15 +1016,21 @@ PART8_APP = """
         );
       }
 
+      const isAnyModalOpen = isTxModalOpen || isAccModalOpen || isSavingsModalOpen || isSettingsModalOpen || isDebtModalOpen;
+
       return (
         <div className={`h-[100dvh] flex flex-col ${theme === 'dark' ? 'dark bg-[#0F172A] text-[#F8FAFC]' : 'bg-slate-50 text-[#0F172A]'} overflow-hidden select-none transition-colors duration-300 ease-in-out`}>
           {toastMsg && <Toast message={toastMsg} onClose={() => setToastMsg('')} />}
 
-          <main
-            onTouchStart={handleScreenTouchStart}
-            onTouchEnd={handleScreenTouchEnd}
-            className="flex-1 w-full max-w-md mx-auto px-4 pt-3 pb-28 overflow-y-auto no-scrollbar"
-          >
+          {/* iOS Background Depth Stacking Layer */}
+          <div className={`ios-modal-depth-layer flex-1 flex flex-col w-full h-full overflow-hidden ${
+            isAnyModalOpen ? 'ios-modal-depth-stacked' : ''
+          }`}>
+            <main
+              onTouchStart={handleScreenTouchStart}
+              onTouchEnd={handleScreenTouchEnd}
+              className="flex-1 w-full max-w-md mx-auto px-4 pt-3 pb-28 overflow-y-auto no-scrollbar"
+            >
             <ErrorBoundary>
               {activeTab === 'dashboard' && (
                 <MainDashboard
@@ -1069,6 +1077,7 @@ PART8_APP = """
                   onToggleStatus={handleToggleDebtStatus}
                   onDeleteDebt={handleDeleteDebt}
                   hideBalance={hideBalance}
+                  onModalChange={setIsDebtModalOpen}
                 />
               )}
 
@@ -1093,6 +1102,8 @@ PART8_APP = """
                 <AnalyticsView
                   transactions={transactions}
                   accounts={accounts}
+                  debts={debts}
+                  savingsGoals={savingsGoals}
                   hideBalance={hideBalance}
                 />
               )}
@@ -1101,6 +1112,7 @@ PART8_APP = """
 
           {/* Floating Capsule Bottom Navigation with Fluid Active Pill */}
           <FloatingCapsuleNav currentTab={activeTab} onSelectTab={setActiveTab} />
+        </div>
 
           {/* Modals with Apple-style sheets and strict close icons */}
           <TransactionModal

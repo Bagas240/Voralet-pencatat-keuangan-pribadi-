@@ -6,8 +6,8 @@ PART4_AUTH_PIN = """
       const [isFadingOut, setIsFadingOut] = useState(false);
 
       useEffect(() => {
-        const timerHold = setTimeout(() => setIsFadingOut(true), 900);
-        const timerDone = setTimeout(() => onFinish(), 1300);
+        const timerHold = setTimeout(() => setIsFadingOut(true), 1300);
+        const timerDone = setTimeout(() => onFinish(), 1700);
         return () => {
           clearTimeout(timerHold);
           clearTimeout(timerDone);
@@ -15,19 +15,11 @@ PART4_AUTH_PIN = """
       }, [onFinish]);
 
       return (
-        <div className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-white dark:bg-black transition-all duration-400 ease-out select-none ${
+        <div className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#0099FF] transition-all duration-400 ease-out select-none ${
           isFadingOut ? 'opacity-0 scale-95 pointer-events-none' : 'opacity-100 scale-100'
         }`}>
-          <div className="flex flex-col items-center text-center px-4">
-            <div className="w-20 h-20 rounded-[24px] bg-[#0284C7] text-white flex items-center justify-center shadow-md mb-4">
-              <Icon name="wallet" className="w-10 h-10" strokeWidth={2} />
-            </div>
-            <h1 className="text-2xl font-bold tracking-tight text-[#0F172A] dark:text-white">
-              Voralet
-            </h1>
-            <p className="text-xs text-[#64748B] dark:text-zinc-400 mt-1 font-medium">
-              Keuangan Sehat • Impian Dekat
-            </p>
+          <div className="flex flex-col items-center text-center px-6 animate-ios-spring-pop">
+            <VoraletLogo size="splash" />
           </div>
         </div>
       );
@@ -141,7 +133,7 @@ PART4_AUTH_PIN = """
 
       const handleSaveNewPin = (e) => {
         e.preventDefault();
-        if (newPin.length !== 6 || !/^\\d{6}$/.test(newPin)) {
+        if (newPin.length !== 6 || !/^\d{6}$/.test(newPin)) {
           setPinError('PIN harus berupa 6 angka');
           return;
         }
@@ -329,10 +321,7 @@ PART4_AUTH_PIN = """
         <div className="pin-keypad-screen flex flex-col justify-between p-6 bg-white dark:bg-[#0F172A] max-w-md mx-auto transition-colors duration-300 ease-in-out">
           <div>
             <div className="flex items-center justify-between pt-2">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E0F2FE] dark:bg-[#1E293B] border border-[#BAE6FD] dark:border-[#334155] text-[#0284C7] dark:text-[#38BDF8] text-xs font-bold">
-                <Icon name="wallet" className="w-4 h-4" />
-                <span>Voralet</span>
-              </div>
+              <AppLogo size="sm" showText={true} />
               <button
                 type="button"
                 onClick={onToggleTheme}
@@ -520,7 +509,8 @@ PART4_AUTH_PIN = """
                 )}
               </div>
 
-              <div className="pb-4 space-y-4">
+              {/* Elevated Button Container with generous bottom safe-area padding */}
+              <div className="pb-10 mb-8 pt-2 space-y-4">
                 <Keypad
                   onKeyPress={handleDigitPress}
                   onBackspace={handleBackspace}
@@ -529,13 +519,13 @@ PART4_AUTH_PIN = """
                   type="button"
                   onClick={handleStep1Next}
                   disabled={newPin.length < 6}
-                  className={`w-full py-3.5 rounded-xl font-bold text-sm transition-all ios-btn-tap ${
+                  className={`w-full py-4 rounded-2xl font-bold text-sm transition-all ios-btn-tap ${
                     newPin.length === 6
-                      ? 'bg-[#0284C7] hover:bg-[#0369A1] text-white shadow-sm cursor-pointer'
+                      ? 'bg-[#0284C7] hover:bg-[#0369A1] text-white shadow-md cursor-pointer'
                       : 'bg-slate-100 dark:bg-[#1E293B] border border-transparent dark:border-[#334155] text-[#64748B] dark:text-[#94A3B8] opacity-60 cursor-not-allowed'
                   }`}
                 >
-                  Lanjut
+                  Lanjutkan
                 </button>
               </div>
             </div>
@@ -759,7 +749,7 @@ PART4_AUTH_PIN = """
                 <button
                   type="button"
                   onClick={handleFinishOnboarding}
-                  className="flex-1 py-3.5 bg-[#0284C7] hover:bg-[#0369A1] text-white text-sm font-bold rounded-xl shadow-md transition-all active:scale-95 ios-btn-tap text-center"
+                  className="flex-1 py-3.5 bg-[#0099FF] hover:bg-[#008CE8] text-white text-sm font-bold rounded-xl shadow-md transition-all active:scale-95 ios-btn-tap text-center"
                 >
                   Mulai Gunakan Voralet
                 </button>
