@@ -28,27 +28,27 @@ PART7_VIEWS = """
             <button
               type="button"
               onClick={onOpenNewGoal}
-              className="px-4 py-2.5 bg-brand hover:bg-brand-hover text-white text-xs font-bold rounded-2xl flex items-center gap-2 shadow-sm transition-all ios-btn-tap"
+              className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-2xl flex items-center gap-1.5 shadow-sm ios-btn-tap"
             >
-              <Icon name="plus" className="w-4 h-4" strokeWidth={2.4} />
-              <span>Target Baru</span>
+              <Icon name="plus" className="w-4 h-4" strokeWidth={2.6} />
+              <span>Tambah Kantong</span>
             </button>
           </div>
 
           {safeGoals.length === 0 ? (
             <div className="ios-inset-group text-center py-10">
-              <IconBadge icon="target" className="w-14 h-14 rounded-2xl bg-sky-50 dark:bg-slate-800 text-brand mx-auto mb-3" iconClass="w-7 h-7" />
-              <h3 className="text-sm font-bold text-slate-800 dark:text-white">Belum Ada Target Impian</h3>
+              <IconBadge icon="target" className="w-14 h-14 rounded-2xl bg-emerald-50 dark:bg-slate-800 text-emerald-600 mx-auto mb-3 shadow-sm" iconClass="w-7 h-7" />
+              <h3 className="text-sm font-bold text-slate-800 dark:text-white">Belum Ada Kantong Impian</h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xs mx-auto mb-4">
                 Beli gadget baru, liburan, motor, atau dana darurat? Buat target impian pertamamu sekarang.
               </p>
               <button
                 type="button"
                 onClick={onOpenNewGoal}
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand hover:bg-brand-hover text-white text-xs font-bold rounded-xl shadow-sm transition-colors ios-btn-tap mx-auto"
+                className="inline-flex items-center gap-2 px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-md transition-all ios-btn-tap mx-auto"
               >
-                <Icon name="plus" className="w-4 h-4" />
-                <span>Buat Target Impian Baru</span>
+                <Icon name="plus" className="w-4 h-4" strokeWidth={2.5} />
+                <span>+ Tambah Kantong Impian Pertama</span>
               </button>
             </div>
           ) : (
@@ -135,6 +135,16 @@ PART7_VIEWS = """
                   </div>
                 );
               })}
+
+              {/* Explicit button to add more goals at the bottom of the list */}
+              <button
+                type="button"
+                onClick={onOpenNewGoal}
+                className="w-full py-3.5 border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-brand rounded-2xl flex items-center justify-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-brand transition-all ios-btn-tap bg-white/60 dark:bg-slate-850/60 shadow-sm"
+              >
+                <Icon name="plus" className="w-4 h-4" strokeWidth={2.5} />
+                <span>+ Tambah Kantong Impian Baru</span>
+              </button>
             </div>
           )}
 
@@ -486,7 +496,7 @@ PART7_VIEWS = """
 
       return (
         <nav
-          className="fixed bottom-5 left-0 right-0 z-50 w-[92%] max-w-[360px] h-14 mx-auto rounded-full bg-white/95 backdrop-blur-md dark:bg-[#1E293B]/95 border border-slate-200/90 dark:border-[#334155] shadow-[0_8px_30px_rgba(15,23,42,0.12)] flex items-center p-1.5 select-none"
+          className="fixed bottom-5 left-0 right-0 z-50 w-[92%] max-w-[360px] h-14 mx-auto rounded-full bg-white/95 backdrop-blur-md dark:bg-[#1E293B]/95 border border-slate-200/90 dark:border-slate-700 shadow-[0_14px_36px_rgba(15,23,42,0.22),0_4px_12px_rgba(15,23,42,0.08)] dark:shadow-[0_18px_42px_rgba(0,0,0,0.75),0_0_0_1px_rgba(255,255,255,0.08)] flex items-center p-1.5 select-none"
         >
           {/* Active Sliding Pill - Smooth Apple Spring Curve */}
           <div

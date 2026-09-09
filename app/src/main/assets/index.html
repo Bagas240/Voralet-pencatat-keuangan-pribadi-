@@ -10,55 +10,63 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tailwind CSS Configuration (MANDATORY BEFORE CDN SCRIPT FOR darkMode: 'class') -->
   <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            brand: {
-              DEFAULT: '#0284C7',
-              hover: '#0369A1',
-              light: '#E0F2FE',
-              soft: '#F0F9FF',
-              dark: '#0284C7'
+    window.tailwind = {
+      config: {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              brand: {
+                DEFAULT: '#0284C7',
+                hover: '#0369A1',
+                light: '#E0F2FE',
+                soft: '#F0F9FF',
+                dark: '#0284C7'
+              },
+              sky: {
+                50: '#F0F9FF',
+                100: '#E0F2FE',
+                200: '#BAE6FD',
+                300: '#7DD3FC',
+                400: '#38BDF8',
+                500: '#0EA5E9',
+                600: '#0284C7',
+                700: '#0369A1',
+                800: '#075985',
+                900: '#0C4A6E'
+              },
+              slate: {
+                950: '#020617',
+                900: '#0F172A', // Dark Mode Main Background
+                850: '#151F32',
+                800: '#1E293B', // Dark Mode Cards / Containers
+                750: '#293548',
+                700: '#334155', // Dark Mode Borders
+                600: '#475569',
+                500: '#64748B', // Secondary Text Light Mode
+                400: '#94A3B8', // Secondary Text Dark Mode
+                300: '#CBD5E1',
+                200: '#E2E8F0',
+                100: '#F1F5F9',
+                50: '#F8FAFC'  // Primary Text Dark Mode
+              }
             },
-            sky: {
-              50: '#F0F9FF',
-              100: '#E0F2FE',
-              200: '#BAE6FD',
-              300: '#7DD3FC',
-              400: '#38BDF8',
-              500: '#0EA5E9',
-              600: '#0284C7',
-              700: '#0369A1',
-              800: '#075985',
-              900: '#0C4A6E'
-            },
-            // Tailwind Slate mapped to strict Dark Mode palette
-            slate: {
-              950: '#020617',
-              900: '#0F172A', // Dark Mode Main Background
-              850: '#151F32',
-              800: '#1E293B', // Dark Mode Cards / Containers
-              750: '#293548',
-              700: '#334155', // Dark Mode Borders
-              600: '#475569',
-              500: '#64748B', // Secondary Text Light Mode
-              400: '#94A3B8', // Secondary Text Dark Mode
-              300: '#CBD5E1',
-              200: '#E2E8F0',
-              100: '#F1F5F9',
-              50: '#F8FAFC'  // Primary Text Dark Mode
+            fontFamily: {
+              sans: ['Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', 'Roboto', 'sans-serif']
             }
-          },
-          fontFamily: {
-            sans: ['Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', 'Roboto', 'sans-serif']
           }
         }
       }
+    };
+  </script>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    if (window.tailwind) {
+      window.tailwind.config = window.tailwind.config || {};
+      window.tailwind.config.darkMode = 'class';
     }
   </script>
 
@@ -70,14 +78,16 @@
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script>window.Babel || document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.4/babel.min.js"><\/script>')</script>
 
-  <!-- Enforce Light Mode as strict default on first launch with Blue & White theme -->
+  <!-- Theme Synchronization Initialization -->
   <script>
     try {
       const savedTheme = localStorage.getItem('voralet_theme');
       if (savedTheme === 'dark') {
         document.documentElement.classList.add('dark');
+        if (document.body) document.body.classList.add('dark');
       } else {
         document.documentElement.classList.remove('dark');
+        if (document.body) document.body.classList.remove('dark');
         if (!savedTheme) {
           localStorage.setItem('voralet_theme', 'light');
         }
@@ -131,14 +141,28 @@
       background-color: #FFFFFF;
       padding: 1rem;
       border: 1px solid #E2E8F0;
-      box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.05);
-      transition: background-color 300ms ease-in-out, border-color 300ms ease-in-out, color 300ms ease-in-out;
+      box-shadow: 0 2px 10px -1px rgba(15, 23, 42, 0.07), 0 1px 3px -1px rgba(15, 23, 42, 0.04);
+      transition: background-color 300ms ease-in-out, border-color 300ms ease-in-out, color 300ms ease-in-out, box-shadow 300ms ease-in-out;
     }
     .dark .ios-inset-group {
       background-color: #1E293B !important;
       border-color: #334155 !important;
-      box-shadow: none;
+      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.45), 0 2px 8px -1px rgba(0, 0, 0, 0.3) !important;
       color: #F8FAFC !important;
+    }
+
+    /* iOS Floating & Capsule Shadows */
+    .ios-drop-shadow {
+      box-shadow: 0 6px 20px -3px rgba(15, 23, 42, 0.1), 0 2px 6px -2px rgba(15, 23, 42, 0.05);
+    }
+    .dark .ios-drop-shadow {
+      box-shadow: 0 8px 24px -3px rgba(0, 0, 0, 0.55), 0 2px 8px -2px rgba(0, 0, 0, 0.4);
+    }
+    .ios-nav-shadow {
+      box-shadow: 0 14px 36px -6px rgba(15, 23, 42, 0.22), 0 4px 14px -2px rgba(15, 23, 42, 0.1);
+    }
+    .dark .ios-nav-shadow {
+      box-shadow: 0 18px 40px -6px rgba(0, 0, 0, 0.75), 0 4px 16px -2px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08);
     }
 
     /* Hairline Divider */
@@ -146,8 +170,33 @@
       border-bottom: 1px solid #E2E8F0;
       transition: border-color 300ms ease-in-out;
     }
-    .dark .ios-hairline {
+    .dark .ios-hairline, html.dark .ios-hairline {
       border-bottom: 1px solid #334155 !important;
+    }
+
+    /* Bulletproof Fallbacks for Dark Mode */
+    html.dark, html.dark body, body.dark, html.dark #root, .dark #root {
+      background-color: #0F172A !important;
+      color: #F8FAFC !important;
+    }
+    .dark .bg-slate-50, html.dark .bg-slate-50 {
+      background-color: #0F172A !important;
+    }
+    .dark .bg-white, html.dark .bg-white {
+      background-color: #1E293B !important;
+      color: #F8FAFC !important;
+    }
+    .dark .text-slate-900, html.dark .text-slate-900,
+    .dark .text-slate-800, html.dark .text-slate-800 {
+      color: #F8FAFC !important;
+    }
+    .dark .text-slate-700, html.dark .text-slate-700,
+    .dark .text-slate-600, html.dark .text-slate-600 {
+      color: #CBD5E1 !important;
+    }
+    .dark .border-slate-200, html.dark .border-slate-200,
+    .dark .border-slate-100, html.dark .border-slate-100 {
+      border-color: #334155 !important;
     }
 
     /* Scrollbar hide */
@@ -435,15 +484,40 @@
             </svg>
           );
         case 'arrow-up-right':
+        case 'trending-down':
+        case 'expense':
           return (
             <svg className={computedClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
               <path d="M7 17L17 7M17 7H7M17 7V17" />
             </svg>
           );
         case 'arrow-down-left':
+        case 'trending-up':
+        case 'income':
           return (
             <svg className={computedClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
               <path d="M17 7L7 17M7 17H17M7 17V7" />
+            </svg>
+          );
+        case 'plus-circle':
+          return (
+            <svg className={computedClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="16" />
+              <line x1="8" y1="12" x2="16" y2="12" />
+            </svg>
+          );
+        case 'minus-circle':
+          return (
+            <svg className={computedClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="8" y1="12" x2="16" y2="12" />
+            </svg>
+          );
+        case 'chevron-right':
+          return (
+            <svg className={computedClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6" />
             </svg>
           );
         case 'eye':
@@ -717,6 +791,162 @@
     };
 
     // =========================================================================
+    // REUSABLE UI PRIMITIVES (Apple Human Interface Design Language)
+    // =========================================================================
+    const Button = ({
+      children,
+      onClick,
+      type = "button",
+      variant = "primary",
+      size = "md",
+      icon = null,
+      iconPosition = "left",
+      disabled = false,
+      loading = false,
+      fullWidth = false,
+      className = "",
+      ...props
+    }) => {
+      const variantClasses = {
+        primary: "bg-[#0284C7] hover:bg-[#0369A1] text-white shadow-sm",
+        secondary: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700",
+        outline: "border border-slate-200 dark:border-slate-700 bg-transparent text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800",
+        danger: "bg-rose-600 hover:bg-rose-700 text-white shadow-sm",
+        emerald: "bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm",
+        ghost: "bg-transparent text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+      };
+
+      const sizeClasses = {
+        sm: "px-3 py-1.5 text-xs rounded-xl gap-1.5",
+        md: "px-4 py-2.5 text-xs font-bold rounded-xl gap-2",
+        lg: "px-5 py-3.5 text-sm font-bold rounded-2xl gap-2.5"
+      };
+
+      return (
+        <button
+          type={type}
+          onClick={onClick}
+          disabled={disabled || loading}
+          className={`inline-flex items-center justify-center font-semibold transition-all ios-btn-tap select-none ${
+            variantClasses[variant] || variantClasses.primary
+          } ${sizeClasses[size] || sizeClasses.md} ${fullWidth ? "w-full" : ""} ${
+            disabled ? "opacity-50 cursor-not-allowed pointer-events-none" : ""
+          } ${className}`}
+          {...props}
+        >
+          {loading ? (
+            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <>
+              {icon && iconPosition === "left" && <Icon name={icon} className="w-4 h-4" strokeWidth={2.4} />}
+              {children}
+              {icon && iconPosition === "right" && <Icon name={icon} className="w-4 h-4" strokeWidth={2.4} />}
+            </>
+          )}
+        </button>
+      );
+    };
+
+    const InputField = ({
+      label,
+      value,
+      onChange,
+      type = "text",
+      placeholder = "",
+      error = "",
+      hint = "",
+      required = false,
+      autoFocus = false,
+      prefix = null,
+      icon = null,
+      className = "",
+      inputClassName = "",
+      ...props
+    }) => {
+      return (
+        <div className={`space-y-1 ${className}`}>
+          {label && (
+            <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200">
+              {label} {required && <span className="text-rose-500">*</span>}
+            </label>
+          )}
+          <div className="relative flex items-center">
+            {prefix && (
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-sm font-bold select-none">
+                {prefix}
+              </span>
+            )}
+            {icon && !prefix && (
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 select-none">
+                <Icon name={icon} className="w-4 h-4" />
+              </span>
+            )}
+            <input
+              type={type}
+              value={value}
+              onChange={onChange}
+              placeholder={placeholder}
+              required={required}
+              autoFocus={autoFocus}
+              onFocus={handleGlobalInputFocus}
+              onBlur={handleGlobalInputBlur}
+              className={`w-full py-2.5 rounded-xl border bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-xs font-medium focus:outline-none focus:border-brand dark:focus:border-sky-400 transition-colors ${
+                prefix ? "pl-8 pr-3.5" : icon ? "pl-10 pr-3.5" : "px-3.5"
+              } ${error ? "border-rose-400 dark:border-rose-500" : "border-slate-200 dark:border-slate-700"} ${inputClassName}`}
+              {...props}
+            />
+          </div>
+          {hint && !error && <p className="text-[11px] text-slate-400">{hint}</p>}
+          {error && <p className="text-[11px] font-semibold text-rose-500">{error}</p>}
+        </div>
+      );
+    };
+
+    const Card = ({ children, className = "", onClick, ...props }) => {
+      return (
+        <div
+          onClick={onClick}
+          className={`ios-inset-group ${onClick ? "cursor-pointer ios-card-tap" : ""} ${className}`}
+          {...props}
+        >
+          {children}
+        </div>
+      );
+    };
+
+    // Resilient Error Boundary to safeguard against render crashes
+    class ErrorBoundary extends React.Component {
+      constructor(props) {
+        super(props);
+        this.state = { hasError: false, error: null };
+      }
+      static getDerivedStateFromError(error) {
+        return { hasError: true, error };
+      }
+      componentDidCatch(error, errorInfo) {
+        // Silently capture error for application resilience
+      }
+      render() {
+        if (this.state.hasError) {
+          if (this.props.fallback) return this.props.fallback;
+          return (
+            <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-amber-800 dark:text-amber-300 text-xs text-center my-3">
+              <p className="font-bold">Gagal memuat komponen ini</p>
+              <button
+                type="button"
+                onClick={() => this.setState({ hasError: false, error: null })}
+                className="mt-2 px-3 py-1 bg-amber-200 dark:bg-amber-900/60 rounded-lg font-semibold ios-btn-tap"
+              >
+                Muat Ulang
+              </button>
+            </div>
+          );
+        }
+        return this.props.children;
+      }
+    }
+
+    // =========================================================================
     // 1. DATA LAYER (LOCAL STORAGE SERVICE & LEDGER SYSTEM)
     // =========================================================================
     const STORAGE_KEYS = {
@@ -731,6 +961,146 @@
       HIDE_BALANCE: 'voralet_hide_balance',
       THEME: 'voralet_theme',
       AVATAR: 'voralet_avatar'
+    };
+
+    // =========================================================================
+    // CRYPTOGRAPHY SERVICE (Web Crypto API SHA-256 Salted Hashing)
+    // =========================================================================
+    const CryptoService = {
+      SALT: 'voralet_secure_salt_v1_',
+      hashPin: async (pin) => {
+        if (!pin) return '';
+        try {
+          if (window.crypto && window.crypto.subtle && window.crypto.subtle.digest) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(CryptoService.SALT + String(pin));
+            const hashBuffer = await window.crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+          }
+        } catch (e) {}
+        // Deterministic fallback if subtle is unavailable
+        let hash = 0x811c9dc5;
+        const str = CryptoService.SALT + String(pin);
+        for (let i = 0; i < str.length; i++) {
+          hash ^= str.charCodeAt(i);
+          hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
+        }
+        return 'voralet_hash_' + (hash >>> 0).toString(16);
+      },
+      verifyPin: async (inputPin, storedPin) => {
+        if (!storedPin || !inputPin) return false;
+        // Legacy plaintext migration: if storedPin is 6 raw digits, check and upgrade
+        if (storedPin.length === 6 && /^\d{6}$/.test(storedPin)) {
+          if (inputPin === storedPin) {
+            CryptoService.hashPin(inputPin).then(hashed => {
+              if (hashed) StorageService.setPin(hashed);
+            });
+            return true;
+          }
+          return false;
+        }
+        const hashedInput = await CryptoService.hashPin(inputPin);
+        return hashedInput === storedPin;
+      }
+    };
+
+    // =========================================================================
+    // DEFENSIVE VALIDATORS & SCHEMA INTEGRITY
+    // =========================================================================
+    const Validators = {
+      sanitizeText: (str, maxLen = 60) => {
+        if (!str) return '';
+        return String(str).trim().slice(0, maxLen);
+      },
+      sanitizeNumber: (val, fallback = 0) => {
+        const n = Number(val);
+        return (isNaN(n) || !isFinite(n) || n < 0) ? fallback : n;
+      },
+      validateTransaction: (tx) => {
+        if (!tx || typeof tx !== 'object') return null;
+        const amount = Validators.sanitizeNumber(tx.amount, 0);
+        if (amount <= 0) return null;
+        return {
+          id: String(tx.id || ('tx_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7))),
+          type: (tx.type === 'INCOME') ? 'INCOME' : 'EXPENSE',
+          amount,
+          category: Validators.sanitizeText(tx.category || 'lainnya', 30),
+          accountId: String(tx.accountId || ''),
+          date: tx.date || new Date().toISOString().split('T')[0],
+          note: Validators.sanitizeText(tx.note || '', 100),
+          createdAt: tx.createdAt || new Date().toISOString()
+        };
+      },
+      validateAccount: (acc) => {
+        if (!acc || typeof acc !== 'object') return null;
+        const name = Validators.sanitizeText(acc.name, 30);
+        if (!name) return null;
+        return {
+          id: String(acc.id || ('acc_' + Date.now())),
+          name,
+          type: ['Bank', 'Cash', 'E-Wallet'].includes(acc.type) ? acc.type : 'Cash',
+          initialBalance: Validators.sanitizeNumber(acc.initialBalance, 0),
+          createdAt: acc.createdAt || new Date().toISOString()
+        };
+      },
+      validateSavingsGoal: (goal) => {
+        if (!goal || typeof goal !== 'object') return null;
+        const name = Validators.sanitizeText(goal.name, 40);
+        const targetAmount = Validators.sanitizeNumber(goal.targetAmount, 0);
+        if (!name || targetAmount <= 0) return null;
+        return {
+          id: String(goal.id || ('goal_' + Date.now())),
+          name,
+          targetAmount,
+          currentAmount: Validators.sanitizeNumber(goal.currentAmount, 0),
+          category: Validators.sanitizeText(goal.category || 'Tabungan', 30),
+          icon: Validators.sanitizeText(goal.icon || 'target', 20),
+          createdAt: goal.createdAt || new Date().toISOString()
+        };
+      },
+      validateDebt: (debt) => {
+        if (!debt || typeof debt !== 'object') return null;
+        const personName = Validators.sanitizeText(debt.personName, 40);
+        const amount = Validators.sanitizeNumber(debt.amount, 0);
+        if (!personName || amount <= 0) return null;
+        return {
+          id: String(debt.id || ('debt_' + Date.now())),
+          personName,
+          type: debt.type === 'PIUTANG' ? 'PIUTANG' : 'HUTANG',
+          amount,
+          dueDate: debt.dueDate || '',
+          isPaid: Boolean(debt.isPaid),
+          note: Validators.sanitizeText(debt.note || '', 100),
+          createdAt: debt.createdAt || new Date().toISOString()
+        };
+      },
+      validateBackupSchema: (data) => {
+        if (!data || typeof data !== 'object') return null;
+        const accounts = Array.isArray(data.accounts)
+          ? data.accounts.map(Validators.validateAccount).filter(Boolean)
+          : [];
+        const transactions = Array.isArray(data.transactions)
+          ? data.transactions.map(Validators.validateTransaction).filter(Boolean)
+          : [];
+        const savingsGoals = Array.isArray(data.savingsGoals)
+          ? data.savingsGoals.map(Validators.validateSavingsGoal).filter(Boolean)
+          : [];
+        const debts = Array.isArray(data.debts)
+          ? data.debts.map(Validators.validateDebt).filter(Boolean)
+          : [];
+        return {
+          accounts,
+          transactions,
+          savingsGoals,
+          debts,
+          name: Validators.sanitizeText(data.name || '', 30),
+          username: (data.username || '').toLowerCase().replace(/[^a-z0-9_]/g, ''),
+          avatar: typeof data.avatar === 'string' ? data.avatar : '',
+          theme: data.theme === 'dark' ? 'dark' : 'light',
+          safeBudget: Validators.sanitizeNumber(data.safeBudget, 0)
+        };
+      }
     };
 
     const StorageService = {
@@ -758,38 +1128,54 @@
       getAccounts: () => {
         try {
           const d = localStorage.getItem(STORAGE_KEYS.ACCOUNTS);
-          return d ? JSON.parse(d) : [];
+          const parsed = d ? JSON.parse(d) : [];
+          return Array.isArray(parsed) ? parsed.map(Validators.validateAccount).filter(Boolean) : [];
         } catch (e) { return []; }
       },
       setAccounts: (accs) => {
-        try { localStorage.setItem(STORAGE_KEYS.ACCOUNTS, JSON.stringify(accs)); } catch (e) {}
+        try {
+          const clean = Array.isArray(accs) ? accs.map(Validators.validateAccount).filter(Boolean) : [];
+          localStorage.setItem(STORAGE_KEYS.ACCOUNTS, JSON.stringify(clean));
+        } catch (e) {}
       },
       getTransactions: () => {
         try {
           const d = localStorage.getItem(STORAGE_KEYS.TRANSACTIONS);
-          return d ? JSON.parse(d) : [];
+          const parsed = d ? JSON.parse(d) : [];
+          return Array.isArray(parsed) ? parsed.map(Validators.validateTransaction).filter(Boolean) : [];
         } catch (e) { return []; }
       },
       setTransactions: (txs) => {
-        try { localStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify(txs)); } catch (e) {}
+        try {
+          const clean = Array.isArray(txs) ? txs.map(Validators.validateTransaction).filter(Boolean) : [];
+          localStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify(clean));
+        } catch (e) {}
       },
       getSavingsGoals: () => {
         try {
           const d = localStorage.getItem(STORAGE_KEYS.SAVINGS_GOALS);
-          return d ? JSON.parse(d) : [];
+          const parsed = d ? JSON.parse(d) : [];
+          return Array.isArray(parsed) ? parsed.map(Validators.validateSavingsGoal).filter(Boolean) : [];
         } catch (e) { return []; }
       },
       setSavingsGoals: (goals) => {
-        try { localStorage.setItem(STORAGE_KEYS.SAVINGS_GOALS, JSON.stringify(goals)); } catch (e) {}
+        try {
+          const clean = Array.isArray(goals) ? goals.map(Validators.validateSavingsGoal).filter(Boolean) : [];
+          localStorage.setItem(STORAGE_KEYS.SAVINGS_GOALS, JSON.stringify(clean));
+        } catch (e) {}
       },
       getDebts: () => {
         try {
           const d = localStorage.getItem(STORAGE_KEYS.DEBTS);
-          return d ? JSON.parse(d) : [];
+          const parsed = d ? JSON.parse(d) : [];
+          return Array.isArray(parsed) ? parsed.map(Validators.validateDebt).filter(Boolean) : [];
         } catch (e) { return []; }
       },
       setDebts: (debts) => {
-        try { localStorage.setItem(STORAGE_KEYS.DEBTS, JSON.stringify(debts)); } catch (e) {}
+        try {
+          const clean = Array.isArray(debts) ? debts.map(Validators.validateDebt).filter(Boolean) : [];
+          localStorage.setItem(STORAGE_KEYS.DEBTS, JSON.stringify(clean));
+        } catch (e) {}
       },
       getSafeBudget: () => {
         try {
@@ -831,7 +1217,7 @@
       }
     };
 
-    // LEDGER ENGINE: Single Source of Truth
+    // LEDGER ENGINE: Single Source of Truth for Deterministic Calculations
     const Ledger = {
       getAccountBalance: (accountId, accounts, transactions) => {
         if (!accountId) return 0;
@@ -870,6 +1256,96 @@
           else if (t.type === 'EXPENSE') expense += amt;
         }
         return { income, expense, net: income - expense };
+      },
+      // Deterministic calculation for Safe-to-Spend Daily Limit
+      calculateSafeToSpend: (accounts, transactions, customDailyBudget = 0) => {
+        const now = new Date();
+        const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        const currentDay = now.getDate();
+        const daysRemaining = Math.max(1, daysInMonth - currentDay + 1);
+
+        const totalBalance = Ledger.getTotalBalance(accounts, transactions);
+
+        // This month's total expenses
+        const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        const monthlyTxs = (transactions || []).filter(t => t && t.date && t.date.startsWith(currentMonthStr));
+        const spentThisMonth = monthlyTxs
+          .filter(t => t.type === 'EXPENSE')
+          .reduce((acc, t) => acc + (Number(t.amount) || 0), 0);
+
+        // Today's total expenses
+        const todayStr = now.toISOString().split('T')[0];
+        const spentToday = (transactions || [])
+          .filter(t => t && t.date === todayStr && t.type === 'EXPENSE')
+          .reduce((acc, t) => acc + (Number(t.amount) || 0), 0);
+
+        // Calculate daily allowance
+        let dailyLimit = customDailyBudget > 0
+          ? customDailyBudget
+          : Math.max(0, Math.floor(totalBalance / daysRemaining));
+
+        const remainingToday = Math.max(0, dailyLimit - spentToday);
+        const percentUsed = dailyLimit > 0 ? Math.min(100, Math.round((spentToday / dailyLimit) * 100)) : 0;
+
+        return {
+          dailyLimit,
+          spentToday,
+          remainingToday,
+          percentUsed,
+          daysRemaining,
+          spentThisMonth
+        };
+      },
+      // Deterministic Financial Milestones & Health
+      calculateMilestones: (accounts, transactions, savingsGoals, debts) => {
+        const totalBalance = Ledger.getTotalBalance(accounts, transactions);
+        const totalSavings = (savingsGoals || []).reduce((sum, g) => sum + (Number(g.currentAmount) || 0), 0);
+        const unpaidDebts = (debts || []).filter(d => !d.isPaid && d.type === 'HUTANG').reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
+        const unpaidReceivables = (debts || []).filter(d => !d.isPaid && d.type === 'PIUTANG').reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
+
+        const milestones = [
+          {
+            id: 'm1',
+            title: 'Langkah Awal',
+            desc: 'Mencatat transaksi pertama di Voralet',
+            isCompleted: (transactions || []).length > 0,
+            icon: 'check-circle'
+          },
+          {
+            id: 'm2',
+            title: 'Dana Darurat Siaga',
+            desc: 'Saldo total mencapai minimal Rp 1.000.000',
+            isCompleted: totalBalance >= 1000000,
+            icon: 'shield'
+          },
+          {
+            id: 'm3',
+            title: 'Penabung Cerdas',
+            desc: 'Memiliki minimal satu Kantong Impian aktif',
+            isCompleted: (savingsGoals || []).length > 0,
+            icon: 'target'
+          },
+          {
+            id: 'm4',
+            title: 'Bebas Hutang',
+            desc: 'Tidak ada tanggungan hutang yang belum lunas',
+            isCompleted: unpaidDebts === 0,
+            icon: 'check'
+          }
+        ];
+
+        const completedCount = milestones.filter(m => m.isCompleted).length;
+        const progressPct = Math.round((completedCount / milestones.length) * 100);
+
+        return {
+          milestones,
+          completedCount,
+          totalMilestones: milestones.length,
+          progressPct,
+          totalSavings,
+          unpaidDebts,
+          unpaidReceivables
+        };
       }
     };
 
@@ -1020,11 +1496,14 @@
                 key={opt.value}
                 type="button"
                 onClick={() => onChange(opt.value)}
-                className={`relative z-10 flex-1 py-2 text-center text-xs font-semibold transition-colors duration-200 ios-btn-tap ${
-                  isSelected ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'
+                className={`relative z-10 flex-1 py-2 text-center text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors duration-200 ios-btn-tap ${
+                  isSelected ? 'text-slate-900 dark:text-white font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'
                 }`}
               >
-                {opt.label}
+                {opt.icon && (
+                  <Icon name={opt.icon} className={`w-3.5 h-3.5 ${opt.iconColor || ''}`} strokeWidth={2.4} />
+                )}
+                <span>{opt.label}</span>
               </button>
             );
           })}
@@ -1260,7 +1739,9 @@
           setPinError('Konfirmasi PIN tidak cocok');
           return;
         }
-        onResetPin(newPin);
+        CryptoService.hashPin(newPin).then(hashed => {
+          onResetPin(hashed);
+        });
       };
 
       return (
@@ -1417,12 +1898,14 @@
           setError(false);
 
           if (next.length === 6) {
-            if (next === storedPin) {
-              setTimeout(() => onUnlock(), 120);
-            } else {
-              setError(true);
-              setTimeout(() => setPin(''), 400);
-            }
+            CryptoService.verifyPin(next, storedPin).then(isValid => {
+              if (isValid) {
+                setTimeout(() => onUnlock(), 120);
+              } else {
+                setError(true);
+                setTimeout(() => setPin(''), 400);
+              }
+            });
           }
         }
       };
@@ -1574,24 +2057,26 @@
           createdAt: new Date().toISOString()
         };
 
-        StorageService.setPin(newPin);
-        StorageService.setName(trimmedName);
-        StorageService.setUsername(cleanUsername);
-        if (avatar) StorageService.setAvatar(avatar);
-        StorageService.setAccounts([firstAccount]);
-        StorageService.setTransactions([]);
-        StorageService.setSavingsGoals([]);
-        StorageService.setDebts([]);
+        CryptoService.hashPin(newPin).then(hashedPin => {
+          StorageService.setPin(hashedPin);
+          StorageService.setName(trimmedName);
+          StorageService.setUsername(cleanUsername);
+          if (avatar) StorageService.setAvatar(avatar);
+          StorageService.setAccounts([firstAccount]);
+          StorageService.setTransactions([]);
+          StorageService.setSavingsGoals([]);
+          StorageService.setDebts([]);
 
-        onComplete({
-          pin: newPin,
-          name: trimmedName,
-          username: cleanUsername,
-          avatar: avatar,
-          accounts: [firstAccount],
-          transactions: [],
-          savingsGoals: [],
-          debts: []
+          onComplete({
+            pin: hashedPin,
+            name: trimmedName,
+            username: cleanUsername,
+            avatar: avatar,
+            accounts: [firstAccount],
+            transactions: [],
+            savingsGoals: [],
+            debts: []
+          });
         });
       };
 
@@ -2605,8 +3090,8 @@
             <form onSubmit={handleSubmit} className="ios-modal-body flex-1 overflow-y-auto pb-28 p-4 sm:p-5 space-y-4 no-scrollbar">
               <SegmentedControl
                 options={[
-                  { value: 'EXPENSE', label: '[-] Pengeluaran' },
-                  { value: 'INCOME', label: '[+] Pemasukan' }
+                  { value: 'EXPENSE', label: 'Pengeluaran', icon: 'arrow-up-right', iconColor: 'text-rose-500' },
+                  { value: 'INCOME', label: 'Pemasukan', icon: 'arrow-down-left', iconColor: 'text-emerald-500' }
                 ]}
                 value={type}
                 onChange={(newType) => {
@@ -2616,7 +3101,7 @@
                     setCategory(newCats[0].id);
                   }
                 }}
-                className="w-full"
+                className="w-full shadow-sm"
               />
 
               <div>
@@ -3170,10 +3655,11 @@
         handleClose();
       };
 
-      const handleChangePin = (e) => {
+      const handleChangePin = async (e) => {
         e.preventDefault();
         const storedPin = StorageService.getPin();
-        if (currentPin !== storedPin) {
+        const isValid = await CryptoService.verifyPin(currentPin, storedPin);
+        if (!isValid) {
           setPinMsg({ text: 'PIN saat ini salah', isError: true });
           return;
         }
@@ -3186,7 +3672,8 @@
           return;
         }
 
-        StorageService.setPin(newPin);
+        const hashed = await CryptoService.hashPin(newPin);
+        StorageService.setPin(hashed);
         setPinMsg({ text: 'PIN berhasil diubah!', isError: false });
         setTimeout(() => {
           setIsChangingPin(false);
@@ -3203,11 +3690,16 @@
           const reader = new FileReader();
           reader.onload = (event) => {
             try {
-              const data = JSON.parse(event.target.result);
-              onImportData(data);
+              const rawData = JSON.parse(event.target.result);
+              const validData = Validators.validateBackupSchema(rawData);
+              if (!validData) {
+                alert('File JSON tidak sesuai skema Voralet atau rusak.');
+                return;
+              }
+              onImportData(validData);
               handleClose();
             } catch (err) {
-              alert('File JSON tidak valid.');
+              alert('File JSON tidak valid atau rusak.');
             }
           };
           reader.readAsText(file);
@@ -3235,9 +3727,9 @@
 
             <div className="ios-modal-body flex-1 overflow-y-auto pb-28 p-4 sm:p-5 space-y-5 no-scrollbar">
               {/* Profil Identitas */}
-              <form onSubmit={handleSaveProfile} className="space-y-4">
+              <form onSubmit={handleSaveProfile} className="p-4 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700 shadow-[0_4px_16px_rgba(15,23,42,0.08)] dark:shadow-[0_6px_20px_rgba(0,0,0,0.4)] space-y-4">
                 <div className="flex items-center gap-4">
-                  <div className="relative shrink-0">
+                  <div className="relative shrink-0 rounded-full shadow-[0_6px_18px_rgba(15,23,42,0.16)] dark:shadow-[0_8px_24px_rgba(0,0,0,0.6)] ring-2 ring-white dark:ring-slate-700">
                     <Avatar avatar={avatar} name={name} size="w-16 h-16" textSize="text-xl" />
                     <label
                       htmlFor="settings-avatar-upload"
@@ -3319,18 +3811,23 @@
                   <button
                     type="button"
                     onClick={onToggleTheme}
-                    className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 ios-btn-tap"
+                    className={`px-3.5 py-1.5 rounded-xl border font-semibold text-xs transition-all flex items-center gap-2 ios-btn-tap ${
+                      theme === 'dark'
+                        ? 'bg-slate-900 border-slate-700 text-sky-400 shadow-inner'
+                        : 'bg-white border-slate-200 text-slate-700 shadow-sm'
+                    }`}
                   >
-                    {theme === 'dark' ? 'Mode Terang' : 'Mode Gelap'}
+                    <span className={`w-2 h-2 rounded-full ${theme === 'dark' ? 'bg-sky-400 animate-pulse' : 'bg-amber-400'}`}></span>
+                    <span>{theme === 'dark' ? 'Mode Gelap (Aktif)' : 'Mode Terang (Aktif)'}</span>
                   </button>
                 </div>
               </div>
 
               {/* Keamanan & Ubah PIN */}
-              <div className="pt-3 border-t border-slate-100 dark:border-[#27272A]">
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-700">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2.5">
-                    <IconBadge icon="lock" className="p-2 rounded-xl bg-sky-50 dark:bg-[#1C1C1E] text-brand dark:text-sky-400" />
+                    <IconBadge icon="lock" className="p-2 rounded-xl bg-sky-50 dark:bg-slate-700 text-brand dark:text-sky-400" />
                     <div>
                       <h4 className="text-xs font-bold text-slate-900 dark:text-white">Keamanan PIN</h4>
                       <p className="text-[11px] text-slate-400">Ubah 6-digit PIN keamanan brankas</p>
@@ -3478,27 +3975,27 @@
             <button
               type="button"
               onClick={onOpenNewGoal}
-              className="px-4 py-2.5 bg-brand hover:bg-brand-hover text-white text-xs font-bold rounded-2xl flex items-center gap-2 shadow-sm transition-all ios-btn-tap"
+              className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-2xl flex items-center gap-1.5 shadow-sm ios-btn-tap"
             >
-              <Icon name="plus" className="w-4 h-4" strokeWidth={2.4} />
-              <span>Target Baru</span>
+              <Icon name="plus" className="w-4 h-4" strokeWidth={2.6} />
+              <span>Tambah Kantong</span>
             </button>
           </div>
 
           {safeGoals.length === 0 ? (
             <div className="ios-inset-group text-center py-10">
-              <IconBadge icon="target" className="w-14 h-14 rounded-2xl bg-sky-50 dark:bg-slate-800 text-brand mx-auto mb-3" iconClass="w-7 h-7" />
-              <h3 className="text-sm font-bold text-slate-800 dark:text-white">Belum Ada Target Impian</h3>
+              <IconBadge icon="target" className="w-14 h-14 rounded-2xl bg-emerald-50 dark:bg-slate-800 text-emerald-600 mx-auto mb-3 shadow-sm" iconClass="w-7 h-7" />
+              <h3 className="text-sm font-bold text-slate-800 dark:text-white">Belum Ada Kantong Impian</h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xs mx-auto mb-4">
                 Beli gadget baru, liburan, motor, atau dana darurat? Buat target impian pertamamu sekarang.
               </p>
               <button
                 type="button"
                 onClick={onOpenNewGoal}
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand hover:bg-brand-hover text-white text-xs font-bold rounded-xl shadow-sm transition-colors ios-btn-tap mx-auto"
+                className="inline-flex items-center gap-2 px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-md transition-all ios-btn-tap mx-auto"
               >
-                <Icon name="plus" className="w-4 h-4" />
-                <span>Buat Target Impian Baru</span>
+                <Icon name="plus" className="w-4 h-4" strokeWidth={2.5} />
+                <span>+ Tambah Kantong Impian Pertama</span>
               </button>
             </div>
           ) : (
@@ -3585,6 +4082,16 @@
                   </div>
                 );
               })}
+
+              {/* Explicit button to add more goals at the bottom of the list */}
+              <button
+                type="button"
+                onClick={onOpenNewGoal}
+                className="w-full py-3.5 border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-brand rounded-2xl flex items-center justify-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-brand transition-all ios-btn-tap bg-white/60 dark:bg-slate-850/60 shadow-sm"
+              >
+                <Icon name="plus" className="w-4 h-4" strokeWidth={2.5} />
+                <span>+ Tambah Kantong Impian Baru</span>
+              </button>
             </div>
           )}
 
@@ -3936,7 +4443,7 @@
 
       return (
         <nav
-          className="fixed bottom-5 left-0 right-0 z-50 w-[92%] max-w-[360px] h-14 mx-auto rounded-full bg-white/95 backdrop-blur-md dark:bg-[#1E293B]/95 border border-slate-200/90 dark:border-[#334155] shadow-[0_8px_30px_rgba(15,23,42,0.12)] flex items-center p-1.5 select-none"
+          className="fixed bottom-5 left-0 right-0 z-50 w-[92%] max-w-[360px] h-14 mx-auto rounded-full bg-white/95 backdrop-blur-md dark:bg-[#1E293B]/95 border border-slate-200/90 dark:border-slate-700 shadow-[0_14px_36px_rgba(15,23,42,0.22),0_4px_12px_rgba(15,23,42,0.08)] dark:shadow-[0_18px_42px_rgba(0,0,0,0.75),0_0_0_1px_rgba(255,255,255,0.08)] flex items-center p-1.5 select-none"
         >
           {/* Active Sliding Pill - Smooth Apple Spring Curve */}
           <div
@@ -4084,7 +4591,14 @@
             className={`relative bg-white dark:bg-slate-800 flex items-center justify-between py-3 px-1.5 ${!isLast ? 'ios-hairline' : ''} ios-touch-item`}
           >
             <div className="flex items-center gap-3 min-w-0 pointer-events-none">
-              <IconBadge icon={cat.icon} className="p-2.5 rounded-2xl bg-sky-100 dark:bg-slate-700 text-brand dark:text-sky-400 shrink-0" />
+              <div className="relative shrink-0">
+                <IconBadge icon={cat.icon} className="p-2.5 rounded-2xl bg-sky-100 dark:bg-slate-700 text-brand dark:text-sky-400 shrink-0" />
+                <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-white border-2 border-white dark:border-slate-800 ${
+                  tx.type === 'EXPENSE' ? 'bg-rose-500' : 'bg-emerald-500'
+                }`}>
+                  <Icon name={tx.type === 'EXPENSE' ? 'arrow-up-right' : 'arrow-down-left'} className="w-2.5 h-2.5" strokeWidth={3} />
+                </div>
+              </div>
               <div className="min-w-0">
                 <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">
                   {cat.label}
@@ -4151,10 +4665,13 @@
       hideBalance,
       onToggleHideBalance,
       onOpenAddTx,
+      onOpenAddIncome,
+      onOpenAddExpense,
       onOpenAccounts,
       onOpenSettings,
       onOpenDebts,
       onOpenSavings,
+      onOpenNewSavingsGoal,
       onDeleteTx,
       onEditTx,
       onDuplicateTx,
@@ -4203,19 +4720,25 @@
 
       return (
         <div className="space-y-4 pb-28 animate-ios-tab-view">
-          {/* iOS Profile Header Bar - Direct Route to Settings on Tap */}
+          {/* iOS Profile Header Bar - Compact & Natural without elongated box */}
           <div className="flex items-center justify-between pt-1">
             <div
               onClick={onOpenSettings}
-              className="flex items-center gap-3 cursor-pointer group ios-card-tap"
+              className="inline-flex items-center gap-3 cursor-pointer group ios-card-tap py-1 pr-2 rounded-2xl hover:opacity-90 transition-opacity"
               title="Ketuk untuk buka Pengaturan Profil"
             >
-              <Avatar avatar={userProfile.avatar} name={userProfile.name} size="w-11 h-11" textSize="text-base" />
-              <div>
-                <h1 className="text-base font-bold text-slate-900 dark:text-white leading-tight group-hover:text-brand transition-colors">
-                  {userProfile.name || 'Sahabat Voralet'}
-                </h1>
-                <p className="text-xs font-mono text-brand dark:text-sky-400 font-semibold">
+              {/* Profile Avatar with clean circular drop shadow so it stands out distinctly from the background */}
+              <div className="relative shrink-0 rounded-full shadow-[0_6px_16px_rgba(15,23,42,0.18)] dark:shadow-[0_8px_24px_rgba(0,0,0,0.65)] ring-2 ring-white dark:ring-slate-700">
+                <Avatar avatar={userProfile.avatar} name={userProfile.name} size="w-11 h-11" textSize="text-base" />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <h1 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white leading-tight group-hover:text-brand transition-colors truncate">
+                    {userProfile.name || 'Sahabat Voralet'}
+                  </h1>
+                  <Icon name="chevron-right" className="w-3.5 h-3.5 text-slate-400 group-hover:text-brand transition-colors shrink-0" />
+                </div>
+                <p className="text-[11px] font-mono text-brand dark:text-sky-400 font-semibold truncate">
                   @{userProfile.username || 'voralet_user'}
                 </p>
               </div>
@@ -4225,7 +4748,7 @@
               <button
                 type="button"
                 onClick={onOpenAccounts}
-                className="p-2.5 rounded-full text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ios-btn-tap"
+                className="p-2.5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 shadow-sm dark:shadow-[0_4px_12px_rgba(0,0,0,0.35)] text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors ios-btn-tap"
                 title="Kelola Dompet"
                 aria-label="Kelola Dompet"
               >
@@ -4234,17 +4757,17 @@
             </div>
           </div>
 
-          {/* Hero Balance Card - Solid Sky Blue Color Lock (Strictly NO Gradients) */}
-          <div className="rounded-[22px] p-5 bg-[#0284C7] dark:bg-[#1E293B] text-white border border-[#0369A1] dark:border-[#334155] shadow-md transition-colors duration-300 ease-in-out">
-            <div className="flex items-center justify-between text-sky-100 dark:text-slate-400 mb-1.5">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-sky-100 dark:text-slate-400">Total Saldo Brankas</span>
+          {/* Hero Balance Card - High Contrast Deep Royal Blue in both Light and Dark Mode */}
+          <div className="rounded-[22px] p-5 bg-[#0284C7] dark:bg-[#0369A1] text-white border border-[#0369A1] dark:border-sky-600/40 shadow-lg dark:shadow-[0_10px_26px_rgba(3,105,161,0.35)] transition-colors duration-300 ease-in-out">
+            <div className="flex items-center justify-between text-sky-100 mb-1.5">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-sky-100">Total Saldo Brankas</span>
               <button
                 type="button"
                 onClick={onToggleHideBalance}
-                className="p-1 text-sky-100 dark:text-slate-400 hover:text-white transition-colors ios-btn-tap"
+                className="p-1 text-sky-100 hover:text-white transition-colors ios-btn-tap"
                 aria-label="Sensor Saldo"
               >
-                <Icon name={hideBalance ? 'eye-off' : 'eye'} className="w-4 h-4 text-sky-100 dark:text-slate-400" />
+                <Icon name={hideBalance ? 'eye-off' : 'eye'} className="w-4 h-4 text-sky-100" />
               </button>
             </div>
 
@@ -4252,25 +4775,34 @@
               {hideBalance ? 'Rp ••••••••' : formatIDR(totalBalance)}
             </div>
 
-            <div className="grid grid-cols-2 gap-2 pt-3 border-t border-sky-400/50 dark:border-slate-700/60">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-emerald-500/25 text-emerald-100 flex items-center justify-center shrink-0">
+            {/* Tap to record Income or Expense directly */}
+            <div className="grid grid-cols-2 gap-2 pt-3 border-t border-sky-400/50 dark:border-sky-500/40">
+              <div
+                onClick={onOpenAddIncome}
+                className="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-white/10 cursor-pointer transition-colors ios-btn-tap"
+                title="Ketuk untuk Catat Pemasukan"
+              >
+                <div className="w-8 h-8 rounded-xl bg-emerald-500/30 text-emerald-100 flex items-center justify-center shrink-0 border border-emerald-300/30">
                   <Icon name="arrow-down-left" className="w-4 h-4 text-emerald-200" strokeWidth={2.5} />
                 </div>
                 <div className="min-w-0">
-                  <span className="text-[10px] text-sky-100 dark:text-slate-400 block leading-tight font-medium">Masuk (Bln Ini)</span>
+                  <span className="text-[10px] text-sky-100 block leading-tight font-medium">Masuk (Bln Ini)</span>
                   <span className="text-xs whitespace-nowrap truncate font-bold text-white block">
                     {hideBalance ? 'Rp ••••••' : formatIDR(monthSummary.income)}
                   </span>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-rose-500/25 text-rose-100 flex items-center justify-center shrink-0">
+              <div
+                onClick={onOpenAddExpense}
+                className="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-white/10 cursor-pointer transition-colors ios-btn-tap"
+                title="Ketuk untuk Catat Pengeluaran"
+              >
+                <div className="w-8 h-8 rounded-xl bg-rose-500/30 text-rose-100 flex items-center justify-center shrink-0 border border-rose-300/30">
                   <Icon name="arrow-up-right" className="w-4 h-4 text-rose-200" strokeWidth={2.5} />
                 </div>
                 <div className="min-w-0">
-                  <span className="text-[10px] text-sky-100 dark:text-slate-400 block leading-tight font-medium">Keluar (Bln Ini)</span>
+                  <span className="text-[10px] text-sky-100 block leading-tight font-medium">Keluar (Bln Ini)</span>
                   <span className="text-xs whitespace-nowrap truncate font-bold text-white block">
                     {hideBalance ? 'Rp ••••••' : formatIDR(monthSummary.expense)}
                   </span>
@@ -4279,20 +4811,43 @@
             </div>
           </div>
 
-          {/* Quick Action Button Bar: Catat, Dompet, Hutang, & Impian */}
-          <div className="grid grid-cols-4 gap-2">
+          {/* Direct Dual Action Bar: Catat Pemasukan (+) & Catat Pengeluaran (-) with Prominent Icons */}
+          <div className="grid grid-cols-2 gap-2.5">
             <button
               type="button"
-              onClick={onOpenAddTx}
-              className="py-2.5 px-2 bg-brand hover:bg-brand-hover text-white rounded-2xl flex flex-col items-center justify-center gap-1 shadow-sm transition-all ios-btn-tap"
+              onClick={onOpenAddIncome}
+              className="py-3 px-3 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white rounded-2xl flex items-center justify-center gap-2 shadow-[0_4px_14px_rgba(5,150,105,0.28)] dark:shadow-[0_6px_20px_rgba(5,150,105,0.35)] transition-all ios-btn-tap"
             >
-              <Icon name="plus" className="w-4 h-4" strokeWidth={2.4} />
-              <span className="text-[11px] font-bold whitespace-nowrap">Catat</span>
+              <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                <Icon name="arrow-down-left" className="w-4 h-4 text-white" strokeWidth={2.5} />
+              </div>
+              <div className="text-left leading-tight">
+                <span className="text-xs font-bold block">Pemasukan</span>
+                <span className="text-[10px] text-emerald-100 block font-medium">+ Catat Masuk</span>
+              </div>
             </button>
+
+            <button
+              type="button"
+              onClick={onOpenAddExpense}
+              className="py-3 px-3 bg-rose-600 hover:bg-rose-700 active:scale-[0.98] text-white rounded-2xl flex items-center justify-center gap-2 shadow-[0_4px_14px_rgba(225,29,72,0.28)] dark:shadow-[0_6px_20px_rgba(225,29,72,0.35)] transition-all ios-btn-tap"
+            >
+              <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                <Icon name="arrow-up-right" className="w-4 h-4 text-white" strokeWidth={2.5} />
+              </div>
+              <div className="text-left leading-tight">
+                <span className="text-xs font-bold block">Pengeluaran</span>
+                <span className="text-[10px] text-rose-100 block font-medium">- Catat Belanja</span>
+              </div>
+            </button>
+          </div>
+
+          {/* Quick Shortcuts Bar: Dompet, Hutang, & Kantong Impian */}
+          <div className="grid grid-cols-3 gap-2">
             <button
               type="button"
               onClick={onOpenAccounts}
-              className="py-2.5 px-2 bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-2xl flex flex-col items-center justify-center gap-1 shadow-sm transition-all ios-btn-tap hover:border-brand/40"
+              className="py-2.5 px-2 bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-2xl flex flex-col items-center justify-center gap-1 shadow-sm dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)] transition-all ios-btn-tap hover:border-brand/40"
             >
               <Icon name="wallet" className="w-4 h-4 text-brand dark:text-sky-400" />
               <span className="text-[11px] font-bold whitespace-nowrap">Dompet</span>
@@ -4300,7 +4855,7 @@
             <button
               type="button"
               onClick={onOpenDebts}
-              className="py-2.5 px-2 bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-2xl flex flex-col items-center justify-center gap-1 shadow-sm transition-all ios-btn-tap hover:border-brand/40"
+              className="py-2.5 px-2 bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-2xl flex flex-col items-center justify-center gap-1 shadow-sm dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)] transition-all ios-btn-tap hover:border-brand/40"
             >
               <Icon name="receipt" className="w-4 h-4 text-amber-500" />
               <span className="text-[11px] font-bold whitespace-nowrap">Hutang</span>
@@ -4308,7 +4863,7 @@
             <button
               type="button"
               onClick={onOpenSavings}
-              className="py-2.5 px-2 bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-2xl flex flex-col items-center justify-center gap-1 shadow-sm transition-all ios-btn-tap hover:border-brand/40"
+              className="py-2.5 px-2 bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-2xl flex flex-col items-center justify-center gap-1 shadow-sm dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)] transition-all ios-btn-tap hover:border-brand/40"
             >
               <Icon name="target" className="w-4 h-4 text-emerald-500" />
               <span className="text-[11px] font-bold whitespace-nowrap">Impian</span>
@@ -4326,6 +4881,79 @@
 
           {/* Quick Expense Bar */}
           <QuickExpenseBar onSelectQuickExpense={onSelectQuickExpense} />
+
+          {/* Kantong Impian Quick Section */}
+          <div className="ios-inset-group">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <IconBadge icon="target" className="p-1.5 rounded-xl bg-emerald-100 dark:bg-slate-700 text-emerald-600 dark:text-emerald-400" iconClass="w-4 h-4" />
+                <div>
+                  <h3 className="text-xs font-bold text-slate-900 dark:text-white">Kantong Impian</h3>
+                  <p className="text-[10px] text-slate-400">Target & tabungan masa depan</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={onOpenNewSavingsGoal}
+                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-xl flex items-center gap-1 shadow-sm ios-btn-tap"
+              >
+                <Icon name="plus" className="w-3.5 h-3.5" strokeWidth={2.5} />
+                <span>+ Tambah Kantong</span>
+              </button>
+            </div>
+
+            {savingsGoals && savingsGoals.length > 0 ? (
+              <div className="space-y-2.5">
+                {savingsGoals.slice(0, 3).map(goal => {
+                  const target = Number(goal.targetAmount) || 1;
+                  const current = Number(goal.currentAmount) || 0;
+                  const pct = Math.min(100, Math.round((current / target) * 100));
+                  return (
+                    <div
+                      key={goal.id}
+                      onClick={onOpenSavings}
+                      className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/70 border border-slate-100 dark:border-slate-800 cursor-pointer hover:border-emerald-500/40 transition-all ios-card-tap"
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">{goal.title}</span>
+                        <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">{pct}%</span>
+                      </div>
+                      <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden mb-1">
+                        <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${pct}%` }} />
+                      </div>
+                      <div className="flex justify-between text-[10px] text-slate-400">
+                        <span>{hideBalance ? 'Rp ••••••' : formatIDR(current)}</span>
+                        <span>Target: {hideBalance ? 'Rp ••••••' : formatIDR(target)}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+                {savingsGoals.length > 3 && (
+                  <button
+                    type="button"
+                    onClick={onOpenSavings}
+                    className="w-full text-center text-[11px] font-semibold text-brand dark:text-sky-400 pt-1 hover:underline"
+                  >
+                    Lihat semua {savingsGoals.length} Kantong Impian →
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-4 px-2 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-dashed border-slate-200 dark:border-slate-800">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mb-2.5">
+                  Kamu belum memiliki Kantong Impian
+                </p>
+                <button
+                  type="button"
+                  onClick={onOpenNewSavingsGoal}
+                  className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl inline-flex items-center gap-1.5 shadow-sm ios-btn-tap"
+                >
+                  <Icon name="plus" className="w-3.5 h-3.5" strokeWidth={2.5} />
+                  <span>+ Buat Kantong Impian Sekarang</span>
+                </button>
+              </div>
+            )}
+          </div>
 
           {/* Financial Milestones */}
           <MilestonesCard
@@ -4493,25 +5121,43 @@
         setToastMsg(msg);
       }, []);
 
-      // Theme toggle
+      // Theme toggle with full DOM synchronization
       const toggleTheme = useCallback(() => {
         setTheme(prev => {
           const next = prev === 'dark' ? 'light' : 'dark';
           StorageService.setTheme(next);
+          try {
+            localStorage.setItem('voralet_theme', next);
+          } catch (e) {}
+
           if (next === 'dark') {
             document.documentElement.classList.add('dark');
+            if (document.body) document.body.classList.add('dark');
+            const rootEl = document.getElementById('root');
+            if (rootEl) rootEl.classList.add('dark');
           } else {
             document.documentElement.classList.remove('dark');
+            if (document.body) document.body.classList.remove('dark');
+            const rootEl = document.getElementById('root');
+            if (rootEl) rootEl.classList.remove('dark');
           }
+          showToast(next === 'dark' ? 'Mode Gelap diaktifkan 🌙' : 'Mode Terang diaktifkan ☀️');
           return next;
         });
-      }, []);
+      }, [showToast]);
 
       useEffect(() => {
-        if (theme === 'dark') {
+        const isDark = theme === 'dark';
+        if (isDark) {
           document.documentElement.classList.add('dark');
+          if (document.body) document.body.classList.add('dark');
+          const rootEl = document.getElementById('root');
+          if (rootEl) rootEl.classList.add('dark');
         } else {
           document.documentElement.classList.remove('dark');
+          if (document.body) document.body.classList.remove('dark');
+          const rootEl = document.getElementById('root');
+          if (rootEl) rootEl.classList.remove('dark');
         }
       }, [theme]);
 
@@ -4851,7 +5497,7 @@
       }
 
       return (
-        <div className="h-[100dvh] flex flex-col bg-slate-50 dark:bg-[#0F172A] text-[#0F172A] dark:text-[#F8FAFC] overflow-hidden select-none transition-colors duration-300 ease-in-out">
+        <div className={`h-[100dvh] flex flex-col ${theme === 'dark' ? 'dark bg-[#0F172A] text-[#F8FAFC]' : 'bg-slate-50 text-[#0F172A]'} overflow-hidden select-none transition-colors duration-300 ease-in-out`}>
           {toastMsg && <Toast message={toastMsg} onClose={() => setToastMsg('')} />}
 
           <main
@@ -4859,66 +5505,80 @@
             onTouchEnd={handleScreenTouchEnd}
             className="flex-1 w-full max-w-md mx-auto px-4 pt-3 pb-28 overflow-y-auto no-scrollbar"
           >
-            {activeTab === 'dashboard' && (
-              <MainDashboard
-                accounts={accounts}
-                transactions={transactions}
-                userProfile={{ name, username, avatar }}
-                hideBalance={hideBalance}
-                onToggleHideBalance={handleToggleHideBalance}
-                onOpenAddTx={() => {
-                  setTxModalInitial(null);
-                  setIsTxModalOpen(true);
-                }}
-                onOpenAccounts={() => setIsAccModalOpen(true)}
-                onOpenSettings={() => setIsSettingsModalOpen(true)}
-                onOpenDebts={() => setActiveTab('debts')}
-                onOpenSavings={() => setActiveTab('savings')}
-                onDeleteTx={handleDeleteTransaction}
-                onEditTx={handleEditTransaction}
-                onDuplicateTx={handleDuplicateTransaction}
-                safeBudget={safeBudget}
-                onSetBudget={handleSetBudget}
-                savingsGoals={savingsGoals}
-                debts={debts}
-                onSelectQuickExpense={handleQuickExpenseSelect}
-              />
-            )}
+            <ErrorBoundary>
+              {activeTab === 'dashboard' && (
+                <MainDashboard
+                  accounts={accounts}
+                  transactions={transactions}
+                  userProfile={{ name, username, avatar }}
+                  hideBalance={hideBalance}
+                  onToggleHideBalance={handleToggleHideBalance}
+                  onOpenAddTx={() => {
+                    setTxModalInitial(null);
+                    setIsTxModalOpen(true);
+                  }}
+                  onOpenAddIncome={() => {
+                    setTxModalInitial({ type: 'INCOME' });
+                    setIsTxModalOpen(true);
+                  }}
+                  onOpenAddExpense={() => {
+                    setTxModalInitial({ type: 'EXPENSE' });
+                    setIsTxModalOpen(true);
+                  }}
+                  onOpenAccounts={() => setIsAccModalOpen(true)}
+                  onOpenSettings={() => setIsSettingsModalOpen(true)}
+                  onOpenDebts={() => setActiveTab('debts')}
+                  onOpenSavings={() => setActiveTab('savings')}
+                  onOpenNewSavingsGoal={() => {
+                    setSavingsGoalToEdit(null);
+                    setIsSavingsModalOpen(true);
+                  }}
+                  onDeleteTx={handleDeleteTransaction}
+                  onEditTx={handleEditTransaction}
+                  onDuplicateTx={handleDuplicateTransaction}
+                  safeBudget={safeBudget}
+                  onSetBudget={handleSetBudget}
+                  savingsGoals={savingsGoals}
+                  debts={debts}
+                  onSelectQuickExpense={handleQuickExpenseSelect}
+                />
+              )}
 
-            {activeTab === 'debts' && (
-              <DebtsView
-                debts={debts}
-                onAddDebt={handleAddDebt}
-                onToggleStatus={handleToggleDebtStatus}
-                onDeleteDebt={handleDeleteDebt}
-                hideBalance={hideBalance}
-              />
-            )}
+              {activeTab === 'debts' && (
+                <DebtsView
+                  debts={debts}
+                  onAddDebt={handleAddDebt}
+                  onToggleStatus={handleToggleDebtStatus}
+                  onDeleteDebt={handleDeleteDebt}
+                  hideBalance={hideBalance}
+                />
+              )}
 
-            {activeTab === 'savings' && (
-              <SavingsView
-                savingsGoals={savingsGoals}
-                onOpenNewGoal={() => {
-                  setSavingsGoalToEdit(null);
-                  setIsSavingsModalOpen(true);
-                }}
-                onEditGoal={(g) => {
-                  setSavingsGoalToEdit(g);
-                  setIsSavingsModalOpen(true);
-                }}
-                onDeleteGoal={handleDeleteGoal}
-                onDepositGoal={handleDepositGoal}
-                hideBalance={hideBalance}
-              />
-            )}
+              {activeTab === 'savings' && (
+                <SavingsView
+                  savingsGoals={savingsGoals}
+                  onOpenNewGoal={() => {
+                    setSavingsGoalToEdit(null);
+                    setIsSavingsModalOpen(true);
+                  }}
+                  onEditGoal={(g) => {
+                    setSavingsGoalToEdit(g);
+                    setIsSavingsModalOpen(true);
+                  }}
+                  onDeleteGoal={handleDeleteGoal}
+                  onDepositGoal={handleDepositGoal}
+                  hideBalance={hideBalance}
+                />
+              )}
 
-            {activeTab === 'analytics' && (
-              <AnalyticsView
-                transactions={transactions}
-                accounts={accounts}
-                hideBalance={hideBalance}
-              />
-            )}
+              {activeTab === 'analytics' && (
+                <AnalyticsView
+                  transactions={transactions}
+                  accounts={accounts}
+                  hideBalance={hideBalance}
+                />
+              )}
+            </ErrorBoundary>
           </main>
 
           {/* Floating Capsule Bottom Navigation with Fluid Active Pill */}
@@ -4968,7 +5628,12 @@
     };
 
     const rootElement = document.getElementById('root');
-    ReactDOM.render(<App />, rootElement);
+    ReactDOM.render(
+      <ErrorBoundary>
+        <App />
+      </ErrorBoundary>,
+      rootElement
+    );
   </script>
 </body>
 </html>

@@ -149,7 +149,9 @@ PART4_AUTH_PIN = """
           setPinError('Konfirmasi PIN tidak cocok');
           return;
         }
-        onResetPin(newPin);
+        CryptoService.hashPin(newPin).then(hashed => {
+          onResetPin(hashed);
+        });
       };
 
       return (
@@ -306,12 +308,14 @@ PART4_AUTH_PIN = """
           setError(false);
 
           if (next.length === 6) {
-            if (next === storedPin) {
-              setTimeout(() => onUnlock(), 120);
-            } else {
-              setError(true);
-              setTimeout(() => setPin(''), 400);
-            }
+            CryptoService.verifyPin(next, storedPin).then(isValid => {
+              if (isValid) {
+                setTimeout(() => onUnlock(), 120);
+              } else {
+                setError(true);
+                setTimeout(() => setPin(''), 400);
+              }
+            });
           }
         }
       };
@@ -463,24 +467,26 @@ PART4_AUTH_PIN = """
           createdAt: new Date().toISOString()
         };
 
-        StorageService.setPin(newPin);
-        StorageService.setName(trimmedName);
-        StorageService.setUsername(cleanUsername);
-        if (avatar) StorageService.setAvatar(avatar);
-        StorageService.setAccounts([firstAccount]);
-        StorageService.setTransactions([]);
-        StorageService.setSavingsGoals([]);
-        StorageService.setDebts([]);
+        CryptoService.hashPin(newPin).then(hashedPin => {
+          StorageService.setPin(hashedPin);
+          StorageService.setName(trimmedName);
+          StorageService.setUsername(cleanUsername);
+          if (avatar) StorageService.setAvatar(avatar);
+          StorageService.setAccounts([firstAccount]);
+          StorageService.setTransactions([]);
+          StorageService.setSavingsGoals([]);
+          StorageService.setDebts([]);
 
-        onComplete({
-          pin: newPin,
-          name: trimmedName,
-          username: cleanUsername,
-          avatar: avatar,
-          accounts: [firstAccount],
-          transactions: [],
-          savingsGoals: [],
-          debts: []
+          onComplete({
+            pin: hashedPin,
+            name: trimmedName,
+            username: cleanUsername,
+            avatar: avatar,
+            accounts: [firstAccount],
+            transactions: [],
+            savingsGoals: [],
+            debts: []
+          });
         });
       };
 

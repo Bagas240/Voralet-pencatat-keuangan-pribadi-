@@ -16,6 +16,146 @@ PART3_SERVICES = """
       AVATAR: 'voralet_avatar'
     };
 
+    // =========================================================================
+    // CRYPTOGRAPHY SERVICE (Web Crypto API SHA-256 Salted Hashing)
+    // =========================================================================
+    const CryptoService = {
+      SALT: 'voralet_secure_salt_v1_',
+      hashPin: async (pin) => {
+        if (!pin) return '';
+        try {
+          if (window.crypto && window.crypto.subtle && window.crypto.subtle.digest) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(CryptoService.SALT + String(pin));
+            const hashBuffer = await window.crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+          }
+        } catch (e) {}
+        // Deterministic fallback if subtle is unavailable
+        let hash = 0x811c9dc5;
+        const str = CryptoService.SALT + String(pin);
+        for (let i = 0; i < str.length; i++) {
+          hash ^= str.charCodeAt(i);
+          hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
+        }
+        return 'voralet_hash_' + (hash >>> 0).toString(16);
+      },
+      verifyPin: async (inputPin, storedPin) => {
+        if (!storedPin || !inputPin) return false;
+        // Legacy plaintext migration: if storedPin is 6 raw digits, check and upgrade
+        if (storedPin.length === 6 && /^\d{6}$/.test(storedPin)) {
+          if (inputPin === storedPin) {
+            CryptoService.hashPin(inputPin).then(hashed => {
+              if (hashed) StorageService.setPin(hashed);
+            });
+            return true;
+          }
+          return false;
+        }
+        const hashedInput = await CryptoService.hashPin(inputPin);
+        return hashedInput === storedPin;
+      }
+    };
+
+    // =========================================================================
+    // DEFENSIVE VALIDATORS & SCHEMA INTEGRITY
+    // =========================================================================
+    const Validators = {
+      sanitizeText: (str, maxLen = 60) => {
+        if (!str) return '';
+        return String(str).trim().slice(0, maxLen);
+      },
+      sanitizeNumber: (val, fallback = 0) => {
+        const n = Number(val);
+        return (isNaN(n) || !isFinite(n) || n < 0) ? fallback : n;
+      },
+      validateTransaction: (tx) => {
+        if (!tx || typeof tx !== 'object') return null;
+        const amount = Validators.sanitizeNumber(tx.amount, 0);
+        if (amount <= 0) return null;
+        return {
+          id: String(tx.id || ('tx_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7))),
+          type: (tx.type === 'INCOME') ? 'INCOME' : 'EXPENSE',
+          amount,
+          category: Validators.sanitizeText(tx.category || 'lainnya', 30),
+          accountId: String(tx.accountId || ''),
+          date: tx.date || new Date().toISOString().split('T')[0],
+          note: Validators.sanitizeText(tx.note || '', 100),
+          createdAt: tx.createdAt || new Date().toISOString()
+        };
+      },
+      validateAccount: (acc) => {
+        if (!acc || typeof acc !== 'object') return null;
+        const name = Validators.sanitizeText(acc.name, 30);
+        if (!name) return null;
+        return {
+          id: String(acc.id || ('acc_' + Date.now())),
+          name,
+          type: ['Bank', 'Cash', 'E-Wallet'].includes(acc.type) ? acc.type : 'Cash',
+          initialBalance: Validators.sanitizeNumber(acc.initialBalance, 0),
+          createdAt: acc.createdAt || new Date().toISOString()
+        };
+      },
+      validateSavingsGoal: (goal) => {
+        if (!goal || typeof goal !== 'object') return null;
+        const name = Validators.sanitizeText(goal.name, 40);
+        const targetAmount = Validators.sanitizeNumber(goal.targetAmount, 0);
+        if (!name || targetAmount <= 0) return null;
+        return {
+          id: String(goal.id || ('goal_' + Date.now())),
+          name,
+          targetAmount,
+          currentAmount: Validators.sanitizeNumber(goal.currentAmount, 0),
+          category: Validators.sanitizeText(goal.category || 'Tabungan', 30),
+          icon: Validators.sanitizeText(goal.icon || 'target', 20),
+          createdAt: goal.createdAt || new Date().toISOString()
+        };
+      },
+      validateDebt: (debt) => {
+        if (!debt || typeof debt !== 'object') return null;
+        const personName = Validators.sanitizeText(debt.personName, 40);
+        const amount = Validators.sanitizeNumber(debt.amount, 0);
+        if (!personName || amount <= 0) return null;
+        return {
+          id: String(debt.id || ('debt_' + Date.now())),
+          personName,
+          type: debt.type === 'PIUTANG' ? 'PIUTANG' : 'HUTANG',
+          amount,
+          dueDate: debt.dueDate || '',
+          isPaid: Boolean(debt.isPaid),
+          note: Validators.sanitizeText(debt.note || '', 100),
+          createdAt: debt.createdAt || new Date().toISOString()
+        };
+      },
+      validateBackupSchema: (data) => {
+        if (!data || typeof data !== 'object') return null;
+        const accounts = Array.isArray(data.accounts)
+          ? data.accounts.map(Validators.validateAccount).filter(Boolean)
+          : [];
+        const transactions = Array.isArray(data.transactions)
+          ? data.transactions.map(Validators.validateTransaction).filter(Boolean)
+          : [];
+        const savingsGoals = Array.isArray(data.savingsGoals)
+          ? data.savingsGoals.map(Validators.validateSavingsGoal).filter(Boolean)
+          : [];
+        const debts = Array.isArray(data.debts)
+          ? data.debts.map(Validators.validateDebt).filter(Boolean)
+          : [];
+        return {
+          accounts,
+          transactions,
+          savingsGoals,
+          debts,
+          name: Validators.sanitizeText(data.name || '', 30),
+          username: (data.username || '').toLowerCase().replace(/[^a-z0-9_]/g, ''),
+          avatar: typeof data.avatar === 'string' ? data.avatar : '',
+          theme: data.theme === 'dark' ? 'dark' : 'light',
+          safeBudget: Validators.sanitizeNumber(data.safeBudget, 0)
+        };
+      }
+    };
+
     const StorageService = {
       getPin: () => {
         try { return localStorage.getItem(STORAGE_KEYS.PIN); } catch (e) { return null; }
@@ -41,38 +181,54 @@ PART3_SERVICES = """
       getAccounts: () => {
         try {
           const d = localStorage.getItem(STORAGE_KEYS.ACCOUNTS);
-          return d ? JSON.parse(d) : [];
+          const parsed = d ? JSON.parse(d) : [];
+          return Array.isArray(parsed) ? parsed.map(Validators.validateAccount).filter(Boolean) : [];
         } catch (e) { return []; }
       },
       setAccounts: (accs) => {
-        try { localStorage.setItem(STORAGE_KEYS.ACCOUNTS, JSON.stringify(accs)); } catch (e) {}
+        try {
+          const clean = Array.isArray(accs) ? accs.map(Validators.validateAccount).filter(Boolean) : [];
+          localStorage.setItem(STORAGE_KEYS.ACCOUNTS, JSON.stringify(clean));
+        } catch (e) {}
       },
       getTransactions: () => {
         try {
           const d = localStorage.getItem(STORAGE_KEYS.TRANSACTIONS);
-          return d ? JSON.parse(d) : [];
+          const parsed = d ? JSON.parse(d) : [];
+          return Array.isArray(parsed) ? parsed.map(Validators.validateTransaction).filter(Boolean) : [];
         } catch (e) { return []; }
       },
       setTransactions: (txs) => {
-        try { localStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify(txs)); } catch (e) {}
+        try {
+          const clean = Array.isArray(txs) ? txs.map(Validators.validateTransaction).filter(Boolean) : [];
+          localStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify(clean));
+        } catch (e) {}
       },
       getSavingsGoals: () => {
         try {
           const d = localStorage.getItem(STORAGE_KEYS.SAVINGS_GOALS);
-          return d ? JSON.parse(d) : [];
+          const parsed = d ? JSON.parse(d) : [];
+          return Array.isArray(parsed) ? parsed.map(Validators.validateSavingsGoal).filter(Boolean) : [];
         } catch (e) { return []; }
       },
       setSavingsGoals: (goals) => {
-        try { localStorage.setItem(STORAGE_KEYS.SAVINGS_GOALS, JSON.stringify(goals)); } catch (e) {}
+        try {
+          const clean = Array.isArray(goals) ? goals.map(Validators.validateSavingsGoal).filter(Boolean) : [];
+          localStorage.setItem(STORAGE_KEYS.SAVINGS_GOALS, JSON.stringify(clean));
+        } catch (e) {}
       },
       getDebts: () => {
         try {
           const d = localStorage.getItem(STORAGE_KEYS.DEBTS);
-          return d ? JSON.parse(d) : [];
+          const parsed = d ? JSON.parse(d) : [];
+          return Array.isArray(parsed) ? parsed.map(Validators.validateDebt).filter(Boolean) : [];
         } catch (e) { return []; }
       },
       setDebts: (debts) => {
-        try { localStorage.setItem(STORAGE_KEYS.DEBTS, JSON.stringify(debts)); } catch (e) {}
+        try {
+          const clean = Array.isArray(debts) ? debts.map(Validators.validateDebt).filter(Boolean) : [];
+          localStorage.setItem(STORAGE_KEYS.DEBTS, JSON.stringify(clean));
+        } catch (e) {}
       },
       getSafeBudget: () => {
         try {
@@ -114,7 +270,7 @@ PART3_SERVICES = """
       }
     };
 
-    // LEDGER ENGINE: Single Source of Truth
+    // LEDGER ENGINE: Single Source of Truth for Deterministic Calculations
     const Ledger = {
       getAccountBalance: (accountId, accounts, transactions) => {
         if (!accountId) return 0;
@@ -153,6 +309,96 @@ PART3_SERVICES = """
           else if (t.type === 'EXPENSE') expense += amt;
         }
         return { income, expense, net: income - expense };
+      },
+      // Deterministic calculation for Safe-to-Spend Daily Limit
+      calculateSafeToSpend: (accounts, transactions, customDailyBudget = 0) => {
+        const now = new Date();
+        const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        const currentDay = now.getDate();
+        const daysRemaining = Math.max(1, daysInMonth - currentDay + 1);
+
+        const totalBalance = Ledger.getTotalBalance(accounts, transactions);
+
+        // This month's total expenses
+        const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        const monthlyTxs = (transactions || []).filter(t => t && t.date && t.date.startsWith(currentMonthStr));
+        const spentThisMonth = monthlyTxs
+          .filter(t => t.type === 'EXPENSE')
+          .reduce((acc, t) => acc + (Number(t.amount) || 0), 0);
+
+        // Today's total expenses
+        const todayStr = now.toISOString().split('T')[0];
+        const spentToday = (transactions || [])
+          .filter(t => t && t.date === todayStr && t.type === 'EXPENSE')
+          .reduce((acc, t) => acc + (Number(t.amount) || 0), 0);
+
+        // Calculate daily allowance
+        let dailyLimit = customDailyBudget > 0
+          ? customDailyBudget
+          : Math.max(0, Math.floor(totalBalance / daysRemaining));
+
+        const remainingToday = Math.max(0, dailyLimit - spentToday);
+        const percentUsed = dailyLimit > 0 ? Math.min(100, Math.round((spentToday / dailyLimit) * 100)) : 0;
+
+        return {
+          dailyLimit,
+          spentToday,
+          remainingToday,
+          percentUsed,
+          daysRemaining,
+          spentThisMonth
+        };
+      },
+      // Deterministic Financial Milestones & Health
+      calculateMilestones: (accounts, transactions, savingsGoals, debts) => {
+        const totalBalance = Ledger.getTotalBalance(accounts, transactions);
+        const totalSavings = (savingsGoals || []).reduce((sum, g) => sum + (Number(g.currentAmount) || 0), 0);
+        const unpaidDebts = (debts || []).filter(d => !d.isPaid && d.type === 'HUTANG').reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
+        const unpaidReceivables = (debts || []).filter(d => !d.isPaid && d.type === 'PIUTANG').reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
+
+        const milestones = [
+          {
+            id: 'm1',
+            title: 'Langkah Awal',
+            desc: 'Mencatat transaksi pertama di Voralet',
+            isCompleted: (transactions || []).length > 0,
+            icon: 'check-circle'
+          },
+          {
+            id: 'm2',
+            title: 'Dana Darurat Siaga',
+            desc: 'Saldo total mencapai minimal Rp 1.000.000',
+            isCompleted: totalBalance >= 1000000,
+            icon: 'shield'
+          },
+          {
+            id: 'm3',
+            title: 'Penabung Cerdas',
+            desc: 'Memiliki minimal satu Kantong Impian aktif',
+            isCompleted: (savingsGoals || []).length > 0,
+            icon: 'target'
+          },
+          {
+            id: 'm4',
+            title: 'Bebas Hutang',
+            desc: 'Tidak ada tanggungan hutang yang belum lunas',
+            isCompleted: unpaidDebts === 0,
+            icon: 'check'
+          }
+        ];
+
+        const completedCount = milestones.filter(m => m.isCompleted).length;
+        const progressPct = Math.round((completedCount / milestones.length) * 100);
+
+        return {
+          milestones,
+          completedCount,
+          totalMilestones: milestones.length,
+          progressPct,
+          totalSavings,
+          unpaidDebts,
+          unpaidReceivables
+        };
       }
     };
 
@@ -303,11 +549,14 @@ PART3_SERVICES = """
                 key={opt.value}
                 type="button"
                 onClick={() => onChange(opt.value)}
-                className={`relative z-10 flex-1 py-2 text-center text-xs font-semibold transition-colors duration-200 ios-btn-tap ${
-                  isSelected ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'
+                className={`relative z-10 flex-1 py-2 text-center text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors duration-200 ios-btn-tap ${
+                  isSelected ? 'text-slate-900 dark:text-white font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'
                 }`}
               >
-                {opt.label}
+                {opt.icon && (
+                  <Icon name={opt.icon} className={`w-3.5 h-3.5 ${opt.iconColor || ''}`} strokeWidth={2.4} />
+                )}
+                <span>{opt.label}</span>
               </button>
             );
           })}

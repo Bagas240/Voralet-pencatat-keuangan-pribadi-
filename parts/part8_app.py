@@ -109,7 +109,14 @@ PART8_APP = """
             className={`relative bg-white dark:bg-slate-800 flex items-center justify-between py-3 px-1.5 ${!isLast ? 'ios-hairline' : ''} ios-touch-item`}
           >
             <div className="flex items-center gap-3 min-w-0 pointer-events-none">
-              <IconBadge icon={cat.icon} className="p-2.5 rounded-2xl bg-sky-100 dark:bg-slate-700 text-brand dark:text-sky-400 shrink-0" />
+              <div className="relative shrink-0">
+                <IconBadge icon={cat.icon} className="p-2.5 rounded-2xl bg-sky-100 dark:bg-slate-700 text-brand dark:text-sky-400 shrink-0" />
+                <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-white border-2 border-white dark:border-slate-800 ${
+                  tx.type === 'EXPENSE' ? 'bg-rose-500' : 'bg-emerald-500'
+                }`}>
+                  <Icon name={tx.type === 'EXPENSE' ? 'arrow-up-right' : 'arrow-down-left'} className="w-2.5 h-2.5" strokeWidth={3} />
+                </div>
+              </div>
               <div className="min-w-0">
                 <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">
                   {cat.label}
@@ -176,10 +183,13 @@ PART8_APP = """
       hideBalance,
       onToggleHideBalance,
       onOpenAddTx,
+      onOpenAddIncome,
+      onOpenAddExpense,
       onOpenAccounts,
       onOpenSettings,
       onOpenDebts,
       onOpenSavings,
+      onOpenNewSavingsGoal,
       onDeleteTx,
       onEditTx,
       onDuplicateTx,
@@ -228,19 +238,25 @@ PART8_APP = """
 
       return (
         <div className="space-y-4 pb-28 animate-ios-tab-view">
-          {/* iOS Profile Header Bar - Direct Route to Settings on Tap */}
+          {/* iOS Profile Header Bar - Compact & Natural without elongated box */}
           <div className="flex items-center justify-between pt-1">
             <div
               onClick={onOpenSettings}
-              className="flex items-center gap-3 cursor-pointer group ios-card-tap"
+              className="inline-flex items-center gap-3 cursor-pointer group ios-card-tap py-1 pr-2 rounded-2xl hover:opacity-90 transition-opacity"
               title="Ketuk untuk buka Pengaturan Profil"
             >
-              <Avatar avatar={userProfile.avatar} name={userProfile.name} size="w-11 h-11" textSize="text-base" />
-              <div>
-                <h1 className="text-base font-bold text-slate-900 dark:text-white leading-tight group-hover:text-brand transition-colors">
-                  {userProfile.name || 'Sahabat Voralet'}
-                </h1>
-                <p className="text-xs font-mono text-brand dark:text-sky-400 font-semibold">
+              {/* Profile Avatar with clean circular drop shadow so it stands out distinctly from the background */}
+              <div className="relative shrink-0 rounded-full shadow-[0_6px_16px_rgba(15,23,42,0.18)] dark:shadow-[0_8px_24px_rgba(0,0,0,0.65)] ring-2 ring-white dark:ring-slate-700">
+                <Avatar avatar={userProfile.avatar} name={userProfile.name} size="w-11 h-11" textSize="text-base" />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <h1 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white leading-tight group-hover:text-brand transition-colors truncate">
+                    {userProfile.name || 'Sahabat Voralet'}
+                  </h1>
+                  <Icon name="chevron-right" className="w-3.5 h-3.5 text-slate-400 group-hover:text-brand transition-colors shrink-0" />
+                </div>
+                <p className="text-[11px] font-mono text-brand dark:text-sky-400 font-semibold truncate">
                   @{userProfile.username || 'voralet_user'}
                 </p>
               </div>
@@ -250,7 +266,7 @@ PART8_APP = """
               <button
                 type="button"
                 onClick={onOpenAccounts}
-                className="p-2.5 rounded-full text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ios-btn-tap"
+                className="p-2.5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 shadow-sm dark:shadow-[0_4px_12px_rgba(0,0,0,0.35)] text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors ios-btn-tap"
                 title="Kelola Dompet"
                 aria-label="Kelola Dompet"
               >
@@ -259,17 +275,17 @@ PART8_APP = """
             </div>
           </div>
 
-          {/* Hero Balance Card - Solid Sky Blue Color Lock (Strictly NO Gradients) */}
-          <div className="rounded-[22px] p-5 bg-[#0284C7] dark:bg-[#1E293B] text-white border border-[#0369A1] dark:border-[#334155] shadow-md transition-colors duration-300 ease-in-out">
-            <div className="flex items-center justify-between text-sky-100 dark:text-slate-400 mb-1.5">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-sky-100 dark:text-slate-400">Total Saldo Brankas</span>
+          {/* Hero Balance Card - High Contrast Deep Royal Blue in both Light and Dark Mode */}
+          <div className="rounded-[22px] p-5 bg-[#0284C7] dark:bg-[#0369A1] text-white border border-[#0369A1] dark:border-sky-600/40 shadow-lg dark:shadow-[0_10px_26px_rgba(3,105,161,0.35)] transition-colors duration-300 ease-in-out">
+            <div className="flex items-center justify-between text-sky-100 mb-1.5">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-sky-100">Total Saldo Brankas</span>
               <button
                 type="button"
                 onClick={onToggleHideBalance}
-                className="p-1 text-sky-100 dark:text-slate-400 hover:text-white transition-colors ios-btn-tap"
+                className="p-1 text-sky-100 hover:text-white transition-colors ios-btn-tap"
                 aria-label="Sensor Saldo"
               >
-                <Icon name={hideBalance ? 'eye-off' : 'eye'} className="w-4 h-4 text-sky-100 dark:text-slate-400" />
+                <Icon name={hideBalance ? 'eye-off' : 'eye'} className="w-4 h-4 text-sky-100" />
               </button>
             </div>
 
@@ -277,25 +293,34 @@ PART8_APP = """
               {hideBalance ? 'Rp ••••••••' : formatIDR(totalBalance)}
             </div>
 
-            <div className="grid grid-cols-2 gap-2 pt-3 border-t border-sky-400/50 dark:border-slate-700/60">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-emerald-500/25 text-emerald-100 flex items-center justify-center shrink-0">
+            {/* Tap to record Income or Expense directly */}
+            <div className="grid grid-cols-2 gap-2 pt-3 border-t border-sky-400/50 dark:border-sky-500/40">
+              <div
+                onClick={onOpenAddIncome}
+                className="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-white/10 cursor-pointer transition-colors ios-btn-tap"
+                title="Ketuk untuk Catat Pemasukan"
+              >
+                <div className="w-8 h-8 rounded-xl bg-emerald-500/30 text-emerald-100 flex items-center justify-center shrink-0 border border-emerald-300/30">
                   <Icon name="arrow-down-left" className="w-4 h-4 text-emerald-200" strokeWidth={2.5} />
                 </div>
                 <div className="min-w-0">
-                  <span className="text-[10px] text-sky-100 dark:text-slate-400 block leading-tight font-medium">Masuk (Bln Ini)</span>
+                  <span className="text-[10px] text-sky-100 block leading-tight font-medium">Masuk (Bln Ini)</span>
                   <span className="text-xs whitespace-nowrap truncate font-bold text-white block">
                     {hideBalance ? 'Rp ••••••' : formatIDR(monthSummary.income)}
                   </span>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-rose-500/25 text-rose-100 flex items-center justify-center shrink-0">
+              <div
+                onClick={onOpenAddExpense}
+                className="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-white/10 cursor-pointer transition-colors ios-btn-tap"
+                title="Ketuk untuk Catat Pengeluaran"
+              >
+                <div className="w-8 h-8 rounded-xl bg-rose-500/30 text-rose-100 flex items-center justify-center shrink-0 border border-rose-300/30">
                   <Icon name="arrow-up-right" className="w-4 h-4 text-rose-200" strokeWidth={2.5} />
                 </div>
                 <div className="min-w-0">
-                  <span className="text-[10px] text-sky-100 dark:text-slate-400 block leading-tight font-medium">Keluar (Bln Ini)</span>
+                  <span className="text-[10px] text-sky-100 block leading-tight font-medium">Keluar (Bln Ini)</span>
                   <span className="text-xs whitespace-nowrap truncate font-bold text-white block">
                     {hideBalance ? 'Rp ••••••' : formatIDR(monthSummary.expense)}
                   </span>
@@ -304,20 +329,43 @@ PART8_APP = """
             </div>
           </div>
 
-          {/* Quick Action Button Bar: Catat, Dompet, Hutang, & Impian */}
-          <div className="grid grid-cols-4 gap-2">
+          {/* Direct Dual Action Bar: Catat Pemasukan (+) & Catat Pengeluaran (-) with Prominent Icons */}
+          <div className="grid grid-cols-2 gap-2.5">
             <button
               type="button"
-              onClick={onOpenAddTx}
-              className="py-2.5 px-2 bg-brand hover:bg-brand-hover text-white rounded-2xl flex flex-col items-center justify-center gap-1 shadow-sm transition-all ios-btn-tap"
+              onClick={onOpenAddIncome}
+              className="py-3 px-3 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white rounded-2xl flex items-center justify-center gap-2 shadow-[0_4px_14px_rgba(5,150,105,0.28)] dark:shadow-[0_6px_20px_rgba(5,150,105,0.35)] transition-all ios-btn-tap"
             >
-              <Icon name="plus" className="w-4 h-4" strokeWidth={2.4} />
-              <span className="text-[11px] font-bold whitespace-nowrap">Catat</span>
+              <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                <Icon name="arrow-down-left" className="w-4 h-4 text-white" strokeWidth={2.5} />
+              </div>
+              <div className="text-left leading-tight">
+                <span className="text-xs font-bold block">Pemasukan</span>
+                <span className="text-[10px] text-emerald-100 block font-medium">+ Catat Masuk</span>
+              </div>
             </button>
+
+            <button
+              type="button"
+              onClick={onOpenAddExpense}
+              className="py-3 px-3 bg-rose-600 hover:bg-rose-700 active:scale-[0.98] text-white rounded-2xl flex items-center justify-center gap-2 shadow-[0_4px_14px_rgba(225,29,72,0.28)] dark:shadow-[0_6px_20px_rgba(225,29,72,0.35)] transition-all ios-btn-tap"
+            >
+              <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                <Icon name="arrow-up-right" className="w-4 h-4 text-white" strokeWidth={2.5} />
+              </div>
+              <div className="text-left leading-tight">
+                <span className="text-xs font-bold block">Pengeluaran</span>
+                <span className="text-[10px] text-rose-100 block font-medium">- Catat Belanja</span>
+              </div>
+            </button>
+          </div>
+
+          {/* Quick Shortcuts Bar: Dompet, Hutang, & Kantong Impian */}
+          <div className="grid grid-cols-3 gap-2">
             <button
               type="button"
               onClick={onOpenAccounts}
-              className="py-2.5 px-2 bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-2xl flex flex-col items-center justify-center gap-1 shadow-sm transition-all ios-btn-tap hover:border-brand/40"
+              className="py-2.5 px-2 bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-2xl flex flex-col items-center justify-center gap-1 shadow-sm dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)] transition-all ios-btn-tap hover:border-brand/40"
             >
               <Icon name="wallet" className="w-4 h-4 text-brand dark:text-sky-400" />
               <span className="text-[11px] font-bold whitespace-nowrap">Dompet</span>
@@ -325,7 +373,7 @@ PART8_APP = """
             <button
               type="button"
               onClick={onOpenDebts}
-              className="py-2.5 px-2 bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-2xl flex flex-col items-center justify-center gap-1 shadow-sm transition-all ios-btn-tap hover:border-brand/40"
+              className="py-2.5 px-2 bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-2xl flex flex-col items-center justify-center gap-1 shadow-sm dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)] transition-all ios-btn-tap hover:border-brand/40"
             >
               <Icon name="receipt" className="w-4 h-4 text-amber-500" />
               <span className="text-[11px] font-bold whitespace-nowrap">Hutang</span>
@@ -333,7 +381,7 @@ PART8_APP = """
             <button
               type="button"
               onClick={onOpenSavings}
-              className="py-2.5 px-2 bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-2xl flex flex-col items-center justify-center gap-1 shadow-sm transition-all ios-btn-tap hover:border-brand/40"
+              className="py-2.5 px-2 bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-2xl flex flex-col items-center justify-center gap-1 shadow-sm dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)] transition-all ios-btn-tap hover:border-brand/40"
             >
               <Icon name="target" className="w-4 h-4 text-emerald-500" />
               <span className="text-[11px] font-bold whitespace-nowrap">Impian</span>
@@ -351,6 +399,79 @@ PART8_APP = """
 
           {/* Quick Expense Bar */}
           <QuickExpenseBar onSelectQuickExpense={onSelectQuickExpense} />
+
+          {/* Kantong Impian Quick Section */}
+          <div className="ios-inset-group">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <IconBadge icon="target" className="p-1.5 rounded-xl bg-emerald-100 dark:bg-slate-700 text-emerald-600 dark:text-emerald-400" iconClass="w-4 h-4" />
+                <div>
+                  <h3 className="text-xs font-bold text-slate-900 dark:text-white">Kantong Impian</h3>
+                  <p className="text-[10px] text-slate-400">Target & tabungan masa depan</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={onOpenNewSavingsGoal}
+                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-xl flex items-center gap-1 shadow-sm ios-btn-tap"
+              >
+                <Icon name="plus" className="w-3.5 h-3.5" strokeWidth={2.5} />
+                <span>+ Tambah Kantong</span>
+              </button>
+            </div>
+
+            {savingsGoals && savingsGoals.length > 0 ? (
+              <div className="space-y-2.5">
+                {savingsGoals.slice(0, 3).map(goal => {
+                  const target = Number(goal.targetAmount) || 1;
+                  const current = Number(goal.currentAmount) || 0;
+                  const pct = Math.min(100, Math.round((current / target) * 100));
+                  return (
+                    <div
+                      key={goal.id}
+                      onClick={onOpenSavings}
+                      className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/70 border border-slate-100 dark:border-slate-800 cursor-pointer hover:border-emerald-500/40 transition-all ios-card-tap"
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">{goal.title}</span>
+                        <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">{pct}%</span>
+                      </div>
+                      <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden mb-1">
+                        <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${pct}%` }} />
+                      </div>
+                      <div className="flex justify-between text-[10px] text-slate-400">
+                        <span>{hideBalance ? 'Rp ••••••' : formatIDR(current)}</span>
+                        <span>Target: {hideBalance ? 'Rp ••••••' : formatIDR(target)}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+                {savingsGoals.length > 3 && (
+                  <button
+                    type="button"
+                    onClick={onOpenSavings}
+                    className="w-full text-center text-[11px] font-semibold text-brand dark:text-sky-400 pt-1 hover:underline"
+                  >
+                    Lihat semua {savingsGoals.length} Kantong Impian →
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-4 px-2 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-dashed border-slate-200 dark:border-slate-800">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mb-2.5">
+                  Kamu belum memiliki Kantong Impian
+                </p>
+                <button
+                  type="button"
+                  onClick={onOpenNewSavingsGoal}
+                  className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl inline-flex items-center gap-1.5 shadow-sm ios-btn-tap"
+                >
+                  <Icon name="plus" className="w-3.5 h-3.5" strokeWidth={2.5} />
+                  <span>+ Buat Kantong Impian Sekarang</span>
+                </button>
+              </div>
+            )}
+          </div>
 
           {/* Financial Milestones */}
           <MilestonesCard
@@ -518,25 +639,43 @@ PART8_APP = """
         setToastMsg(msg);
       }, []);
 
-      // Theme toggle
+      // Theme toggle with full DOM synchronization
       const toggleTheme = useCallback(() => {
         setTheme(prev => {
           const next = prev === 'dark' ? 'light' : 'dark';
           StorageService.setTheme(next);
+          try {
+            localStorage.setItem('voralet_theme', next);
+          } catch (e) {}
+
           if (next === 'dark') {
             document.documentElement.classList.add('dark');
+            if (document.body) document.body.classList.add('dark');
+            const rootEl = document.getElementById('root');
+            if (rootEl) rootEl.classList.add('dark');
           } else {
             document.documentElement.classList.remove('dark');
+            if (document.body) document.body.classList.remove('dark');
+            const rootEl = document.getElementById('root');
+            if (rootEl) rootEl.classList.remove('dark');
           }
+          showToast(next === 'dark' ? 'Mode Gelap diaktifkan 🌙' : 'Mode Terang diaktifkan ☀️');
           return next;
         });
-      }, []);
+      }, [showToast]);
 
       useEffect(() => {
-        if (theme === 'dark') {
+        const isDark = theme === 'dark';
+        if (isDark) {
           document.documentElement.classList.add('dark');
+          if (document.body) document.body.classList.add('dark');
+          const rootEl = document.getElementById('root');
+          if (rootEl) rootEl.classList.add('dark');
         } else {
           document.documentElement.classList.remove('dark');
+          if (document.body) document.body.classList.remove('dark');
+          const rootEl = document.getElementById('root');
+          if (rootEl) rootEl.classList.remove('dark');
         }
       }, [theme]);
 
@@ -876,7 +1015,7 @@ PART8_APP = """
       }
 
       return (
-        <div className="h-[100dvh] flex flex-col bg-slate-50 dark:bg-[#0F172A] text-[#0F172A] dark:text-[#F8FAFC] overflow-hidden select-none transition-colors duration-300 ease-in-out">
+        <div className={`h-[100dvh] flex flex-col ${theme === 'dark' ? 'dark bg-[#0F172A] text-[#F8FAFC]' : 'bg-slate-50 text-[#0F172A]'} overflow-hidden select-none transition-colors duration-300 ease-in-out`}>
           {toastMsg && <Toast message={toastMsg} onClose={() => setToastMsg('')} />}
 
           <main
@@ -884,66 +1023,80 @@ PART8_APP = """
             onTouchEnd={handleScreenTouchEnd}
             className="flex-1 w-full max-w-md mx-auto px-4 pt-3 pb-28 overflow-y-auto no-scrollbar"
           >
-            {activeTab === 'dashboard' && (
-              <MainDashboard
-                accounts={accounts}
-                transactions={transactions}
-                userProfile={{ name, username, avatar }}
-                hideBalance={hideBalance}
-                onToggleHideBalance={handleToggleHideBalance}
-                onOpenAddTx={() => {
-                  setTxModalInitial(null);
-                  setIsTxModalOpen(true);
-                }}
-                onOpenAccounts={() => setIsAccModalOpen(true)}
-                onOpenSettings={() => setIsSettingsModalOpen(true)}
-                onOpenDebts={() => setActiveTab('debts')}
-                onOpenSavings={() => setActiveTab('savings')}
-                onDeleteTx={handleDeleteTransaction}
-                onEditTx={handleEditTransaction}
-                onDuplicateTx={handleDuplicateTransaction}
-                safeBudget={safeBudget}
-                onSetBudget={handleSetBudget}
-                savingsGoals={savingsGoals}
-                debts={debts}
-                onSelectQuickExpense={handleQuickExpenseSelect}
-              />
-            )}
+            <ErrorBoundary>
+              {activeTab === 'dashboard' && (
+                <MainDashboard
+                  accounts={accounts}
+                  transactions={transactions}
+                  userProfile={{ name, username, avatar }}
+                  hideBalance={hideBalance}
+                  onToggleHideBalance={handleToggleHideBalance}
+                  onOpenAddTx={() => {
+                    setTxModalInitial(null);
+                    setIsTxModalOpen(true);
+                  }}
+                  onOpenAddIncome={() => {
+                    setTxModalInitial({ type: 'INCOME' });
+                    setIsTxModalOpen(true);
+                  }}
+                  onOpenAddExpense={() => {
+                    setTxModalInitial({ type: 'EXPENSE' });
+                    setIsTxModalOpen(true);
+                  }}
+                  onOpenAccounts={() => setIsAccModalOpen(true)}
+                  onOpenSettings={() => setIsSettingsModalOpen(true)}
+                  onOpenDebts={() => setActiveTab('debts')}
+                  onOpenSavings={() => setActiveTab('savings')}
+                  onOpenNewSavingsGoal={() => {
+                    setSavingsGoalToEdit(null);
+                    setIsSavingsModalOpen(true);
+                  }}
+                  onDeleteTx={handleDeleteTransaction}
+                  onEditTx={handleEditTransaction}
+                  onDuplicateTx={handleDuplicateTransaction}
+                  safeBudget={safeBudget}
+                  onSetBudget={handleSetBudget}
+                  savingsGoals={savingsGoals}
+                  debts={debts}
+                  onSelectQuickExpense={handleQuickExpenseSelect}
+                />
+              )}
 
-            {activeTab === 'debts' && (
-              <DebtsView
-                debts={debts}
-                onAddDebt={handleAddDebt}
-                onToggleStatus={handleToggleDebtStatus}
-                onDeleteDebt={handleDeleteDebt}
-                hideBalance={hideBalance}
-              />
-            )}
+              {activeTab === 'debts' && (
+                <DebtsView
+                  debts={debts}
+                  onAddDebt={handleAddDebt}
+                  onToggleStatus={handleToggleDebtStatus}
+                  onDeleteDebt={handleDeleteDebt}
+                  hideBalance={hideBalance}
+                />
+              )}
 
-            {activeTab === 'savings' && (
-              <SavingsView
-                savingsGoals={savingsGoals}
-                onOpenNewGoal={() => {
-                  setSavingsGoalToEdit(null);
-                  setIsSavingsModalOpen(true);
-                }}
-                onEditGoal={(g) => {
-                  setSavingsGoalToEdit(g);
-                  setIsSavingsModalOpen(true);
-                }}
-                onDeleteGoal={handleDeleteGoal}
-                onDepositGoal={handleDepositGoal}
-                hideBalance={hideBalance}
-              />
-            )}
+              {activeTab === 'savings' && (
+                <SavingsView
+                  savingsGoals={savingsGoals}
+                  onOpenNewGoal={() => {
+                    setSavingsGoalToEdit(null);
+                    setIsSavingsModalOpen(true);
+                  }}
+                  onEditGoal={(g) => {
+                    setSavingsGoalToEdit(g);
+                    setIsSavingsModalOpen(true);
+                  }}
+                  onDeleteGoal={handleDeleteGoal}
+                  onDepositGoal={handleDepositGoal}
+                  hideBalance={hideBalance}
+                />
+              )}
 
-            {activeTab === 'analytics' && (
-              <AnalyticsView
-                transactions={transactions}
-                accounts={accounts}
-                hideBalance={hideBalance}
-              />
-            )}
+              {activeTab === 'analytics' && (
+                <AnalyticsView
+                  transactions={transactions}
+                  accounts={accounts}
+                  hideBalance={hideBalance}
+                />
+              )}
+            </ErrorBoundary>
           </main>
 
           {/* Floating Capsule Bottom Navigation with Fluid Active Pill */}
@@ -993,7 +1146,12 @@ PART8_APP = """
     };
 
     const rootElement = document.getElementById('root');
-    ReactDOM.render(<App />, rootElement);
+    ReactDOM.render(
+      <ErrorBoundary>
+        <App />
+      </ErrorBoundary>,
+      rootElement
+    );
   </script>
 </body>
 </html>

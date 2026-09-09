@@ -10,55 +10,63 @@ HTML_HEAD = """<!DOCTYPE html>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tailwind CSS Configuration (MANDATORY BEFORE CDN SCRIPT FOR darkMode: 'class') -->
   <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            brand: {
-              DEFAULT: '#0284C7',
-              hover: '#0369A1',
-              light: '#E0F2FE',
-              soft: '#F0F9FF',
-              dark: '#0284C7'
+    window.tailwind = {
+      config: {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              brand: {
+                DEFAULT: '#0284C7',
+                hover: '#0369A1',
+                light: '#E0F2FE',
+                soft: '#F0F9FF',
+                dark: '#0284C7'
+              },
+              sky: {
+                50: '#F0F9FF',
+                100: '#E0F2FE',
+                200: '#BAE6FD',
+                300: '#7DD3FC',
+                400: '#38BDF8',
+                500: '#0EA5E9',
+                600: '#0284C7',
+                700: '#0369A1',
+                800: '#075985',
+                900: '#0C4A6E'
+              },
+              slate: {
+                950: '#020617',
+                900: '#0F172A', // Dark Mode Main Background
+                850: '#151F32',
+                800: '#1E293B', // Dark Mode Cards / Containers
+                750: '#293548',
+                700: '#334155', // Dark Mode Borders
+                600: '#475569',
+                500: '#64748B', // Secondary Text Light Mode
+                400: '#94A3B8', // Secondary Text Dark Mode
+                300: '#CBD5E1',
+                200: '#E2E8F0',
+                100: '#F1F5F9',
+                50: '#F8FAFC'  // Primary Text Dark Mode
+              }
             },
-            sky: {
-              50: '#F0F9FF',
-              100: '#E0F2FE',
-              200: '#BAE6FD',
-              300: '#7DD3FC',
-              400: '#38BDF8',
-              500: '#0EA5E9',
-              600: '#0284C7',
-              700: '#0369A1',
-              800: '#075985',
-              900: '#0C4A6E'
-            },
-            // Tailwind Slate mapped to strict Dark Mode palette
-            slate: {
-              950: '#020617',
-              900: '#0F172A', // Dark Mode Main Background
-              850: '#151F32',
-              800: '#1E293B', // Dark Mode Cards / Containers
-              750: '#293548',
-              700: '#334155', // Dark Mode Borders
-              600: '#475569',
-              500: '#64748B', // Secondary Text Light Mode
-              400: '#94A3B8', // Secondary Text Dark Mode
-              300: '#CBD5E1',
-              200: '#E2E8F0',
-              100: '#F1F5F9',
-              50: '#F8FAFC'  // Primary Text Dark Mode
+            fontFamily: {
+              sans: ['Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', 'Roboto', 'sans-serif']
             }
-          },
-          fontFamily: {
-            sans: ['Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', 'Roboto', 'sans-serif']
           }
         }
       }
+    };
+  </script>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    if (window.tailwind) {
+      window.tailwind.config = window.tailwind.config || {};
+      window.tailwind.config.darkMode = 'class';
     }
   </script>
 
@@ -70,14 +78,16 @@ HTML_HEAD = """<!DOCTYPE html>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script>window.Babel || document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.4/babel.min.js"><\\/script>')</script>
 
-  <!-- Enforce Light Mode as strict default on first launch with Blue & White theme -->
+  <!-- Theme Synchronization Initialization -->
   <script>
     try {
       const savedTheme = localStorage.getItem('voralet_theme');
       if (savedTheme === 'dark') {
         document.documentElement.classList.add('dark');
+        if (document.body) document.body.classList.add('dark');
       } else {
         document.documentElement.classList.remove('dark');
+        if (document.body) document.body.classList.remove('dark');
         if (!savedTheme) {
           localStorage.setItem('voralet_theme', 'light');
         }
@@ -131,14 +141,28 @@ HTML_HEAD = """<!DOCTYPE html>
       background-color: #FFFFFF;
       padding: 1rem;
       border: 1px solid #E2E8F0;
-      box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.05);
-      transition: background-color 300ms ease-in-out, border-color 300ms ease-in-out, color 300ms ease-in-out;
+      box-shadow: 0 2px 10px -1px rgba(15, 23, 42, 0.07), 0 1px 3px -1px rgba(15, 23, 42, 0.04);
+      transition: background-color 300ms ease-in-out, border-color 300ms ease-in-out, color 300ms ease-in-out, box-shadow 300ms ease-in-out;
     }
     .dark .ios-inset-group {
       background-color: #1E293B !important;
       border-color: #334155 !important;
-      box-shadow: none;
+      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.45), 0 2px 8px -1px rgba(0, 0, 0, 0.3) !important;
       color: #F8FAFC !important;
+    }
+
+    /* iOS Floating & Capsule Shadows */
+    .ios-drop-shadow {
+      box-shadow: 0 6px 20px -3px rgba(15, 23, 42, 0.1), 0 2px 6px -2px rgba(15, 23, 42, 0.05);
+    }
+    .dark .ios-drop-shadow {
+      box-shadow: 0 8px 24px -3px rgba(0, 0, 0, 0.55), 0 2px 8px -2px rgba(0, 0, 0, 0.4);
+    }
+    .ios-nav-shadow {
+      box-shadow: 0 14px 36px -6px rgba(15, 23, 42, 0.22), 0 4px 14px -2px rgba(15, 23, 42, 0.1);
+    }
+    .dark .ios-nav-shadow {
+      box-shadow: 0 18px 40px -6px rgba(0, 0, 0, 0.75), 0 4px 16px -2px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08);
     }
 
     /* Hairline Divider */
@@ -146,8 +170,33 @@ HTML_HEAD = """<!DOCTYPE html>
       border-bottom: 1px solid #E2E8F0;
       transition: border-color 300ms ease-in-out;
     }
-    .dark .ios-hairline {
+    .dark .ios-hairline, html.dark .ios-hairline {
       border-bottom: 1px solid #334155 !important;
+    }
+
+    /* Bulletproof Fallbacks for Dark Mode */
+    html.dark, html.dark body, body.dark, html.dark #root, .dark #root {
+      background-color: #0F172A !important;
+      color: #F8FAFC !important;
+    }
+    .dark .bg-slate-50, html.dark .bg-slate-50 {
+      background-color: #0F172A !important;
+    }
+    .dark .bg-white, html.dark .bg-white {
+      background-color: #1E293B !important;
+      color: #F8FAFC !important;
+    }
+    .dark .text-slate-900, html.dark .text-slate-900,
+    .dark .text-slate-800, html.dark .text-slate-800 {
+      color: #F8FAFC !important;
+    }
+    .dark .text-slate-700, html.dark .text-slate-700,
+    .dark .text-slate-600, html.dark .text-slate-600 {
+      color: #CBD5E1 !important;
+    }
+    .dark .border-slate-200, html.dark .border-slate-200,
+    .dark .border-slate-100, html.dark .border-slate-100 {
+      border-color: #334155 !important;
     }
 
     /* Scrollbar hide */

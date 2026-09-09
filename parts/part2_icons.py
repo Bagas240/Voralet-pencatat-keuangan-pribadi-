@@ -57,15 +57,40 @@ PART2_ICONS = """
             </svg>
           );
         case 'arrow-up-right':
+        case 'trending-down':
+        case 'expense':
           return (
             <svg className={computedClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
               <path d="M7 17L17 7M17 7H7M17 7V17" />
             </svg>
           );
         case 'arrow-down-left':
+        case 'trending-up':
+        case 'income':
           return (
             <svg className={computedClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
               <path d="M17 7L7 17M7 17H17M7 17V7" />
+            </svg>
+          );
+        case 'plus-circle':
+          return (
+            <svg className={computedClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="16" />
+              <line x1="8" y1="12" x2="16" y2="12" />
+            </svg>
+          );
+        case 'minus-circle':
+          return (
+            <svg className={computedClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="8" y1="12" x2="16" y2="12" />
+            </svg>
+          );
+        case 'chevron-right':
+          return (
+            <svg className={computedClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6" />
             </svg>
           );
         case 'eye':
@@ -337,4 +362,160 @@ PART2_ICONS = """
         </button>
       );
     };
+
+    // =========================================================================
+    // REUSABLE UI PRIMITIVES (Apple Human Interface Design Language)
+    // =========================================================================
+    const Button = ({
+      children,
+      onClick,
+      type = "button",
+      variant = "primary",
+      size = "md",
+      icon = null,
+      iconPosition = "left",
+      disabled = false,
+      loading = false,
+      fullWidth = false,
+      className = "",
+      ...props
+    }) => {
+      const variantClasses = {
+        primary: "bg-[#0284C7] hover:bg-[#0369A1] text-white shadow-sm",
+        secondary: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700",
+        outline: "border border-slate-200 dark:border-slate-700 bg-transparent text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800",
+        danger: "bg-rose-600 hover:bg-rose-700 text-white shadow-sm",
+        emerald: "bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm",
+        ghost: "bg-transparent text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+      };
+
+      const sizeClasses = {
+        sm: "px-3 py-1.5 text-xs rounded-xl gap-1.5",
+        md: "px-4 py-2.5 text-xs font-bold rounded-xl gap-2",
+        lg: "px-5 py-3.5 text-sm font-bold rounded-2xl gap-2.5"
+      };
+
+      return (
+        <button
+          type={type}
+          onClick={onClick}
+          disabled={disabled || loading}
+          className={`inline-flex items-center justify-center font-semibold transition-all ios-btn-tap select-none ${
+            variantClasses[variant] || variantClasses.primary
+          } ${sizeClasses[size] || sizeClasses.md} ${fullWidth ? "w-full" : ""} ${
+            disabled ? "opacity-50 cursor-not-allowed pointer-events-none" : ""
+          } ${className}`}
+          {...props}
+        >
+          {loading ? (
+            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <>
+              {icon && iconPosition === "left" && <Icon name={icon} className="w-4 h-4" strokeWidth={2.4} />}
+              {children}
+              {icon && iconPosition === "right" && <Icon name={icon} className="w-4 h-4" strokeWidth={2.4} />}
+            </>
+          )}
+        </button>
+      );
+    };
+
+    const InputField = ({
+      label,
+      value,
+      onChange,
+      type = "text",
+      placeholder = "",
+      error = "",
+      hint = "",
+      required = false,
+      autoFocus = false,
+      prefix = null,
+      icon = null,
+      className = "",
+      inputClassName = "",
+      ...props
+    }) => {
+      return (
+        <div className={`space-y-1 ${className}`}>
+          {label && (
+            <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200">
+              {label} {required && <span className="text-rose-500">*</span>}
+            </label>
+          )}
+          <div className="relative flex items-center">
+            {prefix && (
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-sm font-bold select-none">
+                {prefix}
+              </span>
+            )}
+            {icon && !prefix && (
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 select-none">
+                <Icon name={icon} className="w-4 h-4" />
+              </span>
+            )}
+            <input
+              type={type}
+              value={value}
+              onChange={onChange}
+              placeholder={placeholder}
+              required={required}
+              autoFocus={autoFocus}
+              onFocus={handleGlobalInputFocus}
+              onBlur={handleGlobalInputBlur}
+              className={`w-full py-2.5 rounded-xl border bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-xs font-medium focus:outline-none focus:border-brand dark:focus:border-sky-400 transition-colors ${
+                prefix ? "pl-8 pr-3.5" : icon ? "pl-10 pr-3.5" : "px-3.5"
+              } ${error ? "border-rose-400 dark:border-rose-500" : "border-slate-200 dark:border-slate-700"} ${inputClassName}`}
+              {...props}
+            />
+          </div>
+          {hint && !error && <p className="text-[11px] text-slate-400">{hint}</p>}
+          {error && <p className="text-[11px] font-semibold text-rose-500">{error}</p>}
+        </div>
+      );
+    };
+
+    const Card = ({ children, className = "", onClick, ...props }) => {
+      return (
+        <div
+          onClick={onClick}
+          className={`ios-inset-group ${onClick ? "cursor-pointer ios-card-tap" : ""} ${className}`}
+          {...props}
+        >
+          {children}
+        </div>
+      );
+    };
+
+    // Resilient Error Boundary to safeguard against render crashes
+    class ErrorBoundary extends React.Component {
+      constructor(props) {
+        super(props);
+        this.state = { hasError: false, error: null };
+      }
+      static getDerivedStateFromError(error) {
+        return { hasError: true, error };
+      }
+      componentDidCatch(error, errorInfo) {
+        // Silently capture error for application resilience
+      }
+      render() {
+        if (this.state.hasError) {
+          if (this.props.fallback) return this.props.fallback;
+          return (
+            <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-amber-800 dark:text-amber-300 text-xs text-center my-3">
+              <p className="font-bold">Gagal memuat komponen ini</p>
+              <button
+                type="button"
+                onClick={() => this.setState({ hasError: false, error: null })}
+                className="mt-2 px-3 py-1 bg-amber-200 dark:bg-amber-900/60 rounded-lg font-semibold ios-btn-tap"
+              >
+                Muat Ulang
+              </button>
+            </div>
+          );
+        }
+        return this.props.children;
+      }
+    }
 """

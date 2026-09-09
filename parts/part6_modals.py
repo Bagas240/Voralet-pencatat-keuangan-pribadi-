@@ -96,8 +96,8 @@ PART6_MODALS = """
             <form onSubmit={handleSubmit} className="ios-modal-body flex-1 overflow-y-auto pb-28 p-4 sm:p-5 space-y-4 no-scrollbar">
               <SegmentedControl
                 options={[
-                  { value: 'EXPENSE', label: '[-] Pengeluaran' },
-                  { value: 'INCOME', label: '[+] Pemasukan' }
+                  { value: 'EXPENSE', label: 'Pengeluaran', icon: 'arrow-up-right', iconColor: 'text-rose-500' },
+                  { value: 'INCOME', label: 'Pemasukan', icon: 'arrow-down-left', iconColor: 'text-emerald-500' }
                 ]}
                 value={type}
                 onChange={(newType) => {
@@ -107,7 +107,7 @@ PART6_MODALS = """
                     setCategory(newCats[0].id);
                   }
                 }}
-                className="w-full"
+                className="w-full shadow-sm"
               />
 
               <div>
@@ -661,10 +661,11 @@ PART6_MODALS = """
         handleClose();
       };
 
-      const handleChangePin = (e) => {
+      const handleChangePin = async (e) => {
         e.preventDefault();
         const storedPin = StorageService.getPin();
-        if (currentPin !== storedPin) {
+        const isValid = await CryptoService.verifyPin(currentPin, storedPin);
+        if (!isValid) {
           setPinMsg({ text: 'PIN saat ini salah', isError: true });
           return;
         }
@@ -677,7 +678,8 @@ PART6_MODALS = """
           return;
         }
 
-        StorageService.setPin(newPin);
+        const hashed = await CryptoService.hashPin(newPin);
+        StorageService.setPin(hashed);
         setPinMsg({ text: 'PIN berhasil diubah!', isError: false });
         setTimeout(() => {
           setIsChangingPin(false);
@@ -694,11 +696,16 @@ PART6_MODALS = """
           const reader = new FileReader();
           reader.onload = (event) => {
             try {
-              const data = JSON.parse(event.target.result);
-              onImportData(data);
+              const rawData = JSON.parse(event.target.result);
+              const validData = Validators.validateBackupSchema(rawData);
+              if (!validData) {
+                alert('File JSON tidak sesuai skema Voralet atau rusak.');
+                return;
+              }
+              onImportData(validData);
               handleClose();
             } catch (err) {
-              alert('File JSON tidak valid.');
+              alert('File JSON tidak valid atau rusak.');
             }
           };
           reader.readAsText(file);
@@ -726,9 +733,9 @@ PART6_MODALS = """
 
             <div className="ios-modal-body flex-1 overflow-y-auto pb-28 p-4 sm:p-5 space-y-5 no-scrollbar">
               {/* Profil Identitas */}
-              <form onSubmit={handleSaveProfile} className="space-y-4">
+              <form onSubmit={handleSaveProfile} className="p-4 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700 shadow-[0_4px_16px_rgba(15,23,42,0.08)] dark:shadow-[0_6px_20px_rgba(0,0,0,0.4)] space-y-4">
                 <div className="flex items-center gap-4">
-                  <div className="relative shrink-0">
+                  <div className="relative shrink-0 rounded-full shadow-[0_6px_18px_rgba(15,23,42,0.16)] dark:shadow-[0_8px_24px_rgba(0,0,0,0.6)] ring-2 ring-white dark:ring-slate-700">
                     <Avatar avatar={avatar} name={name} size="w-16 h-16" textSize="text-xl" />
                     <label
                       htmlFor="settings-avatar-upload"
@@ -810,18 +817,23 @@ PART6_MODALS = """
                   <button
                     type="button"
                     onClick={onToggleTheme}
-                    className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 ios-btn-tap"
+                    className={`px-3.5 py-1.5 rounded-xl border font-semibold text-xs transition-all flex items-center gap-2 ios-btn-tap ${
+                      theme === 'dark'
+                        ? 'bg-slate-900 border-slate-700 text-sky-400 shadow-inner'
+                        : 'bg-white border-slate-200 text-slate-700 shadow-sm'
+                    }`}
                   >
-                    {theme === 'dark' ? 'Mode Terang' : 'Mode Gelap'}
+                    <span className={`w-2 h-2 rounded-full ${theme === 'dark' ? 'bg-sky-400 animate-pulse' : 'bg-amber-400'}`}></span>
+                    <span>{theme === 'dark' ? 'Mode Gelap (Aktif)' : 'Mode Terang (Aktif)'}</span>
                   </button>
                 </div>
               </div>
 
               {/* Keamanan & Ubah PIN */}
-              <div className="pt-3 border-t border-slate-100 dark:border-[#27272A]">
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-700">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2.5">
-                    <IconBadge icon="lock" className="p-2 rounded-xl bg-sky-50 dark:bg-[#1C1C1E] text-brand dark:text-sky-400" />
+                    <IconBadge icon="lock" className="p-2 rounded-xl bg-sky-50 dark:bg-slate-700 text-brand dark:text-sky-400" />
                     <div>
                       <h4 className="text-xs font-bold text-slate-900 dark:text-white">Keamanan PIN</h4>
                       <p className="text-[11px] text-slate-400">Ubah 6-digit PIN keamanan brankas</p>
