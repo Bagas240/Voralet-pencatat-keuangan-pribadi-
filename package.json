@@ -1,0 +1,13 @@
+{
+  "name": "voralet",
+  "version": "1.6.0",
+  "description": "Aplikasi pelacak keuangan dan kantong digital dengan sistem 6-digit PIN lokal.",
+  "type": "module",
+  "main": "server.ts",
+  "scripts": {
+    "dev": "node server.ts",
+    "start": "node server.ts",
+    "build": "python build_index.py"
+  },
+  "dependencies": {}
+}

@@ -1,0 +1,6 @@
+{
+  "name": "Voralet",
+  "description": "Aplikasi pencatat keuangan pribadi modern ala iOS dengan brankas PIN lokal, pelacak hutang piutang, safe-to-spend, dan kantong impian.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
