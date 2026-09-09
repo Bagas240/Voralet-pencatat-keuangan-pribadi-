@@ -107,9 +107,13 @@ fun SakuCleanWebView(
           )
           setBackgroundColor(backgroundColor)
 
-          // Fallback to software layer if DRM render nodes are unavailable (prevents E/MESA rendernode failure)
+          // Fallback to software layer if DRM render nodes are unavailable or inaccessible
+          // In virtualized/emulator environments, /dev/dri directory exists but renderD128/card0 does not,
+          // which causes Mesa driver to log "Failed to open rendernode: No such file or directory".
           val hasDriRenderNode = try {
-            java.io.File("/dev/dri").exists()
+            val dri128 = java.io.File("/dev/dri/renderD128")
+            val card0 = java.io.File("/dev/dri/card0")
+            (dri128.exists() && dri128.canRead()) || (card0.exists() && card0.canRead())
           } catch (_: Throwable) {
             false
           }
