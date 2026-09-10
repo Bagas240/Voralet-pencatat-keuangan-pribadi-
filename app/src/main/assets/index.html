@@ -215,7 +215,6 @@
     /* Tactile Touch Animation (SwiftUI Bouncy Spring Compression) */
     .ios-btn-tap, .ios-touch-item {
       transition: transform 150ms ease-out, opacity 150ms ease-out;
-      will-change: transform;
       user-select: none;
       -webkit-user-select: none;
     }
@@ -225,7 +224,6 @@
     }
     .ios-card-tap {
       transition: transform 150ms ease-out, opacity 150ms ease-out;
-      will-change: transform;
       user-select: none;
       -webkit-user-select: none;
     }
@@ -285,7 +283,6 @@
     /* Keypad Button */
     .ios-keypad-btn {
       transition: transform 150ms ease-out, opacity 150ms ease-out, background-color 150ms ease;
-      will-change: transform;
     }
     .ios-keypad-btn:active {
       transform: scale3d(0.92, 0.92, 1) !important;
@@ -1394,7 +1391,7 @@
             return `v2$${CryptoService.ITERATIONS}$${CryptoService.bytesToBase64(salt)}$${CryptoService.bytesToBase64(hash)}`;
           }
         } catch (e) {}
-        return CryptoService.legacyHashPin(pin);
+        return '';
       },
       verifyPin: async (inputPin, storedPin) => {
         if (!storedPin || !inputPin) return false;
@@ -1699,10 +1696,19 @@
       getTotalBalance: (accounts, transactions) => {
         const safeAccs = Array.isArray(accounts) ? accounts : [];
         const safeTxs = Array.isArray(transactions) ? transactions : [];
-        return safeAccs.reduce((tot, a) => {
-          if (!a) return tot;
-          return tot + Ledger.getAccountBalance(a.id, safeAccs, safeTxs);
-        }, 0);
+        const balances = new Map();
+        for (const account of safeAccs) {
+          if (account) balances.set(account.id, Number(account.initialBalance) || 0);
+        }
+        for (const transaction of safeTxs) {
+          if (!transaction || !balances.has(transaction.accountId)) continue;
+          const amount = Number(transaction.amount) || 0;
+          const current = balances.get(transaction.accountId) || 0;
+          balances.set(transaction.accountId, current + (transaction.type === 'INCOME' ? amount : -amount));
+        }
+        let total = 0;
+        for (const balance of balances.values()) total += balance;
+        return total;
       },
       getSummaryTotals: (transactions, filterAccountId = null) => {
         const safeTxs = Array.isArray(transactions) ? transactions : [];
@@ -2145,7 +2151,7 @@
       );
     };
 
-    // Forgot PIN Modal: Verifies username offline to reset PIN without deleting ledger history!
+    // Forgot PIN recovery is destructive because username-only verification cannot protect old data.
     const ForgotPinModal = ({ storedUsername, storedName, onClose, onResetPin }) => {
       const [step, setStep] = useState(1);
       const [inputUsername, setInputUsername] = useState('');
@@ -2225,7 +2231,7 @@
             {step === 1 ? (
               <form onSubmit={handleVerifyUsername} className="pt-4 space-y-4">
                 <p className="text-xs text-slate-500 dark:text-zinc-400 leading-relaxed">
-                  Untuk keamanan offline, masukkan <strong>Username (@id)</strong> akun Voralet kamu. Data mutasi keuangan kamu tetap aman dan tidak akan terhapus.
+                  Masukkan <strong>Username (@id)</strong> akun Voralet kamu. Karena PIN lama tidak dapat dipulihkan, membuat PIN baru akan menghapus data lokal lama.
                 </p>
                 <div>
                   <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 block mb-1">
@@ -2270,7 +2276,7 @@
             ) : (
               <form onSubmit={handleSaveNewPin} className="pt-4 space-y-4">
                 <p className="text-xs text-slate-500 dark:text-zinc-400 leading-relaxed">
-                  Identitas terverifikasi! Masukkan 6-digit PIN baru untuk brankas Voralet kamu.
+                  Identitas terverifikasi! Masukkan 6-digit PIN baru. Data lokal lama akan dihapus setelah PIN baru dibuat.
                 </p>
                 <div>
                   <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 block mb-1">
@@ -3866,8 +3872,8 @@
     }) => {
       const theme = getPocketTheme(acc);
       const isPrimary = index === 0;
-      const rawNum = acc.accountNumber ? String(acc.accountNumber).replace(/\s/g, '') : '';
-      const lastFour = rawNum ? rawNum.slice(-4) : (acc.id ? String(acc.id).replace(/\D/g, '').slice(-4) || '8829' : '8829');
+            const rawNum = acc.accountNumber ? String(acc.accountNumber).replace(/\s/g, '') : '';
+            const lastFour = rawNum ? rawNum.slice(-4) : (acc.id ? String(acc.id).replace(/\D/g, '').slice(-4) || '8829' : '8829');
       const maskedNumber = `•••• ${lastFour}`;
 
       // Card Icon based on Type
@@ -3895,7 +3901,7 @@
             {/* TOP BAR / ALWAYS VISIBLE HEADER */}
             <div className="relative z-10 flex items-center justify-between">
               <div className="flex items-center gap-2.5 min-w-0 pr-2">
-                <div className="w-8 h-8 rounded-xl bg-white/20 border border-white/30 backdrop-blur-md flex items-center justify-center shrink-0 shadow-xs">
+                <div className="w-8 h-8 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center shrink-0 shadow-xs">
                   {renderCardIcon()}
                 </div>
                 <div className="min-w-0">
@@ -3939,7 +3945,7 @@
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/15 border border-white/25 backdrop-blur-md">
+                  <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/15 border border-white/25">
                     <Icon name="check-circle" className="w-3.5 h-3.5 text-emerald-300" strokeWidth={2.5} />
                     <span className="text-[10px] font-bold tracking-wide">Aktif di Dompet</span>
                   </div>
@@ -4921,7 +4927,7 @@
               <div className="pt-4 border-t border-slate-100 dark:border-slate-700 flex flex-col items-center text-center space-y-1.5 select-none">
                 <VoraletLogo size="md" className="mb-1" />
                 <p className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                  Voralet iOS Edition • Versi v1.8.0
+                  Voralet iOS Edition • Versi v1.9.0
                 </p>
                 <p className="text-[10px] text-slate-400 dark:text-slate-500 max-w-xs leading-relaxed">
                   Keuangan Sehat • Impian Dekat. 100% Offline & Terenkripsi Lokal di Perangkat Anda.
@@ -6100,20 +6106,11 @@
                     @{userProfile.username || 'voralet_user'}
                   </p>
                   <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-md bg-sky-100 dark:bg-sky-950/60 text-[#0284C7] dark:text-sky-400 border border-sky-200/60 dark:border-sky-800/60">
-                    v1.8.0
+                    v1.9.0
                   </span>
                 </div>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={onOpenSettings}
-              className="p-2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ios-btn-tap"
-              aria-label="Pengaturan"
-              title="Pengaturan"
-            >
-              <Icon name="settings" className="w-5 h-5" />
-            </button>
           </div>
 
           {/* Hero Balance Card - High Contrast Deep Royal Blue in both Light and Dark Mode */}
@@ -6193,34 +6190,6 @@
             </button>
           </div>
 
-          {/* Quick Shortcuts Bar: Dompet, Hutang, & Kantong Impian */}
-          <div className="grid grid-cols-3 gap-2">
-            <button
-              type="button"
-              onClick={onOpenAccounts}
-              className="py-2.5 px-2 bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-2xl flex flex-col items-center justify-center gap-1 shadow-sm dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)] transition-all ios-btn-tap hover:border-brand/40"
-            >
-              <Icon name="wallet" className="w-4 h-4 text-brand dark:text-sky-400" />
-              <span className="text-[11px] font-bold whitespace-nowrap">Kelola Kantong</span>
-            </button>
-            <button
-              type="button"
-              onClick={onOpenDebts}
-              className="py-2.5 px-2 bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-2xl flex flex-col items-center justify-center gap-1 shadow-sm dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)] transition-all ios-btn-tap hover:border-brand/40"
-            >
-              <Icon name="receipt" className="w-4 h-4 text-amber-500" />
-              <span className="text-[11px] font-bold whitespace-nowrap">Hutang</span>
-            </button>
-            <button
-              type="button"
-              onClick={onOpenSavings}
-              className="py-2.5 px-2 bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-2xl flex flex-col items-center justify-center gap-1 shadow-sm dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)] transition-all ios-btn-tap hover:border-brand/40"
-            >
-              <Icon name="target" className="w-4 h-4 text-emerald-500" />
-              <span className="text-[11px] font-bold whitespace-nowrap">Impian</span>
-            </button>
-          </div>
-
           {/* Apple Wallet / Kelola Kantong Interactive Card Stack Section */}
           <div className="ios-inset-group">
             <div className="flex items-center justify-between mb-3">
@@ -6282,7 +6251,7 @@
                       <div className="apple-wallet-card-collapsed w-full p-3.5 sm:p-4 bg-[#38bdf8] border border-sky-300/60 shadow-md overflow-hidden flex items-center justify-between text-white relative">
                         <div className="apple-atm-shimmer pointer-events-none" />
                         <div className="flex items-center gap-2.5 min-w-0 pr-2 relative z-10">
-                          <div className="w-8 h-8 rounded-xl bg-white/20 border border-white/30 backdrop-blur-md flex items-center justify-center shrink-0 shadow-xs">
+                          <div className="w-8 h-8 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center shrink-0 shadow-xs">
                             <Icon name={acc.type === 'Bank' ? 'bank' : acc.type === 'Cash' ? 'cash' : 'smartphone'} className="w-4 h-4 text-white" />
                           </div>
                           <div className="min-w-0">
@@ -6548,7 +6517,7 @@
       const [debts, setDebts] = useState(() => StorageService.getDebts());
       const [safeBudget, setSafeBudget] = useState(() => StorageService.getSafeBudget());
       const [hideBalance, setHideBalance] = useState(() => StorageService.getHideBalance());
-      const [theme, setTheme] = useState(() => localStorage.getItem('voralet_theme') || 'light');
+      const [theme, setTheme] = useState(() => StorageService.getTheme());
 
       const [activeTab, setActiveTab] = useState('dashboard'); // dashboard | debts | savings | analytics
       const [toastMsg, setToastMsg] = useState('');
@@ -6571,10 +6540,6 @@
         setTheme(prev => {
           const next = prev === 'dark' ? 'light' : 'dark';
           StorageService.setTheme(next);
-          try {
-            localStorage.setItem('voralet_theme', next);
-          } catch (e) {}
-
           if (next === 'dark') {
             document.documentElement.classList.add('dark');
             if (document.body) document.body.classList.add('dark');
@@ -6800,8 +6765,7 @@
         setDebts(prev => {
           const next = prev.map(d => {
             if (d.id === debtId) {
-              const newStatus = d.status === 'LUNAS' ? 'BELUM_LUNAS' : 'LUNAS';
-              return { ...d, status: newStatus };
+              return { ...d, isPaid: !Boolean(d.isPaid) };
             }
             return d;
           });
@@ -6844,10 +6808,23 @@
       }, []);
 
       const handleResetPin = useCallback((newPin) => {
+        if (!newPin) {
+          showToast('Perangkat tidak mendukung penyimpanan PIN aman');
+          return;
+        }
+        StorageService.clearAll();
         setPin(newPin);
         StorageService.setPin(newPin);
-        setIsUnlocked(true);
-        showToast('PIN berhasil diubah');
+        setName('');
+        setUsername('');
+        setAvatar('');
+        setAccounts([]);
+        setTransactions([]);
+        setSavingsGoals([]);
+        setDebts([]);
+        setSafeBudget(0);
+        setIsUnlocked(false);
+        showToast('PIN dibuat ulang dan data lama dihapus');
       }, []);
 
       const handleHardReset = useCallback(() => {
@@ -6869,7 +6846,7 @@
 
       const handleExportData = useCallback(() => {
         const payload = {
-          voralet_version: '1.8.0',
+          voralet_version: '1.9.0',
           exported_at: new Date().toISOString(),
           name,
           username,
@@ -6900,7 +6877,7 @@
         if (Array.isArray(data.transactions)) { setTransactions(data.transactions); StorageService.setTransactions(data.transactions); }
         if (Array.isArray(data.savingsGoals)) { setSavingsGoals(data.savingsGoals); StorageService.setSavingsGoals(data.savingsGoals); }
         if (Array.isArray(data.debts)) { setDebts(data.debts); StorageService.setDebts(data.debts); }
-        if (data.safeBudget) { setSafeBudget(data.safeBudget); StorageService.setSafeBudget(data.safeBudget); }
+        if (data.safeBudget !== undefined) { setSafeBudget(data.safeBudget); StorageService.setSafeBudget(data.safeBudget); }
         showToast('Data berhasil dipulihkan!');
       }, []);
 

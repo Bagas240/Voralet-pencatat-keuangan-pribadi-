@@ -7,7 +7,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const PORT = 3000;
-const HOST = '0.0.0.0';
+const HOST = '127.0.0.1';
 
 const MIME_TYPES: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
@@ -28,18 +28,20 @@ const MIME_TYPES: Record<string, string> = {
 };
 
 const server = http.createServer((req, res) => {
-  // Enable CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', '*');
-
-  if (req.method === 'OPTIONS') {
-    res.writeHead(204);
-    res.end();
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    res.writeHead(405, { 'Content-Type': 'text/plain; charset=utf-8', Allow: 'GET, HEAD' });
+    res.end('Method Not Allowed');
     return;
   }
 
-  const urlPath = (req.url || '/').split('?')[0];
+  let urlPath = '/';
+  try {
+    urlPath = new URL(req.url || '/', `http://${HOST}:${PORT}`).pathname;
+  } catch {
+    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Bad Request');
+    return;
+  }
 
   // Health check endpoint
   if (urlPath === '/health' || urlPath === '/api/health') {
@@ -48,12 +50,19 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // Safe file path resolution
-  let filePath = path.join(__dirname, urlPath === '/' ? 'index.html' : urlPath);
+  const requestedPath = urlPath === '/' ? 'index.html' : urlPath.replace(/^\/+/, '');
+  const rootPath = path.resolve(__dirname);
+  let filePath = path.resolve(rootPath, requestedPath);
+
+  if (filePath !== rootPath && !filePath.startsWith(`${rootPath}${path.sep}`)) {
+    res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Forbidden');
+    return;
+  }
 
   // If path doesn't have an extension and doesn't exist, fall back to index.html (SPA routing)
   if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
-    filePath = path.join(__dirname, 'index.html');
+    filePath = path.join(rootPath, 'index.html');
   }
 
   fs.readFile(filePath, (err, data) => {
@@ -79,7 +88,11 @@ const server = http.createServer((req, res) => {
       'Content-Type': contentType,
       'Cache-Control': 'no-cache',
     });
-    res.end(data);
+    if (req.method === 'HEAD') {
+      res.end();
+    } else {
+      res.end(data);
+    }
   });
 });
 

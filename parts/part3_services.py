@@ -80,7 +80,7 @@ PART3_SERVICES = """
             return `v2$${CryptoService.ITERATIONS}$${CryptoService.bytesToBase64(salt)}$${CryptoService.bytesToBase64(hash)}`;
           }
         } catch (e) {}
-        return CryptoService.legacyHashPin(pin);
+        return '';
       },
       verifyPin: async (inputPin, storedPin) => {
         if (!storedPin || !inputPin) return false;
@@ -385,10 +385,19 @@ PART3_SERVICES = """
       getTotalBalance: (accounts, transactions) => {
         const safeAccs = Array.isArray(accounts) ? accounts : [];
         const safeTxs = Array.isArray(transactions) ? transactions : [];
-        return safeAccs.reduce((tot, a) => {
-          if (!a) return tot;
-          return tot + Ledger.getAccountBalance(a.id, safeAccs, safeTxs);
-        }, 0);
+        const balances = new Map();
+        for (const account of safeAccs) {
+          if (account) balances.set(account.id, Number(account.initialBalance) || 0);
+        }
+        for (const transaction of safeTxs) {
+          if (!transaction || !balances.has(transaction.accountId)) continue;
+          const amount = Number(transaction.amount) || 0;
+          const current = balances.get(transaction.accountId) || 0;
+          balances.set(transaction.accountId, current + (transaction.type === 'INCOME' ? amount : -amount));
+        }
+        let total = 0;
+        for (const balance of balances.values()) total += balance;
+        return total;
       },
       getSummaryTotals: (transactions, filterAccountId = null) => {
         const safeTxs = Array.isArray(transactions) ? transactions : [];

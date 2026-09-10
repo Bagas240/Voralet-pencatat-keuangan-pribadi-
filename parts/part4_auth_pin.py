@@ -93,7 +93,7 @@ PART4_AUTH_PIN = """
       );
     };
 
-    // Forgot PIN Modal: Verifies username offline to reset PIN without deleting ledger history!
+    // Forgot PIN recovery is destructive because username-only verification cannot protect old data.
     const ForgotPinModal = ({ storedUsername, storedName, onClose, onResetPin }) => {
       const [step, setStep] = useState(1);
       const [inputUsername, setInputUsername] = useState('');
@@ -173,7 +173,7 @@ PART4_AUTH_PIN = """
             {step === 1 ? (
               <form onSubmit={handleVerifyUsername} className="pt-4 space-y-4">
                 <p className="text-xs text-slate-500 dark:text-zinc-400 leading-relaxed">
-                  Untuk keamanan offline, masukkan <strong>Username (@id)</strong> akun Voralet kamu. Data mutasi keuangan kamu tetap aman dan tidak akan terhapus.
+                  Masukkan <strong>Username (@id)</strong> akun Voralet kamu. Karena PIN lama tidak dapat dipulihkan, membuat PIN baru akan menghapus data lokal lama.
                 </p>
                 <div>
                   <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 block mb-1">
@@ -218,7 +218,7 @@ PART4_AUTH_PIN = """
             ) : (
               <form onSubmit={handleSaveNewPin} className="pt-4 space-y-4">
                 <p className="text-xs text-slate-500 dark:text-zinc-400 leading-relaxed">
-                  Identitas terverifikasi! Masukkan 6-digit PIN baru untuk brankas Voralet kamu.
+                  Identitas terverifikasi! Masukkan 6-digit PIN baru. Data lokal lama akan dihapus setelah PIN baru dibuat.
                 </p>
                 <div>
                   <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 block mb-1">

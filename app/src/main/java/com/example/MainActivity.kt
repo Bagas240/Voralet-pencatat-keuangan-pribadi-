@@ -46,17 +46,6 @@ import com.example.ui.theme.MyApplicationTheme
 
 class MainActivity : ComponentActivity() {
   companion object {
-    init {
-      try {
-        android.system.Os.setenv("MESA_DEBUG", "0", true)
-        android.system.Os.setenv("MESA_NO_ERROR", "1", true)
-        android.system.Os.setenv("LIBGL_ALWAYS_SOFTWARE", "1", true)
-        android.system.Os.setenv("GALLIUM_DRIVER", "llvmpipe", true)
-        android.system.Os.setenv("EGL_LOG_LEVEL", "fatal", true)
-      } catch (_: Throwable) {
-      }
-    }
-
     fun prepareWebViewStorage(context: Context) {
       try {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -163,6 +152,7 @@ fun SakuCleanWebView(
             ViewGroup.LayoutParams.MATCH_PARENT
           )
           setBackgroundColor(backgroundColor)
+          setLayerType(View.LAYER_TYPE_HARDWARE, null)
 
           @Suppress("DEPRECATION")
           settings.apply {
@@ -170,16 +160,16 @@ fun SakuCleanWebView(
             domStorageEnabled = true
             databaseEnabled = true
             allowFileAccess = true
-            allowContentAccess = true
-            allowFileAccessFromFileURLs = true
-            allowUniversalAccessFromFileURLs = true
+            allowContentAccess = false
+            allowFileAccessFromFileURLs = false
+            allowUniversalAccessFromFileURLs = false
             cacheMode = WebSettings.LOAD_DEFAULT
             useWideViewPort = true
             loadWithOverviewMode = true
-            mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+            mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
             setSupportMultipleWindows(false)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-              safeBrowsingEnabled = false
+              safeBrowsingEnabled = true
             }
           }
 

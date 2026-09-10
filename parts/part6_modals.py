@@ -417,8 +417,8 @@ PART6_MODALS = """
     }) => {
       const theme = getPocketTheme(acc);
       const isPrimary = index === 0;
-      const rawNum = acc.accountNumber ? String(acc.accountNumber).replace(/\s/g, '') : '';
-      const lastFour = rawNum ? rawNum.slice(-4) : (acc.id ? String(acc.id).replace(/\D/g, '').slice(-4) || '8829' : '8829');
+            const rawNum = acc.accountNumber ? String(acc.accountNumber).replace(/\\s/g, '') : '';
+            const lastFour = rawNum ? rawNum.slice(-4) : (acc.id ? String(acc.id).replace(/\\D/g, '').slice(-4) || '8829' : '8829');
       const maskedNumber = `•••• ${lastFour}`;
 
       // Card Icon based on Type
@@ -446,7 +446,7 @@ PART6_MODALS = """
             {/* TOP BAR / ALWAYS VISIBLE HEADER */}
             <div className="relative z-10 flex items-center justify-between">
               <div className="flex items-center gap-2.5 min-w-0 pr-2">
-                <div className="w-8 h-8 rounded-xl bg-white/20 border border-white/30 backdrop-blur-md flex items-center justify-center shrink-0 shadow-xs">
+                <div className="w-8 h-8 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center shrink-0 shadow-xs">
                   {renderCardIcon()}
                 </div>
                 <div className="min-w-0">
@@ -490,7 +490,7 @@ PART6_MODALS = """
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/15 border border-white/25 backdrop-blur-md">
+                  <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/15 border border-white/25">
                     <Icon name="check-circle" className="w-3.5 h-3.5 text-emerald-300" strokeWidth={2.5} />
                     <span className="text-[10px] font-bold tracking-wide">Aktif di Dompet</span>
                   </div>

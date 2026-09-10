@@ -215,7 +215,6 @@ HTML_HEAD = """<!DOCTYPE html>
     /* Tactile Touch Animation (SwiftUI Bouncy Spring Compression) */
     .ios-btn-tap, .ios-touch-item {
       transition: transform 150ms ease-out, opacity 150ms ease-out;
-      will-change: transform;
       user-select: none;
       -webkit-user-select: none;
     }
@@ -225,7 +224,6 @@ HTML_HEAD = """<!DOCTYPE html>
     }
     .ios-card-tap {
       transition: transform 150ms ease-out, opacity 150ms ease-out;
-      will-change: transform;
       user-select: none;
       -webkit-user-select: none;
     }
@@ -285,7 +283,6 @@ HTML_HEAD = """<!DOCTYPE html>
     /* Keypad Button */
     .ios-keypad-btn {
       transition: transform 150ms ease-out, opacity 150ms ease-out, background-color 150ms ease;
-      will-change: transform;
     }
     .ios-keypad-btn:active {
       transform: scale3d(0.92, 0.92, 1) !important;

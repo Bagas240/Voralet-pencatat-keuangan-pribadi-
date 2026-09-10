@@ -275,15 +275,6 @@ PART8_APP = """
                 </div>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={onOpenSettings}
-              className="p-2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ios-btn-tap"
-              aria-label="Pengaturan"
-              title="Pengaturan"
-            >
-              <Icon name="settings" className="w-5 h-5" />
-            </button>
           </div>
 
           {/* Hero Balance Card - High Contrast Deep Royal Blue in both Light and Dark Mode */}
@@ -363,34 +354,6 @@ PART8_APP = """
             </button>
           </div>
 
-          {/* Quick Shortcuts Bar: Dompet, Hutang, & Kantong Impian */}
-          <div className="grid grid-cols-3 gap-2">
-            <button
-              type="button"
-              onClick={onOpenAccounts}
-              className="py-2.5 px-2 bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-2xl flex flex-col items-center justify-center gap-1 shadow-sm dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)] transition-all ios-btn-tap hover:border-brand/40"
-            >
-              <Icon name="wallet" className="w-4 h-4 text-brand dark:text-sky-400" />
-              <span className="text-[11px] font-bold whitespace-nowrap">Kelola Kantong</span>
-            </button>
-            <button
-              type="button"
-              onClick={onOpenDebts}
-              className="py-2.5 px-2 bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-2xl flex flex-col items-center justify-center gap-1 shadow-sm dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)] transition-all ios-btn-tap hover:border-brand/40"
-            >
-              <Icon name="receipt" className="w-4 h-4 text-amber-500" />
-              <span className="text-[11px] font-bold whitespace-nowrap">Hutang</span>
-            </button>
-            <button
-              type="button"
-              onClick={onOpenSavings}
-              className="py-2.5 px-2 bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-2xl flex flex-col items-center justify-center gap-1 shadow-sm dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)] transition-all ios-btn-tap hover:border-brand/40"
-            >
-              <Icon name="target" className="w-4 h-4 text-emerald-500" />
-              <span className="text-[11px] font-bold whitespace-nowrap">Impian</span>
-            </button>
-          </div>
-
           {/* Apple Wallet / Kelola Kantong Interactive Card Stack Section */}
           <div className="ios-inset-group">
             <div className="flex items-center justify-between mb-3">
@@ -435,8 +398,8 @@ PART8_APP = """
                   const bal = accountBalancesMap.get(acc.id) ?? 0;
                   const theme = getPocketTheme(acc);
                   const isPrimary = idx === 0;
-                  const rawNum = acc.accountNumber ? String(acc.accountNumber).replace(/\s/g, '') : '';
-                  const lastFour = rawNum ? rawNum.slice(-4) : (acc.id ? String(acc.id).replace(/\D/g, '').slice(-4) || '8829' : '8829');
+                  const rawNum = acc.accountNumber ? String(acc.accountNumber).replace(/\\s/g, '') : '';
+                  const lastFour = rawNum ? rawNum.slice(-4) : (acc.id ? String(acc.id).replace(/\\D/g, '').slice(-4) || '8829' : '8829');
                   const maskedNumber = `•••• ${lastFour}`;
 
                   return (
@@ -452,7 +415,7 @@ PART8_APP = """
                       <div className="apple-wallet-card-collapsed w-full p-3.5 sm:p-4 bg-[#38bdf8] border border-sky-300/60 shadow-md overflow-hidden flex items-center justify-between text-white relative">
                         <div className="apple-atm-shimmer pointer-events-none" />
                         <div className="flex items-center gap-2.5 min-w-0 pr-2 relative z-10">
-                          <div className="w-8 h-8 rounded-xl bg-white/20 border border-white/30 backdrop-blur-md flex items-center justify-center shrink-0 shadow-xs">
+                          <div className="w-8 h-8 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center shrink-0 shadow-xs">
                             <Icon name={acc.type === 'Bank' ? 'bank' : acc.type === 'Cash' ? 'cash' : 'smartphone'} className="w-4 h-4 text-white" />
                           </div>
                           <div className="min-w-0">
@@ -718,7 +681,7 @@ PART8_APP = """
       const [debts, setDebts] = useState(() => StorageService.getDebts());
       const [safeBudget, setSafeBudget] = useState(() => StorageService.getSafeBudget());
       const [hideBalance, setHideBalance] = useState(() => StorageService.getHideBalance());
-      const [theme, setTheme] = useState(() => localStorage.getItem('voralet_theme') || 'light');
+      const [theme, setTheme] = useState(() => StorageService.getTheme());
 
       const [activeTab, setActiveTab] = useState('dashboard'); // dashboard | debts | savings | analytics
       const [toastMsg, setToastMsg] = useState('');
@@ -741,10 +704,6 @@ PART8_APP = """
         setTheme(prev => {
           const next = prev === 'dark' ? 'light' : 'dark';
           StorageService.setTheme(next);
-          try {
-            localStorage.setItem('voralet_theme', next);
-          } catch (e) {}
-
           if (next === 'dark') {
             document.documentElement.classList.add('dark');
             if (document.body) document.body.classList.add('dark');
@@ -970,8 +929,7 @@ PART8_APP = """
         setDebts(prev => {
           const next = prev.map(d => {
             if (d.id === debtId) {
-              const newStatus = d.status === 'LUNAS' ? 'BELUM_LUNAS' : 'LUNAS';
-              return { ...d, status: newStatus };
+              return { ...d, isPaid: !Boolean(d.isPaid) };
             }
             return d;
           });
@@ -1014,10 +972,23 @@ PART8_APP = """
       }, []);
 
       const handleResetPin = useCallback((newPin) => {
+        if (!newPin) {
+          showToast('Perangkat tidak mendukung penyimpanan PIN aman');
+          return;
+        }
+        StorageService.clearAll();
         setPin(newPin);
         StorageService.setPin(newPin);
-        setIsUnlocked(true);
-        showToast('PIN berhasil diubah');
+        setName('');
+        setUsername('');
+        setAvatar('');
+        setAccounts([]);
+        setTransactions([]);
+        setSavingsGoals([]);
+        setDebts([]);
+        setSafeBudget(0);
+        setIsUnlocked(false);
+        showToast('PIN dibuat ulang dan data lama dihapus');
       }, []);
 
       const handleHardReset = useCallback(() => {
@@ -1070,7 +1041,7 @@ PART8_APP = """
         if (Array.isArray(data.transactions)) { setTransactions(data.transactions); StorageService.setTransactions(data.transactions); }
         if (Array.isArray(data.savingsGoals)) { setSavingsGoals(data.savingsGoals); StorageService.setSavingsGoals(data.savingsGoals); }
         if (Array.isArray(data.debts)) { setDebts(data.debts); StorageService.setDebts(data.debts); }
-        if (data.safeBudget) { setSafeBudget(data.safeBudget); StorageService.setSafeBudget(data.safeBudget); }
+        if (data.safeBudget !== undefined) { setSafeBudget(data.safeBudget); StorageService.setSafeBudget(data.safeBudget); }
         showToast('Data berhasil dipulihkan!');
       }, []);
 
