@@ -77,13 +77,10 @@ HTML_HEAD = """<!DOCTYPE html>
     }
   </script>
 
-  <!-- React 18 & ReactDOM & Babel Standalone -->
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script>window.React || document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"><\\/script>')</script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script>window.ReactDOM || document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"><\\/script>')</script>
+  <!-- React 18 & ReactDOM 18 & Babel Standalone -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.4/babel.min.js"></script>
-  <script>window.Babel || document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.4/babel.min.js"><\\/script>')</script>
 
   <!-- Theme Synchronization Initialization -->
   <script>
@@ -405,6 +402,10 @@ HTML_HEAD = """<!DOCTYPE html>
       background-color: rgba(15, 23, 42, 0.65);
       overscroll-behavior: contain;
       padding: 0;
+      will-change: opacity;
+      transform: translate3d(0, 0, 0);
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
     }
     @media (min-width: 640px) {
       .ios-modal-backdrop {
@@ -425,6 +426,10 @@ HTML_HEAD = """<!DOCTYPE html>
       background-color: #FFFFFF;
       color: #0F172A;
       transition: background-color 300ms ease-in-out, color 300ms ease-in-out;
+      will-change: transform, opacity;
+      transform: translate3d(0, 0, 0);
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
     }
     .dark .ios-modal-card {
       background-color: #1E293B !important;
@@ -514,6 +519,30 @@ HTML_HEAD = """<!DOCTYPE html>
   </style>
 </head>
 <body>
+  <!-- Lightweight Diagnostic Error Catcher for Zero-Crash Visibility -->
+  <script>
+    window.onerror = function(msg, url, line, col, error) {
+      try {
+        var existing = document.getElementById('voralet-error-banner');
+        if (!existing) {
+          var banner = document.createElement('div');
+          banner.id = 'voralet-error-banner';
+          banner.style.cssText = 'position:fixed;bottom:16px;left:16px;right:16px;z-index:999999;background:#991B1B;color:#FFFFFF;padding:12px 16px;border-radius:18px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:12px;box-shadow:0 12px 28px rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:space-between;border:1px solid rgba(255,255,255,0.25);';
+          var textDiv = document.createElement('div');
+          textDiv.style.cssText = 'flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:8px;font-weight:500;';
+          textDiv.innerHTML = '<strong style="color:#FECACA;">Diagnostik Voralet:</strong> ' + String(msg || 'Kesalahan sistem tidak terduga');
+          var closeBtn = document.createElement('button');
+          closeBtn.style.cssText = 'background:rgba(255,255,255,0.2);border:none;color:#FFF;padding:4px 10px;border-radius:10px;font-size:11px;font-weight:bold;cursor:pointer;flex-shrink:0;';
+          closeBtn.textContent = 'Tutup';
+          closeBtn.onclick = function() { banner.remove(); };
+          banner.appendChild(textDiv);
+          banner.appendChild(closeBtn);
+          document.body.appendChild(banner);
+        }
+      } catch (err) {}
+      return false;
+    };
+  </script>
   <div id="root"></div>
 
   <script type="text/babel" data-presets="env,react">

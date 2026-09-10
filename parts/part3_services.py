@@ -122,8 +122,13 @@ PART3_SERVICES = """
     // =========================================================================
     const Validators = {
       sanitizeText: (str, maxLen = 60) => {
-        if (!str) return '';
-        return String(str).trim().slice(0, maxLen);
+        if (str === null || str === undefined) return '';
+        return String(str)
+          .replace(/[<>]/g, '')
+          .replace(/javascript:/gi, '')
+          .replace(/on[a-z]+=/gi, '')
+          .trim()
+          .slice(0, maxLen);
       },
       sanitizeNumber: (val, fallback = 0) => {
         const n = Number(val);
@@ -217,117 +222,146 @@ PART3_SERVICES = """
       }
     };
 
+    // =========================================================================
+    // SAFE STORAGE PROXY (Bulletproof LocalStorage wrapper with memory fallback)
+    // =========================================================================
+    const SafeStorage = (() => {
+      const memoryStore = new Map();
+      let isAvailable = false;
+      try {
+        if (typeof window !== 'undefined' && 'localStorage' in window && window.localStorage) {
+          const testKey = '__voralet_test__';
+          window.localStorage.setItem(testKey, '1');
+          window.localStorage.removeItem(testKey);
+          isAvailable = true;
+        }
+      } catch (e) {
+        isAvailable = false;
+      }
+
+      return {
+        getItem: (key) => {
+          try {
+            if (isAvailable) {
+              const val = window.localStorage.getItem(key);
+              if (val !== null) return val;
+            }
+          } catch (e) {}
+          return memoryStore.has(key) ? memoryStore.get(key) : null;
+        },
+        setItem: (key, value) => {
+          const strVal = String(value);
+          memoryStore.set(key, strVal);
+          try {
+            if (isAvailable) {
+              window.localStorage.setItem(key, strVal);
+            }
+          } catch (e) {}
+        },
+        removeItem: (key) => {
+          memoryStore.delete(key);
+          try {
+            if (isAvailable) {
+              window.localStorage.removeItem(key);
+            }
+          } catch (e) {}
+        },
+        parseJSON: (raw, fallback = null) => {
+          if (!raw || typeof raw !== 'string') return fallback;
+          try {
+            return JSON.parse(raw);
+          } catch (e) {
+            return fallback;
+          }
+        }
+      };
+    })();
+
     const StorageService = {
       getPin: () => {
-        try { return localStorage.getItem(STORAGE_KEYS.PIN); } catch (e) { return null; }
+        return SafeStorage.getItem(STORAGE_KEYS.PIN);
       },
       setPin: (pin) => {
-        try { localStorage.setItem(STORAGE_KEYS.PIN, pin); } catch (e) {}
+        SafeStorage.setItem(STORAGE_KEYS.PIN, pin);
       },
       getName: () => {
-        try { return localStorage.getItem(STORAGE_KEYS.NAME) || ''; } catch (e) { return ''; }
+        return SafeStorage.getItem(STORAGE_KEYS.NAME) || '';
       },
       setName: (name) => {
-        try { localStorage.setItem(STORAGE_KEYS.NAME, name); } catch (e) {}
+        SafeStorage.setItem(STORAGE_KEYS.NAME, name);
       },
       getUsername: () => {
-        try { return localStorage.getItem(STORAGE_KEYS.USERNAME) || ''; } catch (e) { return ''; }
+        return SafeStorage.getItem(STORAGE_KEYS.USERNAME) || '';
       },
       setUsername: (username) => {
-        try {
-          const clean = (username || '').toLowerCase().replace(/[^a-z0-9_]/g, '');
-          localStorage.setItem(STORAGE_KEYS.USERNAME, clean);
-        } catch (e) {}
+        const clean = (username || '').toLowerCase().replace(/[^a-z0-9_]/g, '');
+        SafeStorage.setItem(STORAGE_KEYS.USERNAME, clean);
       },
       getAccounts: () => {
-        try {
-          const d = localStorage.getItem(STORAGE_KEYS.ACCOUNTS);
-          const parsed = d ? JSON.parse(d) : [];
-          return Array.isArray(parsed) ? parsed.map(Validators.validateAccount).filter(Boolean) : [];
-        } catch (e) { return []; }
+        const d = SafeStorage.getItem(STORAGE_KEYS.ACCOUNTS);
+        const parsed = SafeStorage.parseJSON(d, []);
+        return Array.isArray(parsed) ? parsed.map(Validators.validateAccount).filter(Boolean) : [];
       },
       setAccounts: (accs) => {
-        try {
-          const clean = Array.isArray(accs) ? accs.map(Validators.validateAccount).filter(Boolean) : [];
-          localStorage.setItem(STORAGE_KEYS.ACCOUNTS, JSON.stringify(clean));
-        } catch (e) {}
+        const clean = Array.isArray(accs) ? accs.map(Validators.validateAccount).filter(Boolean) : [];
+        SafeStorage.setItem(STORAGE_KEYS.ACCOUNTS, JSON.stringify(clean));
       },
       getTransactions: () => {
-        try {
-          const d = localStorage.getItem(STORAGE_KEYS.TRANSACTIONS);
-          const parsed = d ? JSON.parse(d) : [];
-          return Array.isArray(parsed) ? parsed.map(Validators.validateTransaction).filter(Boolean) : [];
-        } catch (e) { return []; }
+        const d = SafeStorage.getItem(STORAGE_KEYS.TRANSACTIONS);
+        const parsed = SafeStorage.parseJSON(d, []);
+        return Array.isArray(parsed) ? parsed.map(Validators.validateTransaction).filter(Boolean) : [];
       },
       setTransactions: (txs) => {
-        try {
-          const clean = Array.isArray(txs) ? txs.map(Validators.validateTransaction).filter(Boolean) : [];
-          localStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify(clean));
-        } catch (e) {}
+        const clean = Array.isArray(txs) ? txs.map(Validators.validateTransaction).filter(Boolean) : [];
+        SafeStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify(clean));
       },
       getSavingsGoals: () => {
-        try {
-          const d = localStorage.getItem(STORAGE_KEYS.SAVINGS_GOALS);
-          const parsed = d ? JSON.parse(d) : [];
-          return Array.isArray(parsed) ? parsed.map(Validators.validateSavingsGoal).filter(Boolean) : [];
-        } catch (e) { return []; }
+        const d = SafeStorage.getItem(STORAGE_KEYS.SAVINGS_GOALS);
+        const parsed = SafeStorage.parseJSON(d, []);
+        return Array.isArray(parsed) ? parsed.map(Validators.validateSavingsGoal).filter(Boolean) : [];
       },
       setSavingsGoals: (goals) => {
-        try {
-          const clean = Array.isArray(goals) ? goals.map(Validators.validateSavingsGoal).filter(Boolean) : [];
-          localStorage.setItem(STORAGE_KEYS.SAVINGS_GOALS, JSON.stringify(clean));
-        } catch (e) {}
+        const clean = Array.isArray(goals) ? goals.map(Validators.validateSavingsGoal).filter(Boolean) : [];
+        SafeStorage.setItem(STORAGE_KEYS.SAVINGS_GOALS, JSON.stringify(clean));
       },
       getDebts: () => {
-        try {
-          const d = localStorage.getItem(STORAGE_KEYS.DEBTS);
-          const parsed = d ? JSON.parse(d) : [];
-          return Array.isArray(parsed) ? parsed.map(Validators.validateDebt).filter(Boolean) : [];
-        } catch (e) { return []; }
+        const d = SafeStorage.getItem(STORAGE_KEYS.DEBTS);
+        const parsed = SafeStorage.parseJSON(d, []);
+        return Array.isArray(parsed) ? parsed.map(Validators.validateDebt).filter(Boolean) : [];
       },
       setDebts: (debts) => {
-        try {
-          const clean = Array.isArray(debts) ? debts.map(Validators.validateDebt).filter(Boolean) : [];
-          localStorage.setItem(STORAGE_KEYS.DEBTS, JSON.stringify(clean));
-        } catch (e) {}
+        const clean = Array.isArray(debts) ? debts.map(Validators.validateDebt).filter(Boolean) : [];
+        SafeStorage.setItem(STORAGE_KEYS.DEBTS, JSON.stringify(clean));
       },
       getSafeBudget: () => {
-        try {
-          const v = localStorage.getItem(STORAGE_KEYS.SAFE_BUDGET);
-          return v ? Number(v) : 0;
-        } catch (e) { return 0; }
+        const v = SafeStorage.getItem(STORAGE_KEYS.SAFE_BUDGET);
+        return v ? Number(v) : 0;
       },
       setSafeBudget: (val) => {
-        try { localStorage.setItem(STORAGE_KEYS.SAFE_BUDGET, String(val || 0)); } catch (e) {}
+        SafeStorage.setItem(STORAGE_KEYS.SAFE_BUDGET, String(val || 0));
       },
       getHideBalance: () => {
-        try { return localStorage.getItem(STORAGE_KEYS.HIDE_BALANCE) === 'true'; } catch (e) { return false; }
+        return SafeStorage.getItem(STORAGE_KEYS.HIDE_BALANCE) === 'true';
       },
       setHideBalance: (val) => {
-        try { localStorage.setItem(STORAGE_KEYS.HIDE_BALANCE, val ? 'true' : 'false'); } catch (e) {}
+        SafeStorage.setItem(STORAGE_KEYS.HIDE_BALANCE, val ? 'true' : 'false');
       },
       getTheme: () => {
-        try {
-          const val = localStorage.getItem(STORAGE_KEYS.THEME);
-          return val === 'dark' ? 'dark' : 'light';
-        } catch (e) { return 'light'; }
+        const val = SafeStorage.getItem(STORAGE_KEYS.THEME);
+        return val === 'dark' ? 'dark' : 'light';
       },
       setTheme: (theme) => {
-        try { localStorage.setItem(STORAGE_KEYS.THEME, theme); } catch (e) {}
+        SafeStorage.setItem(STORAGE_KEYS.THEME, theme);
       },
       getAvatar: () => {
-        try { return localStorage.getItem(STORAGE_KEYS.AVATAR) || ''; } catch (e) { return ''; }
+        return SafeStorage.getItem(STORAGE_KEYS.AVATAR) || '';
       },
       setAvatar: (avatar) => {
-        try {
-          if (avatar) localStorage.setItem(STORAGE_KEYS.AVATAR, avatar);
-          else localStorage.removeItem(STORAGE_KEYS.AVATAR);
-        } catch (e) {}
+        if (avatar) SafeStorage.setItem(STORAGE_KEYS.AVATAR, avatar);
+        else SafeStorage.removeItem(STORAGE_KEYS.AVATAR);
       },
       clearAll: () => {
-        try {
-          Object.values(STORAGE_KEYS).forEach(k => localStorage.removeItem(k));
-        } catch (e) {}
+        Object.values(STORAGE_KEYS).forEach(k => SafeStorage.removeItem(k));
       }
     };
 

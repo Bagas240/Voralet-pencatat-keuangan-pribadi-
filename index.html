@@ -77,13 +77,10 @@
     }
   </script>
 
-  <!-- React 18 & ReactDOM & Babel Standalone -->
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script>window.React || document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"><\/script>')</script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script>window.ReactDOM || document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"><\/script>')</script>
+  <!-- React 18 & ReactDOM 18 & Babel Standalone -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.4/babel.min.js"></script>
-  <script>window.Babel || document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.4/babel.min.js"><\/script>')</script>
 
   <!-- Theme Synchronization Initialization -->
   <script>
@@ -405,6 +402,10 @@
       background-color: rgba(15, 23, 42, 0.65);
       overscroll-behavior: contain;
       padding: 0;
+      will-change: opacity;
+      transform: translate3d(0, 0, 0);
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
     }
     @media (min-width: 640px) {
       .ios-modal-backdrop {
@@ -425,6 +426,10 @@
       background-color: #FFFFFF;
       color: #0F172A;
       transition: background-color 300ms ease-in-out, color 300ms ease-in-out;
+      will-change: transform, opacity;
+      transform: translate3d(0, 0, 0);
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
     }
     .dark .ios-modal-card {
       background-color: #1E293B !important;
@@ -514,6 +519,30 @@
   </style>
 </head>
 <body>
+  <!-- Lightweight Diagnostic Error Catcher for Zero-Crash Visibility -->
+  <script>
+    window.onerror = function(msg, url, line, col, error) {
+      try {
+        var existing = document.getElementById('voralet-error-banner');
+        if (!existing) {
+          var banner = document.createElement('div');
+          banner.id = 'voralet-error-banner';
+          banner.style.cssText = 'position:fixed;bottom:16px;left:16px;right:16px;z-index:999999;background:#991B1B;color:#FFFFFF;padding:12px 16px;border-radius:18px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:12px;box-shadow:0 12px 28px rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:space-between;border:1px solid rgba(255,255,255,0.25);';
+          var textDiv = document.createElement('div');
+          textDiv.style.cssText = 'flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:8px;font-weight:500;';
+          textDiv.innerHTML = '<strong style="color:#FECACA;">Diagnostik Voralet:</strong> ' + String(msg || 'Kesalahan sistem tidak terduga');
+          var closeBtn = document.createElement('button');
+          closeBtn.style.cssText = 'background:rgba(255,255,255,0.2);border:none;color:#FFF;padding:4px 10px;border-radius:10px;font-size:11px;font-weight:bold;cursor:pointer;flex-shrink:0;';
+          closeBtn.textContent = 'Tutup';
+          closeBtn.onclick = function() { banner.remove(); };
+          banner.appendChild(textDiv);
+          banner.appendChild(closeBtn);
+          document.body.appendChild(banner);
+        }
+      } catch (err) {}
+      return false;
+    };
+  </script>
   <div id="root"></div>
 
   <script type="text/babel" data-presets="env,react">
@@ -1407,8 +1436,13 @@
     // =========================================================================
     const Validators = {
       sanitizeText: (str, maxLen = 60) => {
-        if (!str) return '';
-        return String(str).trim().slice(0, maxLen);
+        if (str === null || str === undefined) return '';
+        return String(str)
+          .replace(/[<>]/g, '')
+          .replace(/javascript:/gi, '')
+          .replace(/on[a-z]+=/gi, '')
+          .trim()
+          .slice(0, maxLen);
       },
       sanitizeNumber: (val, fallback = 0) => {
         const n = Number(val);
@@ -1502,117 +1536,146 @@
       }
     };
 
+    // =========================================================================
+    // SAFE STORAGE PROXY (Bulletproof LocalStorage wrapper with memory fallback)
+    // =========================================================================
+    const SafeStorage = (() => {
+      const memoryStore = new Map();
+      let isAvailable = false;
+      try {
+        if (typeof window !== 'undefined' && 'localStorage' in window && window.localStorage) {
+          const testKey = '__voralet_test__';
+          window.localStorage.setItem(testKey, '1');
+          window.localStorage.removeItem(testKey);
+          isAvailable = true;
+        }
+      } catch (e) {
+        isAvailable = false;
+      }
+
+      return {
+        getItem: (key) => {
+          try {
+            if (isAvailable) {
+              const val = window.localStorage.getItem(key);
+              if (val !== null) return val;
+            }
+          } catch (e) {}
+          return memoryStore.has(key) ? memoryStore.get(key) : null;
+        },
+        setItem: (key, value) => {
+          const strVal = String(value);
+          memoryStore.set(key, strVal);
+          try {
+            if (isAvailable) {
+              window.localStorage.setItem(key, strVal);
+            }
+          } catch (e) {}
+        },
+        removeItem: (key) => {
+          memoryStore.delete(key);
+          try {
+            if (isAvailable) {
+              window.localStorage.removeItem(key);
+            }
+          } catch (e) {}
+        },
+        parseJSON: (raw, fallback = null) => {
+          if (!raw || typeof raw !== 'string') return fallback;
+          try {
+            return JSON.parse(raw);
+          } catch (e) {
+            return fallback;
+          }
+        }
+      };
+    })();
+
     const StorageService = {
       getPin: () => {
-        try { return localStorage.getItem(STORAGE_KEYS.PIN); } catch (e) { return null; }
+        return SafeStorage.getItem(STORAGE_KEYS.PIN);
       },
       setPin: (pin) => {
-        try { localStorage.setItem(STORAGE_KEYS.PIN, pin); } catch (e) {}
+        SafeStorage.setItem(STORAGE_KEYS.PIN, pin);
       },
       getName: () => {
-        try { return localStorage.getItem(STORAGE_KEYS.NAME) || ''; } catch (e) { return ''; }
+        return SafeStorage.getItem(STORAGE_KEYS.NAME) || '';
       },
       setName: (name) => {
-        try { localStorage.setItem(STORAGE_KEYS.NAME, name); } catch (e) {}
+        SafeStorage.setItem(STORAGE_KEYS.NAME, name);
       },
       getUsername: () => {
-        try { return localStorage.getItem(STORAGE_KEYS.USERNAME) || ''; } catch (e) { return ''; }
+        return SafeStorage.getItem(STORAGE_KEYS.USERNAME) || '';
       },
       setUsername: (username) => {
-        try {
-          const clean = (username || '').toLowerCase().replace(/[^a-z0-9_]/g, '');
-          localStorage.setItem(STORAGE_KEYS.USERNAME, clean);
-        } catch (e) {}
+        const clean = (username || '').toLowerCase().replace(/[^a-z0-9_]/g, '');
+        SafeStorage.setItem(STORAGE_KEYS.USERNAME, clean);
       },
       getAccounts: () => {
-        try {
-          const d = localStorage.getItem(STORAGE_KEYS.ACCOUNTS);
-          const parsed = d ? JSON.parse(d) : [];
-          return Array.isArray(parsed) ? parsed.map(Validators.validateAccount).filter(Boolean) : [];
-        } catch (e) { return []; }
+        const d = SafeStorage.getItem(STORAGE_KEYS.ACCOUNTS);
+        const parsed = SafeStorage.parseJSON(d, []);
+        return Array.isArray(parsed) ? parsed.map(Validators.validateAccount).filter(Boolean) : [];
       },
       setAccounts: (accs) => {
-        try {
-          const clean = Array.isArray(accs) ? accs.map(Validators.validateAccount).filter(Boolean) : [];
-          localStorage.setItem(STORAGE_KEYS.ACCOUNTS, JSON.stringify(clean));
-        } catch (e) {}
+        const clean = Array.isArray(accs) ? accs.map(Validators.validateAccount).filter(Boolean) : [];
+        SafeStorage.setItem(STORAGE_KEYS.ACCOUNTS, JSON.stringify(clean));
       },
       getTransactions: () => {
-        try {
-          const d = localStorage.getItem(STORAGE_KEYS.TRANSACTIONS);
-          const parsed = d ? JSON.parse(d) : [];
-          return Array.isArray(parsed) ? parsed.map(Validators.validateTransaction).filter(Boolean) : [];
-        } catch (e) { return []; }
+        const d = SafeStorage.getItem(STORAGE_KEYS.TRANSACTIONS);
+        const parsed = SafeStorage.parseJSON(d, []);
+        return Array.isArray(parsed) ? parsed.map(Validators.validateTransaction).filter(Boolean) : [];
       },
       setTransactions: (txs) => {
-        try {
-          const clean = Array.isArray(txs) ? txs.map(Validators.validateTransaction).filter(Boolean) : [];
-          localStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify(clean));
-        } catch (e) {}
+        const clean = Array.isArray(txs) ? txs.map(Validators.validateTransaction).filter(Boolean) : [];
+        SafeStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify(clean));
       },
       getSavingsGoals: () => {
-        try {
-          const d = localStorage.getItem(STORAGE_KEYS.SAVINGS_GOALS);
-          const parsed = d ? JSON.parse(d) : [];
-          return Array.isArray(parsed) ? parsed.map(Validators.validateSavingsGoal).filter(Boolean) : [];
-        } catch (e) { return []; }
+        const d = SafeStorage.getItem(STORAGE_KEYS.SAVINGS_GOALS);
+        const parsed = SafeStorage.parseJSON(d, []);
+        return Array.isArray(parsed) ? parsed.map(Validators.validateSavingsGoal).filter(Boolean) : [];
       },
       setSavingsGoals: (goals) => {
-        try {
-          const clean = Array.isArray(goals) ? goals.map(Validators.validateSavingsGoal).filter(Boolean) : [];
-          localStorage.setItem(STORAGE_KEYS.SAVINGS_GOALS, JSON.stringify(clean));
-        } catch (e) {}
+        const clean = Array.isArray(goals) ? goals.map(Validators.validateSavingsGoal).filter(Boolean) : [];
+        SafeStorage.setItem(STORAGE_KEYS.SAVINGS_GOALS, JSON.stringify(clean));
       },
       getDebts: () => {
-        try {
-          const d = localStorage.getItem(STORAGE_KEYS.DEBTS);
-          const parsed = d ? JSON.parse(d) : [];
-          return Array.isArray(parsed) ? parsed.map(Validators.validateDebt).filter(Boolean) : [];
-        } catch (e) { return []; }
+        const d = SafeStorage.getItem(STORAGE_KEYS.DEBTS);
+        const parsed = SafeStorage.parseJSON(d, []);
+        return Array.isArray(parsed) ? parsed.map(Validators.validateDebt).filter(Boolean) : [];
       },
       setDebts: (debts) => {
-        try {
-          const clean = Array.isArray(debts) ? debts.map(Validators.validateDebt).filter(Boolean) : [];
-          localStorage.setItem(STORAGE_KEYS.DEBTS, JSON.stringify(clean));
-        } catch (e) {}
+        const clean = Array.isArray(debts) ? debts.map(Validators.validateDebt).filter(Boolean) : [];
+        SafeStorage.setItem(STORAGE_KEYS.DEBTS, JSON.stringify(clean));
       },
       getSafeBudget: () => {
-        try {
-          const v = localStorage.getItem(STORAGE_KEYS.SAFE_BUDGET);
-          return v ? Number(v) : 0;
-        } catch (e) { return 0; }
+        const v = SafeStorage.getItem(STORAGE_KEYS.SAFE_BUDGET);
+        return v ? Number(v) : 0;
       },
       setSafeBudget: (val) => {
-        try { localStorage.setItem(STORAGE_KEYS.SAFE_BUDGET, String(val || 0)); } catch (e) {}
+        SafeStorage.setItem(STORAGE_KEYS.SAFE_BUDGET, String(val || 0));
       },
       getHideBalance: () => {
-        try { return localStorage.getItem(STORAGE_KEYS.HIDE_BALANCE) === 'true'; } catch (e) { return false; }
+        return SafeStorage.getItem(STORAGE_KEYS.HIDE_BALANCE) === 'true';
       },
       setHideBalance: (val) => {
-        try { localStorage.setItem(STORAGE_KEYS.HIDE_BALANCE, val ? 'true' : 'false'); } catch (e) {}
+        SafeStorage.setItem(STORAGE_KEYS.HIDE_BALANCE, val ? 'true' : 'false');
       },
       getTheme: () => {
-        try {
-          const val = localStorage.getItem(STORAGE_KEYS.THEME);
-          return val === 'dark' ? 'dark' : 'light';
-        } catch (e) { return 'light'; }
+        const val = SafeStorage.getItem(STORAGE_KEYS.THEME);
+        return val === 'dark' ? 'dark' : 'light';
       },
       setTheme: (theme) => {
-        try { localStorage.setItem(STORAGE_KEYS.THEME, theme); } catch (e) {}
+        SafeStorage.setItem(STORAGE_KEYS.THEME, theme);
       },
       getAvatar: () => {
-        try { return localStorage.getItem(STORAGE_KEYS.AVATAR) || ''; } catch (e) { return ''; }
+        return SafeStorage.getItem(STORAGE_KEYS.AVATAR) || '';
       },
       setAvatar: (avatar) => {
-        try {
-          if (avatar) localStorage.setItem(STORAGE_KEYS.AVATAR, avatar);
-          else localStorage.removeItem(STORAGE_KEYS.AVATAR);
-        } catch (e) {}
+        if (avatar) SafeStorage.setItem(STORAGE_KEYS.AVATAR, avatar);
+        else SafeStorage.removeItem(STORAGE_KEYS.AVATAR);
       },
       clearAll: () => {
-        try {
-          Object.values(STORAGE_KEYS).forEach(k => localStorage.removeItem(k));
-        } catch (e) {}
+        Object.values(STORAGE_KEYS).forEach(k => SafeStorage.removeItem(k));
       }
     };
 
@@ -2767,7 +2830,6 @@
         return Ledger.getSummaryTotals(thisMonthTx);
       }, [transactions, year, month]);
 
-      const effectiveBudget = safeBudget > 0 ? safeBudget : totalLiquid;
       const spentThisMonth = currentMonthTotals.expense;
       const remainingMonthBudget = Math.max(0, safeBudget > 0 ? (safeBudget - spentThisMonth) : totalLiquid);
       const dailyAllowance = Math.floor(remainingMonthBudget / daysRemaining);
@@ -4859,7 +4921,7 @@
               <div className="pt-4 border-t border-slate-100 dark:border-slate-700 flex flex-col items-center text-center space-y-1.5 select-none">
                 <VoraletLogo size="md" className="mb-1" />
                 <p className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                  Voralet iOS Edition • Versi v1.7.0
+                  Voralet iOS Edition • Versi v1.8.0
                 </p>
                 <p className="text-[10px] text-slate-400 dark:text-slate-500 max-w-xs leading-relaxed">
                   Keuangan Sehat • Impian Dekat. 100% Offline & Terenkripsi Lokal di Perangkat Anda.
@@ -6033,11 +6095,25 @@
                   </h1>
                   <Icon name="chevron-right" className="w-3.5 h-3.5 text-slate-400 group-hover:text-brand transition-colors shrink-0" />
                 </div>
-                <p className="text-[11px] font-mono text-brand dark:text-sky-400 font-semibold truncate">
-                  @{userProfile.username || 'voralet_user'}
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="text-[11px] font-mono text-brand dark:text-sky-400 font-semibold truncate">
+                    @{userProfile.username || 'voralet_user'}
+                  </p>
+                  <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-md bg-sky-100 dark:bg-sky-950/60 text-[#0284C7] dark:text-sky-400 border border-sky-200/60 dark:border-sky-800/60">
+                    v1.8.0
+                  </span>
+                </div>
               </div>
             </div>
+            <button
+              type="button"
+              onClick={onOpenSettings}
+              className="p-2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ios-btn-tap"
+              aria-label="Pengaturan"
+              title="Pengaturan"
+            >
+              <Icon name="settings" className="w-5 h-5" />
+            </button>
           </div>
 
           {/* Hero Balance Card - High Contrast Deep Royal Blue in both Light and Dark Mode */}
@@ -6793,7 +6869,7 @@
 
       const handleExportData = useCallback(() => {
         const payload = {
-          voralet_version: '1.7.0',
+          voralet_version: '1.8.0',
           exported_at: new Date().toISOString(),
           name,
           username,
@@ -7062,13 +7138,31 @@
       );
     };
 
-    const rootElement = document.getElementById('root');
-    ReactDOM.render(
-      <ErrorBoundary>
-        <App />
-      </ErrorBoundary>,
-      rootElement
-    );
+    const mountApp = () => {
+      const rootElement = document.getElementById('root');
+      if (!rootElement) return;
+      if (typeof ReactDOM.createRoot === 'function') {
+        const root = ReactDOM.createRoot(rootElement);
+        root.render(
+          <ErrorBoundary>
+            <App />
+          </ErrorBoundary>
+        );
+      } else {
+        ReactDOM.render(
+          <ErrorBoundary>
+            <App />
+          </ErrorBoundary>,
+          rootElement
+        );
+      }
+    };
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', mountApp);
+    } else {
+      mountApp();
+    }
   </script>
 </body>
 </html>

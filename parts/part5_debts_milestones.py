@@ -20,7 +20,6 @@ PART5_DEBTS_MILESTONES = """
         return Ledger.getSummaryTotals(thisMonthTx);
       }, [transactions, year, month]);
 
-      const effectiveBudget = safeBudget > 0 ? safeBudget : totalLiquid;
       const spentThisMonth = currentMonthTotals.expense;
       const remainingMonthBudget = Math.max(0, safeBudget > 0 ? (safeBudget - spentThisMonth) : totalLiquid);
       const dailyAllowance = Math.floor(remainingMonthBudget / daysRemaining);

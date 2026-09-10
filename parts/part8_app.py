@@ -265,11 +265,25 @@ PART8_APP = """
                   </h1>
                   <Icon name="chevron-right" className="w-3.5 h-3.5 text-slate-400 group-hover:text-brand transition-colors shrink-0" />
                 </div>
-                <p className="text-[11px] font-mono text-brand dark:text-sky-400 font-semibold truncate">
-                  @{userProfile.username || 'voralet_user'}
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="text-[11px] font-mono text-brand dark:text-sky-400 font-semibold truncate">
+                    @{userProfile.username || 'voralet_user'}
+                  </p>
+                  <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-md bg-sky-100 dark:bg-sky-950/60 text-[#0284C7] dark:text-sky-400 border border-sky-200/60 dark:border-sky-800/60">
+                    v__VORALET_VERSION__
+                  </span>
+                </div>
               </div>
             </div>
+            <button
+              type="button"
+              onClick={onOpenSettings}
+              className="p-2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ios-btn-tap"
+              aria-label="Pengaturan"
+              title="Pengaturan"
+            >
+              <Icon name="settings" className="w-5 h-5" />
+            </button>
           </div>
 
           {/* Hero Balance Card - High Contrast Deep Royal Blue in both Light and Dark Mode */}
@@ -1294,13 +1308,31 @@ PART8_APP = """
       );
     };
 
-    const rootElement = document.getElementById('root');
-    ReactDOM.render(
-      <ErrorBoundary>
-        <App />
-      </ErrorBoundary>,
-      rootElement
-    );
+    const mountApp = () => {
+      const rootElement = document.getElementById('root');
+      if (!rootElement) return;
+      if (typeof ReactDOM.createRoot === 'function') {
+        const root = ReactDOM.createRoot(rootElement);
+        root.render(
+          <ErrorBoundary>
+            <App />
+          </ErrorBoundary>
+        );
+      } else {
+        ReactDOM.render(
+          <ErrorBoundary>
+            <App />
+          </ErrorBoundary>,
+          rootElement
+        );
+      }
+    };
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', mountApp);
+    } else {
+      mountApp();
+    }
   </script>
 </body>
 </html>
