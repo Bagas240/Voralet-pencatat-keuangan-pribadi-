@@ -345,9 +345,6 @@ PART4_AUTH_PIN = """
               <h1 className="text-xl font-bold text-[#0F172A] dark:text-[#F8FAFC]">
                 {userName ? `Hai, ${userName}` : 'Kunci Brankas'}
               </h1>
-              {username && (
-                <p className="text-xs font-mono text-[#0284C7] dark:text-[#38BDF8] font-semibold mt-0.5">@{username}</p>
-              )}
               <p className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-1">Masukkan 6-digit PIN untuk akses brankas</p>
 
               <PinDots count={6} filled={pin.length} isError={error} />

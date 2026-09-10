@@ -37,13 +37,69 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import android.app.Application
+import android.content.Context
+import java.io.File
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.viewinterop.AndroidView
 import com.example.ui.theme.MyApplicationTheme
 
 class MainActivity : ComponentActivity() {
+  companion object {
+    init {
+      try {
+        android.system.Os.setenv("MESA_DEBUG", "0", true)
+        android.system.Os.setenv("MESA_NO_ERROR", "1", true)
+        android.system.Os.setenv("LIBGL_ALWAYS_SOFTWARE", "1", true)
+        android.system.Os.setenv("GALLIUM_DRIVER", "llvmpipe", true)
+        android.system.Os.setenv("EGL_LOG_LEVEL", "fatal", true)
+      } catch (_: Throwable) {
+      }
+    }
+
+    fun prepareWebViewStorage(context: Context) {
+      try {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+          val processName = Application.getProcessName()
+          if (context.packageName != processName) {
+            WebView.setDataDirectorySuffix(processName)
+          }
+        }
+        val cache = context.cacheDir
+        val dirs = listOf(
+          File(cache, "WebView"),
+          File(cache, "WebView/Default"),
+          File(cache, "WebView/Default/HTTP Cache"),
+          File(cache, "WebView/Default/HTTP Cache/index-dir"),
+          File(cache, "WebView/Default/Code Cache"),
+          File(cache, "WebView/Default/Code Cache/js"),
+          File(cache, "WebView/Default/Code Cache/wasm"),
+          File(cache, "org.chromium.android_webview"),
+          File(cache, "org.chromium.android_webview/HTTP Cache"),
+          File(cache, "org.chromium.android_webview/HTTP Cache/index-dir"),
+          File(context.filesDir, "WebView")
+        )
+        for (dir in dirs) {
+          if (dir.isFile) {
+            dir.delete()
+          }
+          if (!dir.exists()) {
+            dir.mkdirs()
+          }
+          dir.setReadable(true, false)
+          dir.setWritable(true, false)
+          dir.setExecutable(true, false)
+        }
+      } catch (t: Throwable) {
+        Log.w("MainActivity", "Error preparing WebView storage directories", t)
+      }
+    }
+  }
+
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
+    prepareWebViewStorage(this)
+
     WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG)
     enableEdgeToEdge()
     setContent {
@@ -108,36 +164,22 @@ fun SakuCleanWebView(
           )
           setBackgroundColor(backgroundColor)
 
-          // Fallback to software layer if DRM render nodes are unavailable or inaccessible
-          // In virtualized/emulator environments, /dev/dri directory exists but renderD128/card0 does not,
-          // which causes Mesa driver to log "Failed to open rendernode: No such file or directory".
-          val hasDriRenderNode = try {
-            val dri128 = java.io.File("/dev/dri/renderD128")
-            val card0 = java.io.File("/dev/dri/card0")
-            (dri128.exists() && dri128.canRead()) || (card0.exists() && card0.canRead())
-          } catch (_: Throwable) {
-            false
-          }
-          if (!hasDriRenderNode) {
-            setLayerType(View.LAYER_TYPE_SOFTWARE, null)
-          }
-
           @Suppress("DEPRECATION")
           settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
-            databaseEnabled = false
+            databaseEnabled = true
             allowFileAccess = true
-            allowContentAccess = false
-            allowFileAccessFromFileURLs = false
-            allowUniversalAccessFromFileURLs = false
+            allowContentAccess = true
+            allowFileAccessFromFileURLs = true
+            allowUniversalAccessFromFileURLs = true
             cacheMode = WebSettings.LOAD_DEFAULT
             useWideViewPort = true
             loadWithOverviewMode = true
-            mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
+            mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
             setSupportMultipleWindows(false)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-              safeBrowsingEnabled = true
+              safeBrowsingEnabled = false
             }
           }
 

@@ -241,26 +241,362 @@ PART6_MODALS = """
       );
     };
 
-    const AccountsManagerModal = ({ isOpen, onClose, accounts, transactions, onAddAccount, onDeleteAccount, onEditAccount }) => {
+    // =========================================================================
+    // 3. APPLE WALLET / APPLE PAY STYLE "KELOLA KANTONG" & ACCOUNTS MANAGER
+    // =========================================================================
+
+    const POCKET_THEMES = {
+      bca: {
+        id: 'bca',
+        label: 'BCA Blue',
+        network: 'Mastercard',
+        networkType: 'mastercard',
+        gradient: 'from-[#002b66] via-[#0047BA] to-[#001D47]',
+        cardPattern: 'radial-gradient(circle at 85% 15%, rgba(255,255,255,0.18) 0%, transparent 60%)',
+        textColor: 'text-white',
+        subtextColor: 'text-blue-200/90',
+        chipColor: 'bg-amber-300/90 border-amber-400 shadow-amber-500/30',
+        accentBorder: 'border-blue-400/40',
+        badgeBg: 'bg-blue-400/25 border-blue-300/40',
+        badgeText: 'text-blue-100',
+        swatch: 'bg-blue-600'
+      },
+      gopay: {
+        id: 'gopay',
+        label: 'GoPay Cyan',
+        network: 'GPN / E-Money',
+        networkType: 'gpn',
+        gradient: 'from-[#00607A] via-[#008DA5] to-[#003B46]',
+        cardPattern: 'radial-gradient(circle at 80% 20%, rgba(255,255,255,0.2) 0%, transparent 55%)',
+        textColor: 'text-white',
+        subtextColor: 'text-cyan-200/90',
+        chipColor: 'bg-emerald-300/90 border-emerald-400 shadow-emerald-500/30',
+        accentBorder: 'border-cyan-300/40',
+        badgeBg: 'bg-cyan-400/25 border-cyan-300/40',
+        badgeText: 'text-cyan-100',
+        swatch: 'bg-cyan-500'
+      },
+      dana: {
+        id: 'dana',
+        label: 'DANA Blue',
+        network: 'Visa Debit',
+        networkType: 'visa',
+        gradient: 'from-[#0A5A9C] via-[#118EEA] to-[#073D6B]',
+        cardPattern: 'radial-gradient(circle at 85% 15%, rgba(255,255,255,0.22) 0%, transparent 60%)',
+        textColor: 'text-white',
+        subtextColor: 'text-sky-200/90',
+        chipColor: 'bg-amber-300/90 border-amber-400 shadow-amber-500/30',
+        accentBorder: 'border-sky-300/40',
+        badgeBg: 'bg-white/20 border-white/35',
+        badgeText: 'text-white',
+        swatch: 'bg-sky-500'
+      },
+      mandiri: {
+        id: 'mandiri',
+        label: 'Mandiri Gold',
+        network: 'Visa Platinum',
+        networkType: 'visa',
+        gradient: 'from-[#0A2540] via-[#003B73] to-[#001737]',
+        cardPattern: 'radial-gradient(circle at 90% 10%, rgba(245,158,11,0.25) 0%, transparent 55%)',
+        textColor: 'text-white',
+        subtextColor: 'text-amber-200/90',
+        chipColor: 'bg-amber-400 border-amber-500 shadow-amber-500/40',
+        accentBorder: 'border-amber-400/40',
+        badgeBg: 'bg-amber-400/25 border-amber-300/40',
+        badgeText: 'text-amber-200',
+        swatch: 'bg-blue-900'
+      },
+      bri: {
+        id: 'bri',
+        label: 'BRI BritAma',
+        network: 'Mastercard Debit',
+        networkType: 'mastercard',
+        gradient: 'from-[#052957] via-[#08479A] to-[#031B3B]',
+        cardPattern: 'radial-gradient(circle at 80% 20%, rgba(255,255,255,0.18) 0%, transparent 60%)',
+        textColor: 'text-white',
+        subtextColor: 'text-blue-200/90',
+        chipColor: 'bg-amber-300/90 border-amber-400 shadow-amber-500/30',
+        accentBorder: 'border-blue-300/40',
+        badgeBg: 'bg-blue-400/25 border-blue-300/40',
+        badgeText: 'text-blue-100',
+        swatch: 'bg-blue-700'
+      },
+      jago: {
+        id: 'jago',
+        label: 'Jago Violet',
+        network: 'Visa Platinum',
+        networkType: 'visa',
+        gradient: 'from-[#312E81] via-[#4F46E5] to-[#1E1B4B]',
+        cardPattern: 'radial-gradient(circle at 85% 15%, rgba(199,210,254,0.25) 0%, transparent 55%)',
+        textColor: 'text-white',
+        subtextColor: 'text-indigo-200/90',
+        chipColor: 'bg-amber-300/90 border-amber-400 shadow-amber-500/30',
+        accentBorder: 'border-indigo-300/40',
+        badgeBg: 'bg-indigo-400/25 border-indigo-300/40',
+        badgeText: 'text-indigo-100',
+        swatch: 'bg-indigo-600'
+      },
+      shopee: {
+        id: 'shopee',
+        label: 'ShopeePay',
+        network: 'GPN Debit',
+        networkType: 'gpn',
+        gradient: 'from-[#B82B14] via-[#EE4D2D] to-[#8C1808]',
+        cardPattern: 'radial-gradient(circle at 80% 20%, rgba(255,255,255,0.22) 0%, transparent 60%)',
+        textColor: 'text-white',
+        subtextColor: 'text-orange-200/90',
+        chipColor: 'bg-amber-300/90 border-amber-400 shadow-amber-500/30',
+        accentBorder: 'border-orange-300/40',
+        badgeBg: 'bg-white/25 border-white/35',
+        badgeText: 'text-white',
+        swatch: 'bg-orange-500'
+      },
+      ovo: {
+        id: 'ovo',
+        label: 'OVO Premier',
+        network: 'Mastercard Debit',
+        networkType: 'mastercard',
+        gradient: 'from-[#321C61] via-[#522785] to-[#1E0F3B]',
+        cardPattern: 'radial-gradient(circle at 85% 15%, rgba(216,180,254,0.22) 0%, transparent 60%)',
+        textColor: 'text-white',
+        subtextColor: 'text-purple-200/90',
+        chipColor: 'bg-amber-300/90 border-amber-400 shadow-amber-500/30',
+        accentBorder: 'border-purple-300/40',
+        badgeBg: 'bg-purple-400/25 border-purple-300/40',
+        badgeText: 'text-purple-100',
+        swatch: 'bg-purple-600'
+      },
+      cash: {
+        id: 'cash',
+        label: 'Dompet Fisik (Cash)',
+        network: 'Cash / Tunai',
+        networkType: 'cash',
+        gradient: 'from-[#1E293B] via-[#0F172A] to-[#020617]',
+        cardPattern: 'radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 55%)',
+        textColor: 'text-slate-100',
+        subtextColor: 'text-slate-400',
+        chipColor: 'bg-amber-200/80 border-amber-300/80 shadow-amber-500/20',
+        accentBorder: 'border-slate-600/50',
+        badgeBg: 'bg-slate-700/50 border-slate-600/50',
+        badgeText: 'text-slate-200',
+        swatch: 'bg-slate-800'
+      },
+    };
+
+    const getPocketTheme = (acc) => {
+      if (!acc) return POCKET_THEMES.bca;
+      if (acc.theme && POCKET_THEMES[acc.theme]) {
+        return POCKET_THEMES[acc.theme];
+      }
+      const n = (acc.name || '').toLowerCase();
+      if (n.includes('bca')) return POCKET_THEMES.bca;
+      if (n.includes('gopay') || n.includes('go-pay')) return POCKET_THEMES.gopay;
+      if (n.includes('dana')) return POCKET_THEMES.dana;
+      if (n.includes('mandiri')) return POCKET_THEMES.mandiri;
+      if (n.includes('bri')) return POCKET_THEMES.bri;
+      if (n.includes('jago') || n.includes('tabungan') || n.includes('savings')) return POCKET_THEMES.jago;
+      if (n.includes('shopee') || n.includes('spay')) return POCKET_THEMES.shopee;
+      if (n.includes('ovo')) return POCKET_THEMES.ovo;
+      if (acc.type === 'Cash' || n.includes('tunai') || n.includes('cash') || n.includes('dompet')) return POCKET_THEMES.cash;
+      if (acc.type === 'E-Wallet') return POCKET_THEMES.gopay;
+      return POCKET_THEMES.bca;
+    };
+
+    // Apple Wallet Dynamic Clean Pocket Card (No chip, no card brand logo, dynamic collapsed/expanded)
+    const AppleWalletCard = ({
+      acc,
+      index,
+      totalCards,
+      isSelected,
+      hideBalance,
+      balance,
+      onSelect,
+      onEdit,
+      onDelete,
+      onAddTx
+    }) => {
+      const theme = getPocketTheme(acc);
+      const isPrimary = index === 0;
+      const rawNum = acc.accountNumber ? String(acc.accountNumber).replace(/\s/g, '') : '';
+      const lastFour = rawNum ? rawNum.slice(-4) : (acc.id ? String(acc.id).replace(/\D/g, '').slice(-4) || '8829' : '8829');
+      const maskedNumber = `•••• ${lastFour}`;
+
+      // Card Icon based on Type
+      const renderCardIcon = () => {
+        if (acc.type === 'Bank') return <Icon name="bank" className="w-4 h-4 text-white" />;
+        if (acc.type === 'E-Wallet') return <Icon name="smartphone" className="w-4 h-4 text-white" />;
+        return <Icon name="cash" className="w-4 h-4 text-white" />;
+      };
+
+      return (
+        <div
+          onClick={onSelect}
+          className="w-full relative select-none"
+        >
+          {/* Main Dynamic Card Container - Solid Light Blue without Gradient */}
+          <div
+            className={`w-full text-white bg-[#38bdf8] border border-sky-300/60 shadow-md transition-all duration-500 ease-out cursor-pointer ${
+              isSelected ? 'apple-wallet-card-expanded p-5' : 'apple-wallet-card-collapsed p-4 hover:brightness-105'
+            }`}
+          >
+            {/* Subtle gloss and shimmer */}
+            <div className="apple-atm-shimmer pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-tr from-white/10 via-transparent to-black/10 pointer-events-none" />
+
+            {/* TOP BAR / ALWAYS VISIBLE HEADER */}
+            <div className="relative z-10 flex items-center justify-between">
+              <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                <div className="w-8 h-8 rounded-xl bg-white/20 border border-white/30 backdrop-blur-md flex items-center justify-center shrink-0 shadow-xs">
+                  {renderCardIcon()}
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-extrabold text-sm sm:text-base tracking-tight truncate drop-shadow-sm">
+                      {acc.name}
+                    </span>
+                    {isPrimary && (
+                      <span className="px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider bg-amber-400/30 text-amber-200 border border-amber-400/40 shadow-xs">
+                        Utama
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-[10px] sm:text-[11px] font-mono opacity-85 block">
+                    {maskedNumber} • {acc.type}
+                  </span>
+                </div>
+              </div>
+
+              {/* Right side: Balance display */}
+              <div className="text-right shrink-0">
+                <div className="font-extrabold text-sm sm:text-base tracking-tight drop-shadow-xs">
+                  {hideBalance ? '••••••••' : formatIDR(balance)}
+                </div>
+                <span className="text-[9px] uppercase tracking-wider text-white/75 block">
+                  {isSelected ? 'Saldo Tersedia' : 'Ketuk untuk rincian'}
+                </span>
+              </div>
+            </div>
+
+            {/* EXPANDED CONTENT: Revealed smoothly when clicked */}
+            {isSelected && (
+              <div className="relative z-10 mt-5 pt-4 border-t border-white/20 flex flex-col justify-between animate-ios-sheet">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-[8px] uppercase tracking-widest text-white/70 font-semibold block">
+                      Nama Kantong
+                    </span>
+                    <span className="font-mono text-xs sm:text-sm font-bold uppercase tracking-wide">
+                      {acc.name}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/15 border border-white/25 backdrop-blur-md">
+                    <Icon name="check-circle" className="w-3.5 h-3.5 text-emerald-300" strokeWidth={2.5} />
+                    <span className="text-[10px] font-bold tracking-wide">Aktif di Dompet</span>
+                  </div>
+                </div>
+
+                <div className="mt-3 flex items-center justify-between text-[11px] font-mono text-white/80">
+                  <span>Rekening: {acc.accountNumber || maskedNumber}</span>
+                  <span className="opacity-75">ID: {acc.id}</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* EXPANDED ACTION DOCK (Catat Mutasi, Edit Kartu, Hapus) */}
+          {isSelected && (
+            <div className="mt-3 p-3 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 shadow-lg animate-ios-spring-pop">
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onAddTx) onAddTx(acc.id);
+                  }}
+                  className="py-2.5 px-2 rounded-xl bg-sky-50 dark:bg-slate-700 hover:bg-sky-100 dark:hover:bg-slate-600 text-brand dark:text-sky-300 font-bold text-xs flex flex-col items-center justify-center gap-1 border border-sky-200/60 dark:border-slate-600 transition-colors ios-btn-tap"
+                >
+                  <Icon name="arrow-up-right" className="w-4 h-4" strokeWidth={2.5} />
+                  <span className="text-[11px]">Catat Mutasi</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onEdit) onEdit(acc);
+                  }}
+                  className="py-2.5 px-2 rounded-xl bg-slate-100 dark:bg-slate-700/60 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs flex flex-col items-center justify-center gap-1 border border-slate-200 dark:border-slate-600 transition-colors ios-btn-tap"
+                >
+                  <Icon name="edit" className="w-4 h-4" strokeWidth={2.2} />
+                  <span className="text-[11px]">Edit Kantong</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onDelete) onDelete(acc.id);
+                  }}
+                  className="py-2.5 px-2 rounded-xl bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-600 dark:text-rose-300 font-bold text-xs flex flex-col items-center justify-center gap-1 border border-rose-200 dark:border-rose-900/60 transition-colors ios-btn-tap"
+                >
+                  <Icon name="trash" className="w-4 h-4 text-rose-500" strokeWidth={2.2} />
+                  <span className="text-[11px]">Hapus</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    // Full Apple Wallet Accounts Manager Modal
+    const AccountsManagerModal = ({
+      isOpen,
+      onClose,
+      accounts,
+      transactions,
+      onAddAccount,
+      onDeleteAccount,
+      onEditAccount,
+      hideBalance = false,
+      onToggleHideBalance,
+      onOpenAddTx
+    }) => {
       const [isAdding, setIsAdding] = useState(false);
+      const [selectedId, setSelectedId] = useState(null);
       const [name, setName] = useState('');
       const [type, setType] = useState('Bank');
+      const [accountNumber, setAccountNumber] = useState('');
+      const [selectedTheme, setSelectedTheme] = useState('bca');
       const [initialBalance, setInitialBalance] = useState('');
       const [editingAcc, setEditingAcc] = useState(null);
       const [isClosing, setIsClosing] = useState(false);
+      const [localHideBalance, setLocalHideBalance] = useState(hideBalance);
 
       const safeAccounts = Array.isArray(accounts) ? accounts.filter(Boolean) : [];
       const safeTransactions = Array.isArray(transactions) ? transactions.filter(Boolean) : [];
 
       useEffect(() => {
+        setLocalHideBalance(hideBalance);
+      }, [hideBalance]);
+
+      useEffect(() => {
         if (!isOpen) {
           setIsAdding(false);
           setEditingAcc(null);
+          setSelectedId(null);
           setName('');
+          setAccountNumber('');
+          setSelectedTheme('bca');
           setInitialBalance('');
           setType('Bank');
         }
       }, [isOpen]);
+
+      const totalBalance = useMemo(() => {
+        return Ledger.getTotalBalance(safeAccounts, safeTransactions);
+      }, [safeAccounts, safeTransactions]);
 
       if (!isOpen) return null;
 
@@ -272,171 +608,310 @@ PART6_MODALS = """
         }, 220);
       };
 
-      const handleSave = (e) => {
-        e.preventDefault();
-        const trimmed = (name || '').trim();
-        if (!trimmed) return;
-        const bal = parseRawNumber(initialBalance);
+      const handleCardSelect = (accId) => {
+        setSelectedId(prev => (prev === accId ? null : accId));
+      };
 
-        if (editingAcc && editingAcc.id) {
-          onEditAccount(editingAcc.id, { name: trimmed, type, initialBalance: bal });
-          setEditingAcc(null);
-        } else {
-          const newAcc = {
-            id: 'acc_' + Date.now(),
-            name: trimmed,
-            type,
-            initialBalance: bal,
-            createdAt: new Date().toISOString()
-          };
-          onAddAccount(newAcc);
-        }
-
+      const handleStartAdd = () => {
+        setEditingAcc(null);
         setName('');
+        setAccountNumber('');
+        setSelectedTheme('bca');
         setInitialBalance('');
         setType('Bank');
-        setIsAdding(false);
+        setIsAdding(true);
       };
 
       const startEdit = (acc) => {
         setEditingAcc(acc);
         setName(acc.name || '');
         setType(acc.type || 'Bank');
+        setAccountNumber(acc.accountNumber || '');
+        setSelectedTheme(acc.theme || 'bca');
         setInitialBalance(acc.initialBalance ? String(acc.initialBalance) : '0');
         setIsAdding(true);
       };
 
+      const handleSave = (e) => {
+        e.preventDefault();
+        const trimmed = (name || '').trim();
+        if (!trimmed) return;
+        const bal = parseRawNumber(initialBalance);
+        const accNum = (accountNumber || '').trim();
+
+        if (editingAcc && editingAcc.id) {
+          onEditAccount(editingAcc.id, {
+            name: trimmed,
+            type,
+            accountNumber: accNum,
+            theme: selectedTheme,
+            initialBalance: bal
+          });
+          setEditingAcc(null);
+        } else {
+          const newAcc = {
+            id: 'acc_' + Date.now(),
+            name: trimmed,
+            type,
+            accountNumber: accNum || ('•••• ' + Math.floor(1000 + Math.random() * 9000)),
+            theme: selectedTheme,
+            initialBalance: bal,
+            createdAt: new Date().toISOString()
+          };
+          onAddAccount(newAcc);
+          setSelectedId(newAcc.id);
+        }
+
+        setName('');
+        setAccountNumber('');
+        setSelectedTheme('bca');
+        setInitialBalance('');
+        setType('Bank');
+        setIsAdding(false);
+      };
+
+      // Stack container dynamic height for smooth Apple Wallet layout
+      const selectedIndex = safeAccounts.findIndex(a => a.id === selectedId);
+      const isAnySelected = selectedIndex !== -1;
+      const stackHeight = isAnySelected
+        ? 290 + Math.max(0, safeAccounts.length - 1) * 60 + 50
+        : Math.max(0, safeAccounts.length - 1) * 62 + 95;
+
       return (
-        <div className={`ios-modal-backdrop ${isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'}`}
-             onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}>
-          <div className={`ios-modal-card bg-white dark:bg-slate-800 ${isClosing ? 'animate-ios-sheet-exit' : 'animate-ios-sheet'}`}>
+        <div
+          className={`ios-modal-backdrop ${isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'}`}
+          onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
+        >
+          <div className={`ios-modal-card bg-white dark:bg-slate-900 ${isClosing ? 'animate-ios-sheet-exit' : 'animate-ios-sheet'} flex flex-col max-h-[92dvh]`}>
             <ModalDragHandle onDismiss={handleClose} />
-            <div className="ios-modal-header px-5 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800">
-              <div>
-                <h2 className="text-base font-bold text-slate-900 dark:text-white">Kelola Dompet & Akun</h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Saldo sinkron otomatis dari mutasi</p>
+
+            {/* Apple Wallet Header */}
+            <div className="ios-modal-header px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900 shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-sky-100 dark:bg-slate-800 border border-sky-200/60 dark:border-slate-700 text-brand dark:text-sky-300 flex items-center justify-center shadow-sm">
+                  <Icon name="layers" className="w-4 h-4" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-slate-900 dark:text-white leading-tight">Kelola Kantong</h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Dompet & Sumber Dana</p>
+                </div>
               </div>
-              <button
-                type="button"
-                onClick={handleClose}
-                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors ios-btn-tap"
-                aria-label="Tutup"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-              </button>
+
+              <div className="flex items-center gap-2">
+                {selectedId && !isAdding && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedId(null)}
+                    className="px-2.5 py-1 text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors ios-btn-tap"
+                  >
+                    Lipat Kartu
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ios-btn-tap"
+                  aria-label="Tutup"
+                >
+                  <Icon name="x" className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
-            <div className="ios-modal-body flex-1 overflow-y-auto pb-28 p-4 sm:p-5 space-y-4 no-scrollbar">
+            <div className="ios-modal-body flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 no-scrollbar">
               {!isAdding ? (
                 <>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                      Daftar Dompet ({safeAccounts.length})
-                    </span>
+                  {/* Total Balance Across All Pockets Summary Card */}
+                  <div className="p-4 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-850 to-slate-950 text-white border border-slate-700/80 shadow-lg flex items-center justify-between">
+                    <div>
+                      <span className="text-[11px] font-semibold text-slate-300 flex items-center gap-1.5 uppercase tracking-wider">
+                        <span>Total Saldo Seluruh Kantong</span>
+                        <Icon name="sparkles" className="w-3.5 h-3.5 text-amber-400" />
+                      </span>
+                      <div className="text-xl sm:text-2xl font-extrabold tracking-tight text-white mt-1">
+                        {localHideBalance ? 'Rp ••••••••' : formatIDR(totalBalance)}
+                      </div>
+                    </div>
+
                     <button
                       type="button"
                       onClick={() => {
-                        setEditingAcc(null);
-                        setName('');
-                        setInitialBalance('');
-                        setType('Bank');
-                        setIsAdding(true);
+                        if (onToggleHideBalance) onToggleHideBalance();
+                        setLocalHideBalance(!localHideBalance);
                       }}
-                      className="px-3 py-1.5 bg-sky-100 dark:bg-slate-700 text-brand dark:text-sky-300 text-xs font-semibold rounded-xl flex items-center gap-1 ios-btn-tap"
+                      className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/15 transition-colors ios-btn-tap"
+                      aria-label="Sensor Saldo"
                     >
-                      <Icon name="plus" className="w-4 h-4" />
-                      <span>Tambah Dompet</span>
+                      <Icon name={localHideBalance ? 'eye-off' : 'eye'} className="w-4 h-4 text-white" />
                     </button>
                   </div>
 
-                  <div className="space-y-2">
-                    {safeAccounts.map(acc => {
-                      const bal = Ledger.getAccountBalance(acc.id, safeAccounts, safeTransactions);
-                      return (
-                        <div
-                          key={acc.id}
-                          className="p-3 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center justify-between"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-brand">
-                              <Icon name={acc.type === 'Bank' ? 'bank' : acc.type === 'Cash' ? 'cash' : 'smartphone'} className="w-5 h-5" />
-                            </div>
-                            <div>
-                              <h4 className="text-xs font-bold text-slate-900 dark:text-white">{acc.name}</h4>
-                              <span className="text-[11px] text-slate-500 dark:text-slate-400">{acc.type} • {formatIDR(bal)}</span>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <button
-                              type="button"
-                              onClick={() => startEdit(acc)}
-                              className="p-1.5 text-slate-500 hover:text-brand rounded-lg ios-btn-tap"
+                  {/* Add New Pocket Button (Sleek Dash-Border Style) */}
+                  <button
+                    type="button"
+                    onClick={handleStartAdd}
+                    className="w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-brand dark:hover:border-sky-400 bg-slate-50/70 dark:bg-slate-800/30 hover:bg-sky-50/50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-200 hover:text-brand dark:hover:text-sky-300 text-xs sm:text-sm font-bold transition-all group ios-btn-tap"
+                  >
+                    <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 group-hover:bg-brand/20 dark:group-hover:bg-sky-400/20 flex items-center justify-center text-slate-500 group-hover:text-brand dark:group-hover:text-sky-300 transition-colors">
+                      <Icon name="plus" className="w-4 h-4" strokeWidth={2.5} />
+                    </div>
+                    <span>+ Tambah Kantong Baru</span>
+                  </button>
+
+                  {/* Interactive Card Deck Section */}
+                  <div className="pt-1">
+                    <div className="flex items-center justify-between mb-3 px-1">
+                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400 tracking-wider uppercase">
+                        Kartu Tersedia ({safeAccounts.length})
+                      </span>
+                      <span className="text-[11px] text-slate-400 dark:text-slate-500 flex items-center gap-1">
+                        <span>{selectedId ? 'Ketuk kartu untuk melipat' : 'Ketuk kartu untuk membuka rincian'}</span>
+                        <Icon name={selectedId ? 'chevron-up' : 'chevron-down'} className="w-3 h-3" />
+                      </span>
+                    </div>
+
+                    {safeAccounts.length === 0 ? (
+                      <div className="p-8 text-center bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700">
+                        <Icon name="wallet" className="w-10 h-10 text-slate-400 mx-auto mb-2" />
+                        <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Belum ada kantong aktif</p>
+                        <p className="text-[11px] text-slate-400 mt-1">Buat kantong baru untuk memisahkan rekening dan e-wallet kamu.</p>
+                      </div>
+                    ) : (
+                      <div
+                        style={{ minHeight: `${stackHeight}px` }}
+                        className="relative w-full transition-all duration-300"
+                      >
+                        {safeAccounts.map((acc, idx) => {
+                          const bal = Ledger.getAccountBalance(acc.id, safeAccounts, safeTransactions);
+                          const isSelected = selectedId === acc.id;
+
+                          // Non-selected cards positioning when a card is opened
+                          let shiftY = idx * 62;
+                          let shiftScale = 1 - (safeAccounts.length - 1 - idx) * 0.015;
+                          let shiftOpacity = 1;
+                          let shiftZ = 10 + idx;
+
+                          if (selectedId) {
+                            if (isSelected) {
+                              shiftY = 0;
+                              shiftScale = 1;
+                              shiftZ = 60;
+                            } else {
+                              const posBelow = idx > selectedIndex ? idx - 1 : idx;
+                              shiftY = 270 + posBelow * 58;
+                              shiftScale = 0.96;
+                              shiftOpacity = 0.88;
+                            }
+                          }
+
+                          return (
+                            <div
+                              key={acc.id}
+                              onClick={() => handleCardSelect(acc.id)}
+                              style={{
+                                transform: `translate3d(0, ${shiftY}px, 0) scale(${shiftScale})`,
+                                zIndex: shiftZ,
+                                opacity: shiftOpacity,
+                                transition: 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.15), opacity 0.35s ease, box-shadow 0.35s ease',
+                                transformOrigin: 'top center',
+                              }}
+                              className="absolute top-0 inset-x-0 cursor-pointer select-none"
                             >
-                              <Icon name="edit" className="w-4 h-4" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => onDeleteAccount(acc.id)}
-                              className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg ios-btn-tap"
-                            >
-                              <Icon name="trash" className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
+                              <AppleWalletCard
+                                acc={acc}
+                                index={idx}
+                                totalCards={safeAccounts.length}
+                                isSelected={isSelected}
+                                hideBalance={localHideBalance}
+                                balance={bal}
+                                onSelect={() => handleCardSelect(acc.id)}
+                                onEdit={(targetAcc) => startEdit(targetAcc)}
+                                onDelete={(targetId) => onDeleteAccount(targetId)}
+                                onAddTx={(targetId) => {
+                                  if (onOpenAddTx) onOpenAddTx(targetId);
+                                }}
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 </>
               ) : (
-                <form onSubmit={handleSave} className="space-y-3 bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-700">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-bold text-slate-800 dark:text-white">
-                      {editingAcc ? 'Edit Dompet' : 'Tambah Dompet'}
-                    </span>
+                /* Add / Edit Pocket Form with Card Theme Selector */
+                <form onSubmit={handleSave} className="space-y-4 bg-slate-50 dark:bg-slate-900/90 p-4 sm:p-5 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm animate-ios-sheet">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                        {editingAcc ? 'Edit Kantong' : 'Tambah Kantong Baru'}
+                      </h3>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">Atur nama, jenis, dan warna kartu</p>
+                    </div>
                     <button
                       type="button"
                       onClick={() => {
                         setIsAdding(false);
                         setEditingAcc(null);
                       }}
-                      className="text-xs text-slate-500 hover:underline"
+                      className="px-2.5 py-1 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-colors"
                     >
                       Batal
                     </button>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Nama Dompet</label>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      Nama Kantong
+                    </label>
                     <input
                       type="text"
                       required
                       value={name}
                       onFocus={handleGlobalInputFocus}
                       onBlur={handleGlobalInputBlur}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="Contoh: BCA / GoPay"
-                      className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none focus:border-brand"
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setName(val);
+                        // Auto switch theme if not customized
+                        if (!editingAcc) {
+                          const low = val.toLowerCase();
+                          if (low.includes('bca')) setSelectedTheme('bca');
+                          else if (low.includes('gopay')) setSelectedTheme('gopay');
+                          else if (low.includes('dana')) setSelectedTheme('dana');
+                          else if (low.includes('mandiri')) setSelectedTheme('mandiri');
+                          else if (low.includes('bri')) setSelectedTheme('bri');
+                          else if (low.includes('jago')) setSelectedTheme('jago');
+                          else if (low.includes('shopee')) setSelectedTheme('shopee');
+                          else if (low.includes('cash') || low.includes('tunai') || low.includes('dompet')) setSelectedTheme('cash');
+                        }
+                      }}
+                      placeholder="Contoh: BCA Prioritas, GoPay, DANA"
+                      className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs text-slate-900 dark:text-white focus:outline-none focus:border-brand shadow-xs"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Kategori</label>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      Kategori Akun
+                    </label>
                     <div className="grid grid-cols-3 gap-2">
                       {[
-                        { id: 'Cash', label: 'Tunai', icon: 'cash' },
                         { id: 'Bank', label: 'Bank', icon: 'bank' },
-                        { id: 'E-Wallet', label: 'E-Wallet', icon: 'smartphone' }
+                        { id: 'E-Wallet', label: 'E-Wallet', icon: 'smartphone' },
+                        { id: 'Cash', label: 'Tunai', icon: 'cash' },
                       ].map(item => (
                         <button
                           key={item.id}
                           type="button"
-                          onClick={() => setType(item.id)}
-                          className={`py-1.5 px-2 rounded-xl border text-xs font-medium flex items-center justify-center gap-1.5 ios-btn-tap ${
+                          onClick={() => {
+                            setType(item.id);
+                            if (item.id === 'Cash') setSelectedTheme('cash');
+                            else if (item.id === 'E-Wallet' && selectedTheme === 'bca') setSelectedTheme('gopay');
+                          }}
+                          className={`py-2 px-2 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all ios-btn-tap ${
                             type === item.id
-                              ? 'bg-sky-50 dark:bg-slate-700 border-brand text-brand dark:text-sky-400 font-bold'
+                              ? 'bg-sky-50 dark:bg-slate-700 border-brand text-brand dark:text-sky-300 shadow-xs'
                               : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
                           }`}
                         >
@@ -448,7 +923,49 @@ PART6_MODALS = """
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Saldo Awal (Rp)</label>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      Nomor Akun / Masked ID (Opsional)
+                    </label>
+                    <input
+                      type="text"
+                      value={accountNumber}
+                      onFocus={handleGlobalInputFocus}
+                      onBlur={handleGlobalInputBlur}
+                      onChange={(e) => setAccountNumber(e.target.value)}
+                      placeholder="e.g. •••• 8829 atau 0812-3456-7890"
+                      className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs text-slate-900 dark:text-white focus:outline-none focus:border-brand shadow-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                      Pilihan Desain Kartu
+                    </label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {Object.values(POCKET_THEMES).map(themeItem => (
+                        <button
+                          key={themeItem.id}
+                          type="button"
+                          onClick={() => setSelectedTheme(themeItem.id)}
+                          className={`p-2 rounded-xl border flex items-center gap-2 transition-all ios-btn-tap ${
+                            selectedTheme === themeItem.id
+                              ? 'border-brand dark:border-sky-400 ring-2 ring-sky-400/30 bg-sky-50/50 dark:bg-slate-800'
+                              : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850'
+                          }`}
+                        >
+                          <div className={`w-4 h-4 rounded-full ${themeItem.swatch} shrink-0 shadow-xs`} />
+                          <span className="text-[11px] font-semibold text-slate-800 dark:text-slate-200 truncate">
+                            {themeItem.label}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      Saldo Awal (Rp)
+                    </label>
                     <input
                       type="text"
                       inputMode="numeric"
@@ -460,16 +977,28 @@ PART6_MODALS = """
                         setInitialBalance(num ? num.toString() : '');
                       }}
                       placeholder="Rp 0"
-                      className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-brand"
+                      className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-brand shadow-xs"
                     />
                   </div>
 
-                  <button
-                    type="submit"
-                    className="w-full py-2.5 bg-brand hover:bg-brand-hover text-white text-xs font-semibold rounded-xl transition-colors mt-2"
-                  >
-                    Simpan Dompet
-                  </button>
+                  <div className="pt-2 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsAdding(false);
+                        setEditingAcc(null);
+                      }}
+                      className="flex-1 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-2xl transition-colors ios-btn-tap"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      type="submit"
+                      className="flex-2 py-3 bg-brand hover:bg-brand-hover text-white text-xs font-bold rounded-2xl shadow-md transition-colors ios-btn-tap"
+                    >
+                      {editingAcc ? 'Perbarui Kantong' : 'Simpan Kantong Baru'}
+                    </button>
+                  </div>
                 </form>
               )}
             </div>
@@ -943,7 +1472,7 @@ PART6_MODALS = """
               <div className="pt-4 border-t border-slate-100 dark:border-slate-700 flex flex-col items-center text-center space-y-1.5 select-none">
                 <VoraletLogo size="md" className="mb-1" />
                 <p className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                  Voralet iOS Edition • Versi __VORALET_VERSION__
+                  Voralet iOS Edition • Versi v__VORALET_VERSION__
                 </p>
                 <p className="text-[10px] text-slate-400 dark:text-slate-500 max-w-xs leading-relaxed">
                   Keuangan Sehat • Impian Dekat. 100% Offline & Terenkripsi Lokal di Perangkat Anda.

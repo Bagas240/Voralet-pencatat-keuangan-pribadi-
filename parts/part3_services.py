@@ -153,6 +153,8 @@ PART3_SERVICES = """
           name,
           type: ['Bank', 'Cash', 'E-Wallet'].includes(acc.type) ? acc.type : 'Cash',
           initialBalance: Validators.sanitizeNumber(acc.initialBalance, 0),
+          accountNumber: Validators.sanitizeText(acc.accountNumber || '', 30),
+          theme: Validators.sanitizeText(acc.theme || '', 30),
           createdAt: acc.createdAt || new Date().toISOString()
         };
       },

@@ -237,6 +237,54 @@ HTML_HEAD = """<!DOCTYPE html>
       opacity: 0.92;
     }
 
+    /* Apple Wallet Dynamic Card Stack & Motion */
+    .apple-wallet-card-collapsed {
+      height: 74px;
+      border-radius: 1.25rem;
+      position: relative;
+      overflow: hidden;
+      background-color: #38bdf8;
+      box-shadow: 0 8px 24px -6px rgba(0, 0, 0, 0.28), 0 2px 8px -2px rgba(0, 0, 0, 0.16), inset 0 1px 1px rgba(255, 255, 255, 0.35);
+      transition: all 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .apple-wallet-card-expanded {
+      height: 195px;
+      border-radius: 1.35rem;
+      position: relative;
+      overflow: hidden;
+      background-color: #38bdf8;
+      box-shadow: 0 24px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 2px rgba(255, 255, 255, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+      transition: all 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @media (min-width: 640px) {
+      .apple-wallet-card-expanded {
+        height: 210px;
+        border-radius: 1.5rem;
+      }
+    }
+    .apple-atm-shimmer {
+      position: absolute;
+      inset: -50%;
+      background: linear-gradient(
+        115deg,
+        transparent 35%,
+        rgba(255, 255, 255, 0.06) 45%,
+        rgba(255, 255, 255, 0.18) 50%,
+        rgba(255, 255, 255, 0.06) 55%,
+        transparent 65%
+      );
+      transform: rotate(20deg) translate3d(-100%, -100%, 0);
+      pointer-events: none;
+      animation: appleCardShine 7s infinite ease-in-out;
+    }
+    @keyframes appleCardShine {
+      0%, 70% { transform: rotate(20deg) translate3d(-100%, -100%, 0); }
+      85%, 100% { transform: rotate(20deg) translate3d(100%, 100%, 0); }
+    }
+    .apple-card-emboss {
+      text-shadow: 0 1px 1px rgba(0, 0, 0, 0.4), 0 -1px 0 rgba(255, 255, 255, 0.2);
+    }
+
     /* Keypad Button */
     .ios-keypad-btn {
       transition: transform 150ms ease-out, opacity 150ms ease-out, background-color 150ms ease;

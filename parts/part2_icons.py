@@ -222,6 +222,56 @@ PART2_ICONS = """
               <polyline points="22 4 12 14.01 9 11.01" />
             </svg>
           );
+        case 'credit-card':
+          return (
+            <svg className={computedClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="5" width="20" height="14" rx="3" />
+              <line x1="2" y1="10" x2="22" y2="10" />
+            </svg>
+          );
+        case 'sparkles':
+        case 'sparkle':
+          return (
+            <svg className={computedClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2l2.4 5 5 2.4-5 2.4-2.4 5-2.4-5-5-2.4 5-2.4z" />
+              <path d="M19 15l1.2 2.5 2.5 1.2-2.5 1.2-1.2 2.5-1.2-2.5-2.5-1.2 2.5-1.2z" />
+            </svg>
+          );
+        case 'layers':
+          return (
+            <svg className={computedClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="12 2 2 7 12 12 22 7 12 2" />
+              <polyline points="2 17 12 22 22 17" />
+              <polyline points="2 12 12 17 22 12" />
+            </svg>
+          );
+        case 'chevron-down':
+          return (
+            <svg className={computedClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          );
+        case 'chevron-up':
+          return (
+            <svg className={computedClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="18 15 12 9 6 15" />
+            </svg>
+          );
+        case 'contactless':
+        case 'wifi':
+          return (
+            <svg className={computedClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M8.5 16.5a5 5 0 0 1 0-9" />
+              <path d="M12 19a8.5 8.5 0 0 0 0-14" />
+              <path d="M15.5 21.5a12 12 0 0 0 0-19" />
+            </svg>
+          );
+        case 'apple':
+          return (
+            <svg className={computedClass} viewBox="0 0 170 170" fill="currentColor">
+              <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.7-3.04-7.58-7.7-11.64-13.98-6.19-9.57-11.19-20.71-15-33.42-3.8-12.71-5.71-24.62-5.71-35.73 0-13.7 3.37-25.26 10.12-34.69 6.75-9.43 15.35-14.28 25.8-14.56 4.9.11 10.22 1.34 15.96 3.7 5.74 2.36 9.4 3.6 10.98 3.72 2.19-.24 6.23-1.66 12.13-4.25 5.9-2.6 11.28-3.79 16.14-3.58 11.75.64 21.43 5.09 29.04 13.34-10.45 6.33-15.56 15.22-15.32 26.68.25 9.07 3.68 16.7 10.3 22.89 6.62 6.19 14.52 9.77 23.7 10.74-2.58 7.64-5.83 15.38-9.75 23.21zM119.22 31.84c0-7.14 2.6-13.88 7.8-20.21 5.2-6.33 11.65-10.59 19.34-12.78.36 1.45.54 2.8.54 4.05 0 7.15-2.67 13.98-8.01 20.48-5.34 6.51-11.83 10.78-19.47 12.82-.12-1.46-.2-2.92-.2-4.36z"/>
+            </svg>
+          );
         case 'sun':
           return (
             <svg className={computedClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">

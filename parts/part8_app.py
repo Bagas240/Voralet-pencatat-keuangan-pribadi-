@@ -176,7 +176,7 @@ PART8_APP = """
     // =========================================================================
     // 10. MAIN DASHBOARD
     // =========================================================================
-    const MainDashboard = ({
+    const MainDashboard = React.memo(({
       accounts,
       transactions,
       userProfile,
@@ -204,8 +204,8 @@ PART8_APP = """
       const [selectedAccountFilter, setSelectedAccountFilter] = useState('ALL');
       const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('ALL');
 
-      const safeAccounts = Array.isArray(accounts) ? accounts.filter(Boolean) : [];
-      const safeTransactions = Array.isArray(transactions) ? transactions.filter(Boolean) : [];
+      const safeAccounts = useMemo(() => Array.isArray(accounts) ? accounts.filter(Boolean) : [], [accounts]);
+      const safeTransactions = useMemo(() => Array.isArray(transactions) ? transactions.filter(Boolean) : [], [transactions]);
 
       const totalBalance = useMemo(() => {
         return Ledger.getTotalBalance(safeAccounts, safeTransactions);
@@ -217,6 +217,15 @@ PART8_APP = """
         const thisMonthTx = safeTransactions.filter(t => t && t.date && t.date.startsWith(prefix));
         return Ledger.getSummaryTotals(thisMonthTx);
       }, [safeTransactions]);
+
+      // Pre-calculated account balances map for instant lookup without O(N) recalculations
+      const accountBalancesMap = useMemo(() => {
+        const map = new Map();
+        for (const acc of safeAccounts) {
+          map.set(acc.id, Ledger.getAccountBalance(acc.id, safeAccounts, safeTransactions));
+        }
+        return map;
+      }, [safeAccounts, safeTransactions]);
 
       // Filtered transactions
       const filteredTransactions = useMemo(() => {
@@ -260,18 +269,6 @@ PART8_APP = """
                   @{userProfile.username || 'voralet_user'}
                 </p>
               </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={onOpenAccounts}
-                className="p-2.5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 shadow-sm dark:shadow-[0_4px_12px_rgba(0,0,0,0.35)] text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors ios-btn-tap"
-                title="Kelola Dompet"
-                aria-label="Kelola Dompet"
-              >
-                <Icon name="wallet" className="w-5 h-5" />
-              </button>
             </div>
           </div>
 
@@ -360,7 +357,7 @@ PART8_APP = """
               className="py-2.5 px-2 bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-2xl flex flex-col items-center justify-center gap-1 shadow-sm dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)] transition-all ios-btn-tap hover:border-brand/40"
             >
               <Icon name="wallet" className="w-4 h-4 text-brand dark:text-sky-400" />
-              <span className="text-[11px] font-bold whitespace-nowrap">Dompet</span>
+              <span className="text-[11px] font-bold whitespace-nowrap">Kelola Kantong</span>
             </button>
             <button
               type="button"
@@ -378,6 +375,99 @@ PART8_APP = """
               <Icon name="target" className="w-4 h-4 text-emerald-500" />
               <span className="text-[11px] font-bold whitespace-nowrap">Impian</span>
             </button>
+          </div>
+
+          {/* Apple Wallet / Kelola Kantong Interactive Card Stack Section */}
+          <div className="ios-inset-group">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-sky-100 dark:bg-slate-700 text-brand dark:text-sky-300 flex items-center justify-center shadow-xs">
+                  <Icon name="layers" className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-bold text-slate-900 dark:text-white">Kelola Kantong</h3>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400">Tumpukan kartu rekening & e-wallet</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={onOpenAccounts}
+                className="px-2.5 py-1 bg-sky-50 dark:bg-slate-700 text-brand dark:text-sky-300 text-[11px] font-bold rounded-xl flex items-center gap-1 border border-sky-200/60 dark:border-slate-600 hover:bg-sky-100 dark:hover:bg-slate-600 transition-colors ios-btn-tap"
+              >
+                <span>Buka Dompet</span>
+                <Icon name="chevron-right" className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* Apple Wallet Interactive Deck on Dashboard */}
+            {safeAccounts.length === 0 ? (
+              <button
+                type="button"
+                onClick={onOpenAccounts}
+                className="w-full py-4 px-3 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-600 dark:text-slate-400 flex items-center justify-center gap-2 ios-btn-tap"
+              >
+                <Icon name="plus" className="w-4 h-4 text-brand" />
+                <span>+ Buat Kantong Baru</span>
+              </button>
+            ) : (
+              <div
+                style={{
+                  minHeight: `${Math.max(0, safeAccounts.length - 1) * 58 + 84}px`
+                }}
+                className="relative w-full cursor-pointer select-none"
+                onClick={onOpenAccounts}
+              >
+                {safeAccounts.map((acc, idx) => {
+                  const bal = accountBalancesMap.get(acc.id) ?? 0;
+                  const theme = getPocketTheme(acc);
+                  const isPrimary = idx === 0;
+                  const rawNum = acc.accountNumber ? String(acc.accountNumber).replace(/\s/g, '') : '';
+                  const lastFour = rawNum ? rawNum.slice(-4) : (acc.id ? String(acc.id).replace(/\D/g, '').slice(-4) || '8829' : '8829');
+                  const maskedNumber = `•••• ${lastFour}`;
+
+                  return (
+                    <div
+                      key={acc.id}
+                      style={{
+                        transform: `translate3d(0, ${idx * 58}px, 0) scale(${1 - (safeAccounts.length - 1 - idx) * 0.015})`,
+                        zIndex: 10 + idx,
+                        transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+                      }}
+                      className="absolute top-0 inset-x-0"
+                    >
+                      <div className="apple-wallet-card-collapsed w-full p-3.5 sm:p-4 bg-[#38bdf8] border border-sky-300/60 shadow-md overflow-hidden flex items-center justify-between text-white relative">
+                        <div className="apple-atm-shimmer pointer-events-none" />
+                        <div className="flex items-center gap-2.5 min-w-0 pr-2 relative z-10">
+                          <div className="w-8 h-8 rounded-xl bg-white/20 border border-white/30 backdrop-blur-md flex items-center justify-center shrink-0 shadow-xs">
+                            <Icon name={acc.type === 'Bank' ? 'bank' : acc.type === 'Cash' ? 'cash' : 'smartphone'} className="w-4 h-4 text-white" />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-extrabold text-xs sm:text-sm truncate">{acc.name}</span>
+                              {isPrimary && (
+                                <span className="px-1.5 py-0.5 rounded text-[8px] font-black uppercase bg-amber-400/30 text-amber-200 border border-amber-400/40">
+                                  Utama
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[10px] font-mono opacity-85 block">{maskedNumber} • {acc.type}</span>
+                          </div>
+                        </div>
+
+                        <div className="text-right shrink-0 relative z-10">
+                          <div className="font-black text-xs sm:text-sm tracking-tight drop-shadow-xs">
+                            {hideBalance ? '••••••••' : formatIDR(bal)}
+                          </div>
+                          <span className="text-[9px] uppercase tracking-wider text-white/70 block">
+                            Saldo
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Safe-to-Spend Indicator */}
@@ -595,7 +685,7 @@ PART8_APP = """
           </div>
         </div>
       );
-    };
+    });
 
     // =========================================================================
     // 11. ROOT APP COMPONENT WITH HORIZONTAL SWIPE NAVIGATION
@@ -713,22 +803,22 @@ PART8_APP = """
         }
       };
 
-      // Handlers
-      const handleToggleHideBalance = () => {
+      // Handlers wrapped in useCallback for stable references across renders
+      const handleToggleHideBalance = useCallback(() => {
         setHideBalance(prev => {
           const next = !prev;
           StorageService.setHideBalance(next);
           return next;
         });
-      };
+      }, []);
 
-      const handleSetBudget = (val) => {
+      const handleSetBudget = useCallback((val) => {
         setSafeBudget(val);
         StorageService.setSafeBudget(val);
         showToast('Limit belanja bulanan diperbarui');
-      };
+      }, []);
 
-      const handleAddTransaction = (newTx) => {
+      const handleAddTransaction = useCallback((newTx) => {
         setTransactions(prev => {
           const exists = prev.some(t => t.id === newTx.id);
           const next = exists
@@ -738,9 +828,9 @@ PART8_APP = """
           return next;
         });
         showToast('Transaksi berhasil dicatat');
-      };
+      }, []);
 
-      const handleDeleteTransaction = (txId) => {
+      const handleDeleteTransaction = useCallback((txId) => {
         if (!confirm('Hapus mutasi ini?')) return;
         setTransactions(prev => {
           const next = prev.filter(t => t.id !== txId);
@@ -748,9 +838,9 @@ PART8_APP = """
           return next;
         });
         showToast('Mutasi dihapus');
-      };
+      }, []);
 
-      const handleEditTransaction = (tx) => {
+      const handleEditTransaction = useCallback((tx) => {
         setTxModalInitial({
           id: tx.id,
           type: tx.type,
@@ -760,9 +850,9 @@ PART8_APP = """
           notes: tx.notes
         });
         setIsTxModalOpen(true);
-      };
+      }, []);
 
-      const handleDuplicateTransaction = (tx) => {
+      const handleDuplicateTransaction = useCallback((tx) => {
         const dupTx = {
           ...tx,
           id: 'tx_' + Date.now(),
@@ -771,47 +861,47 @@ PART8_APP = """
         };
         handleAddTransaction(dupTx);
         showToast('Transaksi berhasil diduplikat');
-      };
+      }, [handleAddTransaction]);
 
-      const handleAddAccount = (acc) => {
+      const handleAddAccount = useCallback((acc) => {
         setAccounts(prev => {
           const next = [...prev, acc];
           StorageService.setAccounts(next);
           return next;
         });
         showToast('Dompet berhasil dibuat');
-      };
+      }, []);
 
-      const handleEditAccount = (accId, data) => {
+      const handleEditAccount = useCallback((accId, data) => {
         setAccounts(prev => {
           const next = prev.map(a => a.id === accId ? { ...a, ...data } : a);
           StorageService.setAccounts(next);
           return next;
         });
         showToast('Dompet diperbarui');
-      };
+      }, []);
 
-      const handleDeleteAccount = (accId) => {
-        if (accounts.length <= 1) {
-          alert('Minimal harus menyisakan 1 dompet');
-          return;
-        }
-        if (!confirm('Hapus dompet ini beserta seluruh transaksinya?')) return;
+      const handleDeleteAccount = useCallback((accId) => {
         setAccounts(prev => {
+          if (prev.length <= 1) {
+            alert('Minimal harus menyisakan 1 dompet');
+            return prev;
+          }
+          if (!confirm('Hapus dompet ini beserta seluruh transaksinya?')) return prev;
           const next = prev.filter(a => a.id !== accId);
           StorageService.setAccounts(next);
+          setTransactions(tPrev => {
+            const tNext = tPrev.filter(t => t.accountId !== accId);
+            StorageService.setTransactions(tNext);
+            return tNext;
+          });
+          showToast('Dompet dihapus');
           return next;
         });
-        setTransactions(prev => {
-          const next = prev.filter(t => t.accountId !== accId);
-          StorageService.setTransactions(next);
-          return next;
-        });
-        showToast('Dompet dihapus');
-      };
+      }, []);
 
       // Savings Goals
-      const handleSaveGoal = (goalData) => {
+      const handleSaveGoal = useCallback((goalData) => {
         setSavingsGoals(prev => {
           const exists = prev.some(g => g.id === goalData.id);
           const next = exists
@@ -821,9 +911,9 @@ PART8_APP = """
           return next;
         });
         showToast('Target impian disimpan');
-      };
+      }, []);
 
-      const handleDeleteGoal = (goalId) => {
+      const handleDeleteGoal = useCallback((goalId) => {
         if (!confirm('Hapus target impian ini?')) return;
         setSavingsGoals(prev => {
           const next = prev.filter(g => g.id !== goalId);
@@ -831,9 +921,9 @@ PART8_APP = """
           return next;
         });
         showToast('Target impian dihapus');
-      };
+      }, []);
 
-      const handleDepositGoal = (goalId, amount, mode) => {
+      const handleDepositGoal = useCallback((goalId, amount, mode) => {
         setSavingsGoals(prev => {
           const next = prev.map(g => {
             if (g.id === goalId) {
@@ -847,10 +937,10 @@ PART8_APP = """
           return next;
         });
         showToast(mode === 'DEPOSIT' ? 'Tabungan disetor' : 'Tabungan ditarik');
-      };
+      }, []);
 
       // Debts
-      const handleAddDebt = (debtData) => {
+      const handleAddDebt = useCallback((debtData) => {
         setDebts(prev => {
           const exists = prev.some(d => d.id === debtData.id);
           const next = exists
@@ -860,9 +950,9 @@ PART8_APP = """
           return next;
         });
         showToast('Catatan disimpan');
-      };
+      }, []);
 
-      const handleToggleDebtStatus = (debtId) => {
+      const handleToggleDebtStatus = useCallback((debtId) => {
         setDebts(prev => {
           const next = prev.map(d => {
             if (d.id === debtId) {
@@ -875,9 +965,9 @@ PART8_APP = """
           return next;
         });
         showToast('Status diperbarui');
-      };
+      }, []);
 
-      const handleDeleteDebt = (debtId) => {
+      const handleDeleteDebt = useCallback((debtId) => {
         if (!confirm('Hapus catatan ini?')) return;
         setDebts(prev => {
           const next = prev.filter(d => d.id !== debtId);
@@ -885,10 +975,10 @@ PART8_APP = """
           return next;
         });
         showToast('Catatan dihapus');
-      };
+      }, []);
 
       // Quick Expense Preset
-      const handleQuickExpenseSelect = (preset) => {
+      const handleQuickExpenseSelect = useCallback((preset) => {
         setTxModalInitial({
           type: 'EXPENSE',
           amount: preset.amount,
@@ -896,10 +986,10 @@ PART8_APP = """
           notes: preset.label
         });
         setIsTxModalOpen(true);
-      };
+      }, []);
 
       // Profile & Reset
-      const handleUpdateProfile = (prof) => {
+      const handleUpdateProfile = useCallback((prof) => {
         setName(prof.name);
         setUsername(prof.username);
         setAvatar(prof.avatar);
@@ -907,16 +997,16 @@ PART8_APP = """
         StorageService.setUsername(prof.username);
         StorageService.setAvatar(prof.avatar);
         showToast('Profil berhasil disimpan');
-      };
+      }, []);
 
-      const handleResetPin = (newPin) => {
+      const handleResetPin = useCallback((newPin) => {
         setPin(newPin);
         StorageService.setPin(newPin);
         setIsUnlocked(true);
         showToast('PIN berhasil diubah');
-      };
+      }, []);
 
-      const handleHardReset = () => {
+      const handleHardReset = useCallback(() => {
         StorageService.clearAll();
         setPin(null);
         setName('');
@@ -931,9 +1021,9 @@ PART8_APP = """
         setActiveTab('dashboard');
         setIsSettingsModalOpen(false);
         showToast('Semua data berhasil dibersihkan');
-      };
+      }, []);
 
-      const handleExportData = () => {
+      const handleExportData = useCallback(() => {
         const payload = {
           voralet_version: '__VORALET_VERSION__',
           exported_at: new Date().toISOString(),
@@ -953,9 +1043,9 @@ PART8_APP = """
         a.click();
         URL.revokeObjectURL(url);
         showToast('File JSON cadangan berhasil diunduh');
-      };
+      }, [name, username, accounts, transactions, savingsGoals, debts, safeBudget]);
 
-      const handleImportData = (data) => {
+      const handleImportData = useCallback((data) => {
         if (!data || !Array.isArray(data.accounts)) {
           alert('Format JSON tidak sesuai dengan standar Voralet');
           return;
@@ -968,7 +1058,78 @@ PART8_APP = """
         if (Array.isArray(data.debts)) { setDebts(data.debts); StorageService.setDebts(data.debts); }
         if (data.safeBudget) { setSafeBudget(data.safeBudget); StorageService.setSafeBudget(data.safeBudget); }
         showToast('Data berhasil dipulihkan!');
-      };
+      }, []);
+
+      // Stable modal openers and navigation callbacks wrapped in useCallback
+      const handleOpenAddTx = useCallback(() => {
+        setTxModalInitial(null);
+        setIsTxModalOpen(true);
+      }, []);
+
+      const handleOpenAddIncome = useCallback(() => {
+        setTxModalInitial({ type: 'INCOME' });
+        setIsTxModalOpen(true);
+      }, []);
+
+      const handleOpenAddExpense = useCallback(() => {
+        setTxModalInitial({ type: 'EXPENSE' });
+        setIsTxModalOpen(true);
+      }, []);
+
+      const handleOpenAccounts = useCallback(() => {
+        setIsAccModalOpen(true);
+      }, []);
+
+      const handleCloseAccounts = useCallback(() => {
+        setIsAccModalOpen(false);
+      }, []);
+
+      const handleOpenSettings = useCallback(() => {
+        setIsSettingsModalOpen(true);
+      }, []);
+
+      const handleCloseSettings = useCallback(() => {
+        setIsSettingsModalOpen(false);
+      }, []);
+
+      const handleOpenDebtsTab = useCallback(() => {
+        setActiveTab('debts');
+      }, []);
+
+      const handleOpenSavingsTab = useCallback(() => {
+        setActiveTab('savings');
+      }, []);
+
+      const handleOpenNewSavingsGoal = useCallback(() => {
+        setSavingsGoalToEdit(null);
+        setIsSavingsModalOpen(true);
+      }, []);
+
+      const handleEditSavingsGoal = useCallback((g) => {
+        setSavingsGoalToEdit(g);
+        setIsSavingsModalOpen(true);
+      }, []);
+
+      const handleCloseSavingsModal = useCallback(() => {
+        setIsSavingsModalOpen(false);
+      }, []);
+
+      const handleCloseTxModal = useCallback(() => {
+        setIsTxModalOpen(false);
+      }, []);
+
+      const handleOpenAddTxFromAccount = useCallback((accId) => {
+        setIsAccModalOpen(false);
+        setTxModalInitial({ accountId: accId });
+        setIsTxModalOpen(true);
+      }, []);
+
+      // Memoized user profile object to keep reference identity stable
+      const memoizedUserProfile = useMemo(() => ({
+        name,
+        username,
+        avatar
+      }), [name, username, avatar]);
 
       if (showSplash) {
         return <SplashScreen onFinish={() => setShowSplash(false)} />;
@@ -1027,29 +1188,17 @@ PART8_APP = """
                 <MainDashboard
                   accounts={accounts}
                   transactions={transactions}
-                  userProfile={{ name, username, avatar }}
+                  userProfile={memoizedUserProfile}
                   hideBalance={hideBalance}
                   onToggleHideBalance={handleToggleHideBalance}
-                  onOpenAddTx={() => {
-                    setTxModalInitial(null);
-                    setIsTxModalOpen(true);
-                  }}
-                  onOpenAddIncome={() => {
-                    setTxModalInitial({ type: 'INCOME' });
-                    setIsTxModalOpen(true);
-                  }}
-                  onOpenAddExpense={() => {
-                    setTxModalInitial({ type: 'EXPENSE' });
-                    setIsTxModalOpen(true);
-                  }}
-                  onOpenAccounts={() => setIsAccModalOpen(true)}
-                  onOpenSettings={() => setIsSettingsModalOpen(true)}
-                  onOpenDebts={() => setActiveTab('debts')}
-                  onOpenSavings={() => setActiveTab('savings')}
-                  onOpenNewSavingsGoal={() => {
-                    setSavingsGoalToEdit(null);
-                    setIsSavingsModalOpen(true);
-                  }}
+                  onOpenAddTx={handleOpenAddTx}
+                  onOpenAddIncome={handleOpenAddIncome}
+                  onOpenAddExpense={handleOpenAddExpense}
+                  onOpenAccounts={handleOpenAccounts}
+                  onOpenSettings={handleOpenSettings}
+                  onOpenDebts={handleOpenDebtsTab}
+                  onOpenSavings={handleOpenSavingsTab}
+                  onOpenNewSavingsGoal={handleOpenNewSavingsGoal}
                   onDeleteTx={handleDeleteTransaction}
                   onEditTx={handleEditTransaction}
                   onDuplicateTx={handleDuplicateTransaction}
@@ -1075,14 +1224,8 @@ PART8_APP = """
               {activeTab === 'savings' && (
                 <SavingsView
                   savingsGoals={savingsGoals}
-                  onOpenNewGoal={() => {
-                    setSavingsGoalToEdit(null);
-                    setIsSavingsModalOpen(true);
-                  }}
-                  onEditGoal={(g) => {
-                    setSavingsGoalToEdit(g);
-                    setIsSavingsModalOpen(true);
-                  }}
+                  onOpenNewGoal={handleOpenNewSavingsGoal}
+                  onEditGoal={handleEditSavingsGoal}
                   onDeleteGoal={handleDeleteGoal}
                   onDepositGoal={handleDepositGoal}
                   hideBalance={hideBalance}
@@ -1108,7 +1251,7 @@ PART8_APP = """
           {/* Modals with Apple-style sheets and strict close icons */}
           <TransactionModal
             isOpen={isTxModalOpen}
-            onClose={() => setIsTxModalOpen(false)}
+            onClose={handleCloseTxModal}
             initialData={txModalInitial}
             accounts={accounts}
             onAddTransaction={handleAddTransaction}
@@ -1116,17 +1259,20 @@ PART8_APP = """
 
           <AccountsManagerModal
             isOpen={isAccModalOpen}
-            onClose={() => setIsAccModalOpen(false)}
+            onClose={handleCloseAccounts}
             accounts={accounts}
             transactions={transactions}
             onAddAccount={handleAddAccount}
             onDeleteAccount={handleDeleteAccount}
             onEditAccount={handleEditAccount}
+            hideBalance={hideBalance}
+            onToggleHideBalance={handleToggleHideBalance}
+            onOpenAddTx={handleOpenAddTxFromAccount}
           />
 
           <SavingsGoalModal
             isOpen={isSavingsModalOpen}
-            onClose={() => setIsSavingsModalOpen(false)}
+            onClose={handleCloseSavingsModal}
             onSaveGoal={handleSaveGoal}
             onDepositGoal={handleDepositGoal}
             goalToEdit={savingsGoalToEdit}
@@ -1135,8 +1281,8 @@ PART8_APP = """
 
           <SettingsModal
             isOpen={isSettingsModalOpen}
-            onClose={() => setIsSettingsModalOpen(false)}
-            userProfile={{ name, username, avatar }}
+            onClose={handleCloseSettings}
+            userProfile={memoizedUserProfile}
             onUpdateProfile={handleUpdateProfile}
             onHardReset={handleHardReset}
             onImportData={handleImportData}
