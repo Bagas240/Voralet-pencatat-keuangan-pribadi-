@@ -389,9 +389,14 @@ PART2_ICONS = """
 
     // Soft Circular or Rounded-Square Badge Wrapper
     const IconBadge = ({ icon, className = "p-2.5 rounded-2xl bg-sky-100 dark:bg-slate-800 text-sky-600 dark:text-sky-400 shrink-0", iconClass = "w-5 h-5", strokeWidth = 2 }) => {
+      const isEmoji = typeof icon === 'string' && /\\p{Extended_Pictographic}/u.test(icon);
       return (
-        <div className={`flex items-center justify-center ${className}`}>
-          <Icon name={icon} className={iconClass} strokeWidth={strokeWidth} />
+        <div className={`flex items-center justify-center select-none ${className}`}>
+          {isEmoji ? (
+            <span className="text-base leading-none select-none flex items-center justify-center">{icon}</span>
+          ) : (
+            <Icon name={icon} className={iconClass} strokeWidth={strokeWidth} />
+          )}
         </div>
       );
     };

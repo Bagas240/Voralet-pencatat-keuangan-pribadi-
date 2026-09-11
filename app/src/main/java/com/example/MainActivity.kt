@@ -152,7 +152,6 @@ fun SakuCleanWebView(
             ViewGroup.LayoutParams.MATCH_PARENT
           )
           setBackgroundColor(backgroundColor)
-          setLayerType(View.LAYER_TYPE_HARDWARE, null)
 
           @Suppress("DEPRECATION")
           settings.apply {

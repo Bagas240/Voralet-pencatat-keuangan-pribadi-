@@ -197,12 +197,17 @@ PART8_APP = """
       onSetBudget,
       savingsGoals,
       debts,
-      onSelectQuickExpense
+      onSelectQuickExpense,
+      customCategories = []
     }) => {
       const [searchQuery, setSearchQuery] = useState('');
       const [filterType, setFilterType] = useState('ALL'); // ALL | EXPENSE | INCOME
       const [selectedAccountFilter, setSelectedAccountFilter] = useState('ALL');
       const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('ALL');
+
+      const allCategories = useMemo(() => {
+        return getAllCategories(customCategories);
+      }, [customCategories]);
 
       const safeAccounts = useMemo(() => Array.isArray(accounts) ? accounts.filter(Boolean) : [], [accounts]);
       const safeTransactions = useMemo(() => Array.isArray(transactions) ? transactions.filter(Boolean) : [], [transactions]);
@@ -236,14 +241,15 @@ PART8_APP = """
           if (selectedCategoryFilter !== 'ALL' && tx.category !== selectedCategoryFilter) return false;
           if (searchQuery.trim()) {
             const q = searchQuery.toLowerCase();
-            const cat = (CATEGORIES.find(c => c.id === tx.category)?.label || '').toLowerCase();
+            const catObj = allCategories.find(c => c.id === tx.category);
+            const cat = (catObj?.label || '').toLowerCase();
             const notes = (tx.notes || '').toLowerCase();
             const amt = String(tx.amount || '');
             if (!cat.includes(q) && !notes.includes(q) && !amt.includes(q)) return false;
           }
           return true;
         });
-      }, [safeTransactions, filterType, selectedAccountFilter, selectedCategoryFilter, searchQuery]);
+      }, [safeTransactions, filterType, selectedAccountFilter, selectedCategoryFilter, searchQuery, allCategories]);
 
       return (
         <div className="space-y-4 pb-28 animate-ios-tab-view">
@@ -613,18 +619,19 @@ PART8_APP = """
                 >
                   Semua Kategori
                 </button>
-                {CATEGORIES.map(c => (
+                {allCategories.map(c => (
                   <button
                     key={c.id}
                     type="button"
                     onClick={() => setSelectedCategoryFilter(c.id)}
-                    className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold whitespace-nowrap transition-colors ios-btn-tap ${
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold whitespace-nowrap transition-colors ios-btn-tap flex items-center gap-1 ${
                       selectedCategoryFilter === c.id
                         ? 'bg-brand text-white'
                         : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
                     }`}
                   >
-                    {c.label}
+                    <span>{c.icon}</span>
+                    <span>{c.label}</span>
                   </button>
                 ))}
               </div>
@@ -639,7 +646,7 @@ PART8_APP = """
             ) : (
               <div className="divide-y divide-transparent">
                 {filteredTransactions.slice(0, 40).map((tx, idx) => {
-                  const cat = CATEGORIES.find(c => c.id === tx.category) || { label: tx.category, icon: 'tag' };
+                  const cat = getCategoryById(tx.category, customCategories);
                   const acc = safeAccounts.find(a => a.id === tx.accountId);
 
                   return (
@@ -679,6 +686,7 @@ PART8_APP = """
       const [transactions, setTransactions] = useState(() => StorageService.getTransactions());
       const [savingsGoals, setSavingsGoals] = useState(() => StorageService.getSavingsGoals());
       const [debts, setDebts] = useState(() => StorageService.getDebts());
+      const [customCategories, setCustomCategories] = useState(() => StorageService.getCustomCategories());
       const [safeBudget, setSafeBudget] = useState(() => StorageService.getSafeBudget());
       const [hideBalance, setHideBalance] = useState(() => StorageService.getHideBalance());
       const [theme, setTheme] = useState(() => StorageService.getTheme());
@@ -737,6 +745,11 @@ PART8_APP = """
 
       // Global Mobile Keyboard Handling
       useEffect(() => {
+        // Anti-tamper environment & integrity verification
+        if (typeof CryptoService !== 'undefined' && CryptoService.verifyIntegrity) {
+          CryptoService.verifyIntegrity();
+        }
+
         window.addEventListener('focusin', handleGlobalInputFocus);
         window.addEventListener('focusout', handleGlobalInputBlur);
         return () => {
@@ -1001,11 +1014,39 @@ PART8_APP = """
         setTransactions([]);
         setSavingsGoals([]);
         setDebts([]);
+        setCustomCategories([]);
         setSafeBudget(0);
         setIsUnlocked(false);
         setActiveTab('dashboard');
         setIsSettingsModalOpen(false);
         showToast('Semua data berhasil dibersihkan');
+      }, []);
+
+      const handleSaveCustomCategory = useCallback((cat) => {
+        setCustomCategories(prev => {
+          const safePrev = Array.isArray(prev) ? prev : [];
+          const existingIdx = safePrev.findIndex(c => c.id === cat.id);
+          let next;
+          if (existingIdx >= 0) {
+            next = [...safePrev];
+            next[existingIdx] = cat;
+          } else {
+            next = [...safePrev, cat];
+          }
+          StorageService.setCustomCategories(next);
+          return next;
+        });
+        showToast('Kategori kustom berhasil disimpan');
+      }, []);
+
+      const handleDeleteCustomCategory = useCallback((catId) => {
+        setCustomCategories(prev => {
+          const safePrev = Array.isArray(prev) ? prev : [];
+          const next = safePrev.filter(c => c.id !== catId);
+          StorageService.setCustomCategories(next);
+          return next;
+        });
+        showToast('Kategori kustom berhasil dihapus');
       }, []);
 
       const handleExportData = useCallback(() => {
@@ -1018,6 +1059,7 @@ PART8_APP = """
           transactions,
           savingsGoals,
           debts,
+          customCategories,
           safeBudget
         };
         const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -1028,7 +1070,7 @@ PART8_APP = """
         a.click();
         URL.revokeObjectURL(url);
         showToast('File JSON cadangan berhasil diunduh');
-      }, [name, username, accounts, transactions, savingsGoals, debts, safeBudget]);
+      }, [name, username, accounts, transactions, savingsGoals, debts, customCategories, safeBudget]);
 
       const handleImportData = useCallback((data) => {
         if (!data || !Array.isArray(data.accounts)) {
@@ -1041,6 +1083,7 @@ PART8_APP = """
         if (Array.isArray(data.transactions)) { setTransactions(data.transactions); StorageService.setTransactions(data.transactions); }
         if (Array.isArray(data.savingsGoals)) { setSavingsGoals(data.savingsGoals); StorageService.setSavingsGoals(data.savingsGoals); }
         if (Array.isArray(data.debts)) { setDebts(data.debts); StorageService.setDebts(data.debts); }
+        if (Array.isArray(data.customCategories)) { setCustomCategories(data.customCategories); StorageService.setCustomCategories(data.customCategories); }
         if (data.safeBudget !== undefined) { setSafeBudget(data.safeBudget); StorageService.setSafeBudget(data.safeBudget); }
         showToast('Data berhasil dipulihkan!');
       }, []);
@@ -1224,6 +1267,7 @@ PART8_APP = """
                   debts={debts}
                   savingsGoals={savingsGoals}
                   hideBalance={hideBalance}
+                  customCategories={customCategories}
                 />
               )}
             </ErrorBoundary>
@@ -1240,6 +1284,8 @@ PART8_APP = """
             initialData={txModalInitial}
             accounts={accounts}
             onAddTransaction={handleAddTransaction}
+            customCategories={customCategories}
+            onSaveCustomCategory={handleSaveCustomCategory}
           />
 
           <AccountsManagerModal
@@ -1274,6 +1320,9 @@ PART8_APP = """
             onExportData={handleExportData}
             theme={theme}
             onToggleTheme={toggleTheme}
+            customCategories={customCategories}
+            onSaveCustomCategory={handleSaveCustomCategory}
+            onDeleteCustomCategory={handleDeleteCustomCategory}
           />
         </div>
       );

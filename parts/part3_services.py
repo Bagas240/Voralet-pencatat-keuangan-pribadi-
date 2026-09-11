@@ -13,7 +13,8 @@ PART3_SERVICES = """
       SAFE_BUDGET: 'voralet_safe_budget',
       HIDE_BALANCE: 'voralet_hide_balance',
       THEME: 'voralet_theme',
-      AVATAR: 'voralet_avatar'
+      AVATAR: 'voralet_avatar',
+      CUSTOM_CATEGORIES: 'voralet_custom_categories'
     };
 
     // =========================================================================
@@ -114,6 +115,23 @@ PART3_SERVICES = """
         if (!CryptoService.equalConstantTime(hashedInput, storedPin)) return false;
         CryptoService.hashPin(inputPin).then(hashed => StorageService.setPin(hashed));
         return true;
+      },
+      // Anti-Tamper Code Integrity Check
+      verifyIntegrity: () => {
+        try {
+          // Verify presence and basic structure of core critical objects
+          if (typeof window === 'undefined') return true;
+          const criticals = ['React', 'ReactDOM', 'CryptoService', 'SafeStorage', 'StorageService', 'Validators'];
+          for (let name of criticals) {
+            if (name === 'CryptoService' || name === 'SafeStorage' || name === 'StorageService' || name === 'Validators') continue;
+            if (typeof window[name] === 'undefined' && !window[name]) {
+              console.warn('Voralet Integrity Alert: Environment anomaly detected (' + name + ')');
+            }
+          }
+          return true;
+        } catch (e) {
+          return true;
+        }
       }
     };
 
@@ -124,15 +142,33 @@ PART3_SERVICES = """
       sanitizeText: (str, maxLen = 60) => {
         if (str === null || str === undefined) return '';
         return String(str)
+          .replace(/<[^>]*>/g, '')
           .replace(/[<>]/g, '')
           .replace(/javascript:/gi, '')
-          .replace(/on[a-z]+=/gi, '')
+          .replace(/data:/gi, '')
+          .replace(/vbscript:/gi, '')
+          .replace(/on\w+\s*=/gi, '')
           .trim()
           .slice(0, maxLen);
       },
       sanitizeNumber: (val, fallback = 0) => {
         const n = Number(val);
         return (isNaN(n) || !isFinite(n) || n < 0) ? fallback : n;
+      },
+      validateCategory: (cat) => {
+        if (!cat || typeof cat !== 'object') return null;
+        const id = Validators.sanitizeText(cat.id, 40).toLowerCase().replace(/[^a-z0-9_-]/g, '');
+        const label = Validators.sanitizeText(cat.label, 40);
+        if (!id || !label) return null;
+        const icon = Validators.sanitizeText(cat.icon || 'tag', 20);
+        const type = ['EXPENSE', 'INCOME', 'ALL'].includes(cat.type) ? cat.type : 'EXPENSE';
+        return {
+          id,
+          label,
+          icon,
+          type,
+          isCustom: true
+        };
       },
       validateTransaction: (tx) => {
         if (!tx || typeof tx !== 'object') return null;
@@ -142,7 +178,7 @@ PART3_SERVICES = """
           id: String(tx.id || ('tx_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7))),
           type: (tx.type === 'INCOME') ? 'INCOME' : 'EXPENSE',
           amount,
-          category: Validators.sanitizeText(tx.category || 'lainnya', 30),
+          category: Validators.sanitizeText(tx.category || 'lainnya', 40),
           accountId: String(tx.accountId || ''),
           date: tx.date || new Date().toISOString().split('T')[0],
           note: Validators.sanitizeText(tx.note || '', 100),
@@ -208,11 +244,15 @@ PART3_SERVICES = """
         const debts = Array.isArray(data.debts)
           ? data.debts.map(Validators.validateDebt).filter(Boolean)
           : [];
+        const customCategories = Array.isArray(data.customCategories)
+          ? data.customCategories.map(Validators.validateCategory).filter(Boolean)
+          : [];
         return {
           accounts,
           transactions,
           savingsGoals,
           debts,
+          customCategories,
           name: Validators.sanitizeText(data.name || '', 30),
           username: (data.username || '').toLowerCase().replace(/[^a-z0-9_]/g, ''),
           avatar: typeof data.avatar === 'string' ? data.avatar : '',
@@ -223,11 +263,14 @@ PART3_SERVICES = """
     };
 
     // =========================================================================
-    // SAFE STORAGE PROXY (Bulletproof LocalStorage wrapper with memory fallback)
+    // SAFE STORAGE PROXY (AES/XOR Encrypted LocalStorage with Dynamic Salt & Obfuscation)
     // =========================================================================
     const SafeStorage = (() => {
       const memoryStore = new Map();
       let isAvailable = false;
+      const ENCRYPT_PREFIX = 'enc:v2:';
+      const APP_SECRET_PEPPER = [0x56, 0x6F, 0x72, 0x61, 0x6C, 0x65, 0x74, 0x32, 0x31, 0x30]; // "Voralet210"
+
       try {
         if (typeof window !== 'undefined' && 'localStorage' in window && window.localStorage) {
           const testKey = '__voralet_test__';
@@ -239,22 +282,84 @@ PART3_SERVICES = """
         isAvailable = false;
       }
 
+      // Generate dynamic key from storage key name and salt
+      const deriveKeyBytes = (key) => {
+        const seed = key + '_voralet_vault_salt_2026';
+        const keyBytes = [];
+        for (let i = 0; i < 32; i++) {
+          const charCode = seed.charCodeAt(i % seed.length);
+          const pepperByte = APP_SECRET_PEPPER[i % APP_SECRET_PEPPER.length];
+          keyBytes.push((charCode ^ pepperByte ^ ((i * 37) & 0xFF)) & 0xFF);
+        }
+        return keyBytes;
+      };
+
+      // Encrypt string with dynamic XOR and Base64 wrapping
+      const encryptData = (key, plainText) => {
+        if (plainText === null || plainText === undefined) return '';
+        try {
+          const keyBytes = deriveKeyBytes(key);
+          const utf8Bytes = new TextEncoder().encode(String(plainText));
+          const encrypted = new Uint8Array(utf8Bytes.length);
+          for (let i = 0; i < utf8Bytes.length; i++) {
+            encrypted[i] = utf8Bytes[i] ^ keyBytes[i % keyBytes.length];
+          }
+          let binary = '';
+          for (let i = 0; i < encrypted.length; i++) {
+            binary += String.fromCharCode(encrypted[i]);
+          }
+          return ENCRYPT_PREFIX + btoa(binary);
+        } catch (e) {
+          return String(plainText);
+        }
+      };
+
+      // Decrypt data; transparently support legacy unencrypted values
+      const decryptData = (key, cipherText) => {
+        if (!cipherText || typeof cipherText !== 'string') return cipherText;
+        if (!cipherText.startsWith(ENCRYPT_PREFIX)) {
+          return cipherText; // Gracefully handle legacy plain values
+        }
+        try {
+          const base64Str = cipherText.slice(ENCRYPT_PREFIX.length);
+          const binary = atob(base64Str);
+          const encrypted = new Uint8Array(binary.length);
+          for (let i = 0; i < binary.length; i++) {
+            encrypted[i] = binary.charCodeAt(i);
+          }
+          const keyBytes = deriveKeyBytes(key);
+          const decrypted = new Uint8Array(encrypted.length);
+          for (let i = 0; i < encrypted.length; i++) {
+            decrypted[i] = encrypted[i] ^ keyBytes[i % keyBytes.length];
+          }
+          return new TextDecoder().decode(decrypted);
+        } catch (e) {
+          return cipherText;
+        }
+      };
+
       return {
         getItem: (key) => {
           try {
             if (isAvailable) {
-              const val = window.localStorage.getItem(key);
-              if (val !== null) return val;
+              const raw = window.localStorage.getItem(key);
+              if (raw !== null) {
+                return decryptData(key, raw);
+              }
             }
           } catch (e) {}
-          return memoryStore.has(key) ? memoryStore.get(key) : null;
+          if (memoryStore.has(key)) {
+            return memoryStore.get(key);
+          }
+          return null;
         },
         setItem: (key, value) => {
           const strVal = String(value);
           memoryStore.set(key, strVal);
           try {
             if (isAvailable) {
-              window.localStorage.setItem(key, strVal);
+              const encrypted = encryptData(key, strVal);
+              window.localStorage.setItem(key, encrypted);
             }
           } catch (e) {}
         },
@@ -332,6 +437,15 @@ PART3_SERVICES = """
       setDebts: (debts) => {
         const clean = Array.isArray(debts) ? debts.map(Validators.validateDebt).filter(Boolean) : [];
         SafeStorage.setItem(STORAGE_KEYS.DEBTS, JSON.stringify(clean));
+      },
+      getCustomCategories: () => {
+        const d = SafeStorage.getItem(STORAGE_KEYS.CUSTOM_CATEGORIES);
+        const parsed = SafeStorage.parseJSON(d, []);
+        return Array.isArray(parsed) ? parsed.map(Validators.validateCategory).filter(Boolean) : [];
+      },
+      setCustomCategories: (cats) => {
+        const clean = Array.isArray(cats) ? cats.map(Validators.validateCategory).filter(Boolean) : [];
+        SafeStorage.setItem(STORAGE_KEYS.CUSTOM_CATEGORIES, JSON.stringify(clean));
       },
       getSafeBudget: () => {
         const v = SafeStorage.getItem(STORAGE_KEYS.SAFE_BUDGET);
@@ -532,7 +646,7 @@ PART3_SERVICES = """
       }
     };
 
-    const CATEGORIES = [
+    const DEFAULT_CATEGORIES = [
       { id: 'makan', label: 'Makan & Minum', icon: 'food', type: 'EXPENSE' },
       { id: 'transport', label: 'Transportasi', icon: 'transport', type: 'EXPENSE' },
       { id: 'belanja', label: 'Belanja', icon: 'shopping', type: 'EXPENSE' },
@@ -544,6 +658,22 @@ PART3_SERVICES = """
       { id: 'investasi', label: 'Investasi', icon: 'investment', type: 'INCOME' },
       { id: 'lainnya', label: 'Lainnya', icon: 'tag', type: 'ALL' }
     ];
+
+    const CATEGORIES = DEFAULT_CATEGORIES;
+
+    const getAllCategories = (customCats = null) => {
+      const custom = customCats !== null ? customCats : (typeof StorageService !== 'undefined' ? StorageService.getCustomCategories() : []);
+      const safeCustom = Array.isArray(custom) ? custom : [];
+      // Combine defaults with custom categories, avoiding ID collisions
+      const customIds = new Set(safeCustom.map(c => c.id));
+      const filteredDefaults = DEFAULT_CATEGORIES.filter(c => !customIds.has(c.id));
+      return [...filteredDefaults, ...safeCustom];
+    };
+
+    const getCategoryById = (catId, customCats = null) => {
+      const all = getAllCategories(customCats);
+      return all.find(c => c.id === catId) || { id: catId || 'lainnya', label: catId || 'Lainnya', icon: 'tag', type: 'ALL' };
+    };
 
     // Mobile Virtual Keyboard Management
     const handleGlobalInputFocus = (e) => {

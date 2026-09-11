@@ -27,7 +27,7 @@ def resolve_version():
     except (OSError, subprocess.CalledProcessError):
         pass
 
-    return '1.9.0'
+    return '2.1.0'
 
 from parts.part1_head import HTML_HEAD
 from parts.part2_icons import PART2_ICONS

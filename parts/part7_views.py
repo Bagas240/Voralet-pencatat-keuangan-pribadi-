@@ -231,7 +231,7 @@ PART7_VIEWS = """
       '#64748B'  // Slate
     ];
 
-    const AnalyticsView = ({ transactions = [], accounts = [], debts = [], savingsGoals = [], hideBalance }) => {
+    const AnalyticsView = ({ transactions = [], accounts = [], debts = [], savingsGoals = [], hideBalance, customCategories = [] }) => {
       const [trendMode, setTrendMode] = useState('MONTHLY'); // MONTHLY (last 6 months) | YEARLY
       const [selectedCatId, setSelectedCatId] = useState(null);
       const safeTxs = Array.isArray(transactions) ? transactions : [];
@@ -316,7 +316,7 @@ PART7_VIEWS = """
         });
 
         const list = Object.entries(map).map(([catId, amount], idx) => {
-          const catInfo = CATEGORIES.find(c => c.id === catId) || { label: catId, icon: 'tag' };
+          const catInfo = getCategoryById(catId, customCategories);
           const pct = sum > 0 ? Math.round((amount / sum) * 100) : 0;
           return {
             id: catId,
@@ -332,7 +332,7 @@ PART7_VIEWS = """
           categoryBreakdown: list.sort((a, b) => b.amount - a.amount),
           totalExpense: sum
         };
-      }, [safeTxs]);
+      }, [safeTxs, customCategories]);
 
       // Donut Chart SVG Segments
       const donutSegments = useMemo(() => {

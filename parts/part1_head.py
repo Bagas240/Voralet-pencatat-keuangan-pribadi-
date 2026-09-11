@@ -214,18 +214,20 @@ HTML_HEAD = """<!DOCTYPE html>
 
     /* Tactile Touch Animation (SwiftUI Bouncy Spring Compression) */
     .ios-btn-tap, .ios-touch-item {
-      transition: transform 150ms ease-out, opacity 150ms ease-out;
+      transition: transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 150ms ease-out;
       user-select: none;
       -webkit-user-select: none;
+      will-change: transform;
     }
     .ios-btn-tap:active, .ios-touch-item:active {
       transform: scale3d(0.94, 0.94, 1) !important;
       opacity: 0.86;
     }
     .ios-card-tap {
-      transition: transform 150ms ease-out, opacity 150ms ease-out;
+      transition: transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 150ms ease-out;
       user-select: none;
       -webkit-user-select: none;
+      will-change: transform;
     }
     .ios-card-tap:active {
       transform: scale3d(0.96, 0.96, 1) !important;
