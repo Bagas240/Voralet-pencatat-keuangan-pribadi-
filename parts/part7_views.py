@@ -381,7 +381,7 @@ PART7_VIEWS = """
           if (d.type === 'HUTANG') totalHutang += amt;
           else if (d.type === 'PIUTANG') totalPiutang += amt;
 
-          if (d.status === 'LUNAS') {
+          if (d.status === 'LUNAS' || d.isPaid) {
             settledCount++;
             settledAmount += amt;
           } else {
@@ -795,7 +795,7 @@ PART7_VIEWS = """
       const [isAdding, setIsAdding] = useState(false);
       const [editingAcc, setEditingAcc] = useState(null);
       const [name, setName] = useState('');
-      const [type, setType] = useState('BANK');
+      const [type, setType] = useState('Bank');
       const [initialBalance, setInitialBalance] = useState('');
       const [color, setColor] = useState('#0284C7');
       const [expandedCardId, setExpandedCardId] = useState(null);
@@ -814,7 +814,7 @@ PART7_VIEWS = """
         if (e) e.stopPropagation();
         setEditingAcc(acc);
         setName(acc.name || '');
-        setType(acc.type || 'BANK');
+        setType(acc.type || 'Bank');
         setInitialBalance(String(acc.initialBalance || '0'));
         setColor(acc.color || '#0284C7');
         setIsAdding(true);
@@ -865,7 +865,7 @@ PART7_VIEWS = """
                 onClick={() => {
                   setEditingAcc(null);
                   setName('');
-                  setType('BANK');
+                  setType('Bank');
                   setInitialBalance('');
                   setColor('#0284C7');
                   setIsAdding(true);
@@ -946,9 +946,10 @@ PART7_VIEWS = """
                     onChange={(e) => setType(e.target.value)}
                     className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none focus:border-[#0284C7]"
                   >
-                    <option value="BANK">Rekening Bank</option>
-                    <option value="EWALLET">E-Wallet</option>
-                    <option value="CASH">Kas Tunai</option>
+                    <option value="Bank">Rekening Bank</option>
+                    <option value="E-Wallet">E-Wallet</option>
+                    <option value="Cash">Kas Tunai</option>
+                    <option value="Investasi">Investasi</option>
                   </select>
                 </div>
 
@@ -995,8 +996,12 @@ PART7_VIEWS = """
               safeAccounts.map((acc) => {
                 const bal = Ledger.getAccountBalance(acc.id, safeAccounts, safeTransactions);
                 const isExpanded = expandedCardId === acc.id;
-                const iconName = acc.type === 'CASH' ? 'cash' : acc.type === 'EWALLET' ? 'smartphone' : 'bank';
-                const typeLabel = acc.type === 'CASH' ? 'Kas Tunai' : acc.type === 'EWALLET' ? 'E-Wallet' : 'Rekening Bank';
+                const normType = String(acc.type || '').toUpperCase();
+                const isCash = normType === 'CASH' || normType === 'TUNAI';
+                const isEWallet = normType.includes('WALLET') || normType === 'EWALLET';
+                const isInvest = normType === 'INVESTASI';
+                const iconName = isCash ? 'cash' : isEWallet ? 'smartphone' : isInvest ? 'award' : 'bank';
+                const typeLabel = isCash ? 'Kas Tunai' : isEWallet ? 'E-Wallet' : isInvest ? 'Investasi' : 'Rekening Bank';
 
                 // Get last 4 mutations for this account
                 const accountTxs = safeTransactions
@@ -1127,6 +1132,9 @@ PART7_VIEWS = """
     // =========================================================================
     // 8. FLOATING CAPSULE NAVIGATION (ICON-ONLY 5 TABS WITH TOUCH DRAG MECHANICS)
     // =========================================================================
+    // =========================================================================
+    // 8. FLOATING CAPSULE NAVIGATION (ICON-ONLY 5 TABS WITH FLUID iOS DRAG & DUAL MASK)
+    // =========================================================================
     const FloatingCapsuleNav = ({ currentTab, onSelectTab }) => {
       const tabs = [
         { id: 'dashboard', label: 'Ringkasan', icon: 'home' },
@@ -1137,90 +1145,283 @@ PART7_VIEWS = """
       ];
 
       const navRef = useRef(null);
-      const isDragging = useRef(false);
+      const isDraggingRef = useRef(false);
       const activeIndex = Math.max(0, tabs.findIndex(t => t.id === currentTab));
 
-      const updateTabFromCoord = (clientX) => {
+      // Continuous float position for real-time drag (0.0 to 4.0)
+      const [dragPos, setDragPos] = useState(activeIndex);
+      const [isDragging, setIsDragging] = useState(false);
+
+      // Sync dragPos with activeIndex when not actively dragging
+      useEffect(() => {
+        if (!isDraggingRef.current) {
+          setDragPos(activeIndex);
+        }
+      }, [activeIndex]);
+
+      const updatePosFromCoord = (clientX) => {
         if (!navRef.current) return;
         const rect = navRef.current.getBoundingClientRect();
-        const relX = clientX - rect.left;
-        const fraction = Math.max(0, Math.min(0.999, relX / rect.width));
-        const tabIndex = Math.floor(fraction * tabs.length);
-        if (tabs[tabIndex] && tabs[tabIndex].id !== currentTab) {
-          onSelectTab(tabs[tabIndex].id);
+        const padding = 6;
+        const availableW = rect.width - (padding * 2);
+        const relX = clientX - (rect.left + padding);
+        const fraction = Math.max(0, Math.min(0.9999, relX / availableW));
+        const continuousPos = fraction * tabs.length;
+        setDragPos(continuousPos);
+      };
+
+      const handlePointerDown = (clientX) => {
+        isDraggingRef.current = true;
+        setIsDragging(true);
+        if (window.VoraletHaptics) window.VoraletHaptics.tap();
+        else if (window.navigator?.vibrate) window.navigator.vibrate(10);
+        updatePosFromCoord(clientX);
+      };
+
+      const handlePointerMove = (clientX) => {
+        if (!isDraggingRef.current) return;
+        updatePosFromCoord(clientX);
+      };
+
+      const handlePointerUp = () => {
+        if (!isDraggingRef.current) return;
+        isDraggingRef.current = false;
+        setIsDragging(false);
+
+        // Snap to nearest tab
+        const finalIdx = Math.max(0, Math.min(tabs.length - 1, Math.round(dragPos - 0.5)));
+        setDragPos(finalIdx);
+        if (tabs[finalIdx] && tabs[finalIdx].id !== currentTab) {
+          onSelectTab(tabs[finalIdx].id);
+          if (window.VoraletHaptics) window.VoraletHaptics.tap();
+          else if (window.navigator?.vibrate) window.navigator.vibrate(15);
         }
       };
 
-      const handleTouchStart = (e) => {
-        if (!e.touches || e.touches.length === 0) return;
-        isDragging.current = true;
-        updateTabFromCoord(e.touches[0].clientX);
-      };
-
-      const handleTouchMove = (e) => {
-        if (!isDragging.current || !e.touches || e.touches.length === 0) return;
-        updateTabFromCoord(e.touches[0].clientX);
-      };
-
-      const handleTouchEnd = () => {
-        isDragging.current = false;
-      };
-
-      const handleMouseDown = (e) => {
-        isDragging.current = true;
-        updateTabFromCoord(e.clientX);
-      };
-
-      const handleMouseMove = (e) => {
-        if (!isDragging.current) return;
-        updateTabFromCoord(e.clientX);
-      };
-
-      const handleMouseUp = () => {
-        isDragging.current = false;
-      };
+      const currentPos = isDragging ? Math.max(0, Math.min(tabs.length - 1, dragPos - 0.5)) : activeIndex;
+      const pillLeftPercent = (currentPos / tabs.length) * 100;
+      const pillWidthPercent = 100 / tabs.length;
 
       return (
         <nav
           ref={navRef}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          className="fixed bottom-5 left-0 right-0 z-50 w-[92%] max-w-[360px] h-14 mx-auto rounded-full bg-[#FFFFFF] dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155] shadow-[0_12px_32px_rgba(15,23,42,0.18)] dark:shadow-[0_16px_36px_rgba(0,0,0,0.6)] flex items-center p-1.5 select-none touch-none"
+          onTouchStart={(e) => { if (e.touches?.[0]) handlePointerDown(e.touches[0].clientX); }}
+          onTouchMove={(e) => { if (e.touches?.[0]) handlePointerMove(e.touches[0].clientX); }}
+          onTouchEnd={handlePointerUp}
+          onTouchCancel={handlePointerUp}
+          onMouseDown={(e) => handlePointerDown(e.clientX)}
+          onMouseMove={(e) => handlePointerMove(e.clientX)}
+          onMouseUp={handlePointerUp}
+          onMouseLeave={() => { if (isDraggingRef.current) handlePointerUp(); }}
+          className="fixed bottom-5 left-0 right-0 z-50 w-[92%] max-w-[360px] h-14 mx-auto rounded-full bg-[#FFFFFF] dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155] shadow-[0_12px_32px_rgba(15,23,42,0.18)] dark:shadow-[0_16px_36px_rgba(0,0,0,0.6)] select-none touch-none overflow-hidden p-1.5"
+          style={{ willChange: 'transform' }}
         >
-          {/* Active Sliding Pill - Smooth Apple Spring Curve */}
-          <div
-            className="absolute top-1.5 bottom-1.5 rounded-full bg-[#0284C7] dark:bg-[#38BDF8] shadow-sm pointer-events-none transition-all duration-300"
-            style={{
-              left: `calc(${activeIndex * 20}% + 3px)`,
-              width: 'calc(20% - 6px)',
-              transitionTimingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)'
-            }}
-          />
+          {/* Inner relative container for precise pixel positioning */}
+          <div className="relative w-full h-full">
 
-          {tabs.map((t, idx) => {
-            const isActive = idx === activeIndex;
-            return (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => onSelectTab(t.id)}
-                title={t.label}
-                aria-label={t.label}
-                className="flex-1 h-full relative z-10 flex items-center justify-center rounded-full transition-colors duration-200 ios-btn-tap"
-              >
-                <Icon
-                  name={t.icon}
-                  className={`w-5 h-5 flex-shrink-0 aspect-square ${isActive ? 'text-white dark:text-[#0F172A]' : 'text-slate-500 dark:text-slate-400'}`}
-                  strokeWidth={isActive ? 2.4 : 1.8}
+            {/* BASE LAYER: Inactive Grey / Slate Icons */}
+            <div className="absolute inset-0 flex items-center justify-around pointer-events-none">
+              {tabs.map((t) => (
+                <div
+                  key={t.id}
+                  className="flex-1 h-full flex items-center justify-center text-slate-400 dark:text-slate-500"
+                >
+                  <Icon
+                    name={t.icon}
+                    className="w-5 h-5 flex-shrink-0 aspect-square"
+                    strokeWidth={1.8}
+                  />
+                </div>
+              ))}
+            </div>
+
+            {/* SLIDING PILL BACKGROUND - Smooth spring when releasing, instantaneous when dragging */}
+            <div
+              className={`absolute top-0 bottom-0 rounded-full bg-[#0284C7] dark:bg-[#38BDF8] shadow-sm pointer-events-none ${
+                isDragging ? 'transition-none' : 'transition-all duration-300'
+              }`}
+              style={{
+                left: `${pillLeftPercent}%`,
+                width: `${pillWidthPercent}%`,
+                transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)'
+              }}
+            />
+
+            {/* TOP MASKED LAYER: Brilliant White Icons revealed EXACTLY where the pill is */}
+            <div
+              className={`absolute inset-0 pointer-events-none overflow-hidden ${
+                isDragging ? 'transition-none' : 'transition-all duration-300'
+              }`}
+              style={{
+                clipPath: `inset(0 ${Math.max(0, 100 - (pillLeftPercent + pillWidthPercent))}% 0 ${pillLeftPercent}% round 9999px)`,
+                WebkitClipPath: `inset(0 ${Math.max(0, 100 - (pillLeftPercent + pillWidthPercent))}% 0 ${pillLeftPercent}% round 9999px)`,
+                transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)'
+              }}
+            >
+              <div className="w-full h-full flex items-center justify-around">
+                {tabs.map((t) => (
+                  <div
+                    key={t.id}
+                    className="flex-1 h-full flex items-center justify-center text-white dark:text-[#0F172A]"
+                  >
+                    <Icon
+                      name={t.icon}
+                      className="w-5 h-5 flex-shrink-0 aspect-square"
+                      strokeWidth={2.4}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* CLICKABLE HIT TARGETS - 48x48dp touch accessibility */}
+            <div className="absolute inset-0 flex items-center justify-around z-20">
+              {tabs.map((t, idx) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => {
+                    setDragPos(idx);
+                    onSelectTab(t.id);
+                  }}
+                  title={t.label}
+                  aria-label={t.label}
+                  className="flex-1 h-full flex items-center justify-center rounded-full ios-btn-tap focus:outline-none cursor-pointer"
                 />
-              </button>
-            );
-          })}
+              ))}
+            </div>
+
+          </div>
         </nav>
+      );
+    };
+
+    // =========================================================================
+    // 9. NON-INTRUSIVE SKIPPABLE ONBOARDING TUTORIAL MODAL
+    // =========================================================================
+    const NonIntrusiveTutorialModal = ({ isOpen, onDismiss }) => {
+      const [step, setStep] = useState(0);
+
+      const tutorialSteps = [
+        {
+          title: 'Selamat Datang di Voralet!',
+          desc: 'Brankas keuangan pribadi yang 100% offline, terenkripsi, dan dirancang elegan dengan sensasi iOS.',
+          icon: 'shield-check',
+          badge: 'v2.3.0 Private Vault',
+          color: 'from-sky-500 to-blue-600',
+          detail: 'Semua mutasi, kantong, dan impian Anda tersimpan secara lokal dan aman di perangkat ini.'
+        },
+        {
+          title: 'Kantong Terpisah & Multi-Akun',
+          desc: 'Kelola dompet fisik, rekening bank, e-wallet, atau pos pengeluaran dalam tab Kantong Keuangan.',
+          icon: 'credit-card',
+          badge: 'Tab Kantong',
+          color: 'from-blue-600 to-indigo-600',
+          detail: 'Setiap kantong memiliki riwayat saldo mandiri sehingga arus kas Anda selalu tertib.'
+        },
+        {
+          title: 'Navigasi Fluid & Geser Halus',
+          desc: 'Sentuh atau tahan lalu geser kapsul navigasi di bagian bawah layar untuk beralih menu secepat kilat.',
+          icon: 'navigation',
+          badge: 'iOS Gestures',
+          color: 'from-indigo-500 to-purple-600',
+          detail: 'Efek visual masking interaktif akan mengikuti gerakan jari Anda secara real-time.'
+        },
+        {
+          title: 'Cadangan Terenkripsi Ultra-Aman',
+          desc: 'Unduh file cadangan brankas terenkripsi dengan perlindungan kode master 2006 / 2026.',
+          icon: 'lock',
+          badge: 'Enkripsi Penuh',
+          color: 'from-emerald-500 to-teal-600',
+          detail: 'Data tidak dapat dibaca oleh pihak ketiga tanpa verifikasi aplikasi Voralet asli.'
+        }
+      ];
+
+      if (!isOpen) return null;
+
+      const current = tutorialSteps[step];
+      const isLast = step === tutorialSteps.length - 1;
+
+      const handleSkip = () => {
+        if (window.VoraletHaptics) window.VoraletHaptics.tap();
+        onDismiss();
+      };
+
+      const handleNext = () => {
+        if (window.VoraletHaptics) window.VoraletHaptics.tap();
+        if (isLast) {
+          onDismiss();
+        } else {
+          setStep(s => s + 1);
+        }
+      };
+
+      return (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-ios-backdrop">
+          <div className="w-full max-w-sm bg-white dark:bg-slate-800 rounded-3xl shadow-[0_20px_50px_rgba(15,23,42,0.25)] border border-slate-200/80 dark:border-slate-700 p-5 space-y-4 animate-ios-sheet">
+            
+            {/* Header with Skip Pill Button */}
+            <div className="flex items-center justify-between">
+              <span className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full bg-sky-50 dark:bg-slate-700/80 text-[#0284C7] dark:text-[#38BDF8] border border-sky-100 dark:border-slate-600">
+                {current.badge}
+              </span>
+              <button
+                type="button"
+                onClick={handleSkip}
+                className="text-xs font-semibold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 px-2 py-1 rounded-lg ios-btn-tap"
+              >
+                Lewati (Skip)
+              </button>
+            </div>
+
+            {/* Icon Graphic */}
+            <div className="flex items-center gap-3.5 pt-1">
+              <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${current.color} text-white flex items-center justify-center shadow-md flex-shrink-0`}>
+                <Icon name={current.icon} className="w-6 h-6" strokeWidth={2.2} />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+                  {current.title}
+                </h3>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                  Langkah {step + 1} dari {tutorialSteps.length}
+                </p>
+              </div>
+            </div>
+
+            {/* Description Text */}
+            <div className="p-3 bg-slate-50 dark:bg-slate-900/70 rounded-2xl border border-slate-100 dark:border-slate-700/80 text-xs text-slate-600 dark:text-slate-300 space-y-1">
+              <p className="font-medium leading-relaxed">{current.desc}</p>
+              <p className="text-[11px] text-slate-400 dark:text-slate-500 leading-normal">{current.detail}</p>
+            </div>
+
+            {/* Progress Indicators & Action Buttons */}
+            <div className="flex items-center justify-between pt-1">
+              {/* Dots */}
+              <div className="flex items-center gap-1.5">
+                {tutorialSteps.map((_, idx) => (
+                  <span
+                    key={idx}
+                    className={`h-1.5 rounded-full transition-all duration-300 ${
+                      idx === step ? 'w-5 bg-[#0284C7] dark:bg-[#38BDF8]' : 'w-1.5 bg-slate-300 dark:bg-slate-600'
+                    }`}
+                  />
+                ))}
+              </div>
+
+              {/* Next / Selesai Button */}
+              <button
+                type="button"
+                onClick={handleNext}
+                className="px-4 py-2 bg-[#0284C7] hover:bg-[#0369A1] dark:bg-[#38BDF8] dark:hover:bg-[#0284C7] text-white dark:text-[#0F172A] text-xs font-bold rounded-xl shadow-sm ios-btn-tap flex items-center gap-1.5"
+              >
+                <span>{isLast ? 'Mulai Pakai' : 'Lanjut'}</span>
+                <Icon name="chevron-right" className="w-3.5 h-3.5" strokeWidth={2.5} />
+              </button>
+            </div>
+
+          </div>
+        </div>
       );
     };
 """

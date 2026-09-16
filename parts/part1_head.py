@@ -411,54 +411,167 @@ HTML_HEAD = """<!DOCTYPE html>
       will-change: transform, opacity;
     }
 
-    /* iOS Bottom Sheet Animations */
+    /* iOS Modal & Sheet Keyframes (Fluid Apple HIG Physics) */
     @keyframes iosSheetEnter {
-      0% { transform: translate3d(0, 100%, 0); }
-      100% { transform: translate3d(0, 0, 0); }
+      0% {
+        transform: translate3d(0, 100%, 0);
+        opacity: 0.85;
+      }
+      100% {
+        transform: translate3d(0, 0, 0);
+        opacity: 1;
+      }
     }
     @keyframes iosSheetExit {
-      0% { transform: translate3d(0, 0, 0); }
-      100% { transform: translate3d(0, 100%, 0); }
+      0% {
+        transform: translate3d(0, 0, 0);
+        opacity: 1;
+      }
+      100% {
+        transform: translate3d(0, 100%, 0);
+        opacity: 0.85;
+      }
     }
     @keyframes iosBackdropFadeIn {
-      0% { opacity: 0; }
-      100% { opacity: 1; }
+      0% { opacity: 0; backdrop-filter: blur(0px); -webkit-backdrop-filter: blur(0px); }
+      100% { opacity: 1; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
     }
     @keyframes iosBackdropFadeOut {
-      0% { opacity: 1; }
-      100% { opacity: 0; }
+      0% { opacity: 1; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+      100% { opacity: 0; backdrop-filter: blur(0px); -webkit-backdrop-filter: blur(0px); }
     }
     .animate-ios-sheet {
-      animation: iosSheetEnter 0.35s cubic-bezier(0.32, 0.72, 0, 1) forwards;
-      will-change: transform;
+      animation: iosSheetEnter 0.42s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      will-change: transform, opacity;
     }
     .animate-ios-sheet-exit {
-      animation: iosSheetExit 0.25s cubic-bezier(0.32, 0.72, 0, 1) forwards;
-      will-change: transform;
+      animation: iosSheetExit 0.28s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+      will-change: transform, opacity;
     }
     .animate-ios-backdrop {
-      animation: iosBackdropFadeIn 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+      animation: iosBackdropFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       will-change: opacity;
     }
     .animate-ios-backdrop-exit {
-      animation: iosBackdropFadeOut 0.22s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+      animation: iosBackdropFadeOut 0.25s cubic-bezier(0.32, 0.72, 0, 1) forwards;
       will-change: opacity;
     }
 
-    /* iOS Page View Transition Animation */
-    @keyframes iosTabFadeIn {
+    /* iOS Navigation & Tab Slide View Transitions (Fluid Apple HIG Physics) */
+    @keyframes iosTabSlideForward {
       0% {
         opacity: 0;
-        transform: translate3d(0, 10px, 0) scale(0.985);
+        transform: translate3d(38px, 0, 0) scale(0.986);
       }
       100% {
         opacity: 1;
         transform: translate3d(0, 0, 0) scale(1);
       }
     }
+    @keyframes iosTabSlideBackward {
+      0% {
+        opacity: 0;
+        transform: translate3d(-38px, 0, 0) scale(0.986);
+      }
+      100% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1);
+      }
+    }
+    @keyframes iosTabFadeIn {
+      0% {
+        opacity: 0;
+        transform: translate3d(0, 12px, 0) scale(0.986);
+      }
+      100% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1);
+      }
+    }
+    .animate-ios-tab-slide-forward {
+      animation: iosTabSlideForward 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      will-change: transform, opacity;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+    .animate-ios-tab-slide-backward {
+      animation: iosTabSlideBackward 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      will-change: transform, opacity;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
     .animate-ios-tab-view {
-      animation: iosTabFadeIn 0.28s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-      will-change: opacity, transform;
+      animation: iosTabFadeIn 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      will-change: transform, opacity;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+
+    /* Transaction List Layout Animations */
+    @keyframes txSlideIn {
+      0% {
+        opacity: 0;
+        transform: translate3d(0, -22px, 0) scale(0.97);
+        max-height: 0px;
+        background-color: rgba(2, 132, 199, 0.12);
+      }
+      50% {
+        opacity: 0.9;
+        transform: translate3d(0, 1px, 0) scale(1.004);
+        background-color: rgba(2, 132, 199, 0.06);
+      }
+      100% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1);
+        max-height: 120px;
+        background-color: transparent;
+      }
+    }
+    .animate-tx-slide-in {
+      animation: txSlideIn 0.42s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      overflow: hidden;
+      will-change: transform, opacity, max-height;
+    }
+
+    @keyframes txFadeOut {
+      0% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1);
+        max-height: 85px;
+        margin-bottom: 0px;
+      }
+      40% {
+        opacity: 0.15;
+        transform: translate3d(0, -4px, 0) scale(0.97);
+      }
+      100% {
+        opacity: 0;
+        transform: translate3d(0, -12px, 0) scale(0.92);
+        max-height: 0px;
+        padding-top: 0px;
+        padding-bottom: 0px;
+        margin-top: 0px;
+        margin-bottom: 0px;
+        border-width: 0px;
+      }
+    }
+    .animate-tx-fade-out {
+      animation: txFadeOut 0.32s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+      pointer-events: none;
+      overflow: hidden;
+      will-change: opacity, transform, max-height;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .animate-tx-slide-in,
+      .animate-tx-fade-out,
+      .animate-ios-tab-slide-forward,
+      .animate-ios-tab-slide-backward,
+      .animate-ios-tab-view {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transform: none !important;
+      }
     }
 
     /* iOS Spring Banner Toast */

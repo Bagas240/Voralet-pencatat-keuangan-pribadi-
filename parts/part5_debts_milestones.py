@@ -146,7 +146,7 @@ PART5_DEBTS_MILESTONES = """
       const milestones = useMemo(() => {
         const txCount = (transactions || []).length;
         const activeGoalsCount = (savingsGoals || []).length;
-        const unpaidDebts = (debts || []).filter(d => d.status !== 'LUNAS' && d.type === 'HUTANG').length;
+        const unpaidDebts = (debts || []).filter(d => !d.isPaid && d.status !== 'LUNAS' && d.type === 'HUTANG').length;
 
         return [
           {
@@ -453,7 +453,8 @@ PART5_DEBTS_MILESTONES = """
         let totalHutang = 0;
         let totalPiutang = 0;
         safeDebts.forEach(d => {
-          if (d.status !== 'LUNAS') {
+          const isSettled = d.isPaid || d.status === 'LUNAS';
+          if (!isSettled) {
             const amt = Number(d.amount) || 0;
             if (d.type === 'HUTANG') totalHutang += amt;
             else totalPiutang += amt;
@@ -579,17 +580,17 @@ PART5_DEBTS_MILESTONES = """
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-bold text-slate-900 dark:text-white">{item.personName}</span>
                         <span className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full ${
-                          item.status === 'LUNAS'
+                          (item.isPaid || item.status === 'LUNAS')
                             ? 'bg-slate-100 dark:bg-slate-700 text-slate-500'
                             : item.type === 'HUTANG'
                               ? 'bg-rose-100 dark:bg-rose-900/50 text-rose-700 dark:text-rose-300'
                               : 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300'
                         }`}>
-                          {item.status === 'LUNAS' ? 'LUNAS' : item.type === 'HUTANG' ? 'HUTANG' : 'PIUTANG'}
+                          {(item.isPaid || item.status === 'LUNAS') ? 'LUNAS' : item.type === 'HUTANG' ? 'HUTANG' : 'PIUTANG'}
                         </span>
                       </div>
                       <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                        {item.notes ? item.notes : 'Tanpa keterangan'}
+                        {item.notes || item.note || 'Tanpa keterangan'}
                         {item.dueDate && ` • Tempo: ${formatDateID(item.dueDate)}`}
                       </div>
                     </div>
@@ -607,9 +608,20 @@ PART5_DEBTS_MILESTONES = """
                         onClick={() => onToggleStatus(item.id)}
                         className="text-[10px] font-semibold text-brand dark:text-sky-400 hover:underline"
                       >
-                        {item.status === 'LUNAS' ? 'Tandai Belum' : 'Tandai Lunas'}
+                        {(item.isPaid || item.status === 'LUNAS') ? 'Tandai Belum' : 'Tandai Lunas'}
                       </button>
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedDebt(item);
+                        setIsModalOpen(true);
+                      }}
+                      className="p-1.5 text-slate-400 hover:text-brand rounded-lg ios-btn-tap"
+                      title="Edit"
+                    >
+                      <Icon name="edit" className="w-4 h-4" />
+                    </button>
                     <button
                       type="button"
                       onClick={() => onDeleteDebt(item.id)}

@@ -11,7 +11,10 @@ PART8_APP = """
       hideBalance,
       onDelete,
       onEdit,
-      onDuplicate
+      onDuplicate,
+      isNewlyAdded = false,
+      isDeleting = false,
+      onClearNewlyAdded
     }) => {
       const [offsetX, setOffsetX] = useState(0);
       const [isDragging, setIsDragging] = useState(false);
@@ -64,7 +67,16 @@ PART8_APP = """
       };
 
       return (
-        <div className="relative overflow-hidden select-none">
+        <div
+          className={`relative overflow-hidden select-none transition-all duration-300 ease-out ${
+            isNewlyAdded ? 'animate-tx-slide-in rounded-2xl' : ''
+          } ${isDeleting ? 'animate-tx-fade-out' : ''}`}
+          onAnimationEnd={(e) => {
+            if (e.target === e.currentTarget && isNewlyAdded && onClearNewlyAdded) {
+              onClearNewlyAdded(tx.id);
+            }
+          }}
+        >
           {/* Background Swipe Actions */}
           <div className="absolute inset-0 flex items-center justify-between pointer-events-auto">
             {/* Swipe Right Action: Edit */}
@@ -162,7 +174,7 @@ PART8_APP = """
 
           {/* Contextual Long-Press / More Menu */}
           <ContextualMenuModal
-            isOpen={isMenuOpen}
+            isOpen={isMenuOpen && !isDeleting}
             title={`${cat.label} - ${formatIDR(tx.amount)}`}
             onClose={() => setIsMenuOpen(false)}
             onEdit={() => onEdit(tx)}
@@ -200,7 +212,10 @@ PART8_APP = """
       onSelectQuickExpense,
       customCategories = [],
       onSelectTab,
-      onOpenCsvImport
+      onOpenCsvImport,
+      deletingTxIds = new Set(),
+      newlyAddedTxIds = new Set(),
+      onClearNewlyAddedTx
     }) => {
       const [searchQuery, setSearchQuery] = useState('');
       const [filterType, setFilterType] = useState('ALL'); // ALL | EXPENSE | INCOME
@@ -306,7 +321,7 @@ PART8_APP = """
       }, [safeTransactions, filterType, selectedAccountFilter, selectedCategoryFilter, startDate, endDate, searchQuery, allCategories]);
 
       return (
-        <div className="space-y-4 pb-28 animate-ios-tab-view">
+        <div className="space-y-4 pb-28">
           {/* iOS Profile Header Bar - Compact & Natural without elongated box */}
           <div className="flex items-center justify-between pt-1">
             <div
@@ -412,93 +427,6 @@ PART8_APP = """
                 <span className="text-[10px] text-rose-100 block font-medium">- Catat Belanja</span>
               </div>
             </button>
-          </div>
-
-          {/* Kelola Kantong - Simplified Flat Pocket Cards */}
-          <div className="ios-inset-group">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-sky-100 dark:bg-slate-700 text-brand dark:text-sky-300 flex items-center justify-center shadow-xs">
-                  <Icon name="credit-card" className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-xs font-bold text-slate-900 dark:text-white">Kantong Keuangan</h3>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400">Rekening bank, e-wallet, dan kas tunai</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => onSelectTab ? onSelectTab('cards') : onOpenAccounts()}
-                className="px-2.5 py-1 bg-sky-50 dark:bg-slate-700 text-brand dark:text-sky-300 text-[11px] font-bold rounded-xl flex items-center gap-1 border border-sky-200/60 dark:border-slate-600 hover:bg-sky-100 dark:hover:bg-slate-600 transition-colors ios-btn-tap"
-              >
-                <span>Kelola Semua</span>
-                <Icon name="chevron-right" className="w-3.5 h-3.5" />
-              </button>
-            </div>
-
-            {/* Simplified Pocket Cards on Dashboard */}
-            {safeAccounts.length === 0 ? (
-              <button
-                type="button"
-                onClick={() => onSelectTab ? onSelectTab('cards') : onOpenAccounts()}
-                className="w-full py-4 px-3 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-600 dark:text-slate-400 flex items-center justify-center gap-2 ios-btn-tap"
-              >
-                <Icon name="plus" className="w-4 h-4 text-brand" />
-                <span>+ Buat Kantong Baru</span>
-              </button>
-            ) : (
-              <div className="space-y-2.5">
-                {safeAccounts.slice(0, 3).map((acc) => {
-                  const bal = accountBalancesMap.get(acc.id) ?? 0;
-                  const iconName = (acc.type === 'CASH' || acc.type === 'Cash') ? 'cash' : (acc.type === 'EWALLET' || acc.type === 'E-Wallet') ? 'smartphone' : 'bank';
-                  const typeLabel = (acc.type === 'CASH' || acc.type === 'Cash') ? 'Kas Tunai' : (acc.type === 'EWALLET' || acc.type === 'E-Wallet') ? 'E-Wallet' : 'Rekening Bank';
-                  const maskedNumber = (acc.accountNumber && String(acc.accountNumber).trim())
-                    ? `•••• ${String(acc.accountNumber).replace(/\s/g, '').slice(-4)}`
-                    : `•••• ${String(acc.id || '8829').replace(/\D/g, '').slice(-4) || '8829'}`;
-
-                  return (
-                    <div
-                      key={acc.id}
-                      onClick={() => onSelectTab ? onSelectTab('cards') : onOpenAccounts()}
-                      className="relative w-full rounded-2xl bg-[#0284C7] dark:bg-[#0369A1] p-3.5 text-white shadow-sm flex flex-col justify-between cursor-pointer ios-card-tap select-none"
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2.5 min-w-0 pr-2">
-                          <div className="w-8 h-8 rounded-xl bg-white/20 border border-white/25 flex items-center justify-center text-white shrink-0">
-                            <Icon name={iconName} className="w-4 h-4" />
-                          </div>
-                          <div className="min-w-0">
-                            <span className="text-[9px] font-bold uppercase tracking-wider text-sky-100 block">
-                              {typeLabel}
-                            </span>
-                            <h4 className="text-xs sm:text-sm font-extrabold text-white truncate">
-                              {acc.name}
-                            </h4>
-                          </div>
-                        </div>
-
-                        <div className="px-2 py-0.5 rounded-md bg-white/15 border border-white/20 text-[9px] font-mono font-bold text-sky-100 shrink-0">
-                          {maskedNumber}
-                        </div>
-                      </div>
-
-                      <div className="pt-2 border-t border-white/15 flex items-end justify-between">
-                        <div>
-                          <span className="text-[8px] uppercase tracking-wider text-sky-200 block">Saldo</span>
-                          <div className="text-xs sm:text-sm font-black text-white">
-                            {hideBalance ? 'Rp ••••••••' : formatIDR(bal)}
-                          </div>
-                        </div>
-                        <span className="text-[10px] text-sky-100 font-semibold flex items-center gap-0.5">
-                          <span>Detail</span>
-                          <Icon name="chevron-right" className="w-3 h-3" />
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
           </div>
 
           {/* Safe-to-Spend Indicator */}
@@ -844,6 +772,9 @@ PART8_APP = """
                       onDelete={onDeleteTx}
                       onEdit={onEditTx}
                       onDuplicate={onDuplicateTx}
+                      isNewlyAdded={newlyAddedTxIds ? newlyAddedTxIds.has(tx.id) : false}
+                      isDeleting={deletingTxIds ? deletingTxIds.has(tx.id) : false}
+                      onClearNewlyAdded={onClearNewlyAddedTx}
                     />
                   );
                 })}
@@ -877,6 +808,19 @@ PART8_APP = """
       const [activeTab, setActiveTab] = useState('dashboard'); // dashboard | debts | savings | analytics
       const [toastMsg, setToastMsg] = useState('');
 
+      // Layout animation state tracking
+      const [deletingTxIds, setDeletingTxIds] = useState(() => new Set());
+      const [newlyAddedTxIds, setNewlyAddedTxIds] = useState(() => new Set());
+
+      const handleClearNewlyAddedTx = useCallback((txId) => {
+        setNewlyAddedTxIds(prev => {
+          if (!prev.has(txId)) return prev;
+          const next = new Set(prev);
+          next.delete(txId);
+          return next;
+        });
+      }, []);
+
       // Modals
       const [isTxModalOpen, setIsTxModalOpen] = useState(false);
       const [txModalInitial, setTxModalInitial] = useState(null);
@@ -887,6 +831,25 @@ PART8_APP = """
       const [isDebtModalOpen, setIsDebtModalOpen] = useState(false);
       const [isDevModalOpen, setIsDevModalOpen] = useState(false);
       const [isCsvImportModalOpen, setIsCsvImportModalOpen] = useState(false);
+      const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+
+      // Auto-trigger tutorial on first run once unlocked
+      useEffect(() => {
+        if (isUnlocked) {
+          const completed = StorageService.getTutorialCompleted();
+          if (!completed) {
+            const timer = setTimeout(() => {
+              setIsTutorialOpen(true);
+            }, 600);
+            return () => clearTimeout(timer);
+          }
+        }
+      }, [isUnlocked]);
+
+      const handleDismissTutorial = useCallback(() => {
+        setIsTutorialOpen(false);
+        StorageService.setTutorialCompleted(true);
+      }, []);
 
       const showToast = useCallback((msg) => {
         setToastMsg(msg);
@@ -990,16 +953,32 @@ PART8_APP = """
       }, []);
 
       const handleAddTransaction = useCallback((newTx) => {
+        let isNew = false;
         setTransactions(prev => {
           const exists = prev.some(t => t.id === newTx.id);
+          isNew = !exists;
           const next = exists
             ? prev.map(t => t.id === newTx.id ? newTx : t)
             : [newTx, ...prev];
           StorageService.setTransactions(next);
           return next;
         });
-        showToast('Transaksi berhasil dicatat');
-      }, []);
+
+        // Trigger layout slide-in animation for newly added transaction
+        if (isNew) {
+          setNewlyAddedTxIds(prev => {
+            const next = new Set(prev);
+            next.add(newTx.id);
+            return next;
+          });
+          // Fallback auto-clear after 1.2s in case animationend does not fire
+          setTimeout(() => {
+            handleClearNewlyAddedTx(newTx.id);
+          }, 1200);
+        }
+
+        showToast(isNew ? 'Transaksi berhasil dicatat' : 'Transaksi diperbarui');
+      }, [handleClearNewlyAddedTx, showToast]);
 
       const handleImportBatchTransactions = useCallback((newTxs) => {
         if (!Array.isArray(newTxs) || newTxs.length === 0) return;
@@ -1008,18 +987,49 @@ PART8_APP = """
           StorageService.setTransactions(combined);
           return combined;
         });
-        showToast(`Berhasil mengimpor ${newTxs.length} mutasi baru!`);
-      }, [showToast]);
 
-      const handleDeleteTransaction = useCallback((txId) => {
-        if (!confirm('Hapus mutasi ini?')) return;
-        setTransactions(prev => {
-          const next = prev.filter(t => t.id !== txId);
-          StorageService.setTransactions(next);
+        setNewlyAddedTxIds(prev => {
+          const next = new Set(prev);
+          newTxs.slice(0, 10).forEach(t => next.add(t.id));
           return next;
         });
-        showToast('Mutasi dihapus');
-      }, []);
+
+        setTimeout(() => {
+          newTxs.forEach(t => handleClearNewlyAddedTx(t.id));
+        }, 1200);
+
+        showToast(`Berhasil mengimpor ${newTxs.length} mutasi baru!`);
+      }, [handleClearNewlyAddedTx, showToast]);
+
+      const handleDeleteTransaction = useCallback((txId) => {
+        if (deletingTxIds.has(txId)) return;
+        if (!confirm('Hapus mutasi ini?')) return;
+
+        // Trigger layout fade-out & collapse animation
+        setDeletingTxIds(prev => {
+          const next = new Set(prev);
+          next.add(txId);
+          return next;
+        });
+
+        if (window.VoraletHaptics && typeof window.VoraletHaptics.delete === 'function') {
+          window.VoraletHaptics.delete();
+        }
+
+        setTimeout(() => {
+          setTransactions(prev => {
+            const next = prev.filter(t => t.id !== txId);
+            StorageService.setTransactions(next);
+            return next;
+          });
+          setDeletingTxIds(prev => {
+            const next = new Set(prev);
+            next.delete(txId);
+            return next;
+          });
+          showToast('Mutasi dihapus');
+        }, 320);
+      }, [deletingTxIds, showToast]);
 
       const handleEditTransaction = useCallback((tx) => {
         setTxModalInitial({
@@ -1122,22 +1132,38 @@ PART8_APP = """
 
       // Debts
       const handleAddDebt = useCallback((debtData) => {
+        if (!debtData) return;
+        const isPaid = Boolean(debtData.isPaid || debtData.status === 'LUNAS');
+        const note = debtData.note || debtData.notes || '';
+        const normalized = {
+          ...debtData,
+          isPaid,
+          status: isPaid ? 'LUNAS' : 'BELUM_LUNAS',
+          note,
+          notes: note
+        };
         setDebts(prev => {
-          const exists = prev.some(d => d.id === debtData.id);
+          const exists = prev.some(d => d.id === normalized.id);
           const next = exists
-            ? prev.map(d => d.id === debtData.id ? debtData : d)
-            : [debtData, ...prev];
+            ? prev.map(d => d.id === normalized.id ? normalized : d)
+            : [normalized, ...prev];
           StorageService.setDebts(next);
           return next;
         });
         showToast('Catatan disimpan');
-      }, []);
+      }, [showToast]);
 
       const handleToggleDebtStatus = useCallback((debtId) => {
         setDebts(prev => {
           const next = prev.map(d => {
             if (d.id === debtId) {
-              return { ...d, isPaid: !Boolean(d.isPaid) };
+              const currentPaid = Boolean(d.isPaid || d.status === 'LUNAS');
+              const newPaid = !currentPaid;
+              return {
+                ...d,
+                isPaid: newPaid,
+                status: newPaid ? 'LUNAS' : 'BELUM_LUNAS'
+              };
             }
             return d;
           });
@@ -1145,7 +1171,7 @@ PART8_APP = """
           return next;
         });
         showToast('Status diperbarui');
-      }, []);
+      }, [showToast]);
 
       const handleDeleteDebt = useCallback((debtId) => {
         if (!confirm('Hapus catatan ini?')) return;
@@ -1245,7 +1271,7 @@ PART8_APP = """
       }, []);
 
       const handleExportData = useCallback(() => {
-        const payload = {
+        const rawPayload = {
           voralet_version: '__VORALET_VERSION__',
           exported_at: new Date().toISOString(),
           name,
@@ -1257,30 +1283,43 @@ PART8_APP = """
           customCategories,
           safeBudget
         };
-        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+        // Ultra-secure encrypted vault backup: non-verifiable & tamper-proof without Voralet
+        const encryptedBackup = CryptoService.encryptBackup(rawPayload);
+        const finalExport = encryptedBackup || rawPayload;
+        const blob = new Blob([JSON.stringify(finalExport, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `voralet_backup_${new Date().toISOString().slice(0, 10)}.json`;
+        a.download = `voralet_encrypted_vault_${new Date().toISOString().slice(0, 10)}.json`;
         a.click();
         URL.revokeObjectURL(url);
-        showToast('File JSON cadangan berhasil diunduh');
+        showToast('Cadangan brankas terenkripsi berhasil diunduh 🔒');
       }, [name, username, accounts, transactions, savingsGoals, debts, customCategories, safeBudget]);
 
       const handleImportData = useCallback((data) => {
-        if (!data || !Array.isArray(data.accounts)) {
+        // Auto-decrypt if encrypted vault format
+        let targetData = data;
+        if (data && data.voralet_encrypted_vault) {
+          const decrypted = CryptoService.decryptBackup(data);
+          if (!decrypted) {
+            alert('Enkripsi cadangan tidak valid atau file telah dimodifikasi.');
+            return;
+          }
+          targetData = decrypted;
+        }
+        if (!targetData || !Array.isArray(targetData.accounts)) {
           alert('Format JSON tidak sesuai dengan standar Voralet');
           return;
         }
-        if (data.name) { setName(data.name); StorageService.setName(data.name); }
-        if (data.username) { setUsername(data.username); StorageService.setUsername(data.username); }
-        if (Array.isArray(data.accounts)) { setAccounts(data.accounts); StorageService.setAccounts(data.accounts); }
-        if (Array.isArray(data.transactions)) { setTransactions(data.transactions); StorageService.setTransactions(data.transactions); }
-        if (Array.isArray(data.savingsGoals)) { setSavingsGoals(data.savingsGoals); StorageService.setSavingsGoals(data.savingsGoals); }
-        if (Array.isArray(data.debts)) { setDebts(data.debts); StorageService.setDebts(data.debts); }
-        if (Array.isArray(data.customCategories)) { setCustomCategories(data.customCategories); StorageService.setCustomCategories(data.customCategories); }
-        if (data.safeBudget !== undefined) { setSafeBudget(data.safeBudget); StorageService.setSafeBudget(data.safeBudget); }
-        showToast('Data berhasil dipulihkan!');
+        if (targetData.name) { setName(targetData.name); StorageService.setName(targetData.name); }
+        if (targetData.username) { setUsername(targetData.username); StorageService.setUsername(targetData.username); }
+        if (Array.isArray(targetData.accounts)) { setAccounts(targetData.accounts); StorageService.setAccounts(targetData.accounts); }
+        if (Array.isArray(targetData.transactions)) { setTransactions(targetData.transactions); StorageService.setTransactions(targetData.transactions); }
+        if (Array.isArray(targetData.savingsGoals)) { setSavingsGoals(targetData.savingsGoals); StorageService.setSavingsGoals(targetData.savingsGoals); }
+        if (Array.isArray(targetData.debts)) { setDebts(targetData.debts); StorageService.setDebts(targetData.debts); }
+        if (Array.isArray(targetData.customCategories)) { setCustomCategories(targetData.customCategories); StorageService.setCustomCategories(targetData.customCategories); }
+        if (targetData.safeBudget !== undefined) { setSafeBudget(targetData.safeBudget); StorageService.setSafeBudget(targetData.safeBudget); }
+        showToast('Data terenkripsi berhasil dipulihkan! 🔓');
       }, []);
 
       // Stable modal openers and navigation callbacks wrapped in useCallback
@@ -1433,6 +1472,9 @@ PART8_APP = """
                   customCategories={customCategories}
                   onSelectTab={setActiveTab}
                   onOpenCsvImport={() => setIsCsvImportModalOpen(true)}
+                  deletingTxIds={deletingTxIds}
+                  newlyAddedTxIds={newlyAddedTxIds}
+                  onClearNewlyAddedTx={handleClearNewlyAddedTx}
                 />
               )}
 
@@ -1536,6 +1578,7 @@ PART8_APP = """
             onSaveCustomCategory={handleSaveCustomCategory}
             onDeleteCustomCategory={handleDeleteCustomCategory}
             onOpenDeveloperGate={() => setIsDevModalOpen(true)}
+            onReplayTutorial={() => setIsTutorialOpen(true)}
           />
 
           <CsvImportModal
@@ -1554,6 +1597,11 @@ PART8_APP = """
             transactions={transactions}
             debts={debts}
             savingsGoals={savingsGoals}
+          />
+
+          <NonIntrusiveTutorialModal
+            isOpen={isTutorialOpen}
+            onDismiss={handleDismissTutorial}
           />
         </div>
       );

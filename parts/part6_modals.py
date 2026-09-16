@@ -1259,7 +1259,7 @@ PART6_MODALS = """
       );
     };
 
-    const SettingsModal = ({ isOpen, onClose, userProfile, onUpdateProfile, onHardReset, onImportData, onExportData, onOpenCsvImport, onExportCsv, theme, onToggleTheme, customCategories = [], onSaveCustomCategory, onDeleteCustomCategory, onOpenDeveloperGate }) => {
+    const SettingsModal = ({ isOpen, onClose, userProfile, onUpdateProfile, onHardReset, onImportData, onExportData, onOpenCsvImport, onExportCsv, theme, onToggleTheme, customCategories = [], onSaveCustomCategory, onDeleteCustomCategory, onOpenDeveloperGate, onReplayTutorial }) => {
       const [name, setName] = useState(userProfile.name || '');
       const [username, setUsername] = useState(userProfile.username || '');
       const [avatar, setAvatar] = useState(userProfile.avatar || '');
@@ -1342,6 +1342,12 @@ PART6_MODALS = """
           reader.onload = (event) => {
             try {
               const rawData = JSON.parse(event.target.result);
+              if (rawData && rawData.voralet_encrypted_vault) {
+                // Secure encrypted vault detected
+                onImportData(rawData);
+                handleClose();
+                return;
+              }
               const validData = Validators.validateBackupSchema(rawData);
               if (!validData) {
                 alert('File JSON tidak sesuai skema Voralet atau rusak.');
@@ -1453,28 +1459,84 @@ PART6_MODALS = """
                 </div>
               </form>
 
-              {/* Tampilan & Mode Gelap */}
+              {/* Tampilan & Mode Gelap (iOS Spring Slider with Hold-and-Drag) */}
               <div className="pt-3 border-t border-slate-100 dark:border-slate-700">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
                     <IconBadge icon={theme === 'dark' ? 'moon' : 'sun'} className="p-2 rounded-xl bg-sky-50 dark:bg-slate-700 text-brand dark:text-sky-400" />
                     <div>
                       <h4 className="text-xs font-bold text-slate-900 dark:text-white">Mode Tampilan</h4>
-                      <p className="text-[11px] text-slate-400">Pilih tema terang atau gelap</p>
+                      <p className="text-[11px] text-slate-400">
+                        {theme === 'dark' ? 'Mode Gelap Aktif 🌙' : 'Mode Terang Aktif ☀️'}
+                      </p>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={onToggleTheme}
-                    className={`px-3.5 py-1.5 rounded-xl border font-semibold text-xs transition-all flex items-center gap-2 ios-btn-tap ${
-                      theme === 'dark'
-                        ? 'bg-slate-900 border-slate-700 text-sky-400 shadow-inner'
-                        : 'bg-white border-slate-200 text-slate-700 shadow-sm'
+
+                  {/* iOS Style Interactive Drag & Tap Toggle Track */}
+                  <div
+                    role="switch"
+                    aria-checked={theme === 'dark'}
+                    tabIndex={0}
+                    onClick={() => onToggleTheme()}
+                    onTouchStart={(e) => {
+                      const startX = e.touches[0].clientX;
+                      const initialTheme = theme;
+                      const onTouchMove = (moveEvt) => {
+                        const diffX = moveEvt.touches[0].clientX - startX;
+                        if (diffX > 15 && initialTheme !== 'dark') {
+                          onToggleTheme();
+                          cleanup();
+                        } else if (diffX < -15 && initialTheme !== 'light') {
+                          onToggleTheme();
+                          cleanup();
+                        }
+                      };
+                      const cleanup = () => {
+                        window.removeEventListener('touchmove', onTouchMove);
+                        window.removeEventListener('touchend', cleanup);
+                      };
+                      window.addEventListener('touchmove', onTouchMove, { passive: true });
+                      window.addEventListener('touchend', cleanup, { once: true });
+                    }}
+                    onMouseDown={(e) => {
+                      const startX = e.clientX;
+                      const initialTheme = theme;
+                      const onMouseMove = (moveEvt) => {
+                        const diffX = moveEvt.clientX - startX;
+                        if (diffX > 15 && initialTheme !== 'dark') {
+                          onToggleTheme();
+                          cleanup();
+                        } else if (diffX < -15 && initialTheme !== 'light') {
+                          onToggleTheme();
+                          cleanup();
+                        }
+                      };
+                      const cleanup = () => {
+                        window.removeEventListener('mousemove', onMouseMove);
+                        window.removeEventListener('mouseup', cleanup);
+                      };
+                      window.addEventListener('mousemove', onMouseMove);
+                      window.addEventListener('mouseup', cleanup, { once: true });
+                    }}
+                    className={`relative w-14 h-8 rounded-full p-1 transition-colors duration-300 cursor-pointer select-none touch-none shadow-inner flex items-center ${
+                      theme === 'dark' ? 'bg-[#0284C7] dark:bg-[#38BDF8]' : 'bg-slate-300 dark:bg-slate-600'
                     }`}
                   >
-                    <span className={`w-2 h-2 rounded-full ${theme === 'dark' ? 'bg-sky-400 animate-pulse' : 'bg-amber-400'}`}></span>
-                    <span>{theme === 'dark' ? 'Mode Gelap (Aktif)' : 'Mode Terang (Aktif)'}</span>
-                  </button>
+                    {/* Sliding iOS Thumb */}
+                    <div
+                      className={`w-6 h-6 rounded-full bg-white shadow-md flex items-center justify-center transition-all duration-300 pointer-events-none ${
+                        theme === 'dark' ? 'translate-x-6' : 'translate-x-0'
+                      }`}
+                      style={{
+                        transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)'
+                      }}
+                    >
+                      <Icon
+                        name={theme === 'dark' ? 'moon' : 'sun'}
+                        className={`w-3.5 h-3.5 ${theme === 'dark' ? 'text-[#0284C7]' : 'text-amber-500'}`}
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -1805,7 +1867,25 @@ PART6_MODALS = """
                 </p>
               </div>
 
-              {/* Master Developer & Security Gate (Code: 2026) */}
+              {/* Panduan & Tutorial Penggunaan */}
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-700">
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleClose();
+                    if (onReplayTutorial) onReplayTutorial();
+                  }}
+                  className="w-full py-2.5 px-3 bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl border border-slate-200/80 dark:border-slate-600 flex items-center justify-between transition-colors ios-btn-tap"
+                >
+                  <div className="flex items-center gap-2">
+                    <Icon name="help-circle" className="w-4 h-4 text-[#0284C7] dark:text-[#38BDF8]" />
+                    <span>Lihat Tutorial & Panduan Fitur</span>
+                  </div>
+                  <Icon name="chevron-right" className="w-3.5 h-3.5 text-slate-400" />
+                </button>
+              </div>
+
+              {/* Master Developer & Security Gate (Code: 2006 / 2026) */}
               <div className="pt-3 border-t border-slate-100 dark:border-slate-700">
                 <button
                   type="button"
@@ -1818,7 +1898,7 @@ PART6_MODALS = """
                     <Icon name="shield-check" className="w-4 h-4 text-brand dark:text-sky-400" />
                     <span>Opsi Pengembang & Keamanan Master</span>
                   </div>
-                  <span className="text-[10px] bg-sky-200/70 dark:bg-slate-800 px-2 py-0.5 rounded-md font-mono font-bold text-brand dark:text-sky-300">KODE: 2026</span>
+                  <span className="text-[10px] bg-sky-200/70 dark:bg-slate-800 px-2 py-0.5 rounded-md font-mono font-bold text-brand dark:text-sky-300">KODE: 2006</span>
                 </button>
               </div>
 
@@ -2469,7 +2549,7 @@ PART6_MODALS = """
           setStorageReport(SafeStorage.getRawStorageReport());
           setIntegrityReport(CryptoService.verifyIntegrity());
         } else {
-          setErrorMsg('Kunci Master Salah! Diperlukan kode verifikasi: 2026');
+          setErrorMsg('Kunci Master Salah! Diperlukan kode verifikasi: 2006 atau 2026');
           setIsShaking(true);
           setTimeout(() => setIsShaking(false), 500);
         }
@@ -2512,7 +2592,7 @@ PART6_MODALS = """
                     <Icon name="lock" className="w-8 h-8 text-brand dark:text-sky-400 mx-auto mb-2" />
                     <h4 className="text-xs font-bold text-slate-900 dark:text-white">Autentikasi Pengembang</h4>
                     <p className="text-[11px] text-slate-500 dark:text-slate-300 mt-1">
-                      Masukkan master security verification key <span className="font-bold text-brand dark:text-sky-400">2026</span> untuk mengakses konfigurasi sistem.
+                      Masukkan master security verification key <span className="font-bold text-brand dark:text-sky-400">2006</span> / <span className="font-bold text-brand dark:text-sky-400">2026</span> untuk mengakses konfigurasi sistem.
                     </p>
                   </div>
 
@@ -2530,7 +2610,7 @@ PART6_MODALS = """
                           setMasterCode(e.target.value.slice(0, 6));
                           if (errorMsg) setErrorMsg('');
                         }}
-                        placeholder="Ketik 2026"
+                        placeholder="Ketik 2006 / 2026"
                         className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-center font-mono font-bold tracking-widest text-base text-slate-900 dark:text-white focus:outline-none focus:border-brand"
                       />
                     </div>
@@ -2543,7 +2623,7 @@ PART6_MODALS = """
                       type="submit"
                       className="w-full py-2.5 bg-brand text-white font-semibold text-xs rounded-xl hover:bg-brand-hover ios-btn-tap"
                     >
-                      Buka Akses Master (2026)
+                      Buka Akses Master (2006 / 2026)
                     </button>
                   </form>
                 </div>
@@ -2555,7 +2635,7 @@ PART6_MODALS = """
                       <Icon name="check-circle" className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                       <div>
                         <p className="text-xs font-bold text-emerald-800 dark:text-emerald-200">MASTER ACCESS GRANTED</p>
-                        <p className="text-[10px] text-emerald-600 dark:text-emerald-400">Kode 2026 terverifikasi dengan aman</p>
+                        <p className="text-[10px] text-emerald-600 dark:text-emerald-400">Kode otentikasi terverifikasi dengan aman</p>
                       </div>
                     </div>
                     <span className="text-[10px] font-mono px-2 py-0.5 bg-emerald-200 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 rounded font-bold">LEVEL-0</span>
