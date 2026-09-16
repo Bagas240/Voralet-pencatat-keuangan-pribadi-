@@ -308,6 +308,7 @@ PART5_DEBTS_MILESTONES = """
           createdAt: debtToEdit ? debtToEdit.createdAt : new Date().toISOString()
         };
 
+        HapticFeedback.save();
         onSaveDebt(debtData);
         handleClose();
       };

@@ -198,12 +198,58 @@ PART8_APP = """
       savingsGoals,
       debts,
       onSelectQuickExpense,
-      customCategories = []
+      customCategories = [],
+      onSelectTab,
+      onOpenCsvImport
     }) => {
       const [searchQuery, setSearchQuery] = useState('');
       const [filterType, setFilterType] = useState('ALL'); // ALL | EXPENSE | INCOME
       const [selectedAccountFilter, setSelectedAccountFilter] = useState('ALL');
       const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('ALL');
+      const [startDate, setStartDate] = useState('');
+      const [endDate, setEndDate] = useState('');
+      const [datePreset, setDatePreset] = useState('ALL'); // ALL | TODAY | THIS_WEEK | THIS_MONTH | LAST_MONTH | CUSTOM
+      const [isDateFilterOpen, setIsDateFilterOpen] = useState(false);
+
+      const applyDatePreset = (preset) => {
+        setDatePreset(preset);
+        const now = new Date();
+        if (preset === 'ALL') {
+          setStartDate('');
+          setEndDate('');
+        } else if (preset === 'TODAY') {
+          const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+          setStartDate(todayStr);
+          setEndDate(todayStr);
+        } else if (preset === 'THIS_WEEK') {
+          const day = now.getDay(); // 0 is Sunday, 1 is Monday...
+          const diffToMon = (day === 0 ? -6 : 1) - day;
+          const mon = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diffToMon);
+          const sun = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() + 6);
+          const monStr = `${mon.getFullYear()}-${String(mon.getMonth() + 1).padStart(2, '0')}-${String(mon.getDate()).padStart(2, '0')}`;
+          const sunStr = `${sun.getFullYear()}-${String(sun.getMonth() + 1).padStart(2, '0')}-${String(sun.getDate()).padStart(2, '0')}`;
+          setStartDate(monStr);
+          setEndDate(sunStr);
+        } else if (preset === 'THIS_MONTH') {
+          const y = now.getFullYear();
+          const m = now.getMonth();
+          const firstDay = `${y}-${String(m + 1).padStart(2, '0')}-01`;
+          const lastDate = new Date(y, m + 1, 0).getDate();
+          const lastDay = `${y}-${String(m + 1).padStart(2, '0')}-${String(lastDate).padStart(2, '0')}`;
+          setStartDate(firstDay);
+          setEndDate(lastDay);
+        } else if (preset === 'LAST_MONTH') {
+          const y = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+          const m = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
+          const firstDay = `${y}-${String(m + 1).padStart(2, '0')}-01`;
+          const lastDate = new Date(y, m + 1, 0).getDate();
+          const lastDay = `${y}-${String(m + 1).padStart(2, '0')}-${String(lastDate).padStart(2, '0')}`;
+          setStartDate(firstDay);
+          setEndDate(lastDay);
+        }
+      };
+
+      const hasActiveDateFilter = Boolean(startDate || endDate || datePreset !== 'ALL');
 
       const allCategories = useMemo(() => {
         return getAllCategories(customCategories);
@@ -232,13 +278,21 @@ PART8_APP = """
         return map;
       }, [safeAccounts, safeTransactions]);
 
-      // Filtered transactions
+      // Filtered transactions with date-range support
       const filteredTransactions = useMemo(() => {
         return safeTransactions.filter(tx => {
           if (!tx) return false;
           if (filterType !== 'ALL' && tx.type !== filterType) return false;
           if (selectedAccountFilter !== 'ALL' && tx.accountId !== selectedAccountFilter) return false;
           if (selectedCategoryFilter !== 'ALL' && tx.category !== selectedCategoryFilter) return false;
+          if (startDate) {
+            const txDate = (tx.date || '').slice(0, 10);
+            if (txDate && txDate < startDate) return false;
+          }
+          if (endDate) {
+            const txDate = (tx.date || '').slice(0, 10);
+            if (txDate && txDate > endDate) return false;
+          }
           if (searchQuery.trim()) {
             const q = searchQuery.toLowerCase();
             const catObj = allCategories.find(c => c.id === tx.category);
@@ -249,7 +303,7 @@ PART8_APP = """
           }
           return true;
         });
-      }, [safeTransactions, filterType, selectedAccountFilter, selectedCategoryFilter, searchQuery, allCategories]);
+      }, [safeTransactions, filterType, selectedAccountFilter, selectedCategoryFilter, startDate, endDate, searchQuery, allCategories]);
 
       return (
         <div className="space-y-4 pb-28 animate-ios-tab-view">
@@ -360,91 +414,85 @@ PART8_APP = """
             </button>
           </div>
 
-          {/* Apple Wallet / Kelola Kantong Interactive Card Stack Section */}
+          {/* Kelola Kantong - Simplified Flat Pocket Cards */}
           <div className="ios-inset-group">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-xl bg-sky-100 dark:bg-slate-700 text-brand dark:text-sky-300 flex items-center justify-center shadow-xs">
-                  <Icon name="layers" className="w-4 h-4" />
+                  <Icon name="credit-card" className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-xs font-bold text-slate-900 dark:text-white">Kelola Kantong</h3>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400">Tumpukan kartu rekening & e-wallet</p>
+                  <h3 className="text-xs font-bold text-slate-900 dark:text-white">Kantong Keuangan</h3>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400">Rekening bank, e-wallet, dan kas tunai</p>
                 </div>
               </div>
               <button
                 type="button"
-                onClick={onOpenAccounts}
+                onClick={() => onSelectTab ? onSelectTab('cards') : onOpenAccounts()}
                 className="px-2.5 py-1 bg-sky-50 dark:bg-slate-700 text-brand dark:text-sky-300 text-[11px] font-bold rounded-xl flex items-center gap-1 border border-sky-200/60 dark:border-slate-600 hover:bg-sky-100 dark:hover:bg-slate-600 transition-colors ios-btn-tap"
               >
-                <span>Buka Dompet</span>
+                <span>Kelola Semua</span>
                 <Icon name="chevron-right" className="w-3.5 h-3.5" />
               </button>
             </div>
 
-            {/* Apple Wallet Interactive Deck on Dashboard */}
+            {/* Simplified Pocket Cards on Dashboard */}
             {safeAccounts.length === 0 ? (
               <button
                 type="button"
-                onClick={onOpenAccounts}
+                onClick={() => onSelectTab ? onSelectTab('cards') : onOpenAccounts()}
                 className="w-full py-4 px-3 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-600 dark:text-slate-400 flex items-center justify-center gap-2 ios-btn-tap"
               >
                 <Icon name="plus" className="w-4 h-4 text-brand" />
                 <span>+ Buat Kantong Baru</span>
               </button>
             ) : (
-              <div
-                style={{
-                  minHeight: `${Math.max(0, safeAccounts.length - 1) * 58 + 84}px`
-                }}
-                className="relative w-full cursor-pointer select-none"
-                onClick={onOpenAccounts}
-              >
-                {safeAccounts.map((acc, idx) => {
+              <div className="space-y-2.5">
+                {safeAccounts.slice(0, 3).map((acc) => {
                   const bal = accountBalancesMap.get(acc.id) ?? 0;
-                  const theme = getPocketTheme(acc);
-                  const isPrimary = idx === 0;
-                  const rawNum = acc.accountNumber ? String(acc.accountNumber).replace(/\\s/g, '') : '';
-                  const lastFour = rawNum ? rawNum.slice(-4) : (acc.id ? String(acc.id).replace(/\\D/g, '').slice(-4) || '8829' : '8829');
-                  const maskedNumber = `•••• ${lastFour}`;
+                  const iconName = (acc.type === 'CASH' || acc.type === 'Cash') ? 'cash' : (acc.type === 'EWALLET' || acc.type === 'E-Wallet') ? 'smartphone' : 'bank';
+                  const typeLabel = (acc.type === 'CASH' || acc.type === 'Cash') ? 'Kas Tunai' : (acc.type === 'EWALLET' || acc.type === 'E-Wallet') ? 'E-Wallet' : 'Rekening Bank';
+                  const maskedNumber = (acc.accountNumber && String(acc.accountNumber).trim())
+                    ? `•••• ${String(acc.accountNumber).replace(/\s/g, '').slice(-4)}`
+                    : `•••• ${String(acc.id || '8829').replace(/\D/g, '').slice(-4) || '8829'}`;
 
                   return (
                     <div
                       key={acc.id}
-                      style={{
-                        transform: `translate3d(0, ${idx * 58}px, 0) scale(${1 - (safeAccounts.length - 1 - idx) * 0.015})`,
-                        zIndex: 10 + idx,
-                        transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
-                      }}
-                      className="absolute top-0 inset-x-0"
+                      onClick={() => onSelectTab ? onSelectTab('cards') : onOpenAccounts()}
+                      className="relative w-full rounded-2xl bg-[#0284C7] dark:bg-[#0369A1] p-3.5 text-white shadow-sm flex flex-col justify-between cursor-pointer ios-card-tap select-none"
                     >
-                      <div className="apple-wallet-card-collapsed w-full p-3.5 sm:p-4 bg-[#38bdf8] border border-sky-300/60 shadow-md overflow-hidden flex items-center justify-between text-white relative">
-                        <div className="apple-atm-shimmer pointer-events-none" />
-                        <div className="flex items-center gap-2.5 min-w-0 pr-2 relative z-10">
-                          <div className="w-8 h-8 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center shrink-0 shadow-xs">
-                            <Icon name={acc.type === 'Bank' ? 'bank' : acc.type === 'Cash' ? 'cash' : 'smartphone'} className="w-4 h-4 text-white" />
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                          <div className="w-8 h-8 rounded-xl bg-white/20 border border-white/25 flex items-center justify-center text-white shrink-0">
+                            <Icon name={iconName} className="w-4 h-4" />
                           </div>
                           <div className="min-w-0">
-                            <div className="flex items-center gap-1.5">
-                              <span className="font-extrabold text-xs sm:text-sm truncate">{acc.name}</span>
-                              {isPrimary && (
-                                <span className="px-1.5 py-0.5 rounded text-[8px] font-black uppercase bg-amber-400/30 text-amber-200 border border-amber-400/40">
-                                  Utama
-                                </span>
-                              )}
-                            </div>
-                            <span className="text-[10px] font-mono opacity-85 block">{maskedNumber} • {acc.type}</span>
+                            <span className="text-[9px] font-bold uppercase tracking-wider text-sky-100 block">
+                              {typeLabel}
+                            </span>
+                            <h4 className="text-xs sm:text-sm font-extrabold text-white truncate">
+                              {acc.name}
+                            </h4>
                           </div>
                         </div>
 
-                        <div className="text-right shrink-0 relative z-10">
-                          <div className="font-black text-xs sm:text-sm tracking-tight drop-shadow-xs">
-                            {hideBalance ? '••••••••' : formatIDR(bal)}
-                          </div>
-                          <span className="text-[9px] uppercase tracking-wider text-white/70 block">
-                            Saldo
-                          </span>
+                        <div className="px-2 py-0.5 rounded-md bg-white/15 border border-white/20 text-[9px] font-mono font-bold text-sky-100 shrink-0">
+                          {maskedNumber}
                         </div>
+                      </div>
+
+                      <div className="pt-2 border-t border-white/15 flex items-end justify-between">
+                        <div>
+                          <span className="text-[8px] uppercase tracking-wider text-sky-200 block">Saldo</span>
+                          <div className="text-xs sm:text-sm font-black text-white">
+                            {hideBalance ? 'Rp ••••••••' : formatIDR(bal)}
+                          </div>
+                        </div>
+                        <span className="text-[10px] text-sky-100 font-semibold flex items-center gap-0.5">
+                          <span>Detail</span>
+                          <Icon name="chevron-right" className="w-3 h-3" />
+                        </span>
                       </div>
                     </div>
                   );
@@ -568,31 +616,166 @@ PART8_APP = """
               )}
             </div>
 
-            {/* Live Search & Filter */}
+            {/* Live Search & Date Range Filter */}
             <div className="space-y-2 mb-3">
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-                  <Icon name="search" className="w-3.5 h-3.5" />
-                </span>
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onFocus={handleGlobalInputFocus}
-                  onBlur={handleGlobalInputBlur}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Cari transaksi atau catatan..."
-                  className="w-full pl-8 pr-8 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand"
-                />
-                {searchQuery && (
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                    <Icon name="search" className="w-3.5 h-3.5" />
+                  </span>
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onFocus={handleGlobalInputFocus}
+                    onBlur={handleGlobalInputBlur}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Cari transaksi atau catatan..."
+                    className="w-full pl-8 pr-8 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand"
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5"
+                    >
+                      <Icon name="x" className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Date-Range Filter Toggle Button */}
+                <button
+                  type="button"
+                  onClick={() => setIsDateFilterOpen(!isDateFilterOpen)}
+                  className={`relative p-2 rounded-xl border flex items-center justify-center transition-all ios-btn-tap shrink-0 ${
+                    hasActiveDateFilter
+                      ? 'bg-brand text-white border-brand shadow-sm'
+                      : isDateFilterOpen
+                        ? 'bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-600'
+                        : 'bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-brand/40'
+                  }`}
+                  title="Filter Rentang Tanggal"
+                  aria-label="Filter Rentang Tanggal"
+                >
+                  <Icon name="calendar" className="w-4 h-4" strokeWidth={2.2} />
+                  {hasActiveDateFilter && (
+                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-amber-400 border-2 border-white dark:border-slate-800 rounded-full" />
+                  )}
+                </button>
+
+                {/* CSV Import Quick Action Button */}
+                {onOpenCsvImport && (
                   <button
                     type="button"
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5"
+                    onClick={onOpenCsvImport}
+                    className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 hover:bg-sky-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-brand dark:hover:text-sky-400 hover:border-brand/40 flex items-center justify-center transition-all ios-btn-tap shrink-0"
+                    title="Impor Transaksi dari File CSV"
+                    aria-label="Impor Transaksi CSV"
                   >
-                    <Icon name="x" className="w-3.5 h-3.5" />
+                    <Icon name="file-text" className="w-4 h-4" strokeWidth={2.2} />
                   </button>
                 )}
               </div>
+
+              {/* Collapsible Date-Range Panel */}
+              {isDateFilterOpen && (
+                <div className="p-3 bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-700 rounded-2xl space-y-2.5 shadow-sm animate-ios-sheet">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                      <Icon name="filter" className="w-3.5 h-3.5 text-brand" />
+                      Rentang Periode Transaksi
+                    </span>
+                    {hasActiveDateFilter && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          applyDatePreset('ALL');
+                        }}
+                        className="text-[11px] font-semibold text-rose-500 hover:underline ios-btn-tap"
+                      >
+                        Reset Periode
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Preset quick buttons */}
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      { id: 'ALL', label: 'Semua Waktu' },
+                      { id: 'TODAY', label: 'Hari Ini' },
+                      { id: 'THIS_WEEK', label: 'Minggu Ini' },
+                      { id: 'THIS_MONTH', label: 'Bulan Ini' },
+                      { id: 'LAST_MONTH', label: 'Bulan Lalu' }
+                    ].map(p => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => applyDatePreset(p.id)}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-colors ios-btn-tap ${
+                          datePreset === p.id && !startDate && !endDate && p.id === 'ALL'
+                            ? 'bg-brand text-white'
+                            : datePreset === p.id && p.id !== 'ALL'
+                              ? 'bg-brand text-white'
+                              : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
+                        }`}
+                      >
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Custom From & To Date Inputs */}
+                  <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-200 dark:border-slate-700/60">
+                    <div>
+                      <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block mb-1">
+                        Dari Tanggal:
+                      </label>
+                      <input
+                        type="date"
+                        value={startDate}
+                        onFocus={handleGlobalInputFocus}
+                        onBlur={handleGlobalInputBlur}
+                        onChange={(e) => {
+                          setStartDate(e.target.value);
+                          setDatePreset('CUSTOM');
+                        }}
+                        className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block mb-1">
+                        Sampai Tanggal:
+                      </label>
+                      <input
+                        type="date"
+                        value={endDate}
+                        onFocus={handleGlobalInputFocus}
+                        onBlur={handleGlobalInputBlur}
+                        onChange={(e) => {
+                          setEndDate(e.target.value);
+                          setDatePreset('CUSTOM');
+                        }}
+                        className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Summary Indicator badge */}
+                  {hasActiveDateFilter && (
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between pt-0.5">
+                      <span>
+                        Menampilkan transaksi:{' '}
+                        <strong className="text-slate-700 dark:text-slate-200">
+                          {startDate ? formatDateID(startDate) : 'Awal'} s/d {endDate ? formatDateID(endDate) : 'Sekarang'}
+                        </strong>
+                      </span>
+                      <span className="text-xs font-bold text-brand">
+                        ({filteredTransactions.length})
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Segmented Control for Mutasi Filter */}
               <SegmentedControl
@@ -702,6 +885,8 @@ PART8_APP = """
       const [savingsGoalToEdit, setSavingsGoalToEdit] = useState(null);
       const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
       const [isDebtModalOpen, setIsDebtModalOpen] = useState(false);
+      const [isDevModalOpen, setIsDevModalOpen] = useState(false);
+      const [isCsvImportModalOpen, setIsCsvImportModalOpen] = useState(false);
 
       const showToast = useCallback((msg) => {
         setToastMsg(msg);
@@ -759,7 +944,7 @@ PART8_APP = """
       }, []);
 
       // Horizontal Swipe Gesture Handling
-      const tabsOrder = ['dashboard', 'debts', 'savings', 'analytics'];
+      const tabsOrder = ['dashboard', 'cards', 'debts', 'savings', 'analytics'];
       const touchStartX = useRef(0);
       const touchStartY = useRef(0);
 
@@ -815,6 +1000,16 @@ PART8_APP = """
         });
         showToast('Transaksi berhasil dicatat');
       }, []);
+
+      const handleImportBatchTransactions = useCallback((newTxs) => {
+        if (!Array.isArray(newTxs) || newTxs.length === 0) return;
+        setTransactions(prev => {
+          const combined = [...newTxs, ...prev];
+          StorageService.setTransactions(combined);
+          return combined;
+        });
+        showToast(`Berhasil mengimpor ${newTxs.length} mutasi baru!`);
+      }, [showToast]);
 
       const handleDeleteTransaction = useCallback((txId) => {
         if (!confirm('Hapus mutasi ini?')) return;
@@ -1196,7 +1391,7 @@ PART8_APP = """
         );
       }
 
-      const isAnyModalOpen = isTxModalOpen || isAccModalOpen || isSavingsModalOpen || isSettingsModalOpen || isDebtModalOpen;
+      const isAnyModalOpen = isTxModalOpen || isAccModalOpen || isSavingsModalOpen || isSettingsModalOpen || isDebtModalOpen || isDevModalOpen;
 
       return (
         <div className={`h-[100dvh] flex flex-col ${theme === 'dark' ? 'dark bg-[#0F172A] text-[#F8FAFC]' : 'bg-slate-50 text-[#0F172A]'} overflow-hidden select-none transition-colors duration-300 ease-in-out`}>
@@ -1235,6 +1430,22 @@ PART8_APP = """
                   savingsGoals={savingsGoals}
                   debts={debts}
                   onSelectQuickExpense={handleQuickExpenseSelect}
+                  customCategories={customCategories}
+                  onSelectTab={setActiveTab}
+                  onOpenCsvImport={() => setIsCsvImportModalOpen(true)}
+                />
+              )}
+
+              {activeTab === 'cards' && (
+                <CardsView
+                  accounts={accounts}
+                  transactions={transactions}
+                  hideBalance={hideBalance}
+                  onToggleHideBalance={handleToggleHideBalance}
+                  onAddAccount={handleAddAccount}
+                  onUpdateAccount={handleEditAccount}
+                  onDeleteAccount={handleDeleteAccount}
+                  onOpenAddTx={handleOpenAddTxFromAccount}
                 />
               )}
 
@@ -1318,11 +1529,31 @@ PART8_APP = """
             onHardReset={handleHardReset}
             onImportData={handleImportData}
             onExportData={handleExportData}
+            onOpenCsvImport={() => setIsCsvImportModalOpen(true)}
             theme={theme}
             onToggleTheme={toggleTheme}
             customCategories={customCategories}
             onSaveCustomCategory={handleSaveCustomCategory}
             onDeleteCustomCategory={handleDeleteCustomCategory}
+            onOpenDeveloperGate={() => setIsDevModalOpen(true)}
+          />
+
+          <CsvImportModal
+            isOpen={isCsvImportModalOpen}
+            onClose={() => setIsCsvImportModalOpen(false)}
+            accounts={accounts}
+            customCategories={customCategories}
+            onImportBatch={handleImportBatchTransactions}
+          />
+
+          <DeveloperSecurityModal
+            isOpen={isDevModalOpen}
+            onClose={() => setIsDevModalOpen(false)}
+            onHardReset={handleHardReset}
+            accounts={accounts}
+            transactions={transactions}
+            debts={debts}
+            savingsGoals={savingsGoals}
           />
         </div>
       );
@@ -1331,21 +1562,12 @@ PART8_APP = """
     const mountApp = () => {
       const rootElement = document.getElementById('root');
       if (!rootElement) return;
-      if (typeof ReactDOM.createRoot === 'function') {
-        const root = ReactDOM.createRoot(rootElement);
-        root.render(
-          <ErrorBoundary>
-            <App />
-          </ErrorBoundary>
-        );
-      } else {
-        ReactDOM.render(
-          <ErrorBoundary>
-            <App />
-          </ErrorBoundary>,
-          rootElement
-        );
-      }
+      const root = ReactDOM.createRoot(rootElement);
+      root.render(
+        <ErrorBoundary>
+          <App />
+        </ErrorBoundary>
+      );
     };
 
     if (document.readyState === 'loading') {

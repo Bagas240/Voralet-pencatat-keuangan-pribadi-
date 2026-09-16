@@ -13,6 +13,7 @@ PART7_VIEWS = """
         e.preventDefault();
         const amt = parseRawNumber(depositAmount);
         if (amt <= 0 || !depositGoal) return;
+        HapticFeedback.save();
         onDepositGoal(depositGoal.id, amt, depositMode);
         setDepositGoal(null);
         setDepositAmount('');
@@ -779,11 +780,357 @@ PART7_VIEWS = """
     };
 
     // =========================================================================
-    // 8. FLOATING CAPSULE NAVIGATION (WITH TOUCH DRAG MECHANICS)
+    // DEDICATED CARDS / WALLET VIEW (TAB 2 - KANTONG KEUANGAN)
+    // =========================================================================
+    const CardsView = ({
+      accounts = [],
+      transactions = [],
+      hideBalance = false,
+      onToggleHideBalance,
+      onAddAccount,
+      onUpdateAccount,
+      onDeleteAccount,
+      onOpenAddTx
+    }) => {
+      const [isAdding, setIsAdding] = useState(false);
+      const [editingAcc, setEditingAcc] = useState(null);
+      const [name, setName] = useState('');
+      const [type, setType] = useState('BANK');
+      const [initialBalance, setInitialBalance] = useState('');
+      const [color, setColor] = useState('#0284C7');
+      const [expandedCardId, setExpandedCardId] = useState(null);
+
+      const safeAccounts = Array.isArray(accounts) ? accounts : [];
+      const safeTransactions = Array.isArray(transactions) ? transactions : [];
+
+      // Calculate total balance across all pockets
+      const totalBalance = useMemo(() => {
+        return safeAccounts.reduce((acc, a) => {
+          return acc + Ledger.getAccountBalance(a.id, safeAccounts, safeTransactions);
+        }, 0);
+      }, [safeAccounts, safeTransactions]);
+
+      const handleStartEdit = (acc, e) => {
+        if (e) e.stopPropagation();
+        setEditingAcc(acc);
+        setName(acc.name || '');
+        setType(acc.type || 'BANK');
+        setInitialBalance(String(acc.initialBalance || '0'));
+        setColor(acc.color || '#0284C7');
+        setIsAdding(true);
+      };
+
+      const handleSave = (e) => {
+        if (e) e.preventDefault();
+        const cleanName = Validators.sanitizeText(name, 40);
+        if (!cleanName) return;
+
+        const numInit = Math.max(0, Validators.sanitizeNumber(initialBalance, 0));
+
+        if (editingAcc) {
+          onUpdateAccount({
+            ...editingAcc,
+            name: cleanName,
+            type,
+            initialBalance: numInit,
+            color
+          });
+        } else {
+          onAddAccount({
+            id: 'acc_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+            name: cleanName,
+            type,
+            initialBalance: numInit,
+            color
+          });
+        }
+
+        setIsAdding(false);
+        setEditingAcc(null);
+        setName('');
+        setInitialBalance('');
+      };
+
+      return (
+        <div className="space-y-4 pb-24 animate-ios-tab-view">
+          {/* Header Title Bar */}
+          <div className="flex items-center justify-between pt-1">
+            <div>
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white">Kantong Keuangan</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Atur rekening bank, e-wallet, dan kas tunai</p>
+            </div>
+            {!isAdding && (
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingAcc(null);
+                  setName('');
+                  setType('BANK');
+                  setInitialBalance('');
+                  setColor('#0284C7');
+                  setIsAdding(true);
+                }}
+                className="px-3.5 py-2 bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors ios-btn-tap shadow-xs"
+              >
+                <Icon name="plus" className="w-3.5 h-3.5" strokeWidth={2.5} />
+                <span>Tambah</span>
+              </button>
+            )}
+          </div>
+
+          {/* Total Saldo Semua Kantong Banner (Strict Flat Design) */}
+          <div className="bg-[#F0F9FF] dark:bg-slate-800 rounded-2xl border border-sky-100 dark:border-slate-700 p-4 select-none">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[11px] font-bold tracking-wider text-slate-500 dark:text-slate-400 uppercase">
+                TOTAL SALDO SEMUA KANTONG
+              </span>
+              {onToggleHideBalance && (
+                <button
+                  type="button"
+                  onClick={onToggleHideBalance}
+                  className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-lg ios-btn-tap"
+                  title={hideBalance ? 'Tampilkan Saldo' : 'Sembunyikan Saldo'}
+                >
+                  <Icon name={hideBalance ? 'eye-off' : 'eye'} className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+            <div className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
+              {hideBalance ? 'Rp ••••••••' : formatIDR(totalBalance)}
+            </div>
+            <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
+              Terdistribusi di {safeAccounts.length} kantong aktif
+            </p>
+          </div>
+
+          {/* Inline Add / Edit Form */}
+          {isAdding && (
+            <form onSubmit={handleSave} className="bg-[#F0F9FF] dark:bg-slate-800 rounded-2xl border border-sky-200 dark:border-slate-700 p-4 space-y-3.5 animate-ios-spring-pop">
+              <div className="flex items-center justify-between pb-2 border-b border-sky-100 dark:border-slate-700">
+                <h3 className="text-xs font-bold text-slate-900 dark:text-white">
+                  {editingAcc ? 'Edit Kantong' : 'Tambah Kantong Baru'}
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAdding(false);
+                    setEditingAcc(null);
+                  }}
+                  className="text-xs font-semibold text-slate-500 hover:text-slate-700 dark:text-slate-400"
+                >
+                  Batal
+                </button>
+              </div>
+
+              <div>
+                <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 block mb-1">
+                  Nama Kantong
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Contoh: BCA Utama, Gopay, Dompet Fisik"
+                  className="w-full px-3.5 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none focus:border-[#0284C7]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 block mb-1">
+                    Jenis Kantong
+                  </label>
+                  <select
+                    value={type}
+                    onChange={(e) => setType(e.target.value)}
+                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none focus:border-[#0284C7]"
+                  >
+                    <option value="BANK">Rekening Bank</option>
+                    <option value="EWALLET">E-Wallet</option>
+                    <option value="CASH">Kas Tunai</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 block mb-1">
+                    {editingAcc ? 'Saldo Pokok Awal' : 'Saldo Awal'}
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={initialBalance}
+                    onChange={(e) => setInitialBalance(e.target.value)}
+                    placeholder="0"
+                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none focus:border-[#0284C7]"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-2.5 bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs font-bold rounded-xl transition-colors ios-btn-tap"
+              >
+                {editingAcc ? 'Simpan Perubahan' : 'Buat Kantong'}
+              </button>
+            </form>
+          )}
+
+          {/* Simplified Pocket Cards List */}
+          <div className="space-y-2.5">
+            <div className="flex items-center justify-between px-1">
+              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                Daftar Kantong ({safeAccounts.length})
+              </span>
+              <span className="text-[10px] text-slate-400">Ketuk kantong untuk mutasi & opsi</span>
+            </div>
+
+            {safeAccounts.length === 0 ? (
+              <div className="p-8 text-center bg-[#F0F9FF] dark:bg-slate-800 rounded-2xl border border-sky-100 dark:border-slate-700">
+                <Icon name="credit-card" className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Belum ada kantong</p>
+                <p className="text-[11px] text-slate-400 mt-1">Tambahkan kantong pertama Anda untuk mulai mengelola dana.</p>
+              </div>
+            ) : (
+              safeAccounts.map((acc) => {
+                const bal = Ledger.getAccountBalance(acc.id, safeAccounts, safeTransactions);
+                const isExpanded = expandedCardId === acc.id;
+                const iconName = acc.type === 'CASH' ? 'cash' : acc.type === 'EWALLET' ? 'smartphone' : 'bank';
+                const typeLabel = acc.type === 'CASH' ? 'Kas Tunai' : acc.type === 'EWALLET' ? 'E-Wallet' : 'Rekening Bank';
+
+                // Get last 4 mutations for this account
+                const accountTxs = safeTransactions
+                  .filter(tx => tx.accountId === acc.id)
+                  .slice(0, 4);
+
+                const maskedNumber = (acc.accountNumber && String(acc.accountNumber).trim())
+                  ? `•••• ${String(acc.accountNumber).replace(/\s/g, '').slice(-4)}`
+                  : `•••• ${String(acc.id || '8829').replace(/\D/g, '').slice(-4) || '8829'}`;
+
+                return (
+                  <div
+                    key={acc.id}
+                    onClick={() => setExpandedCardId(isExpanded ? null : acc.id)}
+                    className="relative w-full rounded-2xl bg-[#0284C7] dark:bg-[#0369A1] p-4 text-white shadow-md select-none cursor-pointer ios-card-tap transition-transform duration-200"
+                  >
+                    {/* Top row: Type chip/badge and brand/card type icon */}
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-xl bg-white/20 border border-white/25 flex items-center justify-center text-white">
+                          <Icon name={iconName} className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-sky-100 block">
+                            {typeLabel}
+                          </span>
+                          <h4 className="text-sm font-extrabold text-white truncate leading-tight">
+                            {acc.name}
+                          </h4>
+                        </div>
+                      </div>
+
+                      {/* Card chip indicator */}
+                      <div className="px-2 py-0.5 rounded-md bg-white/15 border border-white/20 text-[9px] font-mono font-bold tracking-wider text-sky-100">
+                        {maskedNumber}
+                      </div>
+                    </div>
+
+                    {/* Bottom row: Saldo and status */}
+                    <div className="pt-2 border-t border-white/15 flex items-end justify-between">
+                      <div>
+                        <span className="text-[9px] font-semibold uppercase tracking-wider text-sky-200/90 block mb-0.5">
+                          Saldo Tersedia
+                        </span>
+                        <div className="text-lg sm:text-xl font-black tracking-tight text-white">
+                          {hideBalance ? 'Rp ••••••••' : formatIDR(bal)}
+                        </div>
+                      </div>
+
+                      <div className="text-right">
+                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-sky-100 bg-white/15 px-2 py-0.5 rounded-lg">
+                          <span>{isExpanded ? 'Tutup Opsi' : 'Kelola'}</span>
+                          <Icon name={isExpanded ? 'chevron-up' : 'chevron-down'} className="w-3 h-3" />
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Expanded Pocket Actions & Recent Mutations */}
+                    {isExpanded && (
+                      <div className="mt-3.5 pt-3 border-t border-white/20 space-y-3 animate-ios-spring-pop text-slate-800 dark:text-slate-100" onClick={(e) => e.stopPropagation()}>
+                        {/* Quick Action Buttons */}
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (onOpenAddTx) onOpenAddTx(acc.id);
+                            }}
+                            className="flex-1 py-2 px-2 bg-white text-[#0284C7] text-[11px] font-bold rounded-xl flex items-center justify-center gap-1 shadow-xs hover:bg-sky-50 transition-colors ios-btn-tap"
+                          >
+                            <Icon name="plus" className="w-3.5 h-3.5" />
+                            <span>Catat Mutasi</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => handleStartEdit(acc, e)}
+                            className="py-2 px-3 bg-white/20 hover:bg-white/30 text-white text-[11px] font-bold rounded-xl flex items-center gap-1 border border-white/30 transition-colors ios-btn-tap"
+                          >
+                            <Icon name="edit" className="w-3.5 h-3.5" />
+                            <span>Edit</span>
+                          </button>
+                          {safeAccounts.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (confirm(`Hapus kantong "${acc.name}"? Catatan transaksi terkait akan tetap tersimpan.`)) {
+                                  onDeleteAccount(acc.id);
+                                }
+                              }}
+                              className="py-2 px-2.5 bg-rose-500/80 hover:bg-rose-600 text-white text-[11px] font-bold rounded-xl flex items-center gap-1 border border-rose-400/40 transition-colors ios-btn-tap"
+                            >
+                              <Icon name="trash" className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Recent Mutations for this account */}
+                        <div className="space-y-1.5 pt-1">
+                          <p className="text-[10px] font-bold text-sky-100 uppercase tracking-wider">
+                            Mutasi Terakhir
+                          </p>
+                          {accountTxs.length === 0 ? (
+                            <p className="text-[11px] text-sky-200/80 py-1 italic">Belum ada mutasi di kantong ini.</p>
+                          ) : (
+                            accountTxs.map(tx => (
+                              <div key={tx.id} className="flex items-center justify-between py-1.5 px-2.5 rounded-xl bg-black/15 text-xs text-white">
+                                <span className="truncate max-w-[150px] font-medium text-sky-50">
+                                  {tx.notes || tx.category || 'Mutasi'}
+                                </span>
+                                <span className="font-bold text-white">
+                                  {tx.type === 'INCOME' ? '+' : '-'}{formatIDR(tx.amount)}
+                                </span>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      );
+    };
+
+    // =========================================================================
+    // 8. FLOATING CAPSULE NAVIGATION (ICON-ONLY 5 TABS WITH TOUCH DRAG MECHANICS)
     // =========================================================================
     const FloatingCapsuleNav = ({ currentTab, onSelectTab }) => {
       const tabs = [
-        { id: 'dashboard', label: 'Ringkasan', icon: 'wallet' },
+        { id: 'dashboard', label: 'Ringkasan', icon: 'home' },
+        { id: 'cards', label: 'Kantong', icon: 'credit-card' },
         { id: 'debts', label: 'Hutang', icon: 'receipt' },
         { id: 'savings', label: 'Impian', icon: 'target' },
         { id: 'analytics', label: 'Statistik', icon: 'pie-chart' }
@@ -848,8 +1195,8 @@ PART7_VIEWS = """
           <div
             className="absolute top-1.5 bottom-1.5 rounded-full bg-[#0284C7] dark:bg-[#38BDF8] shadow-sm pointer-events-none transition-all duration-300"
             style={{
-              left: `calc(${activeIndex * 25}% + 4px)`,
-              width: 'calc(25% - 8px)',
+              left: `calc(${activeIndex * 20}% + 3px)`,
+              width: 'calc(20% - 6px)',
               transitionTimingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)'
             }}
           />
@@ -861,6 +1208,8 @@ PART7_VIEWS = """
                 key={t.id}
                 type="button"
                 onClick={() => onSelectTab(t.id)}
+                title={t.label}
+                aria-label={t.label}
                 className="flex-1 h-full relative z-10 flex items-center justify-center rounded-full transition-colors duration-200 ios-btn-tap"
               >
                 <Icon
@@ -868,11 +1217,6 @@ PART7_VIEWS = """
                   className={`w-5 h-5 flex-shrink-0 aspect-square ${isActive ? 'text-white dark:text-[#0F172A]' : 'text-slate-500 dark:text-slate-400'}`}
                   strokeWidth={isActive ? 2.4 : 1.8}
                 />
-                {isActive && (
-                  <span className="whitespace-nowrap font-bold text-xs text-white dark:text-[#0F172A] ml-1.5 hidden min-[320px]:inline">
-                    {t.label}
-                  </span>
-                )}
               </button>
             );
           })}

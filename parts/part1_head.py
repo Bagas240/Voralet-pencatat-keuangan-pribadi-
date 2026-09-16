@@ -68,8 +68,13 @@ HTML_HEAD = """<!DOCTYPE html>
       }
     };
   </script>
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tailwind CSS (Local asset with CDN fallback) -->
+  <script src="./vendor/tailwindcss.js"></script>
+  <script>
+    if (!window.tailwind) {
+      document.write('<script src="https://cdn.tailwindcss.com"><\/script>');
+    }
+  </script>
   <script>
     if (window.tailwind) {
       window.tailwind.config = window.tailwind.config || {};
@@ -77,10 +82,25 @@ HTML_HEAD = """<!DOCTYPE html>
     }
   </script>
 
-  <!-- React 18 & ReactDOM 18 & Babel Standalone -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.4/babel.min.js"></script>
+  <!-- React 18 & ReactDOM 18 & Babel Standalone (Local assets with CDN fallback) -->
+  <script src="./vendor/react.production.min.js"></script>
+  <script>
+    if (!window.React) {
+      document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"><\/script>');
+    }
+  </script>
+  <script src="./vendor/react-dom.production.min.js"></script>
+  <script>
+    if (!window.ReactDOM) {
+      document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"><\/script>');
+    }
+  </script>
+  <script src="./vendor/babel.min.js"></script>
+  <script>
+    if (!window.Babel) {
+      document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.4/babel.min.js"><\/script>');
+    }
+  </script>
 
   <!-- Theme Synchronization Initialization -->
   <script>
@@ -99,6 +119,63 @@ HTML_HEAD = """<!DOCTYPE html>
     } catch (e) {
       document.documentElement.classList.remove('dark');
     }
+  </script>
+
+  <!-- Haptic & Vibration Feedback Engine (navigator.vibrate & AndroidBridge) -->
+  <script>
+    (function() {
+      // Unified Voralet Haptics Engine
+      window.VoraletHaptics = {
+        trigger: function(pattern, bridgeType) {
+          try {
+            if (window.navigator && typeof window.navigator.vibrate === 'function') {
+              window.navigator.vibrate(pattern);
+            }
+          } catch (e) {}
+          try {
+            if (window.AndroidBridge && typeof window.AndroidBridge.hapticFeedback === 'function') {
+              window.AndroidBridge.hapticFeedback(bridgeType || 'click');
+            }
+          } catch (e) {}
+        },
+        tap: function() {
+          this.trigger(12, 'light');
+        },
+        pinKey: function() {
+          this.trigger(15, 'light');
+        },
+        pinBackspace: function() {
+          this.trigger(20, 'medium');
+        },
+        pinSuccess: function() {
+          this.trigger([30, 60, 40], 'success');
+        },
+        pinError: function() {
+          this.trigger([60, 80, 60, 80, 60], 'heavy');
+        },
+        save: function() {
+          this.trigger([35, 50, 45], 'success');
+        },
+        delete: function() {
+          this.trigger([40, 60, 50], 'heavy');
+        }
+      };
+
+      // Global event delegation for all button taps, interactive cards, and segmented items
+      var lastHapticTime = 0;
+      document.addEventListener('click', function(e) {
+        var target = e.target;
+        if (!target) return;
+        var btn = target.closest('button, a, input[type="button"], input[type="submit"], .ios-btn-tap, .ios-card-tap, .ios-touch-item, .ios-keypad-btn');
+        if (btn) {
+          var now = Date.now();
+          if (now - lastHapticTime > 60) {
+            lastHapticTime = now;
+            window.VoraletHaptics.tap();
+          }
+        }
+      }, { capture: true, passive: true });
+    })();
   </script>
 
   <style>
@@ -212,26 +289,37 @@ HTML_HEAD = """<!DOCTYPE html>
       scrollbar-width: none;
     }
 
-    /* Tactile Touch Animation (SwiftUI Bouncy Spring Compression) */
+    /* Tactile Touch Animation (iOS Liquid Spring Physics 60/120 FPS) */
     .ios-btn-tap, .ios-touch-item {
-      transition: transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 150ms ease-out;
+      transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.18s ease;
       user-select: none;
       -webkit-user-select: none;
-      will-change: transform;
+      will-change: transform, opacity;
+      transform: translate3d(0, 0, 0);
+      touch-action: manipulation;
     }
     .ios-btn-tap:active, .ios-touch-item:active {
-      transform: scale3d(0.94, 0.94, 1) !important;
-      opacity: 0.86;
+      transform: translate3d(0, 0, 0) scale(0.95) !important;
+      opacity: 0.88;
     }
     .ios-card-tap {
-      transition: transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 150ms ease-out;
+      transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.18s ease;
       user-select: none;
       -webkit-user-select: none;
-      will-change: transform;
+      will-change: transform, opacity;
+      transform: translate3d(0, 0, 0);
+      touch-action: manipulation;
     }
     .ios-card-tap:active {
-      transform: scale3d(0.96, 0.96, 1) !important;
+      transform: translate3d(0, 0, 0) scale(0.97) !important;
       opacity: 0.92;
+    }
+
+    /* Navigation, view transitions, and bottom sheets */
+    .ios-view-transition, .animate-ios-tab-view {
+      transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.3s ease;
+      will-change: transform, opacity;
+      transform: translate3d(0, 0, 0);
     }
 
     /* Apple Wallet Dynamic Card Stack & Motion */
@@ -518,28 +606,10 @@ HTML_HEAD = """<!DOCTYPE html>
   </style>
 </head>
 <body>
-  <!-- Lightweight Diagnostic Error Catcher for Zero-Crash Visibility -->
   <script>
-    window.onerror = function(msg, url, line, col, error) {
-      try {
-        var existing = document.getElementById('voralet-error-banner');
-        if (!existing) {
-          var banner = document.createElement('div');
-          banner.id = 'voralet-error-banner';
-          banner.style.cssText = 'position:fixed;bottom:16px;left:16px;right:16px;z-index:999999;background:#991B1B;color:#FFFFFF;padding:12px 16px;border-radius:18px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:12px;box-shadow:0 12px 28px rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:space-between;border:1px solid rgba(255,255,255,0.25);';
-          var textDiv = document.createElement('div');
-          textDiv.style.cssText = 'flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:8px;font-weight:500;';
-          textDiv.innerHTML = '<strong style="color:#FECACA;">Diagnostik Voralet:</strong> ' + String(msg || 'Kesalahan sistem tidak terduga');
-          var closeBtn = document.createElement('button');
-          closeBtn.style.cssText = 'background:rgba(255,255,255,0.2);border:none;color:#FFF;padding:4px 10px;border-radius:10px;font-size:11px;font-weight:bold;cursor:pointer;flex-shrink:0;';
-          closeBtn.textContent = 'Tutup';
-          closeBtn.onclick = function() { banner.remove(); };
-          banner.appendChild(textDiv);
-          banner.appendChild(closeBtn);
-          document.body.appendChild(banner);
-        }
-      } catch (err) {}
-      return false;
+    window.onerror = function(msg, url, line) {
+      var r = document.getElementById('root');
+      if (r) r.innerHTML = '<div style="padding:20px;color:#e11d48;background:#fff1f2;font-family:sans-serif;border-radius:12px;margin:16px;"><b>Runtime Error:</b><br>'+msg+'<br>Line: '+line+'</div>';
     };
   </script>
   <div id="root"></div>

@@ -70,7 +70,11 @@ PART4_AUTH_PIN = """
                 <button
                   key={i}
                   type="button"
-                  onClick={onBackspace}
+                  onClick={() => {
+                    if (window.VoraletHaptics) window.VoraletHaptics.pinBackspace();
+                    else if (window.navigator?.vibrate) window.navigator.vibrate(20);
+                    onBackspace();
+                  }}
                   className="h-14 rounded-2xl flex items-center justify-center text-slate-600 dark:text-[#94A3B8] hover:bg-slate-100 dark:hover:bg-[#1E293B] active:bg-slate-200 dark:active:bg-[#334155] transition-colors ios-keypad-btn"
                   aria-label="Hapus"
                 >
@@ -82,7 +86,11 @@ PART4_AUTH_PIN = """
               <button
                 key={i}
                 type="button"
-                onClick={() => onKeyPress(k)}
+                onClick={() => {
+                  if (window.VoraletHaptics) window.VoraletHaptics.pinKey();
+                  else if (window.navigator?.vibrate) window.navigator.vibrate(15);
+                  onKeyPress(k);
+                }}
                 className="h-14 rounded-2xl flex items-center justify-center text-xl font-semibold text-[#0F172A] dark:text-[#F8FAFC] bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155] hover:bg-slate-50 dark:hover:bg-[#273549] transition-colors shadow-sm ios-keypad-btn"
               >
                 {k}
@@ -302,8 +310,12 @@ PART4_AUTH_PIN = """
           if (next.length === 6) {
             CryptoService.verifyPin(next, storedPin).then(isValid => {
               if (isValid) {
+                if (window.VoraletHaptics) window.VoraletHaptics.pinSuccess();
+                else if (window.navigator?.vibrate) window.navigator.vibrate([30, 60, 40]);
                 setTimeout(() => onUnlock(), 120);
               } else {
+                if (window.VoraletHaptics) window.VoraletHaptics.pinError();
+                else if (window.navigator?.vibrate) window.navigator.vibrate([60, 80, 60, 80, 60]);
                 setError(true);
                 setTimeout(() => setPin(''), 400);
               }

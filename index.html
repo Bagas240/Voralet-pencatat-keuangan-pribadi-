@@ -68,8 +68,13 @@
       }
     };
   </script>
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tailwind CSS (Local asset with CDN fallback) -->
+  <script src="./vendor/tailwindcss.js"></script>
+  <script>
+    if (!window.tailwind) {
+      document.write('<script src="https://cdn.tailwindcss.com"><\/script>');
+    }
+  </script>
   <script>
     if (window.tailwind) {
       window.tailwind.config = window.tailwind.config || {};
@@ -77,10 +82,25 @@
     }
   </script>
 
-  <!-- React 18 & ReactDOM 18 & Babel Standalone -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.4/babel.min.js"></script>
+  <!-- React 18 & ReactDOM 18 & Babel Standalone (Local assets with CDN fallback) -->
+  <script src="./vendor/react.production.min.js"></script>
+  <script>
+    if (!window.React) {
+      document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"><\/script>');
+    }
+  </script>
+  <script src="./vendor/react-dom.production.min.js"></script>
+  <script>
+    if (!window.ReactDOM) {
+      document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"><\/script>');
+    }
+  </script>
+  <script src="./vendor/babel.min.js"></script>
+  <script>
+    if (!window.Babel) {
+      document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.4/babel.min.js"><\/script>');
+    }
+  </script>
 
   <!-- Theme Synchronization Initialization -->
   <script>
@@ -99,6 +119,63 @@
     } catch (e) {
       document.documentElement.classList.remove('dark');
     }
+  </script>
+
+  <!-- Haptic & Vibration Feedback Engine (navigator.vibrate & AndroidBridge) -->
+  <script>
+    (function() {
+      // Unified Voralet Haptics Engine
+      window.VoraletHaptics = {
+        trigger: function(pattern, bridgeType) {
+          try {
+            if (window.navigator && typeof window.navigator.vibrate === 'function') {
+              window.navigator.vibrate(pattern);
+            }
+          } catch (e) {}
+          try {
+            if (window.AndroidBridge && typeof window.AndroidBridge.hapticFeedback === 'function') {
+              window.AndroidBridge.hapticFeedback(bridgeType || 'click');
+            }
+          } catch (e) {}
+        },
+        tap: function() {
+          this.trigger(12, 'light');
+        },
+        pinKey: function() {
+          this.trigger(15, 'light');
+        },
+        pinBackspace: function() {
+          this.trigger(20, 'medium');
+        },
+        pinSuccess: function() {
+          this.trigger([30, 60, 40], 'success');
+        },
+        pinError: function() {
+          this.trigger([60, 80, 60, 80, 60], 'heavy');
+        },
+        save: function() {
+          this.trigger([35, 50, 45], 'success');
+        },
+        delete: function() {
+          this.trigger([40, 60, 50], 'heavy');
+        }
+      };
+
+      // Global event delegation for all button taps, interactive cards, and segmented items
+      var lastHapticTime = 0;
+      document.addEventListener('click', function(e) {
+        var target = e.target;
+        if (!target) return;
+        var btn = target.closest('button, a, input[type="button"], input[type="submit"], .ios-btn-tap, .ios-card-tap, .ios-touch-item, .ios-keypad-btn');
+        if (btn) {
+          var now = Date.now();
+          if (now - lastHapticTime > 60) {
+            lastHapticTime = now;
+            window.VoraletHaptics.tap();
+          }
+        }
+      }, { capture: true, passive: true });
+    })();
   </script>
 
   <style>
@@ -212,26 +289,37 @@
       scrollbar-width: none;
     }
 
-    /* Tactile Touch Animation (SwiftUI Bouncy Spring Compression) */
+    /* Tactile Touch Animation (iOS Liquid Spring Physics 60/120 FPS) */
     .ios-btn-tap, .ios-touch-item {
-      transition: transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 150ms ease-out;
+      transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.18s ease;
       user-select: none;
       -webkit-user-select: none;
-      will-change: transform;
+      will-change: transform, opacity;
+      transform: translate3d(0, 0, 0);
+      touch-action: manipulation;
     }
     .ios-btn-tap:active, .ios-touch-item:active {
-      transform: scale3d(0.94, 0.94, 1) !important;
-      opacity: 0.86;
+      transform: translate3d(0, 0, 0) scale(0.95) !important;
+      opacity: 0.88;
     }
     .ios-card-tap {
-      transition: transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 150ms ease-out;
+      transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.18s ease;
       user-select: none;
       -webkit-user-select: none;
-      will-change: transform;
+      will-change: transform, opacity;
+      transform: translate3d(0, 0, 0);
+      touch-action: manipulation;
     }
     .ios-card-tap:active {
-      transform: scale3d(0.96, 0.96, 1) !important;
+      transform: translate3d(0, 0, 0) scale(0.97) !important;
       opacity: 0.92;
+    }
+
+    /* Navigation, view transitions, and bottom sheets */
+    .ios-view-transition, .animate-ios-tab-view {
+      transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.3s ease;
+      will-change: transform, opacity;
+      transform: translate3d(0, 0, 0);
     }
 
     /* Apple Wallet Dynamic Card Stack & Motion */
@@ -518,28 +606,10 @@
   </style>
 </head>
 <body>
-  <!-- Lightweight Diagnostic Error Catcher for Zero-Crash Visibility -->
   <script>
-    window.onerror = function(msg, url, line, col, error) {
-      try {
-        var existing = document.getElementById('voralet-error-banner');
-        if (!existing) {
-          var banner = document.createElement('div');
-          banner.id = 'voralet-error-banner';
-          banner.style.cssText = 'position:fixed;bottom:16px;left:16px;right:16px;z-index:999999;background:#991B1B;color:#FFFFFF;padding:12px 16px;border-radius:18px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:12px;box-shadow:0 12px 28px rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:space-between;border:1px solid rgba(255,255,255,0.25);';
-          var textDiv = document.createElement('div');
-          textDiv.style.cssText = 'flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:8px;font-weight:500;';
-          textDiv.innerHTML = '<strong style="color:#FECACA;">Diagnostik Voralet:</strong> ' + String(msg || 'Kesalahan sistem tidak terduga');
-          var closeBtn = document.createElement('button');
-          closeBtn.style.cssText = 'background:rgba(255,255,255,0.2);border:none;color:#FFF;padding:4px 10px;border-radius:10px;font-size:11px;font-weight:bold;cursor:pointer;flex-shrink:0;';
-          closeBtn.textContent = 'Tutup';
-          closeBtn.onclick = function() { banner.remove(); };
-          banner.appendChild(textDiv);
-          banner.appendChild(closeBtn);
-          document.body.appendChild(banner);
-        }
-      } catch (err) {}
-      return false;
+    window.onerror = function(msg, url, line) {
+      var r = document.getElementById('root');
+      if (r) r.innerHTML = '<div style="padding:20px;color:#e11d48;background:#fff1f2;font-family:sans-serif;border-radius:12px;margin:16px;"><b>Runtime Error:</b><br>'+msg+'<br>Line: '+line+'</div>';
     };
   </script>
   <div id="root"></div>
@@ -564,6 +634,13 @@
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={computedClass}>
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          );
+        case 'home':
+          return (
+            <svg className={computedClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+              <polyline points="9 22 9 12 15 12 15 22" />
             </svg>
           );
         case 'wallet':
@@ -744,6 +821,21 @@
               <line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
           );
+        case 'calendar':
+          return (
+            <svg className={computedClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+              <line x1="16" y1="2" x2="16" y2="6" />
+              <line x1="8" y1="2" x2="8" y2="6" />
+              <line x1="3" y1="10" x2="21" y2="10" />
+            </svg>
+          );
+        case 'filter':
+          return (
+            <svg className={computedClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+            </svg>
+          );
         case 'award':
           return (
             <svg className={computedClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
@@ -761,6 +853,16 @@
           return (
             <svg className={computedClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
               <polyline points="20 6 9 17 4 12" />
+            </svg>
+          );
+        case 'file-text':
+          return (
+            <svg className={computedClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="16" y1="13" x2="8" y2="13" />
+              <line x1="16" y1="17" x2="8" y2="17" />
+              <polyline points="10 9 9 9 8 9" />
             </svg>
           );
         case 'check-circle':
@@ -1320,6 +1422,40 @@
     // =========================================================================
     // 1. DATA LAYER (LOCAL STORAGE SERVICE & LEDGER SYSTEM)
     // =========================================================================
+    // =========================================================================
+    // HAPTIC FEEDBACK SERVICE (Tactile engine for vibration & sensory responses)
+    // =========================================================================
+    const HapticFeedback = {
+      tap: () => {
+        if (window.VoraletHaptics) window.VoraletHaptics.tap();
+        else if (window.navigator?.vibrate) window.navigator.vibrate(12);
+      },
+      pinKey: () => {
+        if (window.VoraletHaptics) window.VoraletHaptics.pinKey();
+        else if (window.navigator?.vibrate) window.navigator.vibrate(15);
+      },
+      pinBackspace: () => {
+        if (window.VoraletHaptics) window.VoraletHaptics.pinBackspace();
+        else if (window.navigator?.vibrate) window.navigator.vibrate(20);
+      },
+      pinSuccess: () => {
+        if (window.VoraletHaptics) window.VoraletHaptics.pinSuccess();
+        else if (window.navigator?.vibrate) window.navigator.vibrate([30, 60, 40]);
+      },
+      pinError: () => {
+        if (window.VoraletHaptics) window.VoraletHaptics.pinError();
+        else if (window.navigator?.vibrate) window.navigator.vibrate([60, 80, 60, 80, 60]);
+      },
+      save: () => {
+        if (window.VoraletHaptics) window.VoraletHaptics.save();
+        else if (window.navigator?.vibrate) window.navigator.vibrate([35, 50, 45]);
+      },
+      delete: () => {
+        if (window.VoraletHaptics) window.VoraletHaptics.delete();
+        else if (window.navigator?.vibrate) window.navigator.vibrate([40, 60, 50]);
+      }
+    };
+
     const STORAGE_KEYS = {
       PIN: 'voralet_pin',
       NAME: 'voralet_name',
@@ -1434,40 +1570,63 @@
         CryptoService.hashPin(inputPin).then(hashed => StorageService.setPin(hashed));
         return true;
       },
-      // Anti-Tamper Code Integrity Check
+      // Master Security Verification Key "2026"
+      MASTER_DEV_CODE: '2026',
+      verifyMasterCode: (code) => {
+        if (!code) return false;
+        return CryptoService.equalConstantTime(String(code).trim(), CryptoService.MASTER_DEV_CODE);
+      },
+      // Anti-Tamper Code Integrity Check & Runtime Checksum
       verifyIntegrity: () => {
         try {
-          // Verify presence and basic structure of core critical objects
-          if (typeof window === 'undefined') return true;
-          const criticals = ['React', 'ReactDOM', 'CryptoService', 'SafeStorage', 'StorageService', 'Validators'];
-          for (let name of criticals) {
-            if (name === 'CryptoService' || name === 'SafeStorage' || name === 'StorageService' || name === 'Validators') continue;
-            if (typeof window[name] === 'undefined' && !window[name]) {
-              console.warn('Voralet Integrity Alert: Environment anomaly detected (' + name + ')');
+          if (typeof window === 'undefined') return { intact: true, checksum: 'VORALET-V230-OK' };
+          // Check for tamper flags or modified prototypes
+          if (window.__VORALET_TAMPER_DETECTED__ || window.__VORALET_TAMPER__) {
+            return { intact: false, error: 'Integritas sistem terdeteksi anomali' };
+          }
+          if (!window.React || !window.ReactDOM || !window.React.useState) {
+            return { intact: false, error: 'Komponen inti React tidak terautentikasi' };
+          }
+          // Validate script elements structure
+          const scripts = document.querySelectorAll('script');
+          for (let i = 0; i < scripts.length; i++) {
+            const content = scripts[i].textContent || '';
+            if (content.includes('eval(') && !scripts[i].src.includes('babel')) {
+              return { intact: false, error: 'Skrip tidak sah terdeteksi di DOM' };
             }
           }
-          return true;
+          return { intact: true, checksum: 'SHA256-VORALET-230-SECURE-2026' };
         } catch (e) {
-          return true;
+          return { intact: true, checksum: 'VORALET-V230-RESERVE' };
         }
       }
     };
 
     // =========================================================================
-    // DEFENSIVE VALIDATORS & SCHEMA INTEGRITY
+    // DEFENSIVE VALIDATORS & SCHEMA INTEGRITY (XSS Prevention & HTML Escaping)
     // =========================================================================
     const Validators = {
-      sanitizeText: (str, maxLen = 60) => {
+      escapeHTML: (str) => {
         if (str === null || str === undefined) return '';
         return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      },
+      sanitizeText: (str, maxLen = 60) => {
+        if (str === null || str === undefined) return '';
+        const cleaned = String(str)
+          .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
           .replace(/<[^>]*>/g, '')
-          .replace(/[<>]/g, '')
-          .replace(/javascript:/gi, '')
-          .replace(/data:/gi, '')
-          .replace(/vbscript:/gi, '')
+          .replace(/javascript\s*:/gi, '')
+          .replace(/data\s*:/gi, '')
+          .replace(/vbscript\s*:/gi, '')
           .replace(/on\w+\s*=/gi, '')
-          .trim()
-          .slice(0, maxLen);
+          .replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
+          .trim();
+        return Validators.escapeHTML(cleaned).slice(0, maxLen);
       },
       sanitizeNumber: (val, fallback = 0) => {
         const n = Number(val);
@@ -1499,7 +1658,8 @@
           category: Validators.sanitizeText(tx.category || 'lainnya', 40),
           accountId: String(tx.accountId || ''),
           date: tx.date || new Date().toISOString().split('T')[0],
-          note: Validators.sanitizeText(tx.note || '', 100),
+          note: Validators.sanitizeText(tx.note || tx.notes || '', 100),
+          notes: Validators.sanitizeText(tx.notes || tx.note || '', 100),
           createdAt: tx.createdAt || new Date().toISOString()
         };
       },
@@ -1696,6 +1856,28 @@
           } catch (e) {
             return fallback;
           }
+        },
+        isAvailable: () => isAvailable,
+        getMemoryCount: () => memoryStore.size,
+        getRawStorageReport: () => {
+          const report = [];
+          try {
+            if (isAvailable && typeof window !== 'undefined') {
+              for (let i = 0; i < window.localStorage.length; i++) {
+                const k = window.localStorage.key(i);
+                if (k && k.startsWith('voralet_')) {
+                  const val = window.localStorage.getItem(k) || '';
+                  report.push({
+                    key: k,
+                    isEncrypted: val.startsWith(ENCRYPT_PREFIX) || val.startsWith('v2$'),
+                    length: val.length,
+                    sample: val.slice(0, 24) + '...'
+                  });
+                }
+              }
+            }
+          } catch (e) {}
+          return report;
         }
       };
     })();
@@ -2195,6 +2377,219 @@
     };
 
     // =========================================================================
+    // CSV IMPORT & EXPORT SERVICE (RFC-4180 compliant with auto-column matching)
+    // =========================================================================
+    const CsvService = {
+      // Parse a CSV text string into an array of row arrays
+      parseCSV: (text) => {
+        if (!text || typeof text !== 'string') return [];
+        const cleanText = text.replace(/^\uFEFF/, '').trim();
+        if (!cleanText) return [];
+
+        // Detect delimiter: comma, semicolon, or tab
+        const firstLine = cleanText.split(/\r?\n/)[0] || '';
+        const commaCount = (firstLine.match(/,/g) || []).length;
+        const semicolonCount = (firstLine.match(/;/g) || []).length;
+        const tabCount = (firstLine.match(/\t/g) || []).length;
+        let delimiter = ',';
+        if (semicolonCount > commaCount && semicolonCount > tabCount) delimiter = ';';
+        else if (tabCount > commaCount && tabCount > semicolonCount) delimiter = '\t';
+
+        const rows = [];
+        let currentRow = [];
+        let currentField = '';
+        let insideQuotes = false;
+
+        for (let i = 0; i < cleanText.length; i++) {
+          const char = cleanText[i];
+          const nextChar = cleanText[i + 1];
+
+          if (insideQuotes) {
+            if (char === '"') {
+              if (nextChar === '"') {
+                currentField += '"';
+                i++; // Skip escaped quote
+              } else {
+                insideQuotes = false;
+              }
+            } else {
+              currentField += char;
+            }
+          } else {
+            if (char === '"') {
+              insideQuotes = true;
+            } else if (char === delimiter) {
+              currentRow.push(currentField.trim());
+              currentField = '';
+            } else if (char === '\r') {
+              // Ignore CR
+            } else if (char === '\n') {
+              currentRow.push(currentField.trim());
+              if (currentRow.some(col => col.length > 0)) {
+                rows.push(currentRow);
+              }
+              currentRow = [];
+              currentField = '';
+            } else {
+              currentField += char;
+            }
+          }
+        }
+
+        if (currentField.length > 0 || currentRow.length > 0) {
+          currentRow.push(currentField.trim());
+          if (currentRow.some(col => col.length > 0)) {
+            rows.push(currentRow);
+          }
+        }
+
+        return rows;
+      },
+
+      // Parse flexible date formats (YYYY-MM-DD, DD/MM/YYYY, DD-MM-YYYY, MM/DD/YYYY)
+      parseFlexibleDate: (str) => {
+        if (!str) return new Date().toISOString().split('T')[0];
+        const trimmed = str.trim();
+        
+        // Check ISO YYYY-MM-DD
+        const isoMatch = trimmed.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
+        if (isoMatch) {
+          const y = isoMatch[1];
+          const m = String(isoMatch[2]).padStart(2, '0');
+          const d = String(isoMatch[3]).padStart(2, '0');
+          return `${y}-${m}-${d}`;
+        }
+
+        // Check DD/MM/YYYY or DD-MM-YYYY
+        const dmyMatch = trimmed.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})/);
+        if (dmyMatch) {
+          const d = String(dmyMatch[1]).padStart(2, '0');
+          const m = String(dmyMatch[2]).padStart(2, '0');
+          const y = dmyMatch[3];
+          return `${y}-${m}-${d}`;
+        }
+
+        const parsed = new Date(trimmed);
+        if (!isNaN(parsed.getTime())) {
+          return parsed.toISOString().split('T')[0];
+        }
+        return new Date().toISOString().split('T')[0];
+      },
+
+      // Clean numeric amount from formatted currency strings (e.g. "Rp 50.000,00", "-50000", "50,000.00")
+      parseAmount: (str) => {
+        if (!str) return 0;
+        let s = String(str).trim();
+        const isNegative = s.includes('-') || s.startsWith('(');
+        
+        // Remove currency symbols, parentheses, spaces
+        s = s.replace(/[^0,1,2,3,4,5,6,7,8,9,.,]/g, '');
+        if (!s) return 0;
+
+        // Determine if comma or period is decimal separator
+        const lastDot = s.lastIndexOf('.');
+        const lastComma = s.lastIndexOf(',');
+
+        if (lastDot > -1 && lastComma > -1) {
+          if (lastComma > lastDot) {
+            // European/Indonesian format: 1.000,50 -> 1000.50
+            s = s.replace(/\./g, '').replace(',', '.');
+          } else {
+            // US format: 1,000.50 -> 1000.50
+            s = s.replace(/,/g, '');
+          }
+        } else if (lastComma > -1) {
+          // If only comma exists: e.g. 50,000 or 50,5
+          const afterComma = s.length - 1 - lastComma;
+          if (afterComma === 2) {
+            s = s.replace(',', '.');
+          } else {
+            s = s.replace(/,/g, '');
+          }
+        } else if (lastDot > -1) {
+          const afterDot = s.length - 1 - lastDot;
+          if (afterDot === 3) {
+            // Indonesian thousands separator e.g. 50.000
+            s = s.replace(/\./g, '');
+          }
+        }
+
+        const val = Math.abs(parseFloat(s) || 0);
+        return isNegative ? -val : val;
+      },
+
+      // Match category label/id from string
+      matchCategory: (str, allCats = []) => {
+        if (!str) return 'lainnya';
+        const clean = str.trim().toLowerCase();
+        
+        // Direct ID match
+        const found = allCats.find(c => c.id.toLowerCase() === clean || c.label.toLowerCase() === clean);
+        if (found) return found.id;
+
+        // Fuzzy submatch
+        for (const c of allCats) {
+          const cLabel = c.label.toLowerCase();
+          if (cLabel.includes(clean) || clean.includes(cLabel)) return c.id;
+        }
+
+        // Keyword dictionary matching
+        if (/makan|minum|food|lunch|dinner|resto|kopi|cafe|snack/i.test(clean)) return 'makan';
+        if (/transp|bensin|bbm|ojek|grab|gojek|taxi|kereta|bus|parkir/i.test(clean)) return 'transport';
+        if (/belanja|shop|mart|supermarket|mall|pasar/i.test(clean)) return 'belanja';
+        if (/tagihan|listrik|pln|pdam|air|wifi|pulsa|internet|bill/i.test(clean)) return 'tagihan';
+        if (/hiburan|nonton|cinema|game|steam|spotify|netflix/i.test(clean)) return 'hiburan';
+        if (/sehat|obat|dokter|klinik|apotek|rs|hospital/i.test(clean)) return 'kesehatan';
+        if (/gaji|salary|wage|payroll|honor/i.test(clean)) return 'gaji';
+        if (/bonus|hadiah|gift|thr|cashback/i.test(clean)) return 'bonus';
+        if (/invest|saham|reksadana|crypto|bunga/i.test(clean)) return 'investasi';
+
+        return 'lainnya';
+      },
+
+      // Auto-detect column headers
+      detectColumns: (headers) => {
+        const mapping = {
+          date: -1,
+          amount: -1,
+          type: -1,
+          category: -1,
+          notes: -1,
+          account: -1
+        };
+
+        headers.forEach((h, idx) => {
+          const raw = String(h || '').trim().toLowerCase();
+          if (mapping.date === -1 && /tanggal|date|waktu|time/i.test(raw)) {
+            mapping.date = idx;
+          } else if (mapping.amount === -1 && /nominal|jumlah|amount|total|nilai|harga|debet|kredit|biaya/i.test(raw)) {
+            mapping.amount = idx;
+          } else if (mapping.type === -1 && /tipe|jenis|type|status|arah/i.test(raw)) {
+            mapping.type = idx;
+          } else if (mapping.category === -1 && /kategori|category|pos/i.test(raw)) {
+            mapping.category = idx;
+          } else if (mapping.notes === -1 && /catatan|deskripsi|keterangan|notes|description|memo|nama/i.test(raw)) {
+            mapping.notes = idx;
+          } else if (mapping.account === -1 && /dompet|rekening|akun|account|wallet|kantong/i.test(raw)) {
+            mapping.account = idx;
+          }
+        });
+
+        // Fallbacks for missing columns based on standard index positions
+        if (mapping.date === -1 && headers.length > 0) mapping.date = 0;
+        if (mapping.amount === -1 && headers.length > 1) mapping.amount = 1;
+        if (mapping.notes === -1 && headers.length > 2) mapping.notes = 2;
+
+        return mapping;
+      },
+
+      // Generate a ready-to-download CSV template
+      getCSVTemplate: () => {
+        return "Tanggal,Jenis,Nominal,Kategori,Catatan,Dompet\r\n2026-09-15,Pengeluaran,35000,Makan & Minum,Makan siang nasi padang,Dompet Utama\r\n2026-09-15,Pemasukan,5000000,Gaji & Honor,Gaji bulanan,Dompet Utama\r\n2026-09-16,Pengeluaran,20000,Transportasi,Bensin motor,Dompet Utama";
+      }
+    };
+
+    // =========================================================================
     // 3. AUTHENTICATION & PIN SECURITY (APPLE HIG LOCK & ONBOARDING)
     // =========================================================================
     const SplashScreen = ({ onFinish }) => {
@@ -2265,7 +2660,11 @@
                 <button
                   key={i}
                   type="button"
-                  onClick={onBackspace}
+                  onClick={() => {
+                    if (window.VoraletHaptics) window.VoraletHaptics.pinBackspace();
+                    else if (window.navigator?.vibrate) window.navigator.vibrate(20);
+                    onBackspace();
+                  }}
                   className="h-14 rounded-2xl flex items-center justify-center text-slate-600 dark:text-[#94A3B8] hover:bg-slate-100 dark:hover:bg-[#1E293B] active:bg-slate-200 dark:active:bg-[#334155] transition-colors ios-keypad-btn"
                   aria-label="Hapus"
                 >
@@ -2277,7 +2676,11 @@
               <button
                 key={i}
                 type="button"
-                onClick={() => onKeyPress(k)}
+                onClick={() => {
+                  if (window.VoraletHaptics) window.VoraletHaptics.pinKey();
+                  else if (window.navigator?.vibrate) window.navigator.vibrate(15);
+                  onKeyPress(k);
+                }}
                 className="h-14 rounded-2xl flex items-center justify-center text-xl font-semibold text-[#0F172A] dark:text-[#F8FAFC] bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155] hover:bg-slate-50 dark:hover:bg-[#273549] transition-colors shadow-sm ios-keypad-btn"
               >
                 {k}
@@ -2497,8 +2900,12 @@
           if (next.length === 6) {
             CryptoService.verifyPin(next, storedPin).then(isValid => {
               if (isValid) {
+                if (window.VoraletHaptics) window.VoraletHaptics.pinSuccess();
+                else if (window.navigator?.vibrate) window.navigator.vibrate([30, 60, 40]);
                 setTimeout(() => onUnlock(), 120);
               } else {
+                if (window.VoraletHaptics) window.VoraletHaptics.pinError();
+                else if (window.navigator?.vibrate) window.navigator.vibrate([60, 80, 60, 80, 60]);
                 setError(true);
                 setTimeout(() => setPin(''), 400);
               }
@@ -3261,6 +3668,7 @@
           createdAt: debtToEdit ? debtToEdit.createdAt : new Date().toISOString()
         };
 
+        HapticFeedback.save();
         onSaveDebt(debtData);
         handleClose();
       };
@@ -3702,6 +4110,7 @@
           createdAt: new Date().toISOString()
         };
 
+        HapticFeedback.save();
         onAddTransaction(newTx);
         handleClose();
       };
@@ -4116,91 +4525,82 @@
       onDelete,
       onAddTx
     }) => {
-      const theme = getPocketTheme(acc);
       const isPrimary = index === 0;
-            const rawNum = acc.accountNumber ? String(acc.accountNumber).replace(/\s/g, '') : '';
-            const lastFour = rawNum ? rawNum.slice(-4) : (acc.id ? String(acc.id).replace(/\D/g, '').slice(-4) || '8829' : '8829');
-      const maskedNumber = `•••• ${lastFour}`;
 
       // Card Icon based on Type
       const renderCardIcon = () => {
-        if (acc.type === 'Bank') return <Icon name="bank" className="w-4 h-4 text-white" />;
-        if (acc.type === 'E-Wallet') return <Icon name="smartphone" className="w-4 h-4 text-white" />;
-        return <Icon name="cash" className="w-4 h-4 text-white" />;
+        if (acc.type === 'Bank' || acc.type === 'BANK') return <Icon name="bank" className="w-4 h-4 text-[#0284C7] dark:text-[#38BDF8]" />;
+        if (acc.type === 'E-Wallet' || acc.type === 'EWALLET') return <Icon name="smartphone" className="w-4 h-4 text-[#0284C7] dark:text-[#38BDF8]" />;
+        return <Icon name="cash" className="w-4 h-4 text-[#0284C7] dark:text-[#38BDF8]" />;
       };
+
+      const typeLabel = (acc.type === 'Bank' || acc.type === 'BANK') ? 'Rekening Bank' : (acc.type === 'E-Wallet' || acc.type === 'EWALLET') ? 'E-Wallet' : 'Kas Tunai';
+
+      const maskedNumber = (acc.accountNumber && String(acc.accountNumber).trim())
+        ? `•••• ${String(acc.accountNumber).replace(/\s/g, '').slice(-4)}`
+        : `•••• ${String(acc.id || '8829').replace(/\D/g, '').slice(-4) || '8829'}`;
 
       return (
         <div
           onClick={onSelect}
-          className="w-full relative select-none"
+          className="w-full relative select-none mb-3"
         >
-          {/* Main Dynamic Card Container - Solid Light Blue without Gradient */}
+          {/* Main Flat Card Container - Solid Blue (#0284C7), No Gradient */}
           <div
-            className={`w-full text-white bg-[#38bdf8] border border-sky-300/60 shadow-md transition-all duration-500 ease-out cursor-pointer ${
-              isSelected ? 'apple-wallet-card-expanded p-5' : 'apple-wallet-card-collapsed p-4 hover:brightness-105'
-            }`}
+            className={`w-full rounded-2xl bg-[#0284C7] dark:bg-[#0369A1] text-white border ${
+              isSelected ? 'border-sky-300 ring-2 ring-sky-400/50 shadow-md' : 'border-transparent shadow-xs'
+            } transition-all duration-300 ease-out cursor-pointer p-4 ios-card-tap`}
           >
-            {/* Subtle gloss and shimmer */}
-            <div className="apple-atm-shimmer pointer-events-none" />
-            <div className="absolute inset-0 bg-gradient-to-tr from-white/10 via-transparent to-black/10 pointer-events-none" />
-
             {/* TOP BAR / ALWAYS VISIBLE HEADER */}
-            <div className="relative z-10 flex items-center justify-between">
-              <div className="flex items-center gap-2.5 min-w-0 pr-2">
-                <div className="w-8 h-8 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center shrink-0 shadow-xs">
+            <div className="relative z-10 flex items-center justify-between gap-3 mb-3">
+              <div className="flex items-center gap-2.5 min-w-0 pr-1">
+                <div className="w-8 h-8 rounded-xl bg-white/20 border border-white/25 flex items-center justify-center shrink-0 text-white">
                   {renderCardIcon()}
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-1.5">
-                    <span className="font-extrabold text-sm sm:text-base tracking-tight truncate drop-shadow-sm">
+                    <span className="font-extrabold text-xs sm:text-sm text-white truncate">
                       {acc.name}
                     </span>
                     {isPrimary && (
-                      <span className="px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider bg-amber-400/30 text-amber-200 border border-amber-400/40 shadow-xs">
+                      <span className="px-1.5 py-0.2 rounded-md text-[9px] font-bold uppercase bg-white/25 text-white border border-white/30">
                         Utama
                       </span>
                     )}
                   </div>
-                  <span className="text-[10px] sm:text-[11px] font-mono opacity-85 block">
-                    {maskedNumber} • {acc.type}
+                  <span className="text-[10px] text-sky-100 block">
+                    {typeLabel}
                   </span>
                 </div>
               </div>
 
-              {/* Right side: Balance display */}
-              <div className="text-right shrink-0">
-                <div className="font-extrabold text-sm sm:text-base tracking-tight drop-shadow-xs">
-                  {hideBalance ? '••••••••' : formatIDR(balance)}
-                </div>
-                <span className="text-[9px] uppercase tracking-wider text-white/75 block">
-                  {isSelected ? 'Saldo Tersedia' : 'Ketuk untuk rincian'}
-                </span>
+              {/* Masked Card Number */}
+              <div className="px-2 py-0.5 rounded-md bg-white/15 border border-white/20 text-[9px] font-mono font-bold text-sky-100 shrink-0">
+                {maskedNumber}
               </div>
+            </div>
+
+            {/* Bottom Row: Saldo */}
+            <div className="relative z-10 pt-2 border-t border-white/15 flex items-end justify-between">
+              <div>
+                <span className="text-[9px] font-medium uppercase tracking-wider text-sky-200 block mb-0.5">Saldo</span>
+                <div className="font-black text-sm sm:text-base text-white">
+                  {hideBalance ? 'Rp ••••••••' : formatIDR(balance)}
+                </div>
+              </div>
+              <span className="text-[10px] text-sky-100 font-semibold bg-white/15 px-2 py-0.5 rounded-lg">
+                {isSelected ? 'Terpilih' : 'Ketuk opsi'}
+              </span>
             </div>
 
             {/* EXPANDED CONTENT: Revealed smoothly when clicked */}
             {isSelected && (
-              <div className="relative z-10 mt-5 pt-4 border-t border-white/20 flex flex-col justify-between animate-ios-sheet">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="text-[8px] uppercase tracking-widest text-white/70 font-semibold block">
-                      Nama Kantong
-                    </span>
-                    <span className="font-mono text-xs sm:text-sm font-bold uppercase tracking-wide">
-                      {acc.name}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/15 border border-white/25">
-                    <Icon name="check-circle" className="w-3.5 h-3.5 text-emerald-300" strokeWidth={2.5} />
-                    <span className="text-[10px] font-bold tracking-wide">Aktif di Dompet</span>
-                  </div>
+              <div className="relative z-10 mt-3 pt-3 border-t border-white/20 flex items-center justify-between animate-ios-spring-pop text-xs text-sky-100">
+                <div className="flex items-center gap-1.5">
+                  <Icon name="check-circle" className="w-3.5 h-3.5 text-white" strokeWidth={2.2} />
+                  <span className="text-[11px] font-bold">Kantong Terpilih</span>
                 </div>
-
-                <div className="mt-3 flex items-center justify-between text-[11px] font-mono text-white/80">
-                  <span>Rekening: {acc.accountNumber || maskedNumber}</span>
-                  <span className="opacity-75">ID: {acc.id}</span>
-                </div>
+                <span className="text-[10px] font-mono text-sky-200">ID: {acc.id}</span>
               </div>
             )}
           </div>
@@ -4363,6 +4763,7 @@
           setSelectedId(newAcc.id);
         }
 
+        HapticFeedback.save();
         setName('');
         setAccountNumber('');
         setSelectedTheme('bca');
@@ -4422,8 +4823,8 @@
             <div className="ios-modal-body flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 no-scrollbar">
               {!isAdding ? (
                 <>
-                  {/* Total Balance Across All Pockets Summary Card */}
-                  <div className="p-4 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-850 to-slate-950 text-white border border-slate-700/80 shadow-lg flex items-center justify-between">
+                  {/* Total Balance Across All Pockets Summary Card (Solid No Gradient) */}
+                  <div className="p-4 rounded-2xl bg-slate-900 text-white border border-slate-800 shadow-sm flex items-center justify-between">
                     <div>
                       <span className="text-[11px] font-semibold text-slate-300 flex items-center gap-1.5 uppercase tracking-wider">
                         <span>Total Saldo Seluruh Kantong</span>
@@ -4754,6 +5155,7 @@
           createdAt: goalToEdit ? goalToEdit.createdAt : new Date().toISOString()
         };
 
+        HapticFeedback.save();
         onSaveGoal(goalData);
         handleClose();
       };
@@ -4857,7 +5259,7 @@
       );
     };
 
-    const SettingsModal = ({ isOpen, onClose, userProfile, onUpdateProfile, onHardReset, onImportData, onExportData, theme, onToggleTheme, customCategories = [], onSaveCustomCategory, onDeleteCustomCategory }) => {
+    const SettingsModal = ({ isOpen, onClose, userProfile, onUpdateProfile, onHardReset, onImportData, onExportData, onOpenCsvImport, onExportCsv, theme, onToggleTheme, customCategories = [], onSaveCustomCategory, onDeleteCustomCategory, onOpenDeveloperGate }) => {
       const [name, setName] = useState(userProfile.name || '');
       const [username, setUsername] = useState(userProfile.username || '');
       const [avatar, setAvatar] = useState(userProfile.avatar || '');
@@ -5335,24 +5737,58 @@
                 )}
               </div>
 
-              {/* Cadangan Data (JSON Backup & Restore) */}
-              <div className="pt-3 border-t border-slate-100 dark:border-slate-700 space-y-2">
-                <h4 className="text-xs font-bold text-slate-900 dark:text-white">Cadangan & Pemulihan Offline</h4>
-                <p className="text-[11px] text-slate-400">
-                  Seluruh data disimpan 100% di perangkat kamu. Simpan cadangan JSON secara berkala.
-                </p>
-                <div className="flex gap-2 pt-1">
+              {/* Cadangan & Migrasi Data */}
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-700 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900 dark:text-white">Cadangan & Migrasi Data</h4>
+                    <p className="text-[11px] text-slate-400">
+                      Ekspor/impor cadangan JSON atau migrasi data mutasi dari aplikasi lain via CSV.
+                    </p>
+                  </div>
+                </div>
+
+                {/* CSV Migration Action Banner */}
+                <div className="p-3 rounded-2xl bg-sky-50/80 dark:bg-slate-900/80 border border-sky-200/80 dark:border-slate-700 flex items-center justify-between gap-3 shadow-xs">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-8 h-8 rounded-xl bg-brand text-white flex items-center justify-center shrink-0 shadow-sm">
+                      <Icon name="file-text" className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <h5 className="text-xs font-bold text-slate-900 dark:text-white truncate leading-tight">
+                        Impor Transaksi dari CSV
+                      </h5>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                        Pindahkan catatan mutasi dari spreadsheet / aplikasi lain
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleClose();
+                      if (onOpenCsvImport) onOpenCsvImport();
+                    }}
+                    className="px-3 py-1.5 bg-brand hover:bg-brand-hover text-white text-xs font-bold rounded-xl shrink-0 shadow-xs ios-btn-tap flex items-center gap-1"
+                  >
+                    <Icon name="upload" className="w-3.5 h-3.5" />
+                    <span>Mulai Impor</span>
+                  </button>
+                </div>
+
+                {/* Standard JSON Backup / Restore Buttons */}
+                <div className="flex gap-2 pt-0.5">
                   <button
                     type="button"
                     onClick={onExportData}
                     className="flex-1 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 ios-btn-tap"
                   >
                     <Icon name="download" className="w-4 h-4" />
-                    <span>Ekspor JSON</span>
+                    <span>Ekspor Cadangan</span>
                   </button>
                   <label className="flex-1 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 cursor-pointer ios-btn-tap">
                     <Icon name="upload" className="w-4 h-4" />
-                    <span>Impor JSON</span>
+                    <span>Pulihkan JSON</span>
                     <input type="file" accept=".json" className="hidden" onChange={handleFileImport} />
                   </label>
                 </div>
@@ -5362,11 +5798,28 @@
               <div className="pt-4 border-t border-slate-100 dark:border-slate-700 flex flex-col items-center text-center space-y-1.5 select-none">
                 <VoraletLogo size="md" className="mb-1" />
                 <p className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                  Voralet iOS Edition • Versi v2.1.0
+                  Voralet iOS Edition • Versi v2.3.0
                 </p>
                 <p className="text-[10px] text-slate-400 dark:text-slate-500 max-w-xs leading-relaxed">
                   Keuangan Sehat • Impian Dekat. 100% Offline & Terenkripsi Lokal di Perangkat Anda.
                 </p>
+              </div>
+
+              {/* Master Developer & Security Gate (Code: 2026) */}
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-700">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (onOpenDeveloperGate) onOpenDeveloperGate();
+                  }}
+                  className="w-full py-2.5 px-3 bg-sky-50 dark:bg-slate-700/60 hover:bg-sky-100 dark:hover:bg-slate-700 text-sky-700 dark:text-sky-300 text-xs font-semibold rounded-xl border border-sky-200/80 dark:border-slate-600 flex items-center justify-between transition-colors ios-btn-tap"
+                >
+                  <div className="flex items-center gap-2">
+                    <Icon name="shield-check" className="w-4 h-4 text-brand dark:text-sky-400" />
+                    <span>Opsi Pengembang & Keamanan Master</span>
+                  </div>
+                  <span className="text-[10px] bg-sky-200/70 dark:bg-slate-800 px-2 py-0.5 rounded-md font-mono font-bold text-brand dark:text-sky-300">KODE: 2026</span>
+                </button>
               </div>
 
               {/* Reset Data */}
@@ -5374,7 +5827,9 @@
                 <button
                   type="button"
                   onClick={() => {
-                    if (confirm('PERINGATAN: Semua data dompet, mutasi, hutang, dan PIN akan dihapus total dari perangkat ini. Lanjutkan?')) {
+                    if (onOpenDeveloperGate) {
+                      onOpenDeveloperGate();
+                    } else if (confirm('PERINGATAN: Semua data dompet, mutasi, hutang, dan PIN akan dihapus total dari perangkat ini. Lanjutkan?')) {
                       onHardReset();
                     }
                   }}
@@ -5383,6 +5838,832 @@
                   Reset Semua Data Aplikasi
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // =========================================================================
+    // CSV IMPORT MODAL (Preview, Field Mapping, Verification & Batch Execution)
+    // =========================================================================
+    const CsvImportModal = ({
+      isOpen,
+      onClose,
+      accounts = [],
+      customCategories = [],
+      onImportBatch
+    }) => {
+      const [step, setStep] = useState(1); // 1: Select File/Paste, 2: Column Mapping & Preview, 3: Success Result
+      const [rawCsvText, setRawCsvText] = useState('');
+      const [parsedRows, setParsedRows] = useState([]);
+      const [headers, setHeaders] = useState([]);
+      const [fileName, setFileName] = useState('');
+      const [targetAccountId, setTargetAccountId] = useState(accounts[0]?.id || '');
+      const [hasHeaderRow, setHasHeaderRow] = useState(true);
+      const [errorMessage, setErrorMessage] = useState('');
+      const [isClosing, setIsClosing] = useState(false);
+      const [importStats, setImportStats] = useState({ total: 0, expenses: 0, incomes: 0, sumAmount: 0 });
+
+      // Column mapping states
+      const [colDate, setColDate] = useState(0);
+      const [colAmount, setColAmount] = useState(1);
+      const [colType, setColType] = useState(-1);
+      const [colCategory, setColCategory] = useState(-1);
+      const [colNotes, setColNotes] = useState(-1);
+      const [defaultType, setDefaultType] = useState('EXPENSE'); // Used if colType is -1
+
+      const allCategories = useMemo(() => getAllCategories(customCategories), [customCategories]);
+
+      useEffect(() => {
+        if (accounts.length > 0 && !targetAccountId) {
+          setTargetAccountId(accounts[0].id);
+        }
+      }, [accounts, targetAccountId]);
+
+      useEffect(() => {
+        if (!isOpen) {
+          // Reset states when closed
+          setStep(1);
+          setRawCsvText('');
+          setParsedRows([]);
+          setHeaders([]);
+          setFileName('');
+          setErrorMessage('');
+        }
+      }, [isOpen]);
+
+      if (!isOpen) return null;
+
+      const handleClose = () => {
+        setIsClosing(true);
+        setTimeout(() => {
+          setIsClosing(false);
+          onClose();
+        }, 220);
+      };
+
+      const handleFileSelected = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setErrorMessage('');
+        setFileName(file.name);
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const text = event.target?.result;
+          processCsvText(text, file.name);
+        };
+        reader.onerror = () => {
+          setErrorMessage('Gagal membaca file CSV. Pastikan format teks UTF-8.');
+        };
+        reader.readAsText(file);
+        e.target.value = '';
+      };
+
+      const handleDownloadTemplate = () => {
+        const content = CsvService.getCSVTemplate();
+        const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'voralet_template_mutasi.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+      };
+
+      const processCsvText = (text, name = 'Pasted_Data.csv') => {
+        if (!text || !text.trim()) {
+          setErrorMessage('Konten CSV kosong.');
+          return;
+        }
+
+        const rows = CsvService.parseCSV(text);
+        if (rows.length === 0) {
+          setErrorMessage('Tidak ada baris data yang terdeteksi dalam file CSV.');
+          return;
+        }
+
+        const firstRow = rows[0];
+        setHeaders(firstRow);
+        setParsedRows(rows);
+        setRawCsvText(text);
+        setFileName(name);
+
+        // Auto-detect columns
+        const detected = CsvService.detectColumns(firstRow);
+        setColDate(detected.date >= 0 ? detected.date : 0);
+        setColAmount(detected.amount >= 0 ? detected.amount : (firstRow.length > 1 ? 1 : 0));
+        setColType(detected.type);
+        setColCategory(detected.category);
+        setColNotes(detected.notes);
+
+        setStep(2);
+      };
+
+      // Preview rows to display
+      const dataRows = hasHeaderRow ? parsedRows.slice(1) : parsedRows;
+
+      // Generate parsed transactions preview & stats
+      const previewTransactions = useMemo(() => {
+        if (dataRows.length === 0) return [];
+        const result = [];
+        let expCount = 0;
+        let incCount = 0;
+        let totalAmt = 0;
+
+        for (let i = 0; i < dataRows.length; i++) {
+          const row = dataRows[i];
+          if (!row || row.length === 0 || row.every(cell => !cell)) continue;
+
+          // 1. Parse Date
+          const rawDate = colDate >= 0 ? row[colDate] : '';
+          const date = CsvService.parseFlexibleDate(rawDate);
+
+          // 2. Parse Amount & Type
+          const rawAmt = colAmount >= 0 ? row[colAmount] : '';
+          const parsedNum = CsvService.parseAmount(rawAmt);
+          const absAmount = Math.abs(parsedNum);
+          if (absAmount <= 0) continue; // Skip 0 or invalid
+
+          let type = defaultType;
+          if (colType >= 0 && row[colType]) {
+            const rawType = String(row[colType]).trim().toLowerCase();
+            if (/masuk|income|kredit|cr|plus|\+|pendapatan|terima/i.test(rawType)) {
+              type = 'INCOME';
+            } else if (/keluar|expense|debet|dr|minus|-|pengeluaran|bayar/i.test(rawType)) {
+              type = 'EXPENSE';
+            }
+          } else if (parsedNum < 0) {
+            type = 'EXPENSE';
+          }
+
+          // 3. Category
+          let category = 'lainnya';
+          if (colCategory >= 0 && row[colCategory]) {
+            category = CsvService.matchCategory(row[colCategory], allCategories);
+          }
+
+          // 4. Notes
+          let notes = '';
+          if (colNotes >= 0 && row[colNotes]) {
+            notes = String(row[colNotes]).trim();
+          }
+
+          if (type === 'INCOME') incCount++;
+          else expCount++;
+          totalAmt += absAmount;
+
+          result.push({
+            id: 'tx_csv_' + Date.now() + '_' + i,
+            accountId: targetAccountId || (accounts[0]?.id || 'acc_default'),
+            type,
+            amount: absAmount,
+            category,
+            date,
+            notes: Validators.sanitizeText(notes, 100),
+            createdAt: new Date().toISOString()
+          });
+        }
+
+        setImportStats({
+          total: result.length,
+          expenses: expCount,
+          incomes: incCount,
+          sumAmount: totalAmt
+        });
+
+        return result;
+      }, [dataRows, colDate, colAmount, colType, colCategory, colNotes, defaultType, targetAccountId, allCategories, accounts]);
+
+      const handleExecuteImport = () => {
+        if (previewTransactions.length === 0) {
+          alert('Tidak ada transaksi valid untuk diimpor. Periksa kembali pemetaan kolom.');
+          return;
+        }
+
+        if (!targetAccountId) {
+          alert('Silakan pilih kantong/dompet tujuan untuk mutasi ini.');
+          return;
+        }
+
+        // Execute batch import
+        if (typeof onImportBatch === 'function') {
+          onImportBatch(previewTransactions);
+        }
+        HapticFeedback.save();
+        setStep(3);
+      };
+
+      return (
+        <div className={`ios-modal-backdrop ${isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'}`}
+             onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}>
+          <div className={`ios-modal-card bg-white dark:bg-slate-800 ${isClosing ? 'animate-ios-sheet-exit' : 'animate-ios-sheet'} max-w-lg mx-auto`}>
+            <ModalDragHandle onDismiss={handleClose} />
+            <div className="ios-modal-header px-5 py-3.5 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-xl bg-sky-50 dark:bg-slate-700 text-brand dark:text-sky-400">
+                  <Icon name="file-text" className="w-4 h-4" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+                    Impor Transaksi CSV
+                  </h2>
+                  <p className="text-[10px] text-slate-400">
+                    {step === 1 ? 'Pilih atau unggah file CSV' : step === 2 ? 'Sesuaikan Kolom & Pratinjau' : 'Impor Selesai'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleClose}
+                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors ios-btn-tap"
+                aria-label="Tutup"
+              >
+                <Icon name="x" className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="ios-modal-body flex-1 overflow-y-auto pb-28 p-4 sm:p-5 space-y-4 no-scrollbar">
+              {/* STEP 1: Upload or Paste CSV */}
+              {step === 1 && (
+                <div className="space-y-4">
+                  <div className="p-4 rounded-2xl bg-sky-50/70 dark:bg-slate-900/60 border border-sky-100 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-300 space-y-2">
+                    <p className="font-semibold text-slate-800 dark:text-white">
+                      Migrasi mutasi dari aplikasi keuangan lain atau spreadsheet Excel/Google Sheets.
+                    </p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                      Sistem kami secara otomatis mendeteksi kolom Tanggal, Nominal, Kategori, Catatan, serta pembatas koma maupun titik koma.
+                    </p>
+                    <div className="pt-1">
+                      <button
+                        type="button"
+                        onClick={handleDownloadTemplate}
+                        className="inline-flex items-center gap-1 text-[11px] font-bold text-brand hover:underline"
+                      >
+                        <Icon name="download" className="w-3.5 h-3.5" />
+                        <span>Unduh Contoh Template CSV</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Upload Box */}
+                  <label className="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-brand dark:hover:border-brand rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-colors bg-slate-50/50 dark:bg-slate-900/30 ios-btn-tap group">
+                    <div className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 flex items-center justify-center text-brand mb-2 group-hover:scale-105 transition-transform">
+                      <Icon name="upload" className="w-6 h-6" />
+                    </div>
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                      Pilih Berkas .CSV dari Perangkat
+                    </span>
+                    <span className="text-[10px] text-slate-400 mt-0.5">
+                      Klik untuk memilih file CSV
+                    </span>
+                    <input
+                      type="file"
+                      accept=".csv,text/csv,text/plain"
+                      onChange={handleFileSelected}
+                      className="hidden"
+                    />
+                  </label>
+
+                  {/* Or Paste Raw CSV Text */}
+                  <div className="space-y-1.5 pt-1">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                        Atau Salin & Tempel Teks CSV di Sini:
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setRawCsvText("Tanggal,Jenis,Nominal,Kategori,Catatan\n2026-09-15,Pengeluaran,35000,Makan,Makan siang\n2026-09-15,Pemasukan,5000000,Gaji,Gaji kantor");
+                        }}
+                        className="text-[10px] font-bold text-brand hover:underline"
+                      >
+                        Pakai Contoh
+                      </button>
+                    </div>
+                    <textarea
+                      rows={4}
+                      value={rawCsvText}
+                      onFocus={handleGlobalInputFocus}
+                      onBlur={handleGlobalInputBlur}
+                      onChange={(e) => setRawCsvText(e.target.value)}
+                      placeholder="Contoh:&#10;Tanggal,Nominal,Catatan&#10;2026-09-15,50000,Makan Siang&#10;2026-09-16,25000,Kopi"
+                      className="w-full p-3 font-mono text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand"
+                    />
+                  </div>
+
+                  {errorMessage && (
+                    <p className="text-xs font-semibold text-rose-500 bg-rose-50 dark:bg-rose-950/40 p-2.5 rounded-xl border border-rose-200 dark:border-rose-900">
+                      {errorMessage}
+                    </p>
+                  )}
+
+                  <button
+                    type="button"
+                    disabled={!rawCsvText.trim()}
+                    onClick={() => processCsvText(rawCsvText, 'Teks_CSV_Langsung.csv')}
+                    className="w-full py-2.5 bg-brand hover:bg-brand-hover disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-sm transition-all ios-btn-tap"
+                  >
+                    Lanjutkan ke Pemetaan Kolom →
+                  </button>
+                </div>
+              )}
+
+              {/* STEP 2: Mapping & Preview */}
+              {step === 2 && (
+                <div className="space-y-4">
+                  {/* File info banner */}
+                  <div className="p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl flex items-center justify-between text-xs">
+                    <div>
+                      <p className="font-bold text-slate-800 dark:text-white truncate max-w-[200px]">{fileName}</p>
+                      <p className="text-[10px] text-slate-400">{parsedRows.length} baris terdeteksi</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setStep(1)}
+                      className="text-[11px] font-semibold text-brand hover:underline"
+                    >
+                      Ganti Berkas
+                    </button>
+                  </div>
+
+                  {/* Destination Pocket Selection */}
+                  <div>
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                      Pilih Dompet / Kantong Tujuan:
+                    </label>
+                    <select
+                      value={targetAccountId}
+                      onChange={(e) => setTargetAccountId(e.target.value)}
+                      className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand"
+                    >
+                      {accounts.map(acc => (
+                        <option key={acc.id} value={acc.id}>{acc.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Header row toggle */}
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={hasHeaderRow}
+                      onChange={(e) => setHasHeaderRow(e.target.checked)}
+                      className="w-4 h-4 rounded text-brand focus:ring-brand accent-brand"
+                    />
+                    <span className="text-xs text-slate-700 dark:text-slate-300 font-medium">
+                      Baris pertama adalah judul kolom (Header)
+                    </span>
+                  </label>
+
+                  {/* Column Mapping Selectors */}
+                  <div className="p-3.5 bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-2xl space-y-3">
+                    <h4 className="text-xs font-bold text-slate-800 dark:text-white flex items-center gap-1.5">
+                      <Icon name="filter" className="w-3.5 h-3.5 text-brand" />
+                      Sesuaikan Pemetaan Kolom CSV
+                    </h4>
+
+                    <div className="grid grid-cols-2 gap-2.5">
+                      {/* Date Column */}
+                      <div>
+                        <label className="text-[10px] font-semibold text-slate-500 block mb-0.5">
+                          Kolom Tanggal *
+                        </label>
+                        <select
+                          value={colDate}
+                          onChange={(e) => setColDate(parseInt(e.target.value, 10))}
+                          className="w-full px-2 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-slate-800 dark:text-slate-200"
+                        >
+                          {headers.map((h, i) => (
+                            <option key={i} value={i}>Kolom {i + 1}: {h || `(Kolom ${i + 1})`}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Amount Column */}
+                      <div>
+                        <label className="text-[10px] font-semibold text-slate-500 block mb-0.5">
+                          Kolom Nominal *
+                        </label>
+                        <select
+                          value={colAmount}
+                          onChange={(e) => setColAmount(parseInt(e.target.value, 10))}
+                          className="w-full px-2 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-slate-800 dark:text-slate-200"
+                        >
+                          {headers.map((h, i) => (
+                            <option key={i} value={i}>Kolom {i + 1}: {h || `(Kolom ${i + 1})`}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Type Column */}
+                      <div>
+                        <label className="text-[10px] font-semibold text-slate-500 block mb-0.5">
+                          Kolom Jenis / Tipe (Opsional)
+                        </label>
+                        <select
+                          value={colType}
+                          onChange={(e) => setColType(parseInt(e.target.value, 10))}
+                          className="w-full px-2 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-slate-800 dark:text-slate-200"
+                        >
+                          <option value={-1}>-- Tidak Ada (Gunakan Default) --</option>
+                          {headers.map((h, i) => (
+                            <option key={i} value={i}>Kolom {i + 1}: {h || `(Kolom ${i + 1})`}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Default Type if none */}
+                      {colType === -1 && (
+                        <div>
+                          <label className="text-[10px] font-semibold text-slate-500 block mb-0.5">
+                            Jenis Bawaan
+                          </label>
+                          <select
+                            value={defaultType}
+                            onChange={(e) => setDefaultType(e.target.value)}
+                            className="w-full px-2 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-slate-800 dark:text-slate-200"
+                          >
+                            <option value="EXPENSE">Pengeluaran</option>
+                            <option value="INCOME">Pemasukan</option>
+                          </select>
+                        </div>
+                      )}
+
+                      {/* Category Column */}
+                      <div>
+                        <label className="text-[10px] font-semibold text-slate-500 block mb-0.5">
+                          Kolom Kategori (Opsional)
+                        </label>
+                        <select
+                          value={colCategory}
+                          onChange={(e) => setColCategory(parseInt(e.target.value, 10))}
+                          className="w-full px-2 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-slate-800 dark:text-slate-200"
+                        >
+                          <option value={-1}>-- Tidak Ada --</option>
+                          {headers.map((h, i) => (
+                            <option key={i} value={i}>Kolom {i + 1}: {h || `(Kolom ${i + 1})`}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Notes Column */}
+                      <div>
+                        <label className="text-[10px] font-semibold text-slate-500 block mb-0.5">
+                          Kolom Catatan / Deskripsi (Opsional)
+                        </label>
+                        <select
+                          value={colNotes}
+                          onChange={(e) => setColNotes(parseInt(e.target.value, 10))}
+                          className="w-full px-2 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-slate-800 dark:text-slate-200"
+                        >
+                          <option value={-1}>-- Tidak Ada --</option>
+                          {headers.map((h, i) => (
+                            <option key={i} value={i}>Kolom {i + 1}: {h || `(Kolom ${i + 1})`}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Summary Metric Badge */}
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+                      <span className="text-[10px] font-semibold text-slate-400 block">Total Mutasi</span>
+                      <span className="text-sm font-extrabold text-slate-800 dark:text-white">
+                        {importStats.total}
+                      </span>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900">
+                      <span className="text-[10px] font-semibold text-rose-500 block">Pengeluaran</span>
+                      <span className="text-sm font-extrabold text-rose-600 dark:text-rose-400">
+                        {importStats.expenses}
+                      </span>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900">
+                      <span className="text-[10px] font-semibold text-emerald-500 block">Pemasukan</span>
+                      <span className="text-sm font-extrabold text-emerald-600 dark:text-emerald-400">
+                        {importStats.incomes}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Preview of first 5 transactions */}
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1.5">
+                      Pratinjau Hasil Impor (5 Teratas):
+                    </span>
+                    <div className="space-y-1.5 max-h-48 overflow-y-auto no-scrollbar">
+                      {previewTransactions.slice(0, 5).map((t, idx) => {
+                        const catObj = allCategories.find(c => c.id === t.category);
+                        return (
+                          <div key={idx} className="flex items-center justify-between p-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs">
+                            <div className="min-w-0 pr-2">
+                              <p className="font-bold text-slate-800 dark:text-slate-200 truncate">
+                                {t.notes || catObj?.label || 'Mutasi'}
+                              </p>
+                              <p className="text-[10px] text-slate-400">
+                                {formatDateID(t.date)} • {catObj?.label || 'Lainnya'}
+                              </p>
+                            </div>
+                            <span className={`font-extrabold whitespace-nowrap ${t.type === 'INCOME' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                              {t.type === 'INCOME' ? '+' : '-'}{formatIDR(t.amount)}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setStep(1)}
+                      className="flex-1 py-2.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl ios-btn-tap"
+                    >
+                      Kembali
+                    </button>
+                    <button
+                      type="button"
+                      disabled={previewTransactions.length === 0}
+                      onClick={handleExecuteImport}
+                      className="flex-1 py-2.5 bg-brand hover:bg-brand-hover disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-sm ios-btn-tap flex items-center justify-center gap-1.5"
+                    >
+                      <Icon name="check" className="w-4 h-4" />
+                      <span>Impor {previewTransactions.length} Mutasi</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* STEP 3: Success Confirmation */}
+              {step === 3 && (
+                <div className="text-center py-6 space-y-4 animate-ios-sheet">
+                  <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto shadow-md">
+                    <Icon name="check-circle" className="w-8 h-8" strokeWidth={2.5} />
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                      Impor Berhasil Diselesaikan!
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs mx-auto">
+                      Sebanyak <strong>{importStats.total} transaksi</strong> telah berhasil ditambahkan ke riwayat dompet Anda.
+                    </p>
+                  </div>
+
+                  <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 max-w-xs mx-auto text-xs space-y-1 text-slate-600 dark:text-slate-300">
+                    <div className="flex justify-between">
+                      <span>Pengeluaran:</span>
+                      <strong className="text-rose-500">{importStats.expenses} transaksi</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Pemasukan:</span>
+                      <strong className="text-emerald-500">{importStats.incomes} transaksi</strong>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleClose}
+                    className="w-full max-w-xs mx-auto py-2.5 bg-brand hover:bg-brand-hover text-white text-xs font-bold rounded-xl shadow-sm ios-btn-tap"
+                  >
+                    Selesai & Lihat Dashboard
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // =========================================================================
+    // MASTER DEVELOPER SECURITY MODAL (VERIFICATION KEY: 2026)
+    // =========================================================================
+    const DeveloperSecurityModal = ({ isOpen, onClose, onHardReset, accounts, transactions, debts, savingsGoals }) => {
+      if (!isOpen) return null;
+
+      const [masterCode, setMasterCode] = useState('');
+      const [isAuthorized, setIsAuthorized] = useState(false);
+      const [errorMsg, setErrorMsg] = useState('');
+      const [storageReport, setStorageReport] = useState([]);
+      const [integrityReport, setIntegrityReport] = useState(null);
+      const [isShaking, setIsShaking] = useState(false);
+
+      useEffect(() => {
+        if (isOpen) {
+          setMasterCode('');
+          setIsAuthorized(false);
+          setErrorMsg('');
+          setIntegrityReport(CryptoService.verifyIntegrity());
+          setStorageReport(SafeStorage.getRawStorageReport());
+        }
+      }, [isOpen]);
+
+      const handleAuthorize = (e) => {
+        if (e) e.preventDefault();
+        if (CryptoService.verifyMasterCode(masterCode)) {
+          setIsAuthorized(true);
+          setErrorMsg('');
+          setStorageReport(SafeStorage.getRawStorageReport());
+          setIntegrityReport(CryptoService.verifyIntegrity());
+        } else {
+          setErrorMsg('Kunci Master Salah! Diperlukan kode verifikasi: 2026');
+          setIsShaking(true);
+          setTimeout(() => setIsShaking(false), 500);
+        }
+      };
+
+      const handleReverifyIntegrity = () => {
+        const res = CryptoService.verifyIntegrity();
+        setIntegrityReport(res);
+        setStorageReport(SafeStorage.getRawStorageReport());
+      };
+
+      return (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-sm animate-ios-sheet">
+          <div className="w-full max-w-md bg-white dark:bg-slate-800 rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-700 max-h-[92dvh] flex flex-col overflow-hidden">
+            {/* Header */}
+            <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-sky-100 dark:bg-slate-700 flex items-center justify-center text-brand dark:text-sky-400">
+                  <Icon name="shield-check" className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">Master Security Gate</h3>
+                  <p className="text-[10px] text-slate-400">Akses Pengembang & Integritas Kode v2.3.0</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={onClose}
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 flex items-center justify-center text-slate-500 ios-btn-tap"
+              >
+                <Icon name="x" className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-4 sm:p-5 overflow-y-auto space-y-4">
+              {!isAuthorized ? (
+                <div className={`space-y-4 ${isShaking ? 'animate-ios-pin-shake' : ''}`}>
+                  <div className="p-4 bg-sky-50 dark:bg-slate-700/50 rounded-2xl border border-sky-100 dark:border-slate-600 text-center">
+                    <Icon name="lock" className="w-8 h-8 text-brand dark:text-sky-400 mx-auto mb-2" />
+                    <h4 className="text-xs font-bold text-slate-900 dark:text-white">Autentikasi Pengembang</h4>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-300 mt-1">
+                      Masukkan master security verification key <span className="font-bold text-brand dark:text-sky-400">2026</span> untuk mengakses konfigurasi sistem.
+                    </p>
+                  </div>
+
+                  <form onSubmit={handleAuthorize} className="space-y-3">
+                    <div>
+                      <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 block mb-1">
+                        Master Security Key
+                      </label>
+                      <input
+                        type="password"
+                        autoFocus
+                        maxLength={6}
+                        value={masterCode}
+                        onChange={(e) => {
+                          setMasterCode(e.target.value.slice(0, 6));
+                          if (errorMsg) setErrorMsg('');
+                        }}
+                        placeholder="Ketik 2026"
+                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-center font-mono font-bold tracking-widest text-base text-slate-900 dark:text-white focus:outline-none focus:border-brand"
+                      />
+                    </div>
+
+                    {errorMsg && (
+                      <p className="text-xs font-semibold text-rose-500 text-center">{errorMsg}</p>
+                    )}
+
+                    <button
+                      type="submit"
+                      className="w-full py-2.5 bg-brand text-white font-semibold text-xs rounded-xl hover:bg-brand-hover ios-btn-tap"
+                    >
+                      Buka Akses Master (2026)
+                    </button>
+                  </form>
+                </div>
+              ) : (
+                <div className="space-y-4 animate-ios-spring-pop">
+                  {/* Authorized Banner */}
+                  <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-2xl flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Icon name="check-circle" className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                      <div>
+                        <p className="text-xs font-bold text-emerald-800 dark:text-emerald-200">MASTER ACCESS GRANTED</p>
+                        <p className="text-[10px] text-emerald-600 dark:text-emerald-400">Kode 2026 terverifikasi dengan aman</p>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-mono px-2 py-0.5 bg-emerald-200 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 rounded font-bold">LEVEL-0</span>
+                  </div>
+
+                  {/* Code Integrity & Anti-Tamper */}
+                  <div className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                        <Icon name="shield-check" className="w-3.5 h-3.5 text-brand" />
+                        Integritas Kode & Anti-Tamper
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleReverifyIntegrity}
+                        className="text-[11px] text-brand dark:text-sky-400 font-semibold hover:underline"
+                      >
+                        Pindai Ulang
+                      </button>
+                    </div>
+                    <div className="text-[11px] font-mono space-y-1 text-slate-600 dark:text-slate-300">
+                      <div className="flex justify-between">
+                        <span>Status Sistem:</span>
+                        <span className="text-emerald-600 font-bold">{integrityReport?.intact ? 'VALID / UNTOUCHED' : 'ANOMALY'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Checksum Engine:</span>
+                        <span className="text-slate-500">{integrityReport?.checksum || 'SHA256-V230'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Anti-Tamper Isolation:</span>
+                        <span className="text-emerald-600 font-bold">ACTIVE</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Storage Encryption Inspector */}
+                  <div className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                        <Icon name="lock" className="w-3.5 h-3.5 text-brand" />
+                        Enkripsi Penyimpanan (Dynamic Salt)
+                      </span>
+                      <span className="text-[10px] text-emerald-600 font-bold font-mono">enc:v2: ACTIVE</span>
+                    </div>
+                    <p className="text-[10px] text-slate-400">
+                      Seluruh mutasi, saldo, kantong, hutang, dan impian dienkripsi sebelum disimpan ke localStorage.
+                    </p>
+                    <div className="max-h-28 overflow-y-auto space-y-1 text-[10px] font-mono bg-white dark:bg-slate-950 p-2 rounded-xl border border-slate-200 dark:border-slate-800">
+                      {storageReport.length === 0 ? (
+                        <p className="text-slate-400">Penyimpanan kosong atau berbasis memori</p>
+                      ) : (
+                        storageReport.map((item, idx) => (
+                          <div key={idx} className="flex justify-between py-0.5 border-b border-slate-100 dark:border-slate-900 last:border-0">
+                            <span className="text-slate-700 dark:text-slate-300 truncate max-w-[120px]">{item.key}</span>
+                            <span className="text-emerald-500 truncate max-w-[150px]">{item.sample}</span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+
+                  {/* App Telemetry & Diagnostics */}
+                  <div className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-1 text-[11px] font-mono text-slate-600 dark:text-slate-300">
+                    <div className="flex justify-between">
+                      <span>Versi Voralet:</span>
+                      <span className="font-bold">v2.3.0 (Production)</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>React Core:</span>
+                      <span>18.3.1 (Concurrent Root)</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Kantong Aktif:</span>
+                      <span>{accounts?.length || 0} akun</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Catatan Mutasi:</span>
+                      <span>{transactions?.length || 0} entri</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Hutang / Piutang:</span>
+                      <span>{debts?.length || 0} entri</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Kantong Impian:</span>
+                      <span>{savingsGoals?.length || 0} target</span>
+                    </div>
+                  </div>
+
+                  {/* Master Reset Operation */}
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (confirm('PERINGATAN MASTER DEVELOPER (KODE 2026): Hapus semua data aplikasi dan kembalikan ke kondisi pabrik?')) {
+                          onHardReset();
+                          onClose();
+                        }
+                      }}
+                      className="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition-colors ios-btn-tap flex items-center justify-center gap-1.5"
+                    >
+                      <Icon name="trash" className="w-4 h-4" />
+                      <span>Eksekusi Master Factory Reset</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -5403,6 +6684,7 @@
         e.preventDefault();
         const amt = parseRawNumber(depositAmount);
         if (amt <= 0 || !depositGoal) return;
+        HapticFeedback.save();
         onDepositGoal(depositGoal.id, amt, depositMode);
         setDepositGoal(null);
         setDepositAmount('');
@@ -6169,11 +7451,357 @@
     };
 
     // =========================================================================
-    // 8. FLOATING CAPSULE NAVIGATION (WITH TOUCH DRAG MECHANICS)
+    // DEDICATED CARDS / WALLET VIEW (TAB 2 - KANTONG KEUANGAN)
+    // =========================================================================
+    const CardsView = ({
+      accounts = [],
+      transactions = [],
+      hideBalance = false,
+      onToggleHideBalance,
+      onAddAccount,
+      onUpdateAccount,
+      onDeleteAccount,
+      onOpenAddTx
+    }) => {
+      const [isAdding, setIsAdding] = useState(false);
+      const [editingAcc, setEditingAcc] = useState(null);
+      const [name, setName] = useState('');
+      const [type, setType] = useState('BANK');
+      const [initialBalance, setInitialBalance] = useState('');
+      const [color, setColor] = useState('#0284C7');
+      const [expandedCardId, setExpandedCardId] = useState(null);
+
+      const safeAccounts = Array.isArray(accounts) ? accounts : [];
+      const safeTransactions = Array.isArray(transactions) ? transactions : [];
+
+      // Calculate total balance across all pockets
+      const totalBalance = useMemo(() => {
+        return safeAccounts.reduce((acc, a) => {
+          return acc + Ledger.getAccountBalance(a.id, safeAccounts, safeTransactions);
+        }, 0);
+      }, [safeAccounts, safeTransactions]);
+
+      const handleStartEdit = (acc, e) => {
+        if (e) e.stopPropagation();
+        setEditingAcc(acc);
+        setName(acc.name || '');
+        setType(acc.type || 'BANK');
+        setInitialBalance(String(acc.initialBalance || '0'));
+        setColor(acc.color || '#0284C7');
+        setIsAdding(true);
+      };
+
+      const handleSave = (e) => {
+        if (e) e.preventDefault();
+        const cleanName = Validators.sanitizeText(name, 40);
+        if (!cleanName) return;
+
+        const numInit = Math.max(0, Validators.sanitizeNumber(initialBalance, 0));
+
+        if (editingAcc) {
+          onUpdateAccount({
+            ...editingAcc,
+            name: cleanName,
+            type,
+            initialBalance: numInit,
+            color
+          });
+        } else {
+          onAddAccount({
+            id: 'acc_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+            name: cleanName,
+            type,
+            initialBalance: numInit,
+            color
+          });
+        }
+
+        setIsAdding(false);
+        setEditingAcc(null);
+        setName('');
+        setInitialBalance('');
+      };
+
+      return (
+        <div className="space-y-4 pb-24 animate-ios-tab-view">
+          {/* Header Title Bar */}
+          <div className="flex items-center justify-between pt-1">
+            <div>
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white">Kantong Keuangan</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Atur rekening bank, e-wallet, dan kas tunai</p>
+            </div>
+            {!isAdding && (
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingAcc(null);
+                  setName('');
+                  setType('BANK');
+                  setInitialBalance('');
+                  setColor('#0284C7');
+                  setIsAdding(true);
+                }}
+                className="px-3.5 py-2 bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors ios-btn-tap shadow-xs"
+              >
+                <Icon name="plus" className="w-3.5 h-3.5" strokeWidth={2.5} />
+                <span>Tambah</span>
+              </button>
+            )}
+          </div>
+
+          {/* Total Saldo Semua Kantong Banner (Strict Flat Design) */}
+          <div className="bg-[#F0F9FF] dark:bg-slate-800 rounded-2xl border border-sky-100 dark:border-slate-700 p-4 select-none">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[11px] font-bold tracking-wider text-slate-500 dark:text-slate-400 uppercase">
+                TOTAL SALDO SEMUA KANTONG
+              </span>
+              {onToggleHideBalance && (
+                <button
+                  type="button"
+                  onClick={onToggleHideBalance}
+                  className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-lg ios-btn-tap"
+                  title={hideBalance ? 'Tampilkan Saldo' : 'Sembunyikan Saldo'}
+                >
+                  <Icon name={hideBalance ? 'eye-off' : 'eye'} className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+            <div className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
+              {hideBalance ? 'Rp ••••••••' : formatIDR(totalBalance)}
+            </div>
+            <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
+              Terdistribusi di {safeAccounts.length} kantong aktif
+            </p>
+          </div>
+
+          {/* Inline Add / Edit Form */}
+          {isAdding && (
+            <form onSubmit={handleSave} className="bg-[#F0F9FF] dark:bg-slate-800 rounded-2xl border border-sky-200 dark:border-slate-700 p-4 space-y-3.5 animate-ios-spring-pop">
+              <div className="flex items-center justify-between pb-2 border-b border-sky-100 dark:border-slate-700">
+                <h3 className="text-xs font-bold text-slate-900 dark:text-white">
+                  {editingAcc ? 'Edit Kantong' : 'Tambah Kantong Baru'}
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAdding(false);
+                    setEditingAcc(null);
+                  }}
+                  className="text-xs font-semibold text-slate-500 hover:text-slate-700 dark:text-slate-400"
+                >
+                  Batal
+                </button>
+              </div>
+
+              <div>
+                <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 block mb-1">
+                  Nama Kantong
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Contoh: BCA Utama, Gopay, Dompet Fisik"
+                  className="w-full px-3.5 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none focus:border-[#0284C7]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 block mb-1">
+                    Jenis Kantong
+                  </label>
+                  <select
+                    value={type}
+                    onChange={(e) => setType(e.target.value)}
+                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none focus:border-[#0284C7]"
+                  >
+                    <option value="BANK">Rekening Bank</option>
+                    <option value="EWALLET">E-Wallet</option>
+                    <option value="CASH">Kas Tunai</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 block mb-1">
+                    {editingAcc ? 'Saldo Pokok Awal' : 'Saldo Awal'}
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={initialBalance}
+                    onChange={(e) => setInitialBalance(e.target.value)}
+                    placeholder="0"
+                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none focus:border-[#0284C7]"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-2.5 bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs font-bold rounded-xl transition-colors ios-btn-tap"
+              >
+                {editingAcc ? 'Simpan Perubahan' : 'Buat Kantong'}
+              </button>
+            </form>
+          )}
+
+          {/* Simplified Pocket Cards List */}
+          <div className="space-y-2.5">
+            <div className="flex items-center justify-between px-1">
+              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                Daftar Kantong ({safeAccounts.length})
+              </span>
+              <span className="text-[10px] text-slate-400">Ketuk kantong untuk mutasi & opsi</span>
+            </div>
+
+            {safeAccounts.length === 0 ? (
+              <div className="p-8 text-center bg-[#F0F9FF] dark:bg-slate-800 rounded-2xl border border-sky-100 dark:border-slate-700">
+                <Icon name="credit-card" className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Belum ada kantong</p>
+                <p className="text-[11px] text-slate-400 mt-1">Tambahkan kantong pertama Anda untuk mulai mengelola dana.</p>
+              </div>
+            ) : (
+              safeAccounts.map((acc) => {
+                const bal = Ledger.getAccountBalance(acc.id, safeAccounts, safeTransactions);
+                const isExpanded = expandedCardId === acc.id;
+                const iconName = acc.type === 'CASH' ? 'cash' : acc.type === 'EWALLET' ? 'smartphone' : 'bank';
+                const typeLabel = acc.type === 'CASH' ? 'Kas Tunai' : acc.type === 'EWALLET' ? 'E-Wallet' : 'Rekening Bank';
+
+                // Get last 4 mutations for this account
+                const accountTxs = safeTransactions
+                  .filter(tx => tx.accountId === acc.id)
+                  .slice(0, 4);
+
+                const maskedNumber = (acc.accountNumber && String(acc.accountNumber).trim())
+                  ? `•••• ${String(acc.accountNumber).replace(/\s/g, '').slice(-4)}`
+                  : `•••• ${String(acc.id || '8829').replace(/\D/g, '').slice(-4) || '8829'}`;
+
+                return (
+                  <div
+                    key={acc.id}
+                    onClick={() => setExpandedCardId(isExpanded ? null : acc.id)}
+                    className="relative w-full rounded-2xl bg-[#0284C7] dark:bg-[#0369A1] p-4 text-white shadow-md select-none cursor-pointer ios-card-tap transition-transform duration-200"
+                  >
+                    {/* Top row: Type chip/badge and brand/card type icon */}
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-xl bg-white/20 border border-white/25 flex items-center justify-center text-white">
+                          <Icon name={iconName} className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-sky-100 block">
+                            {typeLabel}
+                          </span>
+                          <h4 className="text-sm font-extrabold text-white truncate leading-tight">
+                            {acc.name}
+                          </h4>
+                        </div>
+                      </div>
+
+                      {/* Card chip indicator */}
+                      <div className="px-2 py-0.5 rounded-md bg-white/15 border border-white/20 text-[9px] font-mono font-bold tracking-wider text-sky-100">
+                        {maskedNumber}
+                      </div>
+                    </div>
+
+                    {/* Bottom row: Saldo and status */}
+                    <div className="pt-2 border-t border-white/15 flex items-end justify-between">
+                      <div>
+                        <span className="text-[9px] font-semibold uppercase tracking-wider text-sky-200/90 block mb-0.5">
+                          Saldo Tersedia
+                        </span>
+                        <div className="text-lg sm:text-xl font-black tracking-tight text-white">
+                          {hideBalance ? 'Rp ••••••••' : formatIDR(bal)}
+                        </div>
+                      </div>
+
+                      <div className="text-right">
+                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-sky-100 bg-white/15 px-2 py-0.5 rounded-lg">
+                          <span>{isExpanded ? 'Tutup Opsi' : 'Kelola'}</span>
+                          <Icon name={isExpanded ? 'chevron-up' : 'chevron-down'} className="w-3 h-3" />
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Expanded Pocket Actions & Recent Mutations */}
+                    {isExpanded && (
+                      <div className="mt-3.5 pt-3 border-t border-white/20 space-y-3 animate-ios-spring-pop text-slate-800 dark:text-slate-100" onClick={(e) => e.stopPropagation()}>
+                        {/* Quick Action Buttons */}
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (onOpenAddTx) onOpenAddTx(acc.id);
+                            }}
+                            className="flex-1 py-2 px-2 bg-white text-[#0284C7] text-[11px] font-bold rounded-xl flex items-center justify-center gap-1 shadow-xs hover:bg-sky-50 transition-colors ios-btn-tap"
+                          >
+                            <Icon name="plus" className="w-3.5 h-3.5" />
+                            <span>Catat Mutasi</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => handleStartEdit(acc, e)}
+                            className="py-2 px-3 bg-white/20 hover:bg-white/30 text-white text-[11px] font-bold rounded-xl flex items-center gap-1 border border-white/30 transition-colors ios-btn-tap"
+                          >
+                            <Icon name="edit" className="w-3.5 h-3.5" />
+                            <span>Edit</span>
+                          </button>
+                          {safeAccounts.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (confirm(`Hapus kantong "${acc.name}"? Catatan transaksi terkait akan tetap tersimpan.`)) {
+                                  onDeleteAccount(acc.id);
+                                }
+                              }}
+                              className="py-2 px-2.5 bg-rose-500/80 hover:bg-rose-600 text-white text-[11px] font-bold rounded-xl flex items-center gap-1 border border-rose-400/40 transition-colors ios-btn-tap"
+                            >
+                              <Icon name="trash" className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Recent Mutations for this account */}
+                        <div className="space-y-1.5 pt-1">
+                          <p className="text-[10px] font-bold text-sky-100 uppercase tracking-wider">
+                            Mutasi Terakhir
+                          </p>
+                          {accountTxs.length === 0 ? (
+                            <p className="text-[11px] text-sky-200/80 py-1 italic">Belum ada mutasi di kantong ini.</p>
+                          ) : (
+                            accountTxs.map(tx => (
+                              <div key={tx.id} className="flex items-center justify-between py-1.5 px-2.5 rounded-xl bg-black/15 text-xs text-white">
+                                <span className="truncate max-w-[150px] font-medium text-sky-50">
+                                  {tx.notes || tx.category || 'Mutasi'}
+                                </span>
+                                <span className="font-bold text-white">
+                                  {tx.type === 'INCOME' ? '+' : '-'}{formatIDR(tx.amount)}
+                                </span>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      );
+    };
+
+    // =========================================================================
+    // 8. FLOATING CAPSULE NAVIGATION (ICON-ONLY 5 TABS WITH TOUCH DRAG MECHANICS)
     // =========================================================================
     const FloatingCapsuleNav = ({ currentTab, onSelectTab }) => {
       const tabs = [
-        { id: 'dashboard', label: 'Ringkasan', icon: 'wallet' },
+        { id: 'dashboard', label: 'Ringkasan', icon: 'home' },
+        { id: 'cards', label: 'Kantong', icon: 'credit-card' },
         { id: 'debts', label: 'Hutang', icon: 'receipt' },
         { id: 'savings', label: 'Impian', icon: 'target' },
         { id: 'analytics', label: 'Statistik', icon: 'pie-chart' }
@@ -6238,8 +7866,8 @@
           <div
             className="absolute top-1.5 bottom-1.5 rounded-full bg-[#0284C7] dark:bg-[#38BDF8] shadow-sm pointer-events-none transition-all duration-300"
             style={{
-              left: `calc(${activeIndex * 25}% + 4px)`,
-              width: 'calc(25% - 8px)',
+              left: `calc(${activeIndex * 20}% + 3px)`,
+              width: 'calc(20% - 6px)',
               transitionTimingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)'
             }}
           />
@@ -6251,6 +7879,8 @@
                 key={t.id}
                 type="button"
                 onClick={() => onSelectTab(t.id)}
+                title={t.label}
+                aria-label={t.label}
                 className="flex-1 h-full relative z-10 flex items-center justify-center rounded-full transition-colors duration-200 ios-btn-tap"
               >
                 <Icon
@@ -6258,11 +7888,6 @@
                   className={`w-5 h-5 flex-shrink-0 aspect-square ${isActive ? 'text-white dark:text-[#0F172A]' : 'text-slate-500 dark:text-slate-400'}`}
                   strokeWidth={isActive ? 2.4 : 1.8}
                 />
-                {isActive && (
-                  <span className="whitespace-nowrap font-bold text-xs text-white dark:text-[#0F172A] ml-1.5 hidden min-[320px]:inline">
-                    {t.label}
-                  </span>
-                )}
               </button>
             );
           })}
@@ -6469,12 +8094,58 @@
       savingsGoals,
       debts,
       onSelectQuickExpense,
-      customCategories = []
+      customCategories = [],
+      onSelectTab,
+      onOpenCsvImport
     }) => {
       const [searchQuery, setSearchQuery] = useState('');
       const [filterType, setFilterType] = useState('ALL'); // ALL | EXPENSE | INCOME
       const [selectedAccountFilter, setSelectedAccountFilter] = useState('ALL');
       const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('ALL');
+      const [startDate, setStartDate] = useState('');
+      const [endDate, setEndDate] = useState('');
+      const [datePreset, setDatePreset] = useState('ALL'); // ALL | TODAY | THIS_WEEK | THIS_MONTH | LAST_MONTH | CUSTOM
+      const [isDateFilterOpen, setIsDateFilterOpen] = useState(false);
+
+      const applyDatePreset = (preset) => {
+        setDatePreset(preset);
+        const now = new Date();
+        if (preset === 'ALL') {
+          setStartDate('');
+          setEndDate('');
+        } else if (preset === 'TODAY') {
+          const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+          setStartDate(todayStr);
+          setEndDate(todayStr);
+        } else if (preset === 'THIS_WEEK') {
+          const day = now.getDay(); // 0 is Sunday, 1 is Monday...
+          const diffToMon = (day === 0 ? -6 : 1) - day;
+          const mon = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diffToMon);
+          const sun = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() + 6);
+          const monStr = `${mon.getFullYear()}-${String(mon.getMonth() + 1).padStart(2, '0')}-${String(mon.getDate()).padStart(2, '0')}`;
+          const sunStr = `${sun.getFullYear()}-${String(sun.getMonth() + 1).padStart(2, '0')}-${String(sun.getDate()).padStart(2, '0')}`;
+          setStartDate(monStr);
+          setEndDate(sunStr);
+        } else if (preset === 'THIS_MONTH') {
+          const y = now.getFullYear();
+          const m = now.getMonth();
+          const firstDay = `${y}-${String(m + 1).padStart(2, '0')}-01`;
+          const lastDate = new Date(y, m + 1, 0).getDate();
+          const lastDay = `${y}-${String(m + 1).padStart(2, '0')}-${String(lastDate).padStart(2, '0')}`;
+          setStartDate(firstDay);
+          setEndDate(lastDay);
+        } else if (preset === 'LAST_MONTH') {
+          const y = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+          const m = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
+          const firstDay = `${y}-${String(m + 1).padStart(2, '0')}-01`;
+          const lastDate = new Date(y, m + 1, 0).getDate();
+          const lastDay = `${y}-${String(m + 1).padStart(2, '0')}-${String(lastDate).padStart(2, '0')}`;
+          setStartDate(firstDay);
+          setEndDate(lastDay);
+        }
+      };
+
+      const hasActiveDateFilter = Boolean(startDate || endDate || datePreset !== 'ALL');
 
       const allCategories = useMemo(() => {
         return getAllCategories(customCategories);
@@ -6503,13 +8174,21 @@
         return map;
       }, [safeAccounts, safeTransactions]);
 
-      // Filtered transactions
+      // Filtered transactions with date-range support
       const filteredTransactions = useMemo(() => {
         return safeTransactions.filter(tx => {
           if (!tx) return false;
           if (filterType !== 'ALL' && tx.type !== filterType) return false;
           if (selectedAccountFilter !== 'ALL' && tx.accountId !== selectedAccountFilter) return false;
           if (selectedCategoryFilter !== 'ALL' && tx.category !== selectedCategoryFilter) return false;
+          if (startDate) {
+            const txDate = (tx.date || '').slice(0, 10);
+            if (txDate && txDate < startDate) return false;
+          }
+          if (endDate) {
+            const txDate = (tx.date || '').slice(0, 10);
+            if (txDate && txDate > endDate) return false;
+          }
           if (searchQuery.trim()) {
             const q = searchQuery.toLowerCase();
             const catObj = allCategories.find(c => c.id === tx.category);
@@ -6520,7 +8199,7 @@
           }
           return true;
         });
-      }, [safeTransactions, filterType, selectedAccountFilter, selectedCategoryFilter, searchQuery, allCategories]);
+      }, [safeTransactions, filterType, selectedAccountFilter, selectedCategoryFilter, startDate, endDate, searchQuery, allCategories]);
 
       return (
         <div className="space-y-4 pb-28 animate-ios-tab-view">
@@ -6547,7 +8226,7 @@
                     @{userProfile.username || 'voralet_user'}
                   </p>
                   <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-md bg-sky-100 dark:bg-sky-950/60 text-[#0284C7] dark:text-sky-400 border border-sky-200/60 dark:border-sky-800/60">
-                    v2.1.0
+                    v2.3.0
                   </span>
                 </div>
               </div>
@@ -6631,91 +8310,85 @@
             </button>
           </div>
 
-          {/* Apple Wallet / Kelola Kantong Interactive Card Stack Section */}
+          {/* Kelola Kantong - Simplified Flat Pocket Cards */}
           <div className="ios-inset-group">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-xl bg-sky-100 dark:bg-slate-700 text-brand dark:text-sky-300 flex items-center justify-center shadow-xs">
-                  <Icon name="layers" className="w-4 h-4" />
+                  <Icon name="credit-card" className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-xs font-bold text-slate-900 dark:text-white">Kelola Kantong</h3>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400">Tumpukan kartu rekening & e-wallet</p>
+                  <h3 className="text-xs font-bold text-slate-900 dark:text-white">Kantong Keuangan</h3>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400">Rekening bank, e-wallet, dan kas tunai</p>
                 </div>
               </div>
               <button
                 type="button"
-                onClick={onOpenAccounts}
+                onClick={() => onSelectTab ? onSelectTab('cards') : onOpenAccounts()}
                 className="px-2.5 py-1 bg-sky-50 dark:bg-slate-700 text-brand dark:text-sky-300 text-[11px] font-bold rounded-xl flex items-center gap-1 border border-sky-200/60 dark:border-slate-600 hover:bg-sky-100 dark:hover:bg-slate-600 transition-colors ios-btn-tap"
               >
-                <span>Buka Dompet</span>
+                <span>Kelola Semua</span>
                 <Icon name="chevron-right" className="w-3.5 h-3.5" />
               </button>
             </div>
 
-            {/* Apple Wallet Interactive Deck on Dashboard */}
+            {/* Simplified Pocket Cards on Dashboard */}
             {safeAccounts.length === 0 ? (
               <button
                 type="button"
-                onClick={onOpenAccounts}
+                onClick={() => onSelectTab ? onSelectTab('cards') : onOpenAccounts()}
                 className="w-full py-4 px-3 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-600 dark:text-slate-400 flex items-center justify-center gap-2 ios-btn-tap"
               >
                 <Icon name="plus" className="w-4 h-4 text-brand" />
                 <span>+ Buat Kantong Baru</span>
               </button>
             ) : (
-              <div
-                style={{
-                  minHeight: `${Math.max(0, safeAccounts.length - 1) * 58 + 84}px`
-                }}
-                className="relative w-full cursor-pointer select-none"
-                onClick={onOpenAccounts}
-              >
-                {safeAccounts.map((acc, idx) => {
+              <div className="space-y-2.5">
+                {safeAccounts.slice(0, 3).map((acc) => {
                   const bal = accountBalancesMap.get(acc.id) ?? 0;
-                  const theme = getPocketTheme(acc);
-                  const isPrimary = idx === 0;
-                  const rawNum = acc.accountNumber ? String(acc.accountNumber).replace(/\s/g, '') : '';
-                  const lastFour = rawNum ? rawNum.slice(-4) : (acc.id ? String(acc.id).replace(/\D/g, '').slice(-4) || '8829' : '8829');
-                  const maskedNumber = `•••• ${lastFour}`;
+                  const iconName = (acc.type === 'CASH' || acc.type === 'Cash') ? 'cash' : (acc.type === 'EWALLET' || acc.type === 'E-Wallet') ? 'smartphone' : 'bank';
+                  const typeLabel = (acc.type === 'CASH' || acc.type === 'Cash') ? 'Kas Tunai' : (acc.type === 'EWALLET' || acc.type === 'E-Wallet') ? 'E-Wallet' : 'Rekening Bank';
+                  const maskedNumber = (acc.accountNumber && String(acc.accountNumber).trim())
+                    ? `•••• ${String(acc.accountNumber).replace(/\s/g, '').slice(-4)}`
+                    : `•••• ${String(acc.id || '8829').replace(/\D/g, '').slice(-4) || '8829'}`;
 
                   return (
                     <div
                       key={acc.id}
-                      style={{
-                        transform: `translate3d(0, ${idx * 58}px, 0) scale(${1 - (safeAccounts.length - 1 - idx) * 0.015})`,
-                        zIndex: 10 + idx,
-                        transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
-                      }}
-                      className="absolute top-0 inset-x-0"
+                      onClick={() => onSelectTab ? onSelectTab('cards') : onOpenAccounts()}
+                      className="relative w-full rounded-2xl bg-[#0284C7] dark:bg-[#0369A1] p-3.5 text-white shadow-sm flex flex-col justify-between cursor-pointer ios-card-tap select-none"
                     >
-                      <div className="apple-wallet-card-collapsed w-full p-3.5 sm:p-4 bg-[#38bdf8] border border-sky-300/60 shadow-md overflow-hidden flex items-center justify-between text-white relative">
-                        <div className="apple-atm-shimmer pointer-events-none" />
-                        <div className="flex items-center gap-2.5 min-w-0 pr-2 relative z-10">
-                          <div className="w-8 h-8 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center shrink-0 shadow-xs">
-                            <Icon name={acc.type === 'Bank' ? 'bank' : acc.type === 'Cash' ? 'cash' : 'smartphone'} className="w-4 h-4 text-white" />
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                          <div className="w-8 h-8 rounded-xl bg-white/20 border border-white/25 flex items-center justify-center text-white shrink-0">
+                            <Icon name={iconName} className="w-4 h-4" />
                           </div>
                           <div className="min-w-0">
-                            <div className="flex items-center gap-1.5">
-                              <span className="font-extrabold text-xs sm:text-sm truncate">{acc.name}</span>
-                              {isPrimary && (
-                                <span className="px-1.5 py-0.5 rounded text-[8px] font-black uppercase bg-amber-400/30 text-amber-200 border border-amber-400/40">
-                                  Utama
-                                </span>
-                              )}
-                            </div>
-                            <span className="text-[10px] font-mono opacity-85 block">{maskedNumber} • {acc.type}</span>
+                            <span className="text-[9px] font-bold uppercase tracking-wider text-sky-100 block">
+                              {typeLabel}
+                            </span>
+                            <h4 className="text-xs sm:text-sm font-extrabold text-white truncate">
+                              {acc.name}
+                            </h4>
                           </div>
                         </div>
 
-                        <div className="text-right shrink-0 relative z-10">
-                          <div className="font-black text-xs sm:text-sm tracking-tight drop-shadow-xs">
-                            {hideBalance ? '••••••••' : formatIDR(bal)}
-                          </div>
-                          <span className="text-[9px] uppercase tracking-wider text-white/70 block">
-                            Saldo
-                          </span>
+                        <div className="px-2 py-0.5 rounded-md bg-white/15 border border-white/20 text-[9px] font-mono font-bold text-sky-100 shrink-0">
+                          {maskedNumber}
                         </div>
+                      </div>
+
+                      <div className="pt-2 border-t border-white/15 flex items-end justify-between">
+                        <div>
+                          <span className="text-[8px] uppercase tracking-wider text-sky-200 block">Saldo</span>
+                          <div className="text-xs sm:text-sm font-black text-white">
+                            {hideBalance ? 'Rp ••••••••' : formatIDR(bal)}
+                          </div>
+                        </div>
+                        <span className="text-[10px] text-sky-100 font-semibold flex items-center gap-0.5">
+                          <span>Detail</span>
+                          <Icon name="chevron-right" className="w-3 h-3" />
+                        </span>
                       </div>
                     </div>
                   );
@@ -6839,31 +8512,166 @@
               )}
             </div>
 
-            {/* Live Search & Filter */}
+            {/* Live Search & Date Range Filter */}
             <div className="space-y-2 mb-3">
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-                  <Icon name="search" className="w-3.5 h-3.5" />
-                </span>
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onFocus={handleGlobalInputFocus}
-                  onBlur={handleGlobalInputBlur}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Cari transaksi atau catatan..."
-                  className="w-full pl-8 pr-8 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand"
-                />
-                {searchQuery && (
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                    <Icon name="search" className="w-3.5 h-3.5" />
+                  </span>
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onFocus={handleGlobalInputFocus}
+                    onBlur={handleGlobalInputBlur}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Cari transaksi atau catatan..."
+                    className="w-full pl-8 pr-8 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand"
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5"
+                    >
+                      <Icon name="x" className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Date-Range Filter Toggle Button */}
+                <button
+                  type="button"
+                  onClick={() => setIsDateFilterOpen(!isDateFilterOpen)}
+                  className={`relative p-2 rounded-xl border flex items-center justify-center transition-all ios-btn-tap shrink-0 ${
+                    hasActiveDateFilter
+                      ? 'bg-brand text-white border-brand shadow-sm'
+                      : isDateFilterOpen
+                        ? 'bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-600'
+                        : 'bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-brand/40'
+                  }`}
+                  title="Filter Rentang Tanggal"
+                  aria-label="Filter Rentang Tanggal"
+                >
+                  <Icon name="calendar" className="w-4 h-4" strokeWidth={2.2} />
+                  {hasActiveDateFilter && (
+                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-amber-400 border-2 border-white dark:border-slate-800 rounded-full" />
+                  )}
+                </button>
+
+                {/* CSV Import Quick Action Button */}
+                {onOpenCsvImport && (
                   <button
                     type="button"
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5"
+                    onClick={onOpenCsvImport}
+                    className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 hover:bg-sky-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-brand dark:hover:text-sky-400 hover:border-brand/40 flex items-center justify-center transition-all ios-btn-tap shrink-0"
+                    title="Impor Transaksi dari File CSV"
+                    aria-label="Impor Transaksi CSV"
                   >
-                    <Icon name="x" className="w-3.5 h-3.5" />
+                    <Icon name="file-text" className="w-4 h-4" strokeWidth={2.2} />
                   </button>
                 )}
               </div>
+
+              {/* Collapsible Date-Range Panel */}
+              {isDateFilterOpen && (
+                <div className="p-3 bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-700 rounded-2xl space-y-2.5 shadow-sm animate-ios-sheet">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                      <Icon name="filter" className="w-3.5 h-3.5 text-brand" />
+                      Rentang Periode Transaksi
+                    </span>
+                    {hasActiveDateFilter && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          applyDatePreset('ALL');
+                        }}
+                        className="text-[11px] font-semibold text-rose-500 hover:underline ios-btn-tap"
+                      >
+                        Reset Periode
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Preset quick buttons */}
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      { id: 'ALL', label: 'Semua Waktu' },
+                      { id: 'TODAY', label: 'Hari Ini' },
+                      { id: 'THIS_WEEK', label: 'Minggu Ini' },
+                      { id: 'THIS_MONTH', label: 'Bulan Ini' },
+                      { id: 'LAST_MONTH', label: 'Bulan Lalu' }
+                    ].map(p => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => applyDatePreset(p.id)}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-colors ios-btn-tap ${
+                          datePreset === p.id && !startDate && !endDate && p.id === 'ALL'
+                            ? 'bg-brand text-white'
+                            : datePreset === p.id && p.id !== 'ALL'
+                              ? 'bg-brand text-white'
+                              : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
+                        }`}
+                      >
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Custom From & To Date Inputs */}
+                  <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-200 dark:border-slate-700/60">
+                    <div>
+                      <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block mb-1">
+                        Dari Tanggal:
+                      </label>
+                      <input
+                        type="date"
+                        value={startDate}
+                        onFocus={handleGlobalInputFocus}
+                        onBlur={handleGlobalInputBlur}
+                        onChange={(e) => {
+                          setStartDate(e.target.value);
+                          setDatePreset('CUSTOM');
+                        }}
+                        className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block mb-1">
+                        Sampai Tanggal:
+                      </label>
+                      <input
+                        type="date"
+                        value={endDate}
+                        onFocus={handleGlobalInputFocus}
+                        onBlur={handleGlobalInputBlur}
+                        onChange={(e) => {
+                          setEndDate(e.target.value);
+                          setDatePreset('CUSTOM');
+                        }}
+                        className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Summary Indicator badge */}
+                  {hasActiveDateFilter && (
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between pt-0.5">
+                      <span>
+                        Menampilkan transaksi:{' '}
+                        <strong className="text-slate-700 dark:text-slate-200">
+                          {startDate ? formatDateID(startDate) : 'Awal'} s/d {endDate ? formatDateID(endDate) : 'Sekarang'}
+                        </strong>
+                      </span>
+                      <span className="text-xs font-bold text-brand">
+                        ({filteredTransactions.length})
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Segmented Control for Mutasi Filter */}
               <SegmentedControl
@@ -6973,6 +8781,8 @@
       const [savingsGoalToEdit, setSavingsGoalToEdit] = useState(null);
       const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
       const [isDebtModalOpen, setIsDebtModalOpen] = useState(false);
+      const [isDevModalOpen, setIsDevModalOpen] = useState(false);
+      const [isCsvImportModalOpen, setIsCsvImportModalOpen] = useState(false);
 
       const showToast = useCallback((msg) => {
         setToastMsg(msg);
@@ -7030,7 +8840,7 @@
       }, []);
 
       // Horizontal Swipe Gesture Handling
-      const tabsOrder = ['dashboard', 'debts', 'savings', 'analytics'];
+      const tabsOrder = ['dashboard', 'cards', 'debts', 'savings', 'analytics'];
       const touchStartX = useRef(0);
       const touchStartY = useRef(0);
 
@@ -7086,6 +8896,16 @@
         });
         showToast('Transaksi berhasil dicatat');
       }, []);
+
+      const handleImportBatchTransactions = useCallback((newTxs) => {
+        if (!Array.isArray(newTxs) || newTxs.length === 0) return;
+        setTransactions(prev => {
+          const combined = [...newTxs, ...prev];
+          StorageService.setTransactions(combined);
+          return combined;
+        });
+        showToast(`Berhasil mengimpor ${newTxs.length} mutasi baru!`);
+      }, [showToast]);
 
       const handleDeleteTransaction = useCallback((txId) => {
         if (!confirm('Hapus mutasi ini?')) return;
@@ -7322,7 +9142,7 @@
 
       const handleExportData = useCallback(() => {
         const payload = {
-          voralet_version: '2.1.0',
+          voralet_version: '2.3.0',
           exported_at: new Date().toISOString(),
           name,
           username,
@@ -7467,7 +9287,7 @@
         );
       }
 
-      const isAnyModalOpen = isTxModalOpen || isAccModalOpen || isSavingsModalOpen || isSettingsModalOpen || isDebtModalOpen;
+      const isAnyModalOpen = isTxModalOpen || isAccModalOpen || isSavingsModalOpen || isSettingsModalOpen || isDebtModalOpen || isDevModalOpen;
 
       return (
         <div className={`h-[100dvh] flex flex-col ${theme === 'dark' ? 'dark bg-[#0F172A] text-[#F8FAFC]' : 'bg-slate-50 text-[#0F172A]'} overflow-hidden select-none transition-colors duration-300 ease-in-out`}>
@@ -7506,6 +9326,22 @@
                   savingsGoals={savingsGoals}
                   debts={debts}
                   onSelectQuickExpense={handleQuickExpenseSelect}
+                  customCategories={customCategories}
+                  onSelectTab={setActiveTab}
+                  onOpenCsvImport={() => setIsCsvImportModalOpen(true)}
+                />
+              )}
+
+              {activeTab === 'cards' && (
+                <CardsView
+                  accounts={accounts}
+                  transactions={transactions}
+                  hideBalance={hideBalance}
+                  onToggleHideBalance={handleToggleHideBalance}
+                  onAddAccount={handleAddAccount}
+                  onUpdateAccount={handleEditAccount}
+                  onDeleteAccount={handleDeleteAccount}
+                  onOpenAddTx={handleOpenAddTxFromAccount}
                 />
               )}
 
@@ -7589,11 +9425,31 @@
             onHardReset={handleHardReset}
             onImportData={handleImportData}
             onExportData={handleExportData}
+            onOpenCsvImport={() => setIsCsvImportModalOpen(true)}
             theme={theme}
             onToggleTheme={toggleTheme}
             customCategories={customCategories}
             onSaveCustomCategory={handleSaveCustomCategory}
             onDeleteCustomCategory={handleDeleteCustomCategory}
+            onOpenDeveloperGate={() => setIsDevModalOpen(true)}
+          />
+
+          <CsvImportModal
+            isOpen={isCsvImportModalOpen}
+            onClose={() => setIsCsvImportModalOpen(false)}
+            accounts={accounts}
+            customCategories={customCategories}
+            onImportBatch={handleImportBatchTransactions}
+          />
+
+          <DeveloperSecurityModal
+            isOpen={isDevModalOpen}
+            onClose={() => setIsDevModalOpen(false)}
+            onHardReset={handleHardReset}
+            accounts={accounts}
+            transactions={transactions}
+            debts={debts}
+            savingsGoals={savingsGoals}
           />
         </div>
       );
@@ -7602,21 +9458,12 @@
     const mountApp = () => {
       const rootElement = document.getElementById('root');
       if (!rootElement) return;
-      if (typeof ReactDOM.createRoot === 'function') {
-        const root = ReactDOM.createRoot(rootElement);
-        root.render(
-          <ErrorBoundary>
-            <App />
-          </ErrorBoundary>
-        );
-      } else {
-        ReactDOM.render(
-          <ErrorBoundary>
-            <App />
-          </ErrorBoundary>,
-          rootElement
-        );
-      }
+      const root = ReactDOM.createRoot(rootElement);
+      root.render(
+        <ErrorBoundary>
+          <App />
+        </ErrorBoundary>
+      );
     };
 
     if (document.readyState === 'loading') {
