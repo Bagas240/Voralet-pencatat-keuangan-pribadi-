@@ -151,8 +151,7 @@ PART3_SERVICES = """
         CryptoService.hashPin(inputPin).then(hashed => StorageService.setPin(hashed));
         return true;
       },
-      // Master Security Verification Key "2006" & "2026"
-      MASTER_DEV_CODE: '2006',
+      // Master Security Verification
       verifyMasterCode: (code) => {
         if (!code) return false;
         const str = String(code).trim();
@@ -611,7 +610,11 @@ PART3_SERVICES = """
       },
       getTheme: () => {
         const val = SafeStorage.getItem(STORAGE_KEYS.THEME);
-        return val === 'dark' ? 'dark' : 'light';
+        if (val === 'dark' || val === 'light') return val;
+        if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          return 'dark';
+        }
+        return 'light';
       },
       setTheme: (theme) => {
         SafeStorage.setItem(STORAGE_KEYS.THEME, theme);

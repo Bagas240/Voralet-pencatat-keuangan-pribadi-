@@ -2,9 +2,9 @@ PART8_APP = """
     // =========================================================================
     // 9. SWIPEABLE TRANSACTION ROW & CONTEXTUAL LONG PRESS
     // =========================================================================
-    const SwipeableTransactionRow = ({
+    const SwipeableTransactionRow = React.memo(({
       tx,
-      idx,
+      idx = 0,
       isLast,
       cat,
       acc,
@@ -14,7 +14,8 @@ PART8_APP = """
       onDuplicate,
       isNewlyAdded = false,
       isDeleting = false,
-      onClearNewlyAdded
+      onClearNewlyAdded,
+      disableAnimation = false
     }) => {
       const [offsetX, setOffsetX] = useState(0);
       const [isDragging, setIsDragging] = useState(false);
@@ -68,9 +69,20 @@ PART8_APP = """
 
       return (
         <div
-          className={`relative overflow-hidden select-none transition-all duration-300 ease-out ${
-            isNewlyAdded ? 'animate-tx-slide-in rounded-2xl' : ''
-          } ${isDeleting ? 'animate-tx-fade-out' : ''}`}
+          className={`relative overflow-hidden select-none h-[64px] ${
+            isDeleting
+              ? 'animate-tx-fade-out'
+              : isNewlyAdded
+                ? 'animate-tx-slide-in rounded-2xl'
+                : disableAnimation
+                  ? ''
+                  : 'animate-tx-card-entry'
+          }`}
+          style={{
+            height: '64px',
+            boxSizing: 'border-box',
+            animationDelay: isDeleting || isNewlyAdded || disableAnimation ? '0ms' : `${Math.min((idx || 0) * 35, 280)}ms`
+          }}
           onAnimationEnd={(e) => {
             if (e.target === e.currentTarget && isNewlyAdded && onClearNewlyAdded) {
               onClearNewlyAdded(tx.id);
@@ -118,7 +130,9 @@ PART8_APP = """
               transform: `translate3d(${offsetX}px, 0, 0)`,
               transition: isDragging ? 'none' : 'transform 0.25s cubic-bezier(0.32, 0.72, 0, 1)'
             }}
-            className={`relative bg-white dark:bg-slate-800 flex items-center justify-between py-3 px-1.5 ${!isLast ? 'ios-hairline' : ''} ios-touch-item`}
+            className={`relative bg-white dark:bg-slate-800 flex items-center justify-between h-full px-1.5 ${!isLast ? 'ios-hairline' : ''} ios-touch-item ${
+              isNewlyAdded ? 'animate-tx-highlight rounded-xl' : ''
+            }`}
           >
             <div className="flex items-center gap-3 min-w-0 pointer-events-none">
               <div className="relative shrink-0">
@@ -183,7 +197,163 @@ PART8_APP = """
           />
         </div>
       );
-    };
+    });
+
+    // =========================================================================
+    // 9.5. VIRTUALIZED TRANSACTION LIST (High-Performance List Virtualization)
+    // =========================================================================
+    const ITEM_ROW_HEIGHT = 64;
+    const VIRTUAL_OVERSCAN = 6;
+
+    const VirtualizedTransactionList = React.memo(({
+      transactions,
+      customCategories,
+      safeAccounts,
+      hideBalance,
+      onDeleteTx,
+      onEditTx,
+      onDuplicateTx,
+      newlyAddedTxIds,
+      deletingTxIds,
+      onClearNewlyAddedTx
+    }) => {
+      const containerRef = useRef(null);
+      const [scrollState, setScrollState] = useState({
+        scrollTop: 0,
+        viewportHeight: 600,
+        containerOffsetTop: 0
+      });
+
+      useEffect(() => {
+        const el = containerRef.current;
+        if (!el) return;
+
+        // Temukan kontainer scroll induk terdekat (misal <main> ber-overflow-y-auto)
+        let parent = el.parentElement;
+        while (parent && parent !== document.body) {
+          const style = window.getComputedStyle(parent);
+          if (style.overflowY === 'auto' || style.overflowY === 'scroll' || parent.tagName === 'MAIN') {
+            break;
+          }
+          parent = parent.parentElement;
+        }
+        const scrollTarget = parent || window;
+
+        let ticking = false;
+        const updatePositions = () => {
+          if (!containerRef.current) return;
+          const sTop = scrollTarget === window ? window.scrollY : scrollTarget.scrollTop;
+          const vHeight = scrollTarget === window ? window.innerHeight : scrollTarget.clientHeight;
+
+          const elRect = containerRef.current.getBoundingClientRect();
+          const parentRect = scrollTarget === window ? { top: 0 } : scrollTarget.getBoundingClientRect();
+          const relativeTop = (elRect.top - parentRect.top) + sTop;
+
+          setScrollState({
+            scrollTop: sTop,
+            viewportHeight: vHeight || 600,
+            containerOffsetTop: Math.max(0, relativeTop)
+          });
+          ticking = false;
+        };
+
+        const onScrollOrResize = () => {
+          if (!ticking) {
+            ticking = true;
+            requestAnimationFrame(updatePositions);
+          }
+        };
+
+        updatePositions();
+        const eventNode = scrollTarget === window ? window : scrollTarget;
+        eventNode.addEventListener('scroll', onScrollOrResize, { passive: true });
+        window.addEventListener('resize', onScrollOrResize, { passive: true });
+
+        let resizeObserver = null;
+        if (typeof ResizeObserver !== 'undefined') {
+          try {
+            resizeObserver = new ResizeObserver(() => {
+              onScrollOrResize();
+            });
+            resizeObserver.observe(el);
+            if (scrollTarget !== window) {
+              resizeObserver.observe(scrollTarget);
+            }
+          } catch (_) {
+            // Abaikan jika ResizeObserver tidak tersedia di lingkungan tertentu
+          }
+        }
+
+        return () => {
+          eventNode.removeEventListener('scroll', onScrollOrResize);
+          window.removeEventListener('resize', onScrollOrResize);
+          if (resizeObserver) resizeObserver.disconnect();
+        };
+      }, [transactions.length]);
+
+      if (!transactions || transactions.length === 0) {
+        return (
+          <div className="text-center py-8">
+            <IconBadge icon="receipt" className="w-10 h-10 rounded-xl bg-slate-50 dark:bg-slate-900 text-slate-400 mx-auto mb-1.5" iconClass="w-5 h-5" />
+            <p className="text-xs text-slate-400">Tidak ada transaksi ditemukan.</p>
+          </div>
+        );
+      }
+
+      const count = transactions.length;
+      const { scrollTop, viewportHeight, containerOffsetTop } = scrollState;
+      const relativeScroll = Math.max(0, scrollTop - containerOffsetTop);
+
+      const startIndex = Math.max(0, Math.floor(relativeScroll / ITEM_ROW_HEIGHT) - VIRTUAL_OVERSCAN);
+      const endIndex = Math.min(count, Math.ceil((relativeScroll + viewportHeight) / ITEM_ROW_HEIGHT) + VIRTUAL_OVERSCAN);
+
+      const topSpacerHeight = startIndex * ITEM_ROW_HEIGHT;
+      const bottomSpacerHeight = Math.max(0, (count - endIndex) * ITEM_ROW_HEIGHT);
+      const visibleItems = transactions.slice(startIndex, endIndex);
+
+      return (
+        <div ref={containerRef} className="relative w-full" style={{ minHeight: `${count * ITEM_ROW_HEIGHT}px` }}>
+          {/* Virtual Top Spacer */}
+          {topSpacerHeight > 0 && (
+            <div style={{ height: `${topSpacerHeight}px` }} aria-hidden="true" />
+          )}
+
+          {/* Rendered Window of Visible Items */}
+          <div className="divide-y divide-transparent">
+            {visibleItems.map((tx, localIdx) => {
+              const globalIdx = startIndex + localIdx;
+              const isLast = globalIdx === count - 1;
+              const cat = getCategoryById(tx.category, customCategories);
+              const acc = safeAccounts.find(a => a.id === tx.accountId);
+
+              return (
+                <SwipeableTransactionRow
+                  key={tx.id}
+                  tx={tx}
+                  idx={globalIdx}
+                  isLast={isLast}
+                  cat={cat}
+                  acc={acc}
+                  hideBalance={hideBalance}
+                  onDelete={onDeleteTx}
+                  onEdit={onEditTx}
+                  onDuplicate={onDuplicateTx}
+                  isNewlyAdded={newlyAddedTxIds ? newlyAddedTxIds.has(tx.id) : false}
+                  isDeleting={deletingTxIds ? deletingTxIds.has(tx.id) : false}
+                  onClearNewlyAdded={onClearNewlyAddedTx}
+                  disableAnimation={globalIdx >= 10}
+                />
+              );
+            })}
+          </div>
+
+          {/* Virtual Bottom Spacer */}
+          {bottomSpacerHeight > 0 && (
+            <div style={{ height: `${bottomSpacerHeight}px` }} aria-hidden="true" />
+          )}
+        </div>
+      );
+    });
 
     // =========================================================================
     // 10. MAIN DASHBOARD
@@ -353,7 +523,10 @@ PART8_APP = """
           </div>
 
           {/* Hero Balance Card - High Contrast Deep Royal Blue in both Light and Dark Mode */}
-          <div className="rounded-[22px] p-5 bg-[#0284C7] dark:bg-[#0369A1] text-white border border-[#0369A1] dark:border-sky-600/40 shadow-lg dark:shadow-[0_10px_26px_rgba(3,105,161,0.35)] transition-colors duration-300 ease-in-out">
+          <div
+            className="animate-dashboard-card rounded-[22px] p-5 bg-[#0284C7] dark:bg-[#0369A1] text-white border border-[#0369A1] dark:border-sky-600/40 shadow-lg dark:shadow-[0_10px_26px_rgba(3,105,161,0.35)] transition-colors duration-300 ease-in-out"
+            style={{ animationDelay: '50ms' }}
+          >
             <div className="flex items-center justify-between text-sky-100 mb-1.5">
               <span className="text-[11px] font-bold uppercase tracking-wider text-sky-100">Total Saldo Brankas</span>
               <button
@@ -367,30 +540,32 @@ PART8_APP = """
             </div>
 
             <div className="text-2xl whitespace-nowrap truncate font-extrabold tracking-tight mb-4 text-white">
-              {hideBalance ? 'Rp ••••••••' : formatIDR(totalBalance)}
+              <span key={hideBalance ? 'hidden' : `bal-${totalBalance}`} className="animate-value-pulse">
+                {hideBalance ? 'Rp ••••••••' : formatIDR(totalBalance)}
+              </span>
             </div>
 
             {/* Monthly income and expense summary */}
             <div className="grid grid-cols-2 gap-2 pt-3 border-t border-sky-400/50 dark:border-sky-500/40">
-              <div className="flex items-center gap-2.5 p-1.5 rounded-xl">
+              <div className="flex items-center gap-2.5 p-1.5 rounded-xl bg-white/5 backdrop-blur-[2px]">
                 <div className="w-8 h-8 rounded-xl bg-emerald-500/30 text-emerald-100 flex items-center justify-center shrink-0 border border-emerald-300/30">
                   <Icon name="arrow-down-left" className="w-4 h-4 text-emerald-200" strokeWidth={2.5} />
                 </div>
                 <div className="min-w-0">
                   <span className="text-[10px] text-sky-100 block leading-tight font-medium">Masuk (Bln Ini)</span>
-                  <span className="text-xs whitespace-nowrap truncate font-bold text-white block">
+                  <span key={hideBalance ? 'hidden-inc' : `inc-${monthSummary.income}`} className="text-xs whitespace-nowrap truncate font-bold text-white block animate-value-pulse">
                     {hideBalance ? 'Rp ••••••' : formatIDR(monthSummary.income)}
                   </span>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2.5 p-1.5 rounded-xl">
+              <div className="flex items-center gap-2.5 p-1.5 rounded-xl bg-white/5 backdrop-blur-[2px]">
                 <div className="w-8 h-8 rounded-xl bg-rose-500/30 text-rose-100 flex items-center justify-center shrink-0 border border-rose-300/30">
                   <Icon name="arrow-up-right" className="w-4 h-4 text-rose-200" strokeWidth={2.5} />
                 </div>
                 <div className="min-w-0">
                   <span className="text-[10px] text-sky-100 block leading-tight font-medium">Keluar (Bln Ini)</span>
-                  <span className="text-xs whitespace-nowrap truncate font-bold text-white block">
+                  <span key={hideBalance ? 'hidden-exp' : `exp-${monthSummary.expense}`} className="text-xs whitespace-nowrap truncate font-bold text-white block animate-value-pulse">
                     {hideBalance ? 'Rp ••••••' : formatIDR(monthSummary.expense)}
                   </span>
                 </div>
@@ -399,7 +574,7 @@ PART8_APP = """
           </div>
 
           {/* Direct Dual Action Bar: Catat Pemasukan (+) & Catat Pengeluaran (-) with Prominent Icons */}
-          <div className="grid grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-2 gap-2.5 animate-dashboard-card" style={{ animationDelay: '90ms' }}>
             <button
               type="button"
               onClick={onOpenAddIncome}
@@ -442,7 +617,7 @@ PART8_APP = """
           <QuickExpenseBar onSelectQuickExpense={onSelectQuickExpense} />
 
           {/* Kantong Impian Quick Section */}
-          <div className="ios-inset-group">
+          <div className="ios-inset-group animate-dashboard-card" style={{ animationDelay: '150ms' }}>
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <IconBadge icon="target" className="p-1.5 rounded-xl bg-emerald-100 dark:bg-slate-700 text-emerald-600 dark:text-emerald-400" iconClass="w-4 h-4" />
@@ -748,38 +923,19 @@ PART8_APP = """
               </div>
             </div>
 
-            {/* List with Swipe-to-Action & Long-Press */}
-            {filteredTransactions.length === 0 ? (
-              <div className="text-center py-8">
-                <IconBadge icon="receipt" className="w-10 h-10 rounded-xl bg-slate-50 dark:bg-slate-900 text-slate-400 mx-auto mb-1.5" iconClass="w-5 h-5" />
-                <p className="text-xs text-slate-400">Tidak ada transaksi ditemukan.</p>
-              </div>
-            ) : (
-              <div className="divide-y divide-transparent">
-                {filteredTransactions.slice(0, 40).map((tx, idx) => {
-                  const cat = getCategoryById(tx.category, customCategories);
-                  const acc = safeAccounts.find(a => a.id === tx.accountId);
-
-                  return (
-                    <SwipeableTransactionRow
-                      key={tx.id}
-                      tx={tx}
-                      idx={idx}
-                      isLast={idx === filteredTransactions.length - 1}
-                      cat={cat}
-                      acc={acc}
-                      hideBalance={hideBalance}
-                      onDelete={onDeleteTx}
-                      onEdit={onEditTx}
-                      onDuplicate={onDuplicateTx}
-                      isNewlyAdded={newlyAddedTxIds ? newlyAddedTxIds.has(tx.id) : false}
-                      isDeleting={deletingTxIds ? deletingTxIds.has(tx.id) : false}
-                      onClearNewlyAdded={onClearNewlyAddedTx}
-                    />
-                  );
-                })}
-              </div>
-            )}
+            {/* Virtualized Transaction History List */}
+            <VirtualizedTransactionList
+              transactions={filteredTransactions}
+              customCategories={customCategories}
+              safeAccounts={safeAccounts}
+              hideBalance={hideBalance}
+              onDeleteTx={onDeleteTx}
+              onEditTx={onEditTx}
+              onDuplicateTx={onDuplicateTx}
+              newlyAddedTxIds={newlyAddedTxIds}
+              deletingTxIds={deletingTxIds}
+              onClearNewlyAddedTx={onClearNewlyAddedTx}
+            />
           </div>
         </div>
       );
@@ -890,6 +1046,44 @@ PART8_APP = """
           if (rootEl) rootEl.classList.remove('dark');
         }
       }, [theme]);
+
+      // Automatically synchronize the app's dark mode setting with the user's system OS theme preferences using 'window.matchMedia('(prefers-color-scheme: dark)')'
+      useEffect(() => {
+        if (typeof window === 'undefined' || !window.matchMedia) return;
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+        const handleOsThemeChange = (e) => {
+          const isSystemDark = typeof e.matches === 'boolean' ? e.matches : mediaQuery.matches;
+          const nextTheme = isSystemDark ? 'dark' : 'light';
+          setTheme(nextTheme);
+          StorageService.setTheme(nextTheme);
+        };
+
+        // Sync initial state with system OS theme preference
+        try {
+          const saved = SafeStorage.getItem(STORAGE_KEYS.THEME);
+          if (!saved) {
+            const initialSystemTheme = mediaQuery.matches ? 'dark' : 'light';
+            setTheme(initialSystemTheme);
+            StorageService.setTheme(initialSystemTheme);
+          }
+        } catch (err) {}
+
+        // Listen for system OS theme changes dynamically
+        if (typeof mediaQuery.addEventListener === 'function') {
+          mediaQuery.addEventListener('change', handleOsThemeChange);
+        } else if (typeof mediaQuery.addListener === 'function') {
+          mediaQuery.addListener(handleOsThemeChange);
+        }
+
+        return () => {
+          if (typeof mediaQuery.removeEventListener === 'function') {
+            mediaQuery.removeEventListener('change', handleOsThemeChange);
+          } else if (typeof mediaQuery.removeListener === 'function') {
+            mediaQuery.removeListener(handleOsThemeChange);
+          }
+        };
+      }, []);
 
       // Global Mobile Keyboard Handling
       useEffect(() => {
@@ -1003,7 +1197,13 @@ PART8_APP = """
 
       const handleDeleteTransaction = useCallback((txId) => {
         if (deletingTxIds.has(txId)) return;
-        if (!confirm('Hapus mutasi ini?')) return;
+        const targetTx = (transactions || []).find(t => t.id === txId);
+        const txDesc = targetTx?.notes ? `"${targetTx.notes}"` : (targetTx?.category ? `kategori "${targetTx.category}"` : 'ini');
+        const formattedAmt = targetTx?.amount ? ` senilai ${Formatters.currency(targetTx.amount)}` : '';
+
+        // Browser-native window.confirm dialog to prevent accidental data loss
+        const confirmed = window.confirm(`Apakah Anda yakin ingin menghapus transaksi ${txDesc}${formattedAmt}?\n\nTindakan ini tidak dapat dibatalkan.`);
+        if (!confirmed) return;
 
         // Trigger layout fade-out & collapse animation
         setDeletingTxIds(prev => {
@@ -1027,9 +1227,9 @@ PART8_APP = """
             next.delete(txId);
             return next;
           });
-          showToast('Mutasi dihapus');
-        }, 320);
-      }, [deletingTxIds, showToast]);
+          showToast('Transaksi berhasil dihapus');
+        }, 360);
+      }, [transactions, deletingTxIds, showToast]);
 
       const handleEditTransaction = useCallback((tx) => {
         setTxModalInitial({
@@ -1073,23 +1273,34 @@ PART8_APP = """
       }, []);
 
       const handleDeleteAccount = useCallback((accId) => {
+        if ((accounts || []).length <= 1) {
+          window.alert('Minimal harus menyisakan 1 akun atau kantong keuangan.');
+          return;
+        }
+
+        const targetAcc = (accounts || []).find(a => a.id === accId);
+        const accName = targetAcc?.name ? `"${targetAcc.name}"` : 'ini';
+        const linkedTxs = (transactions || []).filter(t => t && t.accountId === accId);
+        const warningSuffix = linkedTxs.length > 0
+          ? `\n\nPERINGATAN: Sebanyak ${linkedTxs.length} transaksi yang tersimpan di dalam akun ini juga akan dihapus secara permanen.`
+          : '';
+
+        // Browser-native window.confirm dialog to prevent accidental data loss
+        const confirmed = window.confirm(`Apakah Anda yakin ingin menghapus akun ${accName}?${warningSuffix}\n\nTindakan ini tidak dapat dibatalkan.`);
+        if (!confirmed) return;
+
         setAccounts(prev => {
-          if (prev.length <= 1) {
-            alert('Minimal harus menyisakan 1 dompet');
-            return prev;
-          }
-          if (!confirm('Hapus dompet ini beserta seluruh transaksinya?')) return prev;
           const next = prev.filter(a => a.id !== accId);
           StorageService.setAccounts(next);
-          setTransactions(tPrev => {
-            const tNext = tPrev.filter(t => t.accountId !== accId);
-            StorageService.setTransactions(tNext);
-            return tNext;
-          });
-          showToast('Dompet dihapus');
           return next;
         });
-      }, []);
+        setTransactions(tPrev => {
+          const tNext = tPrev.filter(t => t.accountId !== accId);
+          StorageService.setTransactions(tNext);
+          return tNext;
+        });
+        showToast(`Akun ${accName} berhasil dihapus`);
+      }, [accounts, transactions, showToast]);
 
       // Savings Goals
       const handleSaveGoal = useCallback((goalData) => {

@@ -28,13 +28,12 @@ object VoraletWebViewConfig {
             isVerticalScrollBarEnabled = false
             isHorizontalScrollBarEnabled = false
 
-            // Allow WebView and system window compositor to handle rendering naturally
+            // Allow default hardware layer rendering for smooth graphics pipeline
             setLayerType(View.LAYER_TYPE_NONE, null)
 
             settings.apply {
                 javaScriptEnabled = true
                 domStorageEnabled = true
-                databaseEnabled = true
 
                 // Security Hardening: Never allow local file URLs to access arbitrary files or external origins
                 allowFileAccess = true

@@ -32,7 +32,7 @@ PART5_DEBTS_MILESTONES = """
       };
 
       return (
-        <div className="ios-inset-group mb-4">
+        <div className="ios-inset-group mb-4 animate-dashboard-card" style={{ animationDelay: '120ms' }}>
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <IconBadge icon="shield-check" className="p-1.5 rounded-xl bg-sky-100 dark:bg-slate-700 text-brand dark:text-sky-400" iconClass="w-4 h-4" />
@@ -56,7 +56,9 @@ PART5_DEBTS_MILESTONES = """
           <div className="flex items-baseline justify-between mt-1">
             <div>
               <div className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-                {hideBalance ? 'Rp ••••••' : formatIDR(dailyAllowance)}
+                <span key={hideBalance ? 'hidden-allow' : `allow-${dailyAllowance}`} className="animate-value-pulse">
+                  {hideBalance ? 'Rp ••••••' : formatIDR(dailyAllowance)}
+                </span>
                 <span className="text-xs font-normal text-slate-400 dark:text-slate-500 ml-1">/ hari</span>
               </div>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
@@ -195,7 +197,7 @@ PART5_DEBTS_MILESTONES = """
       const unlockedCount = milestones.filter(m => m.unlocked).length;
 
       return (
-        <div className="ios-inset-group mb-4">
+        <div className="ios-inset-group mb-4 animate-dashboard-card" style={{ animationDelay: '180ms' }}>
           <div
             className="flex items-center justify-between cursor-pointer ios-touch-item"
             onClick={() => setIsOpen(prev => !prev)}

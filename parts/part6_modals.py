@@ -1885,7 +1885,7 @@ PART6_MODALS = """
                 </button>
               </div>
 
-              {/* Master Developer & Security Gate (Code: 2006 / 2026) */}
+              {/* Master Developer & Security Gate */}
               <div className="pt-3 border-t border-slate-100 dark:border-slate-700">
                 <button
                   type="button"
@@ -1898,7 +1898,7 @@ PART6_MODALS = """
                     <Icon name="shield-check" className="w-4 h-4 text-brand dark:text-sky-400" />
                     <span>Opsi Pengembang & Keamanan Master</span>
                   </div>
-                  <span className="text-[10px] bg-sky-200/70 dark:bg-slate-800 px-2 py-0.5 rounded-md font-mono font-bold text-brand dark:text-sky-300">KODE: 2006</span>
+                  <span className="text-[10px] bg-sky-200/70 dark:bg-slate-800 px-2 py-0.5 rounded-md font-mono font-bold text-brand dark:text-sky-300">RAHASIA</span>
                 </button>
               </div>
 
@@ -2549,7 +2549,7 @@ PART6_MODALS = """
           setStorageReport(SafeStorage.getRawStorageReport());
           setIntegrityReport(CryptoService.verifyIntegrity());
         } else {
-          setErrorMsg('Kunci Master Salah! Diperlukan kode verifikasi: 2006 atau 2026');
+          setErrorMsg('Kunci Master Salah! Akses ditolak.');
           setIsShaking(true);
           setTimeout(() => setIsShaking(false), 500);
         }
@@ -2592,7 +2592,7 @@ PART6_MODALS = """
                     <Icon name="lock" className="w-8 h-8 text-brand dark:text-sky-400 mx-auto mb-2" />
                     <h4 className="text-xs font-bold text-slate-900 dark:text-white">Autentikasi Pengembang</h4>
                     <p className="text-[11px] text-slate-500 dark:text-slate-300 mt-1">
-                      Masukkan master security verification key <span className="font-bold text-brand dark:text-sky-400">2006</span> / <span className="font-bold text-brand dark:text-sky-400">2026</span> untuk mengakses konfigurasi sistem.
+                      Masukkan kode otorisasi master rahasia untuk membuka akses konfigurasi tingkat lanjut.
                     </p>
                   </div>
 
@@ -2610,7 +2610,7 @@ PART6_MODALS = """
                           setMasterCode(e.target.value.slice(0, 6));
                           if (errorMsg) setErrorMsg('');
                         }}
-                        placeholder="Ketik 2006 / 2026"
+                        placeholder="••••"
                         className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-center font-mono font-bold tracking-widest text-base text-slate-900 dark:text-white focus:outline-none focus:border-brand"
                       />
                     </div>
@@ -2623,7 +2623,7 @@ PART6_MODALS = """
                       type="submit"
                       className="w-full py-2.5 bg-brand text-white font-semibold text-xs rounded-xl hover:bg-brand-hover ios-btn-tap"
                     >
-                      Buka Akses Master (2006 / 2026)
+                      Buka Akses Master
                     </button>
                   </form>
                 </div>
@@ -2731,7 +2731,7 @@ PART6_MODALS = """
                     <button
                       type="button"
                       onClick={() => {
-                        if (confirm('PERINGATAN MASTER DEVELOPER (KODE 2026): Hapus semua data aplikasi dan kembalikan ke kondisi pabrik?')) {
+                        if (confirm('PERINGATAN MASTER DEVELOPER: Apakah Anda yakin ingin menghapus semua data aplikasi dan mengembalikan ke kondisi awal pabrik? Tindakan ini tidak dapat dibatalkan.')) {
                           onHardReset();
                           onClose();
                         }

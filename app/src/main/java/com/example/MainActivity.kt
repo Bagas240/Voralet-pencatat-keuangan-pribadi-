@@ -79,7 +79,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         prepareWebViewStorage(this)
-        WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG)
+        // Permanently disable WebView remote debugging for tamper protection
+        WebView.setWebContentsDebuggingEnabled(false)
         enableEdgeToEdge()
 
         setContent {

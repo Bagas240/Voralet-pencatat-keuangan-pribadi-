@@ -104,21 +104,26 @@
 
   <!-- Theme Synchronization Initialization -->
   <script>
-    try {
-      const savedTheme = localStorage.getItem('voralet_theme');
-      if (savedTheme === 'dark') {
-        document.documentElement.classList.add('dark');
-        if (document.body) document.body.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-        if (document.body) document.body.classList.remove('dark');
-        if (!savedTheme) {
-          localStorage.setItem('voralet_theme', 'light');
+    (function() {
+      try {
+        const savedTheme = localStorage.getItem('voralet_theme');
+        const mediaQuery = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+        const prefersDark = mediaQuery ? mediaQuery.matches : false;
+        const initialTheme = (savedTheme === 'dark' || savedTheme === 'light')
+          ? savedTheme
+          : (prefersDark ? 'dark' : 'light');
+
+        if (initialTheme === 'dark') {
+          document.documentElement.classList.add('dark');
+          if (document.body) document.body.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+          if (document.body) document.body.classList.remove('dark');
         }
+      } catch (e) {
+        document.documentElement.classList.remove('dark');
       }
-    } catch (e) {
-      document.documentElement.classList.remove('dark');
-    }
+    })();
   </script>
 
   <!-- Haptic & Vibration Feedback Engine (navigator.vibrate & AndroidBridge) -->
@@ -507,28 +512,91 @@
       -webkit-backface-visibility: hidden;
     }
 
-    /* Transaction List Layout Animations */
-    @keyframes txSlideIn {
+    /* Transaction List Layout Animations (Smooth iOS Fluid Spring & Soft Dismiss) */
+    @keyframes dashboardCardEntry {
       0% {
         opacity: 0;
-        transform: translate3d(0, -22px, 0) scale(0.97);
-        max-height: 0px;
-        background-color: rgba(2, 132, 199, 0.12);
+        transform: translate3d(0, 18px, 0) scale(0.975);
       }
-      50% {
-        opacity: 0.9;
-        transform: translate3d(0, 1px, 0) scale(1.004);
-        background-color: rgba(2, 132, 199, 0.06);
+      65% {
+        opacity: 0.95;
       }
       100% {
         opacity: 1;
         transform: translate3d(0, 0, 0) scale(1);
-        max-height: 120px;
-        background-color: transparent;
+      }
+    }
+    .animate-dashboard-card {
+      animation: dashboardCardEntry 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
+      will-change: transform, opacity;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+
+    @keyframes valuePulseHighlight {
+      0% {
+        transform: scale(1);
+        filter: brightness(1);
+      }
+      35% {
+        transform: scale(1.035);
+        filter: brightness(1.15);
+      }
+      100% {
+        transform: scale(1);
+        filter: brightness(1);
+      }
+    }
+    .animate-value-pulse {
+      animation: valuePulseHighlight 0.38s cubic-bezier(0.16, 1, 0.3, 1);
+      display: inline-block;
+      will-change: transform, filter;
+    }
+
+    @keyframes txCardEntry {
+      0% {
+        opacity: 0;
+        transform: translate3d(0, 16px, 0) scale(0.98);
+      }
+      60% {
+        opacity: 0.95;
+      }
+      100% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1);
+      }
+    }
+    .animate-tx-card-entry {
+      animation: txCardEntry 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+      will-change: transform, opacity;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+
+    @keyframes txSlideIn {
+      0% {
+        opacity: 0;
+        max-height: 0px;
+        transform: translate3d(0, -16px, 0) scale(0.97);
+        filter: blur(1.5px);
+      }
+      40% {
+        opacity: 0.85;
+        filter: blur(0px);
+      }
+      75% {
+        max-height: 82px;
+        transform: translate3d(0, 1px, 0) scale(1.002);
+      }
+      100% {
+        opacity: 1;
+        max-height: 82px;
+        transform: translate3d(0, 0, 0) scale(1);
+        filter: none;
       }
     }
     .animate-tx-slide-in {
-      animation: txSlideIn 0.42s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation: txSlideIn 0.46s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       overflow: hidden;
       will-change: transform, opacity, max-height;
     }
@@ -536,33 +604,73 @@
     @keyframes txFadeOut {
       0% {
         opacity: 1;
+        max-height: 82px;
         transform: translate3d(0, 0, 0) scale(1);
-        max-height: 85px;
-        margin-bottom: 0px;
+        filter: none;
       }
-      40% {
-        opacity: 0.15;
-        transform: translate3d(0, -4px, 0) scale(0.97);
+      30% {
+        opacity: 0.65;
+        transform: translate3d(14px, 0, 0) scale(0.98);
+      }
+      65% {
+        opacity: 0;
+        transform: translate3d(32px, 0, 0) scale(0.94);
+        max-height: 48px;
+        filter: blur(1px);
       }
       100% {
         opacity: 0;
-        transform: translate3d(0, -12px, 0) scale(0.92);
         max-height: 0px;
         padding-top: 0px;
         padding-bottom: 0px;
         margin-top: 0px;
         margin-bottom: 0px;
-        border-width: 0px;
+        transform: translate3d(40px, 0, 0) scale(0.9);
       }
     }
     .animate-tx-fade-out {
-      animation: txFadeOut 0.32s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+      animation: txFadeOut 0.36s cubic-bezier(0.32, 0.72, 0, 1) forwards;
       pointer-events: none;
       overflow: hidden;
       will-change: opacity, transform, max-height;
     }
 
+    @keyframes txHighlightGlow {
+      0% {
+        background-color: rgba(2, 132, 199, 0.18);
+      }
+      50% {
+        background-color: rgba(2, 132, 199, 0.08);
+      }
+      100% {
+        background-color: transparent;
+      }
+    }
+    .animate-tx-highlight {
+      animation: txHighlightGlow 1.2s ease-out forwards;
+    }
+
+    html.dark .animate-tx-highlight,
+    body.dark .animate-tx-highlight,
+    .dark .animate-tx-highlight {
+      animation: txHighlightGlowDark 1.2s ease-out forwards;
+    }
+    @keyframes txHighlightGlowDark {
+      0% {
+        background-color: rgba(56, 189, 248, 0.22);
+      }
+      50% {
+        background-color: rgba(56, 189, 248, 0.08);
+      }
+      100% {
+        background-color: transparent;
+      }
+    }
+
     @media (prefers-reduced-motion: reduce) {
+      .animate-dashboard-card,
+      .animate-value-pulse,
+      .animate-tx-card-entry,
       .animate-tx-slide-in,
       .animate-tx-fade-out,
       .animate-ios-tab-slide-forward,
@@ -1684,8 +1792,7 @@
         CryptoService.hashPin(inputPin).then(hashed => StorageService.setPin(hashed));
         return true;
       },
-      // Master Security Verification Key "2006" & "2026"
-      MASTER_DEV_CODE: '2006',
+      // Master Security Verification
       verifyMasterCode: (code) => {
         if (!code) return false;
         const str = String(code).trim();
@@ -2144,7 +2251,11 @@
       },
       getTheme: () => {
         const val = SafeStorage.getItem(STORAGE_KEYS.THEME);
-        return val === 'dark' ? 'dark' : 'light';
+        if (val === 'dark' || val === 'light') return val;
+        if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          return 'dark';
+        }
+        return 'light';
       },
       setTheme: (theme) => {
         SafeStorage.setItem(STORAGE_KEYS.THEME, theme);
@@ -3582,7 +3693,7 @@
       };
 
       return (
-        <div className="ios-inset-group mb-4">
+        <div className="ios-inset-group mb-4 animate-dashboard-card" style={{ animationDelay: '120ms' }}>
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <IconBadge icon="shield-check" className="p-1.5 rounded-xl bg-sky-100 dark:bg-slate-700 text-brand dark:text-sky-400" iconClass="w-4 h-4" />
@@ -3606,7 +3717,9 @@
           <div className="flex items-baseline justify-between mt-1">
             <div>
               <div className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-                {hideBalance ? 'Rp ••••••' : formatIDR(dailyAllowance)}
+                <span key={hideBalance ? 'hidden-allow' : `allow-${dailyAllowance}`} className="animate-value-pulse">
+                  {hideBalance ? 'Rp ••••••' : formatIDR(dailyAllowance)}
+                </span>
                 <span className="text-xs font-normal text-slate-400 dark:text-slate-500 ml-1">/ hari</span>
               </div>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
@@ -3745,7 +3858,7 @@
       const unlockedCount = milestones.filter(m => m.unlocked).length;
 
       return (
-        <div className="ios-inset-group mb-4">
+        <div className="ios-inset-group mb-4 animate-dashboard-card" style={{ animationDelay: '180ms' }}>
           <div
             className="flex items-center justify-between cursor-pointer ios-touch-item"
             onClick={() => setIsOpen(prev => !prev)}
@@ -6087,7 +6200,7 @@
                 </button>
               </div>
 
-              {/* Master Developer & Security Gate (Code: 2006 / 2026) */}
+              {/* Master Developer & Security Gate */}
               <div className="pt-3 border-t border-slate-100 dark:border-slate-700">
                 <button
                   type="button"
@@ -6100,7 +6213,7 @@
                     <Icon name="shield-check" className="w-4 h-4 text-brand dark:text-sky-400" />
                     <span>Opsi Pengembang & Keamanan Master</span>
                   </div>
-                  <span className="text-[10px] bg-sky-200/70 dark:bg-slate-800 px-2 py-0.5 rounded-md font-mono font-bold text-brand dark:text-sky-300">KODE: 2006</span>
+                  <span className="text-[10px] bg-sky-200/70 dark:bg-slate-800 px-2 py-0.5 rounded-md font-mono font-bold text-brand dark:text-sky-300">RAHASIA</span>
                 </button>
               </div>
 
@@ -6751,7 +6864,7 @@
           setStorageReport(SafeStorage.getRawStorageReport());
           setIntegrityReport(CryptoService.verifyIntegrity());
         } else {
-          setErrorMsg('Kunci Master Salah! Diperlukan kode verifikasi: 2006 atau 2026');
+          setErrorMsg('Kunci Master Salah! Akses ditolak.');
           setIsShaking(true);
           setTimeout(() => setIsShaking(false), 500);
         }
@@ -6794,7 +6907,7 @@
                     <Icon name="lock" className="w-8 h-8 text-brand dark:text-sky-400 mx-auto mb-2" />
                     <h4 className="text-xs font-bold text-slate-900 dark:text-white">Autentikasi Pengembang</h4>
                     <p className="text-[11px] text-slate-500 dark:text-slate-300 mt-1">
-                      Masukkan master security verification key <span className="font-bold text-brand dark:text-sky-400">2006</span> / <span className="font-bold text-brand dark:text-sky-400">2026</span> untuk mengakses konfigurasi sistem.
+                      Masukkan kode otorisasi master rahasia untuk membuka akses konfigurasi tingkat lanjut.
                     </p>
                   </div>
 
@@ -6812,7 +6925,7 @@
                           setMasterCode(e.target.value.slice(0, 6));
                           if (errorMsg) setErrorMsg('');
                         }}
-                        placeholder="Ketik 2006 / 2026"
+                        placeholder="••••"
                         className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-center font-mono font-bold tracking-widest text-base text-slate-900 dark:text-white focus:outline-none focus:border-brand"
                       />
                     </div>
@@ -6825,7 +6938,7 @@
                       type="submit"
                       className="w-full py-2.5 bg-brand text-white font-semibold text-xs rounded-xl hover:bg-brand-hover ios-btn-tap"
                     >
-                      Buka Akses Master (2006 / 2026)
+                      Buka Akses Master
                     </button>
                   </form>
                 </div>
@@ -6933,7 +7046,7 @@
                     <button
                       type="button"
                       onClick={() => {
-                        if (confirm('PERINGATAN MASTER DEVELOPER (KODE 2026): Hapus semua data aplikasi dan kembalikan ke kondisi pabrik?')) {
+                        if (confirm('PERINGATAN MASTER DEVELOPER: Apakah Anda yakin ingin menghapus semua data aplikasi dan mengembalikan ke kondisi awal pabrik? Tindakan ini tidak dapat dibatalkan.')) {
                           onHardReset();
                           onClose();
                         }
@@ -8040,9 +8153,7 @@
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                if (confirm(`Hapus kantong "${acc.name}"? Catatan transaksi terkait akan tetap tersimpan.`)) {
-                                  onDeleteAccount(acc.id);
-                                }
+                                onDeleteAccount(acc.id);
                               }}
                               className="py-2 px-2.5 bg-rose-500/80 hover:bg-rose-600 text-white text-[11px] font-bold rounded-xl flex items-center gap-1 border border-rose-400/40 transition-colors ios-btn-tap"
                             >
@@ -8282,7 +8393,7 @@
         },
         {
           title: 'Cadangan Terenkripsi Ultra-Aman',
-          desc: 'Unduh file cadangan brankas terenkripsi dengan perlindungan kode master 2006 / 2026.',
+          desc: 'Unduh file cadangan brankas terenkripsi dengan perlindungan enkripsi berlapis dan kunci keamanan tingkat tinggi.',
           icon: 'lock',
           badge: 'Enkripsi Penuh',
           color: 'from-emerald-500 to-teal-600',
@@ -8381,9 +8492,9 @@
     // =========================================================================
     // 9. SWIPEABLE TRANSACTION ROW & CONTEXTUAL LONG PRESS
     // =========================================================================
-    const SwipeableTransactionRow = ({
+    const SwipeableTransactionRow = React.memo(({
       tx,
-      idx,
+      idx = 0,
       isLast,
       cat,
       acc,
@@ -8393,7 +8504,8 @@
       onDuplicate,
       isNewlyAdded = false,
       isDeleting = false,
-      onClearNewlyAdded
+      onClearNewlyAdded,
+      disableAnimation = false
     }) => {
       const [offsetX, setOffsetX] = useState(0);
       const [isDragging, setIsDragging] = useState(false);
@@ -8447,9 +8559,20 @@
 
       return (
         <div
-          className={`relative overflow-hidden select-none transition-all duration-300 ease-out ${
-            isNewlyAdded ? 'animate-tx-slide-in rounded-2xl' : ''
-          } ${isDeleting ? 'animate-tx-fade-out' : ''}`}
+          className={`relative overflow-hidden select-none h-[64px] ${
+            isDeleting
+              ? 'animate-tx-fade-out'
+              : isNewlyAdded
+                ? 'animate-tx-slide-in rounded-2xl'
+                : disableAnimation
+                  ? ''
+                  : 'animate-tx-card-entry'
+          }`}
+          style={{
+            height: '64px',
+            boxSizing: 'border-box',
+            animationDelay: isDeleting || isNewlyAdded || disableAnimation ? '0ms' : `${Math.min((idx || 0) * 35, 280)}ms`
+          }}
           onAnimationEnd={(e) => {
             if (e.target === e.currentTarget && isNewlyAdded && onClearNewlyAdded) {
               onClearNewlyAdded(tx.id);
@@ -8497,7 +8620,9 @@
               transform: `translate3d(${offsetX}px, 0, 0)`,
               transition: isDragging ? 'none' : 'transform 0.25s cubic-bezier(0.32, 0.72, 0, 1)'
             }}
-            className={`relative bg-white dark:bg-slate-800 flex items-center justify-between py-3 px-1.5 ${!isLast ? 'ios-hairline' : ''} ios-touch-item`}
+            className={`relative bg-white dark:bg-slate-800 flex items-center justify-between h-full px-1.5 ${!isLast ? 'ios-hairline' : ''} ios-touch-item ${
+              isNewlyAdded ? 'animate-tx-highlight rounded-xl' : ''
+            }`}
           >
             <div className="flex items-center gap-3 min-w-0 pointer-events-none">
               <div className="relative shrink-0">
@@ -8562,7 +8687,163 @@
           />
         </div>
       );
-    };
+    });
+
+    // =========================================================================
+    // 9.5. VIRTUALIZED TRANSACTION LIST (High-Performance List Virtualization)
+    // =========================================================================
+    const ITEM_ROW_HEIGHT = 64;
+    const VIRTUAL_OVERSCAN = 6;
+
+    const VirtualizedTransactionList = React.memo(({
+      transactions,
+      customCategories,
+      safeAccounts,
+      hideBalance,
+      onDeleteTx,
+      onEditTx,
+      onDuplicateTx,
+      newlyAddedTxIds,
+      deletingTxIds,
+      onClearNewlyAddedTx
+    }) => {
+      const containerRef = useRef(null);
+      const [scrollState, setScrollState] = useState({
+        scrollTop: 0,
+        viewportHeight: 600,
+        containerOffsetTop: 0
+      });
+
+      useEffect(() => {
+        const el = containerRef.current;
+        if (!el) return;
+
+        // Temukan kontainer scroll induk terdekat (misal <main> ber-overflow-y-auto)
+        let parent = el.parentElement;
+        while (parent && parent !== document.body) {
+          const style = window.getComputedStyle(parent);
+          if (style.overflowY === 'auto' || style.overflowY === 'scroll' || parent.tagName === 'MAIN') {
+            break;
+          }
+          parent = parent.parentElement;
+        }
+        const scrollTarget = parent || window;
+
+        let ticking = false;
+        const updatePositions = () => {
+          if (!containerRef.current) return;
+          const sTop = scrollTarget === window ? window.scrollY : scrollTarget.scrollTop;
+          const vHeight = scrollTarget === window ? window.innerHeight : scrollTarget.clientHeight;
+
+          const elRect = containerRef.current.getBoundingClientRect();
+          const parentRect = scrollTarget === window ? { top: 0 } : scrollTarget.getBoundingClientRect();
+          const relativeTop = (elRect.top - parentRect.top) + sTop;
+
+          setScrollState({
+            scrollTop: sTop,
+            viewportHeight: vHeight || 600,
+            containerOffsetTop: Math.max(0, relativeTop)
+          });
+          ticking = false;
+        };
+
+        const onScrollOrResize = () => {
+          if (!ticking) {
+            ticking = true;
+            requestAnimationFrame(updatePositions);
+          }
+        };
+
+        updatePositions();
+        const eventNode = scrollTarget === window ? window : scrollTarget;
+        eventNode.addEventListener('scroll', onScrollOrResize, { passive: true });
+        window.addEventListener('resize', onScrollOrResize, { passive: true });
+
+        let resizeObserver = null;
+        if (typeof ResizeObserver !== 'undefined') {
+          try {
+            resizeObserver = new ResizeObserver(() => {
+              onScrollOrResize();
+            });
+            resizeObserver.observe(el);
+            if (scrollTarget !== window) {
+              resizeObserver.observe(scrollTarget);
+            }
+          } catch (_) {
+            // Abaikan jika ResizeObserver tidak tersedia di lingkungan tertentu
+          }
+        }
+
+        return () => {
+          eventNode.removeEventListener('scroll', onScrollOrResize);
+          window.removeEventListener('resize', onScrollOrResize);
+          if (resizeObserver) resizeObserver.disconnect();
+        };
+      }, [transactions.length]);
+
+      if (!transactions || transactions.length === 0) {
+        return (
+          <div className="text-center py-8">
+            <IconBadge icon="receipt" className="w-10 h-10 rounded-xl bg-slate-50 dark:bg-slate-900 text-slate-400 mx-auto mb-1.5" iconClass="w-5 h-5" />
+            <p className="text-xs text-slate-400">Tidak ada transaksi ditemukan.</p>
+          </div>
+        );
+      }
+
+      const count = transactions.length;
+      const { scrollTop, viewportHeight, containerOffsetTop } = scrollState;
+      const relativeScroll = Math.max(0, scrollTop - containerOffsetTop);
+
+      const startIndex = Math.max(0, Math.floor(relativeScroll / ITEM_ROW_HEIGHT) - VIRTUAL_OVERSCAN);
+      const endIndex = Math.min(count, Math.ceil((relativeScroll + viewportHeight) / ITEM_ROW_HEIGHT) + VIRTUAL_OVERSCAN);
+
+      const topSpacerHeight = startIndex * ITEM_ROW_HEIGHT;
+      const bottomSpacerHeight = Math.max(0, (count - endIndex) * ITEM_ROW_HEIGHT);
+      const visibleItems = transactions.slice(startIndex, endIndex);
+
+      return (
+        <div ref={containerRef} className="relative w-full" style={{ minHeight: `${count * ITEM_ROW_HEIGHT}px` }}>
+          {/* Virtual Top Spacer */}
+          {topSpacerHeight > 0 && (
+            <div style={{ height: `${topSpacerHeight}px` }} aria-hidden="true" />
+          )}
+
+          {/* Rendered Window of Visible Items */}
+          <div className="divide-y divide-transparent">
+            {visibleItems.map((tx, localIdx) => {
+              const globalIdx = startIndex + localIdx;
+              const isLast = globalIdx === count - 1;
+              const cat = getCategoryById(tx.category, customCategories);
+              const acc = safeAccounts.find(a => a.id === tx.accountId);
+
+              return (
+                <SwipeableTransactionRow
+                  key={tx.id}
+                  tx={tx}
+                  idx={globalIdx}
+                  isLast={isLast}
+                  cat={cat}
+                  acc={acc}
+                  hideBalance={hideBalance}
+                  onDelete={onDeleteTx}
+                  onEdit={onEditTx}
+                  onDuplicate={onDuplicateTx}
+                  isNewlyAdded={newlyAddedTxIds ? newlyAddedTxIds.has(tx.id) : false}
+                  isDeleting={deletingTxIds ? deletingTxIds.has(tx.id) : false}
+                  onClearNewlyAdded={onClearNewlyAddedTx}
+                  disableAnimation={globalIdx >= 10}
+                />
+              );
+            })}
+          </div>
+
+          {/* Virtual Bottom Spacer */}
+          {bottomSpacerHeight > 0 && (
+            <div style={{ height: `${bottomSpacerHeight}px` }} aria-hidden="true" />
+          )}
+        </div>
+      );
+    });
 
     // =========================================================================
     // 10. MAIN DASHBOARD
@@ -8732,7 +9013,10 @@
           </div>
 
           {/* Hero Balance Card - High Contrast Deep Royal Blue in both Light and Dark Mode */}
-          <div className="rounded-[22px] p-5 bg-[#0284C7] dark:bg-[#0369A1] text-white border border-[#0369A1] dark:border-sky-600/40 shadow-lg dark:shadow-[0_10px_26px_rgba(3,105,161,0.35)] transition-colors duration-300 ease-in-out">
+          <div
+            className="animate-dashboard-card rounded-[22px] p-5 bg-[#0284C7] dark:bg-[#0369A1] text-white border border-[#0369A1] dark:border-sky-600/40 shadow-lg dark:shadow-[0_10px_26px_rgba(3,105,161,0.35)] transition-colors duration-300 ease-in-out"
+            style={{ animationDelay: '50ms' }}
+          >
             <div className="flex items-center justify-between text-sky-100 mb-1.5">
               <span className="text-[11px] font-bold uppercase tracking-wider text-sky-100">Total Saldo Brankas</span>
               <button
@@ -8746,30 +9030,32 @@
             </div>
 
             <div className="text-2xl whitespace-nowrap truncate font-extrabold tracking-tight mb-4 text-white">
-              {hideBalance ? 'Rp ••••••••' : formatIDR(totalBalance)}
+              <span key={hideBalance ? 'hidden' : `bal-${totalBalance}`} className="animate-value-pulse">
+                {hideBalance ? 'Rp ••••••••' : formatIDR(totalBalance)}
+              </span>
             </div>
 
             {/* Monthly income and expense summary */}
             <div className="grid grid-cols-2 gap-2 pt-3 border-t border-sky-400/50 dark:border-sky-500/40">
-              <div className="flex items-center gap-2.5 p-1.5 rounded-xl">
+              <div className="flex items-center gap-2.5 p-1.5 rounded-xl bg-white/5 backdrop-blur-[2px]">
                 <div className="w-8 h-8 rounded-xl bg-emerald-500/30 text-emerald-100 flex items-center justify-center shrink-0 border border-emerald-300/30">
                   <Icon name="arrow-down-left" className="w-4 h-4 text-emerald-200" strokeWidth={2.5} />
                 </div>
                 <div className="min-w-0">
                   <span className="text-[10px] text-sky-100 block leading-tight font-medium">Masuk (Bln Ini)</span>
-                  <span className="text-xs whitespace-nowrap truncate font-bold text-white block">
+                  <span key={hideBalance ? 'hidden-inc' : `inc-${monthSummary.income}`} className="text-xs whitespace-nowrap truncate font-bold text-white block animate-value-pulse">
                     {hideBalance ? 'Rp ••••••' : formatIDR(monthSummary.income)}
                   </span>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2.5 p-1.5 rounded-xl">
+              <div className="flex items-center gap-2.5 p-1.5 rounded-xl bg-white/5 backdrop-blur-[2px]">
                 <div className="w-8 h-8 rounded-xl bg-rose-500/30 text-rose-100 flex items-center justify-center shrink-0 border border-rose-300/30">
                   <Icon name="arrow-up-right" className="w-4 h-4 text-rose-200" strokeWidth={2.5} />
                 </div>
                 <div className="min-w-0">
                   <span className="text-[10px] text-sky-100 block leading-tight font-medium">Keluar (Bln Ini)</span>
-                  <span className="text-xs whitespace-nowrap truncate font-bold text-white block">
+                  <span key={hideBalance ? 'hidden-exp' : `exp-${monthSummary.expense}`} className="text-xs whitespace-nowrap truncate font-bold text-white block animate-value-pulse">
                     {hideBalance ? 'Rp ••••••' : formatIDR(monthSummary.expense)}
                   </span>
                 </div>
@@ -8778,7 +9064,7 @@
           </div>
 
           {/* Direct Dual Action Bar: Catat Pemasukan (+) & Catat Pengeluaran (-) with Prominent Icons */}
-          <div className="grid grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-2 gap-2.5 animate-dashboard-card" style={{ animationDelay: '90ms' }}>
             <button
               type="button"
               onClick={onOpenAddIncome}
@@ -8821,7 +9107,7 @@
           <QuickExpenseBar onSelectQuickExpense={onSelectQuickExpense} />
 
           {/* Kantong Impian Quick Section */}
-          <div className="ios-inset-group">
+          <div className="ios-inset-group animate-dashboard-card" style={{ animationDelay: '150ms' }}>
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <IconBadge icon="target" className="p-1.5 rounded-xl bg-emerald-100 dark:bg-slate-700 text-emerald-600 dark:text-emerald-400" iconClass="w-4 h-4" />
@@ -9127,38 +9413,19 @@
               </div>
             </div>
 
-            {/* List with Swipe-to-Action & Long-Press */}
-            {filteredTransactions.length === 0 ? (
-              <div className="text-center py-8">
-                <IconBadge icon="receipt" className="w-10 h-10 rounded-xl bg-slate-50 dark:bg-slate-900 text-slate-400 mx-auto mb-1.5" iconClass="w-5 h-5" />
-                <p className="text-xs text-slate-400">Tidak ada transaksi ditemukan.</p>
-              </div>
-            ) : (
-              <div className="divide-y divide-transparent">
-                {filteredTransactions.slice(0, 40).map((tx, idx) => {
-                  const cat = getCategoryById(tx.category, customCategories);
-                  const acc = safeAccounts.find(a => a.id === tx.accountId);
-
-                  return (
-                    <SwipeableTransactionRow
-                      key={tx.id}
-                      tx={tx}
-                      idx={idx}
-                      isLast={idx === filteredTransactions.length - 1}
-                      cat={cat}
-                      acc={acc}
-                      hideBalance={hideBalance}
-                      onDelete={onDeleteTx}
-                      onEdit={onEditTx}
-                      onDuplicate={onDuplicateTx}
-                      isNewlyAdded={newlyAddedTxIds ? newlyAddedTxIds.has(tx.id) : false}
-                      isDeleting={deletingTxIds ? deletingTxIds.has(tx.id) : false}
-                      onClearNewlyAdded={onClearNewlyAddedTx}
-                    />
-                  );
-                })}
-              </div>
-            )}
+            {/* Virtualized Transaction History List */}
+            <VirtualizedTransactionList
+              transactions={filteredTransactions}
+              customCategories={customCategories}
+              safeAccounts={safeAccounts}
+              hideBalance={hideBalance}
+              onDeleteTx={onDeleteTx}
+              onEditTx={onEditTx}
+              onDuplicateTx={onDuplicateTx}
+              newlyAddedTxIds={newlyAddedTxIds}
+              deletingTxIds={deletingTxIds}
+              onClearNewlyAddedTx={onClearNewlyAddedTx}
+            />
           </div>
         </div>
       );
@@ -9269,6 +9536,44 @@
           if (rootEl) rootEl.classList.remove('dark');
         }
       }, [theme]);
+
+      // Automatically synchronize the app's dark mode setting with the user's system OS theme preferences using 'window.matchMedia('(prefers-color-scheme: dark)')'
+      useEffect(() => {
+        if (typeof window === 'undefined' || !window.matchMedia) return;
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+        const handleOsThemeChange = (e) => {
+          const isSystemDark = typeof e.matches === 'boolean' ? e.matches : mediaQuery.matches;
+          const nextTheme = isSystemDark ? 'dark' : 'light';
+          setTheme(nextTheme);
+          StorageService.setTheme(nextTheme);
+        };
+
+        // Sync initial state with system OS theme preference
+        try {
+          const saved = SafeStorage.getItem(STORAGE_KEYS.THEME);
+          if (!saved) {
+            const initialSystemTheme = mediaQuery.matches ? 'dark' : 'light';
+            setTheme(initialSystemTheme);
+            StorageService.setTheme(initialSystemTheme);
+          }
+        } catch (err) {}
+
+        // Listen for system OS theme changes dynamically
+        if (typeof mediaQuery.addEventListener === 'function') {
+          mediaQuery.addEventListener('change', handleOsThemeChange);
+        } else if (typeof mediaQuery.addListener === 'function') {
+          mediaQuery.addListener(handleOsThemeChange);
+        }
+
+        return () => {
+          if (typeof mediaQuery.removeEventListener === 'function') {
+            mediaQuery.removeEventListener('change', handleOsThemeChange);
+          } else if (typeof mediaQuery.removeListener === 'function') {
+            mediaQuery.removeListener(handleOsThemeChange);
+          }
+        };
+      }, []);
 
       // Global Mobile Keyboard Handling
       useEffect(() => {
@@ -9382,7 +9687,15 @@
 
       const handleDeleteTransaction = useCallback((txId) => {
         if (deletingTxIds.has(txId)) return;
-        if (!confirm('Hapus mutasi ini?')) return;
+        const targetTx = (transactions || []).find(t => t.id === txId);
+        const txDesc = targetTx?.notes ? `"${targetTx.notes}"` : (targetTx?.category ? `kategori "${targetTx.category}"` : 'ini');
+        const formattedAmt = targetTx?.amount ? ` senilai ${Formatters.currency(targetTx.amount)}` : '';
+
+        // Browser-native window.confirm dialog to prevent accidental data loss
+        const confirmed = window.confirm(`Apakah Anda yakin ingin menghapus transaksi ${txDesc}${formattedAmt}?
+
+Tindakan ini tidak dapat dibatalkan.`);
+        if (!confirmed) return;
 
         // Trigger layout fade-out & collapse animation
         setDeletingTxIds(prev => {
@@ -9406,9 +9719,9 @@
             next.delete(txId);
             return next;
           });
-          showToast('Mutasi dihapus');
-        }, 320);
-      }, [deletingTxIds, showToast]);
+          showToast('Transaksi berhasil dihapus');
+        }, 360);
+      }, [transactions, deletingTxIds, showToast]);
 
       const handleEditTransaction = useCallback((tx) => {
         setTxModalInitial({
@@ -9452,23 +9765,38 @@
       }, []);
 
       const handleDeleteAccount = useCallback((accId) => {
+        if ((accounts || []).length <= 1) {
+          window.alert('Minimal harus menyisakan 1 akun atau kantong keuangan.');
+          return;
+        }
+
+        const targetAcc = (accounts || []).find(a => a.id === accId);
+        const accName = targetAcc?.name ? `"${targetAcc.name}"` : 'ini';
+        const linkedTxs = (transactions || []).filter(t => t && t.accountId === accId);
+        const warningSuffix = linkedTxs.length > 0
+          ? `
+
+PERINGATAN: Sebanyak ${linkedTxs.length} transaksi yang tersimpan di dalam akun ini juga akan dihapus secara permanen.`
+          : '';
+
+        // Browser-native window.confirm dialog to prevent accidental data loss
+        const confirmed = window.confirm(`Apakah Anda yakin ingin menghapus akun ${accName}?${warningSuffix}
+
+Tindakan ini tidak dapat dibatalkan.`);
+        if (!confirmed) return;
+
         setAccounts(prev => {
-          if (prev.length <= 1) {
-            alert('Minimal harus menyisakan 1 dompet');
-            return prev;
-          }
-          if (!confirm('Hapus dompet ini beserta seluruh transaksinya?')) return prev;
           const next = prev.filter(a => a.id !== accId);
           StorageService.setAccounts(next);
-          setTransactions(tPrev => {
-            const tNext = tPrev.filter(t => t.accountId !== accId);
-            StorageService.setTransactions(tNext);
-            return tNext;
-          });
-          showToast('Dompet dihapus');
           return next;
         });
-      }, []);
+        setTransactions(tPrev => {
+          const tNext = tPrev.filter(t => t.accountId !== accId);
+          StorageService.setTransactions(tNext);
+          return tNext;
+        });
+        showToast(`Akun ${accName} berhasil dihapus`);
+      }, [accounts, transactions, showToast]);
 
       // Savings Goals
       const handleSaveGoal = useCallback((goalData) => {

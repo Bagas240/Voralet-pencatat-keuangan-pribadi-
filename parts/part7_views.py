@@ -1087,9 +1087,7 @@ PART7_VIEWS = """
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                if (confirm(`Hapus kantong "${acc.name}"? Catatan transaksi terkait akan tetap tersimpan.`)) {
-                                  onDeleteAccount(acc.id);
-                                }
+                                onDeleteAccount(acc.id);
                               }}
                               className="py-2 px-2.5 bg-rose-500/80 hover:bg-rose-600 text-white text-[11px] font-bold rounded-xl flex items-center gap-1 border border-rose-400/40 transition-colors ios-btn-tap"
                             >
@@ -1329,7 +1327,7 @@ PART7_VIEWS = """
         },
         {
           title: 'Cadangan Terenkripsi Ultra-Aman',
-          desc: 'Unduh file cadangan brankas terenkripsi dengan perlindungan kode master 2006 / 2026.',
+          desc: 'Unduh file cadangan brankas terenkripsi dengan perlindungan enkripsi berlapis dan kunci keamanan tingkat tinggi.',
           icon: 'lock',
           badge: 'Enkripsi Penuh',
           color: 'from-emerald-500 to-teal-600',

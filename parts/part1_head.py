@@ -104,21 +104,26 @@ HTML_HEAD = """<!DOCTYPE html>
 
   <!-- Theme Synchronization Initialization -->
   <script>
-    try {
-      const savedTheme = localStorage.getItem('voralet_theme');
-      if (savedTheme === 'dark') {
-        document.documentElement.classList.add('dark');
-        if (document.body) document.body.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-        if (document.body) document.body.classList.remove('dark');
-        if (!savedTheme) {
-          localStorage.setItem('voralet_theme', 'light');
+    (function() {
+      try {
+        const savedTheme = localStorage.getItem('voralet_theme');
+        const mediaQuery = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+        const prefersDark = mediaQuery ? mediaQuery.matches : false;
+        const initialTheme = (savedTheme === 'dark' || savedTheme === 'light')
+          ? savedTheme
+          : (prefersDark ? 'dark' : 'light');
+
+        if (initialTheme === 'dark') {
+          document.documentElement.classList.add('dark');
+          if (document.body) document.body.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+          if (document.body) document.body.classList.remove('dark');
         }
+      } catch (e) {
+        document.documentElement.classList.remove('dark');
       }
-    } catch (e) {
-      document.documentElement.classList.remove('dark');
-    }
+    })();
   </script>
 
   <!-- Haptic & Vibration Feedback Engine (navigator.vibrate & AndroidBridge) -->
@@ -507,28 +512,91 @@ HTML_HEAD = """<!DOCTYPE html>
       -webkit-backface-visibility: hidden;
     }
 
-    /* Transaction List Layout Animations */
-    @keyframes txSlideIn {
+    /* Transaction List Layout Animations (Smooth iOS Fluid Spring & Soft Dismiss) */
+    @keyframes dashboardCardEntry {
       0% {
         opacity: 0;
-        transform: translate3d(0, -22px, 0) scale(0.97);
-        max-height: 0px;
-        background-color: rgba(2, 132, 199, 0.12);
+        transform: translate3d(0, 18px, 0) scale(0.975);
       }
-      50% {
-        opacity: 0.9;
-        transform: translate3d(0, 1px, 0) scale(1.004);
-        background-color: rgba(2, 132, 199, 0.06);
+      65% {
+        opacity: 0.95;
       }
       100% {
         opacity: 1;
         transform: translate3d(0, 0, 0) scale(1);
-        max-height: 120px;
-        background-color: transparent;
+      }
+    }
+    .animate-dashboard-card {
+      animation: dashboardCardEntry 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
+      will-change: transform, opacity;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+
+    @keyframes valuePulseHighlight {
+      0% {
+        transform: scale(1);
+        filter: brightness(1);
+      }
+      35% {
+        transform: scale(1.035);
+        filter: brightness(1.15);
+      }
+      100% {
+        transform: scale(1);
+        filter: brightness(1);
+      }
+    }
+    .animate-value-pulse {
+      animation: valuePulseHighlight 0.38s cubic-bezier(0.16, 1, 0.3, 1);
+      display: inline-block;
+      will-change: transform, filter;
+    }
+
+    @keyframes txCardEntry {
+      0% {
+        opacity: 0;
+        transform: translate3d(0, 16px, 0) scale(0.98);
+      }
+      60% {
+        opacity: 0.95;
+      }
+      100% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1);
+      }
+    }
+    .animate-tx-card-entry {
+      animation: txCardEntry 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+      will-change: transform, opacity;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+
+    @keyframes txSlideIn {
+      0% {
+        opacity: 0;
+        max-height: 0px;
+        transform: translate3d(0, -16px, 0) scale(0.97);
+        filter: blur(1.5px);
+      }
+      40% {
+        opacity: 0.85;
+        filter: blur(0px);
+      }
+      75% {
+        max-height: 82px;
+        transform: translate3d(0, 1px, 0) scale(1.002);
+      }
+      100% {
+        opacity: 1;
+        max-height: 82px;
+        transform: translate3d(0, 0, 0) scale(1);
+        filter: none;
       }
     }
     .animate-tx-slide-in {
-      animation: txSlideIn 0.42s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation: txSlideIn 0.46s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       overflow: hidden;
       will-change: transform, opacity, max-height;
     }
@@ -536,33 +604,73 @@ HTML_HEAD = """<!DOCTYPE html>
     @keyframes txFadeOut {
       0% {
         opacity: 1;
+        max-height: 82px;
         transform: translate3d(0, 0, 0) scale(1);
-        max-height: 85px;
-        margin-bottom: 0px;
+        filter: none;
       }
-      40% {
-        opacity: 0.15;
-        transform: translate3d(0, -4px, 0) scale(0.97);
+      30% {
+        opacity: 0.65;
+        transform: translate3d(14px, 0, 0) scale(0.98);
+      }
+      65% {
+        opacity: 0;
+        transform: translate3d(32px, 0, 0) scale(0.94);
+        max-height: 48px;
+        filter: blur(1px);
       }
       100% {
         opacity: 0;
-        transform: translate3d(0, -12px, 0) scale(0.92);
         max-height: 0px;
         padding-top: 0px;
         padding-bottom: 0px;
         margin-top: 0px;
         margin-bottom: 0px;
-        border-width: 0px;
+        transform: translate3d(40px, 0, 0) scale(0.9);
       }
     }
     .animate-tx-fade-out {
-      animation: txFadeOut 0.32s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+      animation: txFadeOut 0.36s cubic-bezier(0.32, 0.72, 0, 1) forwards;
       pointer-events: none;
       overflow: hidden;
       will-change: opacity, transform, max-height;
     }
 
+    @keyframes txHighlightGlow {
+      0% {
+        background-color: rgba(2, 132, 199, 0.18);
+      }
+      50% {
+        background-color: rgba(2, 132, 199, 0.08);
+      }
+      100% {
+        background-color: transparent;
+      }
+    }
+    .animate-tx-highlight {
+      animation: txHighlightGlow 1.2s ease-out forwards;
+    }
+
+    html.dark .animate-tx-highlight,
+    body.dark .animate-tx-highlight,
+    .dark .animate-tx-highlight {
+      animation: txHighlightGlowDark 1.2s ease-out forwards;
+    }
+    @keyframes txHighlightGlowDark {
+      0% {
+        background-color: rgba(56, 189, 248, 0.22);
+      }
+      50% {
+        background-color: rgba(56, 189, 248, 0.08);
+      }
+      100% {
+        background-color: transparent;
+      }
+    }
+
     @media (prefers-reduced-motion: reduce) {
+      .animate-dashboard-card,
+      .animate-value-pulse,
+      .animate-tx-card-entry,
       .animate-tx-slide-in,
       .animate-tx-fade-out,
       .animate-ios-tab-slide-forward,
