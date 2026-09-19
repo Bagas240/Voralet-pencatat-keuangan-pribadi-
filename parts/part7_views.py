@@ -1630,7 +1630,7 @@ PART7_VIEWS = """
           title: 'Selamat Datang di Voralet!',
           desc: 'Brankas keuangan pribadi yang 100% offline, terenkripsi, dan dirancang elegan dengan sensasi iOS.',
           icon: 'shield-check',
-          badge: 'v2.3.0 Private Vault',
+          badge: 'v2.5.0 Private Vault',
           color: 'from-sky-500 to-blue-600',
           detail: 'Semua mutasi, kantong, dan impian Anda tersimpan secara lokal dan aman di perangkat ini.'
         },

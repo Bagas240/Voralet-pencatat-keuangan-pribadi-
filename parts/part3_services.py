@@ -177,7 +177,7 @@ PART3_SERVICES = """
           const encryptedPayload = btoa(binary);
           return {
             voralet_encrypted_vault: true,
-            version: '2.3.0',
+            version: '2.5.0',
             encrypted_at: new Date().toISOString(),
             signature: 'VORALET-HMAC-' + checksum.toString(16).toUpperCase(),
             payload: encryptedPayload

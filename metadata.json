@@ -1,6 +1,6 @@
 {
   "name": "Voralet",
-  "description": "Aplikasi pencatat keuangan pribadi modern v2.3.0 untuk Android dengan brankas PIN lokal, pelacak hutang piutang, kelola kantong, dan kantong impian berkinerja tinggi.",
+  "description": "Aplikasi pencatat keuangan pribadi modern v2.5.0 untuk Android dengan brankas PIN lokal, pelacak hutang piutang, kelola kantong drag-and-drop, dan kantong impian berkinerja tinggi.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

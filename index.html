@@ -2016,7 +2016,7 @@
           const encryptedPayload = btoa(binary);
           return {
             voralet_encrypted_vault: true,
-            version: '2.3.0',
+            version: '2.5.0',
             encrypted_at: new Date().toISOString(),
             signature: 'VORALET-HMAC-' + checksum.toString(16).toUpperCase(),
             payload: encryptedPayload
@@ -6373,7 +6373,7 @@
               <div className="pt-4 border-t border-slate-100 dark:border-slate-700 flex flex-col items-center text-center space-y-1.5 select-none">
                 <VoraletLogo size="md" className="mb-1" />
                 <p className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                  Voralet iOS Edition • Versi v2.3.0
+                  Voralet iOS Edition • Versi v2.5.0
                 </p>
                 <p className="text-[10px] text-slate-400 dark:text-slate-500 max-w-xs leading-relaxed">
                   Keuangan Sehat • Impian Dekat. 100% Offline & Terenkripsi Lokal di Perangkat Anda.
@@ -7085,7 +7085,7 @@
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white">Master Security Gate</h3>
-                  <p className="text-[10px] text-slate-400">Akses Pengembang & Integritas Kode v2.3.0</p>
+                  <p className="text-[10px] text-slate-400">Akses Pengembang & Integritas Kode v2.5.0</p>
                 </div>
               </div>
               <button
@@ -7215,7 +7215,7 @@
                   <div className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-1 text-[11px] font-mono text-slate-600 dark:text-slate-300">
                     <div className="flex justify-between">
                       <span>Versi Voralet:</span>
-                      <span className="font-bold">v2.3.0 (Production)</span>
+                      <span className="font-bold">v2.5.0 (Production)</span>
                     </div>
                     <div className="flex justify-between">
                       <span>React Core:</span>
@@ -8894,7 +8894,7 @@
           title: 'Selamat Datang di Voralet!',
           desc: 'Brankas keuangan pribadi yang 100% offline, terenkripsi, dan dirancang elegan dengan sensasi iOS.',
           icon: 'shield-check',
-          badge: 'v2.3.0 Private Vault',
+          badge: 'v2.5.0 Private Vault',
           color: 'from-sky-500 to-blue-600',
           detail: 'Semua mutasi, kantong, dan impian Anda tersimpan secara lokal dan aman di perangkat ini.'
         },
@@ -9530,7 +9530,7 @@
                     @{userProfile.username || 'voralet_user'}
                   </p>
                   <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-md bg-sky-100 dark:bg-sky-950/60 text-[#0284C7] dark:text-sky-400 border border-sky-200/60 dark:border-sky-800/60">
-                    v2.3.0
+                    v2.5.0
                   </span>
                 </div>
               </div>
@@ -10601,7 +10601,7 @@ Tindakan ini tidak dapat dibatalkan.`);
 
       const handleExportData = useCallback(() => {
         const rawPayload = {
-          voralet_version: '2.3.0',
+          voralet_version: '2.5.0',
           exported_at: new Date().toISOString(),
           name,
           username,
