@@ -24,7 +24,7 @@ class AndroidNativeBridge(
     companion object {
         const val BRIDGE_NAME = "AndroidBridge"
         private const val TAG = "AndroidNativeBridge"
-        private const val APP_VERSION = "2.5.0"
+        private const val APP_VERSION = "2.6.0"
     }
 
     private val clipboardManager: ClipboardManager? by lazy {

@@ -39,7 +39,7 @@ import com.example.webview.VoraletWebViewConfig
 import java.io.File
 
 /**
- * Main Activity for Voralet Personal Finance App v2.5.0.
+ * Main Activity for Voralet Personal Finance App v2.6.0.
  * Architected with Clean Principles, Edge-to-Edge display, and Hardware Accelerated Web Engine.
  */
 class MainActivity : ComponentActivity() {

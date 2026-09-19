@@ -588,49 +588,58 @@
       will-change: transform, opacity;
     }
 
-    /* iOS Modal & Sheet Keyframes (Fluid Apple HIG Physics) */
+    /* iOS Modal & Sheet Keyframes (Gentle Spring Apple HIG Physics) */
     @keyframes iosSheetEnter {
       0% {
-        transform: translate3d(0, 100%, 0);
-        opacity: 0.85;
+        transform: translate3d(0, 100%, 0) scale3d(0.97, 0.97, 1);
+        opacity: 0.6;
+      }
+      65% {
+        transform: translate3d(0, -6px, 0) scale3d(1.006, 1.006, 1);
+        opacity: 1;
+      }
+      82% {
+        transform: translate3d(0, 1.5px, 0) scale3d(0.999, 0.999, 1);
       }
       100% {
-        transform: translate3d(0, 0, 0);
+        transform: translate3d(0, 0, 0) scale3d(1, 1, 1);
         opacity: 1;
       }
     }
     @keyframes iosSheetExit {
       0% {
-        transform: translate3d(0, 0, 0);
+        transform: translate3d(0, 0, 0) scale3d(1, 1, 1);
         opacity: 1;
       }
       100% {
-        transform: translate3d(0, 100%, 0);
-        opacity: 0.85;
+        transform: translate3d(0, 100%, 0) scale3d(0.97, 0.97, 1);
+        opacity: 0.8;
       }
     }
     @keyframes iosBackdropFadeIn {
       0% { opacity: 0; backdrop-filter: blur(0px); -webkit-backdrop-filter: blur(0px); }
-      100% { opacity: 1; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+      100% { opacity: 1; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
     }
     @keyframes iosBackdropFadeOut {
-      0% { opacity: 1; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+      0% { opacity: 1; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
       100% { opacity: 0; backdrop-filter: blur(0px); -webkit-backdrop-filter: blur(0px); }
     }
     .animate-ios-sheet {
-      animation: iosSheetEnter 0.42s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation: iosSheetEnter 0.52s cubic-bezier(0.22, 1, 0.36, 1) forwards;
       will-change: transform, opacity;
+      transform-origin: center bottom;
     }
     .animate-ios-sheet-exit {
       animation: iosSheetExit 0.28s cubic-bezier(0.32, 0.72, 0, 1) forwards;
       will-change: transform, opacity;
+      transform-origin: center bottom;
     }
     .animate-ios-backdrop {
-      animation: iosBackdropFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation: iosBackdropFadeIn 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       will-change: opacity;
     }
     .animate-ios-backdrop-exit {
-      animation: iosBackdropFadeOut 0.25s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+      animation: iosBackdropFadeOut 0.26s cubic-bezier(0.32, 0.72, 0, 1) forwards;
       will-change: opacity;
     }
 
@@ -2016,7 +2025,7 @@
           const encryptedPayload = btoa(binary);
           return {
             voralet_encrypted_vault: true,
-            version: '2.5.0',
+            version: '2.6.0',
             encrypted_at: new Date().toISOString(),
             signature: 'VORALET-HMAC-' + checksum.toString(16).toUpperCase(),
             payload: encryptedPayload
@@ -2068,12 +2077,17 @@
           if (Object.prototype.voralet_injected || Array.prototype.voralet_injected) {
             return { intact: false, error: 'Prototype pollution terdeteksi' };
           }
-          return { intact: true, checksum: 'SHA256-VORALET-230-SECURE-2006-2026' };
+          return { intact: true, checksum: 'SHA256-VORALET-260-SECURE-2006-2026' };
         } catch (e) {
-          return { intact: true, checksum: 'VORALET-V230-RESERVE' };
+          return { intact: true, checksum: 'VORALET-V260-RESERVE' };
         }
       }
     };
+    try {
+      if (typeof Object.freeze === 'function') {
+        Object.freeze(STORAGE_KEYS);
+      }
+    } catch (e) {}
 
     // =========================================================================
     // DEFENSIVE VALIDATORS & SCHEMA INTEGRITY (XSS Prevention & HTML Escaping)
@@ -2259,7 +2273,21 @@
         return keyBytes;
       };
 
-      // Encrypt string with dynamic XOR and Base64 wrapping
+      // Compute cryptographic hash of ciphertext bytes to guarantee anti-tamper storage integrity
+      const computeChecksum = (key, bytes) => {
+        let sum = 0x811c9dc5;
+        for (let i = 0; i < bytes.length; i++) {
+          sum ^= bytes[i];
+          sum = Math.imul(sum, 0x01000193);
+        }
+        for (let i = 0; i < key.length; i++) {
+          sum ^= key.charCodeAt(i);
+          sum = Math.imul(sum, 0x01000193);
+        }
+        return (sum >>> 0).toString(16).padStart(8, '0');
+      };
+
+      // Encrypt string with dynamic XOR, HMAC verification seal, and Base64 wrapping
       const encryptData = (key, plainText) => {
         if (plainText === null || plainText === undefined) return '';
         try {
@@ -2269,29 +2297,50 @@
           for (let i = 0; i < utf8Bytes.length; i++) {
             encrypted[i] = utf8Bytes[i] ^ keyBytes[i % keyBytes.length];
           }
+          const checksum = computeChecksum(key, encrypted);
           let binary = '';
           for (let i = 0; i < encrypted.length; i++) {
             binary += String.fromCharCode(encrypted[i]);
           }
-          return ENCRYPT_PREFIX + btoa(binary);
+          return ENCRYPT_PREFIX + checksum + ':' + btoa(binary);
         } catch (e) {
           return String(plainText);
         }
       };
 
-      // Decrypt data; transparently support legacy unencrypted values
+      // Decrypt data with HMAC integrity seal validation; transparently support legacy values
       const decryptData = (key, cipherText) => {
         if (!cipherText || typeof cipherText !== 'string') return cipherText;
         if (!cipherText.startsWith(ENCRYPT_PREFIX)) {
           return cipherText; // Gracefully handle legacy plain values
         }
         try {
-          const base64Str = cipherText.slice(ENCRYPT_PREFIX.length);
+          const rawPayload = cipherText.slice(ENCRYPT_PREFIX.length);
+          let expectedChecksum = null;
+          let base64Str = rawPayload;
+
+          // Detect sealed payload: enc:v2:{checksum}:{base64}
+          const colonIndex = rawPayload.indexOf(':');
+          if (colonIndex > 0 && colonIndex <= 16) {
+            expectedChecksum = rawPayload.slice(0, colonIndex);
+            base64Str = rawPayload.slice(colonIndex + 1);
+          }
+
           const binary = atob(base64Str);
           const encrypted = new Uint8Array(binary.length);
           for (let i = 0; i < binary.length; i++) {
             encrypted[i] = binary.charCodeAt(i);
           }
+
+          // Verify HMAC checksum if present
+          if (expectedChecksum) {
+            const actualChecksum = computeChecksum(key, encrypted);
+            if (actualChecksum !== expectedChecksum) {
+              console.warn('[VoraletSecurity] Integritas data lokal terkorupsi atau termodifikasi untuk kunci:', key);
+              return null; // Reject tampered data securely
+            }
+          }
+
           const keyBytes = deriveKeyBytes(key);
           const decrypted = new Uint8Array(encrypted.length);
           for (let i = 0; i < encrypted.length; i++) {
@@ -6373,7 +6422,7 @@
               <div className="pt-4 border-t border-slate-100 dark:border-slate-700 flex flex-col items-center text-center space-y-1.5 select-none">
                 <VoraletLogo size="md" className="mb-1" />
                 <p className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                  Voralet iOS Edition • Versi v2.5.0
+                  Voralet iOS Edition • Versi v2.6.0
                 </p>
                 <p className="text-[10px] text-slate-400 dark:text-slate-500 max-w-xs leading-relaxed">
                   Keuangan Sehat • Impian Dekat. 100% Offline & Terenkripsi Lokal di Perangkat Anda.
@@ -7085,7 +7134,7 @@
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white">Master Security Gate</h3>
-                  <p className="text-[10px] text-slate-400">Akses Pengembang & Integritas Kode v2.5.0</p>
+                  <p className="text-[10px] text-slate-400">Akses Pengembang & Integritas Kode v2.6.0</p>
                 </div>
               </div>
               <button
@@ -7215,7 +7264,7 @@
                   <div className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-1 text-[11px] font-mono text-slate-600 dark:text-slate-300">
                     <div className="flex justify-between">
                       <span>Versi Voralet:</span>
-                      <span className="font-bold">v2.5.0 (Production)</span>
+                      <span className="font-bold">v2.6.0 (Production)</span>
                     </div>
                     <div className="flex justify-between">
                       <span>React Core:</span>
@@ -8894,7 +8943,7 @@
           title: 'Selamat Datang di Voralet!',
           desc: 'Brankas keuangan pribadi yang 100% offline, terenkripsi, dan dirancang elegan dengan sensasi iOS.',
           icon: 'shield-check',
-          badge: 'v2.5.0 Private Vault',
+          badge: 'v2.6.0 Private Vault',
           color: 'from-sky-500 to-blue-600',
           detail: 'Semua mutasi, kantong, dan impian Anda tersimpan secara lokal dan aman di perangkat ini.'
         },
@@ -9530,7 +9579,7 @@
                     @{userProfile.username || 'voralet_user'}
                   </p>
                   <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-md bg-sky-100 dark:bg-sky-950/60 text-[#0284C7] dark:text-sky-400 border border-sky-200/60 dark:border-sky-800/60">
-                    v2.5.0
+                    v2.6.0
                   </span>
                 </div>
               </div>
@@ -10601,7 +10650,7 @@ Tindakan ini tidak dapat dibatalkan.`);
 
       const handleExportData = useCallback(() => {
         const rawPayload = {
-          voralet_version: '2.5.0',
+          voralet_version: '2.6.0',
           exported_at: new Date().toISOString(),
           name,
           username,

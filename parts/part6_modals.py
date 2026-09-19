@@ -2572,7 +2572,7 @@ PART6_MODALS = """
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white">Master Security Gate</h3>
-                  <p className="text-[10px] text-slate-400">Akses Pengembang & Integritas Kode v2.5.0</p>
+                  <p className="text-[10px] text-slate-400">Akses Pengembang & Integritas Kode v2.6.0</p>
                 </div>
               </div>
               <button
@@ -2702,7 +2702,7 @@ PART6_MODALS = """
                   <div className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-1 text-[11px] font-mono text-slate-600 dark:text-slate-300">
                     <div className="flex justify-between">
                       <span>Versi Voralet:</span>
-                      <span className="font-bold">v2.5.0 (Production)</span>
+                      <span className="font-bold">v2.6.0 (Production)</span>
                     </div>
                     <div className="flex justify-between">
                       <span>React Core:</span>

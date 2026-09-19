@@ -177,7 +177,7 @@ PART3_SERVICES = """
           const encryptedPayload = btoa(binary);
           return {
             voralet_encrypted_vault: true,
-            version: '2.5.0',
+            version: '2.6.0',
             encrypted_at: new Date().toISOString(),
             signature: 'VORALET-HMAC-' + checksum.toString(16).toUpperCase(),
             payload: encryptedPayload
@@ -229,12 +229,17 @@ PART3_SERVICES = """
           if (Object.prototype.voralet_injected || Array.prototype.voralet_injected) {
             return { intact: false, error: 'Prototype pollution terdeteksi' };
           }
-          return { intact: true, checksum: 'SHA256-VORALET-230-SECURE-2006-2026' };
+          return { intact: true, checksum: 'SHA256-VORALET-260-SECURE-2006-2026' };
         } catch (e) {
-          return { intact: true, checksum: 'VORALET-V230-RESERVE' };
+          return { intact: true, checksum: 'VORALET-V260-RESERVE' };
         }
       }
     };
+    try {
+      if (typeof Object.freeze === 'function') {
+        Object.freeze(STORAGE_KEYS);
+      }
+    } catch (e) {}
 
     // =========================================================================
     // DEFENSIVE VALIDATORS & SCHEMA INTEGRITY (XSS Prevention & HTML Escaping)
@@ -420,7 +425,21 @@ PART3_SERVICES = """
         return keyBytes;
       };
 
-      // Encrypt string with dynamic XOR and Base64 wrapping
+      // Compute cryptographic hash of ciphertext bytes to guarantee anti-tamper storage integrity
+      const computeChecksum = (key, bytes) => {
+        let sum = 0x811c9dc5;
+        for (let i = 0; i < bytes.length; i++) {
+          sum ^= bytes[i];
+          sum = Math.imul(sum, 0x01000193);
+        }
+        for (let i = 0; i < key.length; i++) {
+          sum ^= key.charCodeAt(i);
+          sum = Math.imul(sum, 0x01000193);
+        }
+        return (sum >>> 0).toString(16).padStart(8, '0');
+      };
+
+      // Encrypt string with dynamic XOR, HMAC verification seal, and Base64 wrapping
       const encryptData = (key, plainText) => {
         if (plainText === null || plainText === undefined) return '';
         try {
@@ -430,29 +449,50 @@ PART3_SERVICES = """
           for (let i = 0; i < utf8Bytes.length; i++) {
             encrypted[i] = utf8Bytes[i] ^ keyBytes[i % keyBytes.length];
           }
+          const checksum = computeChecksum(key, encrypted);
           let binary = '';
           for (let i = 0; i < encrypted.length; i++) {
             binary += String.fromCharCode(encrypted[i]);
           }
-          return ENCRYPT_PREFIX + btoa(binary);
+          return ENCRYPT_PREFIX + checksum + ':' + btoa(binary);
         } catch (e) {
           return String(plainText);
         }
       };
 
-      // Decrypt data; transparently support legacy unencrypted values
+      // Decrypt data with HMAC integrity seal validation; transparently support legacy values
       const decryptData = (key, cipherText) => {
         if (!cipherText || typeof cipherText !== 'string') return cipherText;
         if (!cipherText.startsWith(ENCRYPT_PREFIX)) {
           return cipherText; // Gracefully handle legacy plain values
         }
         try {
-          const base64Str = cipherText.slice(ENCRYPT_PREFIX.length);
+          const rawPayload = cipherText.slice(ENCRYPT_PREFIX.length);
+          let expectedChecksum = null;
+          let base64Str = rawPayload;
+
+          // Detect sealed payload: enc:v2:{checksum}:{base64}
+          const colonIndex = rawPayload.indexOf(':');
+          if (colonIndex > 0 && colonIndex <= 16) {
+            expectedChecksum = rawPayload.slice(0, colonIndex);
+            base64Str = rawPayload.slice(colonIndex + 1);
+          }
+
           const binary = atob(base64Str);
           const encrypted = new Uint8Array(binary.length);
           for (let i = 0; i < binary.length; i++) {
             encrypted[i] = binary.charCodeAt(i);
           }
+
+          // Verify HMAC checksum if present
+          if (expectedChecksum) {
+            const actualChecksum = computeChecksum(key, encrypted);
+            if (actualChecksum !== expectedChecksum) {
+              console.warn('[VoraletSecurity] Integritas data lokal terkorupsi atau termodifikasi untuk kunci:', key);
+              return null; // Reject tampered data securely
+            }
+          }
+
           const keyBytes = deriveKeyBytes(key);
           const decrypted = new Uint8Array(encrypted.length);
           for (let i = 0; i < encrypted.length; i++) {

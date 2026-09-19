@@ -588,49 +588,58 @@ HTML_HEAD = """<!DOCTYPE html>
       will-change: transform, opacity;
     }
 
-    /* iOS Modal & Sheet Keyframes (Fluid Apple HIG Physics) */
+    /* iOS Modal & Sheet Keyframes (Gentle Spring Apple HIG Physics) */
     @keyframes iosSheetEnter {
       0% {
-        transform: translate3d(0, 100%, 0);
-        opacity: 0.85;
+        transform: translate3d(0, 100%, 0) scale3d(0.97, 0.97, 1);
+        opacity: 0.6;
+      }
+      65% {
+        transform: translate3d(0, -6px, 0) scale3d(1.006, 1.006, 1);
+        opacity: 1;
+      }
+      82% {
+        transform: translate3d(0, 1.5px, 0) scale3d(0.999, 0.999, 1);
       }
       100% {
-        transform: translate3d(0, 0, 0);
+        transform: translate3d(0, 0, 0) scale3d(1, 1, 1);
         opacity: 1;
       }
     }
     @keyframes iosSheetExit {
       0% {
-        transform: translate3d(0, 0, 0);
+        transform: translate3d(0, 0, 0) scale3d(1, 1, 1);
         opacity: 1;
       }
       100% {
-        transform: translate3d(0, 100%, 0);
-        opacity: 0.85;
+        transform: translate3d(0, 100%, 0) scale3d(0.97, 0.97, 1);
+        opacity: 0.8;
       }
     }
     @keyframes iosBackdropFadeIn {
       0% { opacity: 0; backdrop-filter: blur(0px); -webkit-backdrop-filter: blur(0px); }
-      100% { opacity: 1; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+      100% { opacity: 1; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
     }
     @keyframes iosBackdropFadeOut {
-      0% { opacity: 1; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+      0% { opacity: 1; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
       100% { opacity: 0; backdrop-filter: blur(0px); -webkit-backdrop-filter: blur(0px); }
     }
     .animate-ios-sheet {
-      animation: iosSheetEnter 0.42s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation: iosSheetEnter 0.52s cubic-bezier(0.22, 1, 0.36, 1) forwards;
       will-change: transform, opacity;
+      transform-origin: center bottom;
     }
     .animate-ios-sheet-exit {
       animation: iosSheetExit 0.28s cubic-bezier(0.32, 0.72, 0, 1) forwards;
       will-change: transform, opacity;
+      transform-origin: center bottom;
     }
     .animate-ios-backdrop {
-      animation: iosBackdropFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation: iosBackdropFadeIn 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       will-change: opacity;
     }
     .animate-ios-backdrop-exit {
-      animation: iosBackdropFadeOut 0.25s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+      animation: iosBackdropFadeOut 0.26s cubic-bezier(0.32, 0.72, 0, 1) forwards;
       will-change: opacity;
     }
 
