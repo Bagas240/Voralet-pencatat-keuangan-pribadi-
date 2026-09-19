@@ -65,7 +65,10 @@ class MainActivity : ComponentActivity() {
                     File(cache, "WebView/Default/HTTP Cache"),
                     File(cache, "WebView/Default/HTTP Cache/Code Cache"),
                     File(cache, "WebView/Default/HTTP Cache/Code Cache/js"),
-                    File(context.filesDir, "WebView")
+                    File(cache, "WebView/Default/HTTP Cache/Code Cache/wasm"),
+                    File(cache, "WebView/Default/HTTP Cache/index-dir"),
+                    File(context.filesDir, "WebView"),
+                    File(context.filesDir, "WebView/Default")
                 )
                 for (dir in dirs) {
                     if (!dir.exists()) dir.mkdirs()

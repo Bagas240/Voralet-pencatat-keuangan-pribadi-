@@ -388,6 +388,8 @@ PART8_APP = """
       onClearNewlyAddedTx
     }) => {
       const [searchQuery, setSearchQuery] = useState('');
+      const [isSearchFocused, setIsSearchFocused] = useState(false);
+      const searchBlurTimeoutRef = useRef(null);
       const [filterType, setFilterType] = useState('ALL'); // ALL | EXPENSE | INCOME
       const [selectedAccountFilter, setSelectedAccountFilter] = useState('ALL');
       const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('ALL');
@@ -722,23 +724,48 @@ PART8_APP = """
             {/* Live Search & Date Range Filter */}
             <div className="space-y-2 mb-3">
               <div className="flex items-center gap-2">
-                <div className="relative flex-1">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                <div className={`relative tx-search-container ${isSearchFocused ? 'is-focused' : 'flex-1'}`}>
+                  <span className={`absolute left-3 top-1/2 -translate-y-1/2 transition-colors ${
+                    isSearchFocused ? 'text-brand dark:text-sky-400' : 'text-slate-400'
+                  }`}>
                     <Icon name="search" className="w-3.5 h-3.5" />
                   </span>
                   <input
                     type="text"
                     value={searchQuery}
-                    onFocus={handleGlobalInputFocus}
-                    onBlur={handleGlobalInputBlur}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Cari transaksi atau catatan..."
+                    onFocus={(e) => {
+                      if (searchBlurTimeoutRef.current) {
+                        clearTimeout(searchBlurTimeoutRef.current);
+                        searchBlurTimeoutRef.current = null;
+                      }
+                      setIsSearchFocused(true);
+                      handleGlobalInputFocus(e);
+                    }}
+                    onBlur={(e) => {
+                      handleGlobalInputBlur(e);
+                      // If user stopped typing and input is empty, collapse back smoothly
+                      if (!searchQuery.trim()) {
+                        searchBlurTimeoutRef.current = setTimeout(() => {
+                          setIsSearchFocused(false);
+                        }, 120);
+                      }
+                    }}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      if (!isSearchFocused) setIsSearchFocused(true);
+                    }}
+                    placeholder={isSearchFocused ? "Ketik untuk mencari transaksi, catatan, atau kategori..." : "Cari transaksi atau catatan..."}
                     className="w-full pl-8 pr-8 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand"
                   />
                   {searchQuery && (
                     <button
                       type="button"
-                      onClick={() => setSearchQuery('')}
+                      onClick={() => {
+                        setSearchQuery('');
+                        if (window.VoraletHaptics?.tap) {
+                          window.VoraletHaptics.tap();
+                        }
+                      }}
                       className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5"
                     >
                       <Icon name="x" className="w-3.5 h-3.5" />
@@ -750,7 +777,9 @@ PART8_APP = """
                 <button
                   type="button"
                   onClick={() => setIsDateFilterOpen(!isDateFilterOpen)}
-                  className={`relative p-2 rounded-xl border flex items-center justify-center transition-all ios-btn-tap shrink-0 ${
+                  className={`relative p-2 rounded-xl border flex items-center justify-center transition-all ios-btn-tap shrink-0 tx-search-sibling-btn ${
+                    isSearchFocused ? 'is-compact' : ''
+                  } ${
                     hasActiveDateFilter
                       ? 'bg-brand text-white border-brand shadow-sm'
                       : isDateFilterOpen
@@ -771,7 +800,9 @@ PART8_APP = """
                   <button
                     type="button"
                     onClick={onOpenCsvImport}
-                    className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 hover:bg-sky-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-brand dark:hover:text-sky-400 hover:border-brand/40 flex items-center justify-center transition-all ios-btn-tap shrink-0"
+                    className={`p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 hover:bg-sky-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-brand dark:hover:text-sky-400 hover:border-brand/40 flex items-center justify-center transition-all ios-btn-tap shrink-0 tx-search-sibling-btn ${
+                      isSearchFocused ? 'is-compact' : ''
+                    }`}
                     title="Impor Transaksi dari File CSV"
                     aria-label="Impor Transaksi CSV"
                   >
@@ -942,6 +973,24 @@ PART8_APP = """
     });
 
     // =========================================================================
+    // 10.5 THEME CROSS-FADE TRANSITION OVERLAY
+    // =========================================================================
+    /**
+     * Authentic iOS Theme Cross-Fade Transition Overlay
+     * Displays a fading veil of the previous theme during mode changes so color shifts dissolve seamlessly.
+     */
+    const ThemeCrossfadeOverlay = React.memo(({ transition }) => {
+      if (!transition) return null;
+      return (
+        <div
+          key={transition.id}
+          className={`ios-theme-crossfade-overlay ${transition.from === 'dark' ? 'from-dark' : 'from-light'}`}
+          aria-hidden="true"
+        />
+      );
+    });
+
+    // =========================================================================
     // 11. ROOT APP COMPONENT WITH HORIZONTAL SWIPE NAVIGATION
     // =========================================================================
     const App = () => {
@@ -960,6 +1009,8 @@ PART8_APP = """
       const [safeBudget, setSafeBudget] = useState(() => StorageService.getSafeBudget());
       const [hideBalance, setHideBalance] = useState(() => StorageService.getHideBalance());
       const [theme, setTheme] = useState(() => StorageService.getTheme());
+      const [themeTransition, setThemeTransition] = useState(null);
+      const transitionTimeoutRef = useRef(null);
 
       const [activeTab, setActiveTab] = useState('dashboard'); // dashboard | debts | savings | analytics
       const [toastMsg, setToastMsg] = useState('');
@@ -1011,12 +1062,40 @@ PART8_APP = """
         setToastMsg(msg);
       }, []);
 
-      // Theme toggle with full DOM synchronization
-      const toggleTheme = useCallback(() => {
+      // Clean up theme transition timer and classes on unmount
+      useEffect(() => {
+        return () => {
+          if (transitionTimeoutRef.current) {
+            clearTimeout(transitionTimeoutRef.current);
+          }
+          document.documentElement.classList.remove('theme-crossfade-active');
+        };
+      }, []);
+
+      // Theme toggle with smooth cross-fade transition overlay and full DOM synchronization
+      const triggerThemeChange = useCallback((nextTheme) => {
         setTheme(prev => {
-          const next = prev === 'dark' ? 'light' : 'dark';
-          StorageService.setTheme(next);
-          if (next === 'dark') {
+          if (prev === nextTheme) return prev;
+          const prevTheme = prev;
+
+          if (transitionTimeoutRef.current) {
+            clearTimeout(transitionTimeoutRef.current);
+          }
+
+          // Trigger cross-fade overlay starting from previous theme ambient backdrop
+          setThemeTransition({
+            from: prevTheme,
+            to: nextTheme,
+            id: Date.now()
+          });
+
+          // Enable global smooth transitions for all UI elements during mode change
+          document.documentElement.classList.add('theme-crossfade-active');
+
+          StorageService.setTheme(nextTheme);
+
+          // Synchronize DOM classes
+          if (nextTheme === 'dark') {
             document.documentElement.classList.add('dark');
             if (document.body) document.body.classList.add('dark');
             const rootEl = document.getElementById('root');
@@ -1027,10 +1106,22 @@ PART8_APP = """
             const rootEl = document.getElementById('root');
             if (rootEl) rootEl.classList.remove('dark');
           }
-          showToast(next === 'dark' ? 'Mode Gelap diaktifkan 🌙' : 'Mode Terang diaktifkan ☀️');
-          return next;
+
+          showToast(nextTheme === 'dark' ? 'Mode Gelap diaktifkan 🌙' : 'Mode Terang diaktifkan ☀️');
+
+          // Schedule cleanup once the 380ms cross-fade completes
+          transitionTimeoutRef.current = setTimeout(() => {
+            setThemeTransition(null);
+            document.documentElement.classList.remove('theme-crossfade-active');
+          }, 420);
+
+          return nextTheme;
         });
       }, [showToast]);
+
+      const toggleTheme = useCallback(() => {
+        triggerThemeChange(theme === 'dark' ? 'light' : 'dark');
+      }, [theme, triggerThemeChange]);
 
       useEffect(() => {
         const isDark = theme === 'dark';
@@ -1055,8 +1146,7 @@ PART8_APP = """
         const handleOsThemeChange = (e) => {
           const isSystemDark = typeof e.matches === 'boolean' ? e.matches : mediaQuery.matches;
           const nextTheme = isSystemDark ? 'dark' : 'light';
-          setTheme(nextTheme);
-          StorageService.setTheme(nextTheme);
+          triggerThemeChange(nextTheme);
         };
 
         // Sync initial state with system OS theme preference
@@ -1083,7 +1173,7 @@ PART8_APP = """
             mediaQuery.removeListener(handleOsThemeChange);
           }
         };
-      }, []);
+      }, [triggerThemeChange]);
 
       // Global Mobile Keyboard Handling
       useEffect(() => {
@@ -1263,14 +1353,23 @@ PART8_APP = """
         showToast('Dompet berhasil dibuat');
       }, []);
 
-      const handleEditAccount = useCallback((accId, data) => {
+      const handleEditAccount = useCallback((arg1, arg2) => {
+        const accId = (arg1 && typeof arg1 === 'object') ? arg1.id : arg1;
+        const data = (arg1 && typeof arg1 === 'object') ? arg1 : arg2;
         setAccounts(prev => {
           const next = prev.map(a => a.id === accId ? { ...a, ...data } : a);
           StorageService.setAccounts(next);
           return next;
         });
         showToast('Dompet diperbarui');
-      }, []);
+      }, [showToast]);
+
+      const handleReorderAccounts = useCallback((newAccounts) => {
+        if (!Array.isArray(newAccounts)) return;
+        setAccounts(newAccounts);
+        StorageService.setAccounts(newAccounts);
+        showToast('Prioritas kantong diperbarui 💳');
+      }, [showToast]);
 
       const handleDeleteAccount = useCallback((accId) => {
         if ((accounts || []).length <= 1) {
@@ -1610,34 +1709,40 @@ PART8_APP = """
 
       if (!pin) {
         return (
-          <OnboardingFlow
-            onComplete={(initialData) => {
-              setPin(initialData.pin);
-              setName(initialData.name);
-              setUsername(initialData.username);
-              setAvatar(initialData.avatar);
-              setAccounts(initialData.accounts);
-              setTransactions(initialData.transactions);
-              setSavingsGoals(initialData.savingsGoals);
-              setDebts(initialData.debts);
-              setIsUnlocked(true);
-            }}
-          />
+          <React.Fragment>
+            <OnboardingFlow
+              onComplete={(initialData) => {
+                setPin(initialData.pin);
+                setName(initialData.name);
+                setUsername(initialData.username);
+                setAvatar(initialData.avatar);
+                setAccounts(initialData.accounts);
+                setTransactions(initialData.transactions);
+                setSavingsGoals(initialData.savingsGoals);
+                setDebts(initialData.debts);
+                setIsUnlocked(true);
+              }}
+            />
+            <ThemeCrossfadeOverlay transition={themeTransition} />
+          </React.Fragment>
         );
       }
 
       if (!isUnlocked) {
         return (
-          <ReturningUserPinScreen
-            storedPin={pin}
-            userName={name}
-            username={username}
-            avatar={avatar}
-            theme={theme}
-            onToggleTheme={toggleTheme}
-            onUnlock={() => setIsUnlocked(true)}
-            onResetPin={handleResetPin}
-          />
+          <React.Fragment>
+            <ReturningUserPinScreen
+              storedPin={pin}
+              userName={name}
+              username={username}
+              avatar={avatar}
+              theme={theme}
+              onToggleTheme={toggleTheme}
+              onUnlock={() => setIsUnlocked(true)}
+              onResetPin={handleResetPin}
+            />
+            <ThemeCrossfadeOverlay transition={themeTransition} />
+          </React.Fragment>
         );
       }
 
@@ -1645,6 +1750,7 @@ PART8_APP = """
 
       return (
         <div className={`h-[100dvh] flex flex-col ${theme === 'dark' ? 'dark bg-[#0F172A] text-[#F8FAFC]' : 'bg-slate-50 text-[#0F172A]'} overflow-hidden select-none transition-colors duration-300 ease-in-out`}>
+          <ThemeCrossfadeOverlay transition={themeTransition} />
           {toastMsg && <Toast message={toastMsg} onClose={() => setToastMsg('')} />}
 
           {/* iOS Background Depth Stacking Layer */}
@@ -1698,7 +1804,9 @@ PART8_APP = """
                   onAddAccount={handleAddAccount}
                   onUpdateAccount={handleEditAccount}
                   onDeleteAccount={handleDeleteAccount}
+                  onReorderAccounts={handleReorderAccounts}
                   onOpenAddTx={handleOpenAddTxFromAccount}
+                  onToast={showToast}
                 />
               )}
 

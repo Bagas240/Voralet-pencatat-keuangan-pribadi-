@@ -289,6 +289,32 @@ PART2_ICONS = """
               <polyline points="18 15 12 9 6 15" />
             </svg>
           );
+        case 'grip-vertical':
+        case 'drag-handle':
+          return (
+            <svg className={computedClass} viewBox="0 0 24 24" fill="currentColor">
+              <circle cx="9" cy="5" r="1.5" />
+              <circle cx="15" cy="5" r="1.5" />
+              <circle cx="9" cy="12" r="1.5" />
+              <circle cx="15" cy="12" r="1.5" />
+              <circle cx="9" cy="19" r="1.5" />
+              <circle cx="15" cy="19" r="1.5" />
+            </svg>
+          );
+        case 'arrow-up':
+          return (
+            <svg className={computedClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="19" x2="12" y2="5" />
+              <polyline points="5 12 12 5 19 12" />
+            </svg>
+          );
+        case 'arrow-down':
+          return (
+            <svg className={computedClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <polyline points="19 12 12 19 5 12" />
+            </svg>
+          );
         case 'contactless':
         case 'wifi':
           return (

@@ -13,6 +13,7 @@ import android.webkit.WebView
  */
 object VoraletWebViewConfig {
 
+    @Suppress("DEPRECATION")
     @SuppressLint("SetJavaScriptEnabled")
     fun applySettings(
         webView: WebView,
@@ -28,7 +29,7 @@ object VoraletWebViewConfig {
             isVerticalScrollBarEnabled = false
             isHorizontalScrollBarEnabled = false
 
-            // Allow default hardware layer rendering for smooth graphics pipeline
+            // Default layer rendering with automatic fallback on emulated/headless environments without direct DRM rendernodes
             setLayerType(View.LAYER_TYPE_NONE, null)
 
             settings.apply {

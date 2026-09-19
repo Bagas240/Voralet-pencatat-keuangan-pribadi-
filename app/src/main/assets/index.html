@@ -375,6 +375,178 @@
       text-shadow: 0 1px 1px rgba(0, 0, 0, 0.4), 0 -1px 0 rgba(255, 255, 255, 0.2);
     }
 
+    /* CardsView Card Stack Spring-Based Lift Animation & Depth */
+    .ios-card-stack-item {
+      position: relative;
+      transition: transform 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275), 
+                  box-shadow 0.45s cubic-bezier(0.16, 1, 0.3, 1), 
+                  opacity 0.35s ease, 
+                  filter 0.35s ease;
+      will-change: transform, box-shadow;
+      transform-origin: center center;
+    }
+    .ios-card-stack-item.is-lifted {
+      transform: translate3d(0, -7px, 0) scale(1.02);
+      box-shadow: 0 22px 42px -10px rgba(2, 132, 199, 0.48), 
+                  0 8px 20px -4px rgba(0, 0, 0, 0.2), 
+                  0 0 0 1.5px rgba(255, 255, 255, 0.5),
+                  inset 0 1px 2px rgba(255, 255, 255, 0.4);
+      z-index: 20 !important;
+    }
+    html.dark .ios-card-stack-item.is-lifted, .dark .ios-card-stack-item.is-lifted {
+      box-shadow: 0 24px 48px -10px rgba(0, 0, 0, 0.75), 
+                  0 10px 24px -4px rgba(3, 105, 161, 0.45), 
+                  0 0 0 1.5px rgba(56, 189, 248, 0.45),
+                  inset 0 1px 2px rgba(255, 255, 255, 0.3);
+    }
+    .ios-card-stack-item.is-dimmed {
+      transform: translate3d(0, 0, 0) scale(0.985);
+      opacity: 0.86;
+      filter: brightness(0.96);
+      box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.12);
+    }
+    html.dark .ios-card-stack-item.is-dimmed, .dark .ios-card-stack-item.is-dimmed {
+      filter: brightness(0.9);
+    }
+    .ios-card-stack-item:active:not(.is-lifted):not(.is-dragging) {
+      transform: translate3d(0, 1px, 0) scale(0.98);
+      transition-duration: 0.12s;
+    }
+
+    /* CardsView Drag & Drop Reordering Styles */
+    .ios-card-stack-item.is-dragging {
+      opacity: 0.94;
+      transform: scale(1.035) translate3d(0, -4px, 0) !important;
+      box-shadow: 0 28px 50px -12px rgba(2, 132, 199, 0.55),
+                  0 12px 24px -6px rgba(0, 0, 0, 0.25),
+                  0 0 0 2px rgba(255, 255, 255, 0.85),
+                  inset 0 1px 2px rgba(255, 255, 255, 0.5) !important;
+      z-index: 50 !important;
+      cursor: grabbing !important;
+      transition: box-shadow 0.2s ease, opacity 0.2s ease, transform 0.15s ease !important;
+    }
+    html.dark .ios-card-stack-item.is-dragging, .dark .ios-card-stack-item.is-dragging {
+      box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.85),
+                  0 14px 28px -6px rgba(3, 105, 161, 0.5),
+                  0 0 0 2px rgba(56, 189, 248, 0.8),
+                  inset 0 1px 2px rgba(255, 255, 255, 0.4) !important;
+    }
+    .ios-card-stack-item.is-drag-target {
+      transform: scale(0.99) translate3d(0, 2px, 0);
+      opacity: 0.75;
+      outline: 2px dashed rgba(2, 132, 199, 0.6);
+      outline-offset: 3px;
+    }
+    html.dark .ios-card-stack-item.is-drag-target {
+      outline-color: rgba(56, 189, 248, 0.7);
+    }
+    .ios-card-drop-indicator {
+      height: 4px;
+      margin: -2px 10px;
+      border-radius: 9999px;
+      background: linear-gradient(90deg, #38BDF8 0%, #0284C7 50%, #38BDF8 100%);
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.9);
+      animation: iosDropPulse 1.2s ease-in-out infinite;
+      z-index: 45;
+      pointer-events: none;
+    }
+    @keyframes iosDropPulse {
+      0%, 100% { opacity: 0.7; transform: scaleY(1); }
+      50% { opacity: 1; transform: scaleY(1.5); }
+    }
+
+    /* Transaction Search Bar Expand & Collapse Animation */
+    .tx-search-container {
+      transition: all 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+      will-change: transform, box-shadow, flex;
+    }
+    .tx-search-container.is-focused {
+      flex: 1 1 100% !important;
+      transform: scale3d(1.008, 1.008, 1);
+    }
+    .tx-search-container input {
+      transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .tx-search-container.is-focused input {
+      box-shadow: 0 4px 14px -2px rgba(2, 132, 199, 0.22),
+                  0 0 0 3px rgba(56, 189, 248, 0.25);
+      border-color: #0284C7 !important;
+    }
+    html.dark .tx-search-container.is-focused input, .dark .tx-search-container.is-focused input {
+      box-shadow: 0 4px 18px -2px rgba(3, 105, 161, 0.35),
+                  0 0 0 3px rgba(56, 189, 248, 0.3);
+      border-color: #38BDF8 !important;
+    }
+    .tx-search-sibling-btn {
+      transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+      will-change: opacity, transform, max-width, margin, padding;
+    }
+    .tx-search-sibling-btn.is-compact {
+      opacity: 0.88;
+      transform: scale(0.96);
+    }
+
+    /* iOS Theme Cross-Fade Transition Overlay */
+    .ios-theme-crossfade-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 99999;
+      animation: iosThemeCrossfade 380ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
+      will-change: opacity;
+      transform: translateZ(0);
+    }
+    .ios-theme-crossfade-overlay.from-light {
+      background: #F8FAFC;
+      background: radial-gradient(circle at 50% 35%, #FFFFFF 0%, #F8FAFC 65%, #F1F5F9 100%);
+    }
+    .ios-theme-crossfade-overlay.from-dark {
+      background: #0F172A;
+      background: radial-gradient(circle at 50% 35%, #1E293B 0%, #0F172A 65%, #020617 100%);
+    }
+    @keyframes iosThemeCrossfade {
+      0% {
+        opacity: 0.95;
+      }
+      100% {
+        opacity: 0;
+      }
+    }
+
+    /* Active cross-fade global smoothing during theme transitions */
+    .theme-crossfade-active,
+    .theme-crossfade-active *,
+    .theme-crossfade-active *::before,
+    .theme-crossfade-active *::after {
+      transition: background-color 380ms cubic-bezier(0.32, 0.72, 0, 1),
+                  border-color 380ms cubic-bezier(0.32, 0.72, 0, 1),
+                  color 380ms cubic-bezier(0.32, 0.72, 0, 1),
+                  fill 380ms cubic-bezier(0.32, 0.72, 0, 1),
+                  stroke 380ms cubic-bezier(0.32, 0.72, 0, 1),
+                  box-shadow 380ms cubic-bezier(0.32, 0.72, 0, 1) !important;
+    }
+
+    /* Browser View Transitions API cross-fade overlay specs */
+    ::view-transition-old(root) {
+      animation: 380ms cubic-bezier(0.32, 0.72, 0, 1) both iosViewTransitionFadeOut;
+    }
+    ::view-transition-new(root) {
+      animation: 380ms cubic-bezier(0.32, 0.72, 0, 1) both iosViewTransitionFadeIn;
+    }
+    @keyframes iosViewTransitionFadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+    @keyframes iosViewTransitionFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
     /* Keypad Button */
     .ios-keypad-btn {
       transition: transform 150ms ease-out, opacity 150ms ease-out, background-color 150ms ease;
@@ -1126,6 +1298,32 @@
           return (
             <svg className={computedClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
               <polyline points="18 15 12 9 6 15" />
+            </svg>
+          );
+        case 'grip-vertical':
+        case 'drag-handle':
+          return (
+            <svg className={computedClass} viewBox="0 0 24 24" fill="currentColor">
+              <circle cx="9" cy="5" r="1.5" />
+              <circle cx="15" cy="5" r="1.5" />
+              <circle cx="9" cy="12" r="1.5" />
+              <circle cx="15" cy="12" r="1.5" />
+              <circle cx="9" cy="19" r="1.5" />
+              <circle cx="15" cy="19" r="1.5" />
+            </svg>
+          );
+        case 'arrow-up':
+          return (
+            <svg className={computedClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="19" x2="12" y2="5" />
+              <polyline points="5 12 12 5 19 12" />
+            </svg>
+          );
+        case 'arrow-down':
+          return (
+            <svg className={computedClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <polyline points="19 12 12 19 5 12" />
             </svg>
           );
         case 'contactless':
@@ -7856,7 +8054,9 @@
       onAddAccount,
       onUpdateAccount,
       onDeleteAccount,
-      onOpenAddTx
+      onReorderAccounts,
+      onOpenAddTx,
+      onToast
     }) => {
       const [isAdding, setIsAdding] = useState(false);
       const [editingAcc, setEditingAcc] = useState(null);
@@ -7866,8 +8066,217 @@
       const [color, setColor] = useState('#0284C7');
       const [expandedCardId, setExpandedCardId] = useState(null);
 
+      // Drag and drop reordering state
+      const [draggedId, setDraggedId] = useState(null);
+      const [dragOverId, setDragOverId] = useState(null);
+      const [dragPosition, setDragPosition] = useState(null); // 'before' | 'after'
+      const isDraggingRef = useRef(false);
+      const justDraggedRef = useRef(false);
+      const cardRefs = useRef({});
+      const touchStateRef = useRef(null);
+
       const safeAccounts = Array.isArray(accounts) ? accounts : [];
       const safeTransactions = Array.isArray(transactions) ? transactions : [];
+
+      // Reorder account programmatically (e.g. Move up/down/top)
+      const handleMoveAccount = useCallback((accId, direction) => {
+        const idx = safeAccounts.findIndex(a => a.id === accId);
+        if (idx === -1) return;
+        const next = [...safeAccounts];
+        const [moved] = next.splice(idx, 1);
+        if (direction === 'top') {
+          next.unshift(moved);
+        } else if (direction === 'up' && idx > 0) {
+          next.splice(idx - 1, 0, moved);
+        } else if (direction === 'down' && idx < safeAccounts.length - 1) {
+          next.splice(idx + 1, 0, moved);
+        } else {
+          return;
+        }
+        if (onReorderAccounts) {
+          onReorderAccounts(next);
+        }
+        if (window.VoraletHaptics?.notification) {
+          window.VoraletHaptics.notification('success');
+        } else if (window.VoraletHaptics?.tap) {
+          window.VoraletHaptics.tap();
+        }
+      }, [safeAccounts, onReorderAccounts]);
+
+      // Pointer & Touch drag handler for mobile WebView and desktop
+      const handleDragHandlePointerDown = useCallback((accId, e) => {
+        if (e.button !== 0 && e.pointerType === 'mouse') return;
+        e.stopPropagation();
+
+        setExpandedCardId(null);
+        const pointerId = e.pointerId;
+        const startY = e.clientY;
+        const startX = e.clientX;
+
+        if (window.VoraletHaptics?.tap) {
+          window.VoraletHaptics.tap();
+        }
+
+        touchStateRef.current = {
+          accId,
+          pointerId,
+          startY,
+          startX,
+          isStarted: false
+        };
+
+        const handlePointerMove = (moveEv) => {
+          if (!touchStateRef.current || touchStateRef.current.pointerId !== moveEv.pointerId) return;
+          const deltaY = moveEv.clientY - touchStateRef.current.startY;
+          const deltaX = moveEv.clientX - touchStateRef.current.startX;
+
+          if (!touchStateRef.current.isStarted) {
+            if (Math.abs(deltaY) > 6 || Math.abs(deltaX) > 6) {
+              touchStateRef.current.isStarted = true;
+              isDraggingRef.current = true;
+              setDraggedId(accId);
+              if (window.VoraletHaptics?.selection) {
+                window.VoraletHaptics.selection();
+              }
+            } else {
+              return;
+            }
+          }
+
+          if (moveEv.cancelable) {
+            moveEv.preventDefault();
+          }
+
+          const currentClientY = moveEv.clientY;
+          let foundId = null;
+          let foundPos = null;
+
+          for (const a of safeAccounts) {
+            const el = cardRefs.current[a.id];
+            if (!el) continue;
+            const rect = el.getBoundingClientRect();
+            if (currentClientY >= rect.top && currentClientY <= rect.bottom) {
+              foundId = a.id;
+              const midY = rect.top + rect.height / 2;
+              foundPos = currentClientY < midY ? 'before' : 'after';
+              break;
+            }
+          }
+
+          if (foundId) {
+            setDragOverId(foundId);
+            setDragPosition(foundPos);
+          }
+        };
+
+        const handlePointerUp = (upEv) => {
+          if (!touchStateRef.current || touchStateRef.current.pointerId !== upEv.pointerId) return;
+
+          window.removeEventListener('pointermove', handlePointerMove);
+          window.removeEventListener('pointerup', handlePointerUp);
+          window.removeEventListener('pointercancel', handlePointerUp);
+
+          const wasStarted = touchStateRef.current.isStarted;
+          touchStateRef.current = null;
+
+          if (wasStarted) {
+            justDraggedRef.current = true;
+            setTimeout(() => {
+              justDraggedRef.current = false;
+            }, 300);
+
+            setDraggedId(currDragged => {
+              setDragOverId(currOver => {
+                setDragPosition(currPos => {
+                  if (currDragged && currOver && currDragged !== currOver) {
+                    const fromIdx = safeAccounts.findIndex(a => a.id === currDragged);
+                    const toIdx = safeAccounts.findIndex(a => a.id === currOver);
+                    if (fromIdx !== -1 && toIdx !== -1) {
+                      const next = [...safeAccounts];
+                      const [moved] = next.splice(fromIdx, 1);
+                      const finalIdx = next.findIndex(a => a.id === currOver);
+                      const insertIdx = currPos === 'after' ? finalIdx + 1 : finalIdx;
+                      next.splice(insertIdx, 0, moved);
+
+                      if (onReorderAccounts) {
+                        onReorderAccounts(next);
+                      }
+                      if (window.VoraletHaptics?.notification) {
+                        window.VoraletHaptics.notification('success');
+                      } else if (window.VoraletHaptics?.tap) {
+                        window.VoraletHaptics.tap();
+                      }
+                    }
+                  }
+                  return null;
+                });
+                return null;
+              });
+              return null;
+            });
+            isDraggingRef.current = false;
+          }
+        };
+
+        window.addEventListener('pointermove', handlePointerMove, { passive: false });
+        window.addEventListener('pointerup', handlePointerUp);
+        window.addEventListener('pointercancel', handlePointerUp);
+      }, [safeAccounts, onReorderAccounts]);
+
+      // HTML5 Drag and Drop handlers for desktop
+      const handleHtmlDragStart = (e, accId) => {
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', accId);
+        setDraggedId(accId);
+        isDraggingRef.current = true;
+        setExpandedCardId(null);
+      };
+
+      const handleHtmlDragOver = (e, accId) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        const el = cardRefs.current[accId];
+        if (el) {
+          const rect = el.getBoundingClientRect();
+          const midY = rect.top + rect.height / 2;
+          const pos = e.clientY < midY ? 'before' : 'after';
+          setDragOverId(accId);
+          setDragPosition(pos);
+        }
+      };
+
+      const handleHtmlDrop = (e, targetAccId) => {
+        e.preventDefault();
+        const sourceAccId = e.dataTransfer.getData('text/plain') || draggedId;
+        if (sourceAccId && targetAccId && sourceAccId !== targetAccId) {
+          const fromIdx = safeAccounts.findIndex(a => a.id === sourceAccId);
+          const toIdx = safeAccounts.findIndex(a => a.id === targetAccId);
+          if (fromIdx !== -1 && toIdx !== -1) {
+            const next = [...safeAccounts];
+            const [moved] = next.splice(fromIdx, 1);
+            const finalIdx = next.findIndex(a => a.id === targetAccId);
+            const insertIdx = dragPosition === 'after' ? finalIdx + 1 : finalIdx;
+            next.splice(insertIdx, 0, moved);
+            if (onReorderAccounts) {
+              onReorderAccounts(next);
+            }
+            if (window.VoraletHaptics?.notification) {
+              window.VoraletHaptics.notification('success');
+            }
+          }
+        }
+        setDraggedId(null);
+        setDragOverId(null);
+        setDragPosition(null);
+        isDraggingRef.current = false;
+      };
+
+      const handleHtmlDragEnd = () => {
+        setDraggedId(null);
+        setDragOverId(null);
+        setDragPosition(null);
+        isDraggingRef.current = false;
+      };
 
       // Calculate total balance across all pockets
       const totalBalance = useMemo(() => {
@@ -8049,7 +8458,14 @@
               <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 Daftar Kantong ({safeAccounts.length})
               </span>
-              <span className="text-[10px] text-slate-400">Ketuk kantong untuk mutasi & opsi</span>
+              {safeAccounts.length > 1 ? (
+                <span className="text-[10px] text-slate-400 flex items-center gap-1 font-medium">
+                  <Icon name="grip-vertical" className="w-3 h-3 text-sky-500" />
+                  <span>Tahan & geser untuk atur prioritas</span>
+                </span>
+              ) : (
+                <span className="text-[10px] text-slate-400">Ketuk kantong untuk mutasi & opsi</span>
+              )}
             </div>
 
             {safeAccounts.length === 0 ? (
@@ -8059,9 +8475,15 @@
                 <p className="text-[11px] text-slate-400 mt-1">Tambahkan kantong pertama Anda untuk mulai mengelola dana.</p>
               </div>
             ) : (
-              safeAccounts.map((acc) => {
+              safeAccounts.map((acc, index) => {
                 const bal = Ledger.getAccountBalance(acc.id, safeAccounts, safeTransactions);
                 const isExpanded = expandedCardId === acc.id;
+                const hasAnySelected = expandedCardId !== null;
+                const isDragging = draggedId === acc.id;
+                const isDragTarget = dragOverId === acc.id && draggedId !== acc.id;
+                const showIndicatorBefore = isDragTarget && dragPosition === 'before';
+                const showIndicatorAfter = isDragTarget && dragPosition === 'after';
+
                 const normType = String(acc.type || '').toUpperCase();
                 const isCash = normType === 'CASH' || normType === 'TUNAI';
                 const isEWallet = normType.includes('WALLET') || normType === 'EWALLET';
@@ -8079,112 +8501,213 @@
                   : `•••• ${String(acc.id || '8829').replace(/\D/g, '').slice(-4) || '8829'}`;
 
                 return (
-                  <div
-                    key={acc.id}
-                    onClick={() => setExpandedCardId(isExpanded ? null : acc.id)}
-                    className="relative w-full rounded-2xl bg-[#0284C7] dark:bg-[#0369A1] p-4 text-white shadow-md select-none cursor-pointer ios-card-tap transition-transform duration-200"
-                  >
-                    {/* Top row: Type chip/badge and brand/card type icon */}
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-xl bg-white/20 border border-white/25 flex items-center justify-center text-white">
-                          <Icon name={iconName} className="w-4 h-4" />
+                  <React.Fragment key={acc.id}>
+                    {showIndicatorBefore && (
+                      <div className="ios-card-drop-indicator" />
+                    )}
+                    <div
+                      ref={el => { cardRefs.current[acc.id] = el; }}
+                      draggable={safeAccounts.length > 1}
+                      onDragStart={(e) => handleHtmlDragStart(e, acc.id)}
+                      onDragOver={(e) => handleHtmlDragOver(e, acc.id)}
+                      onDrop={(e) => handleHtmlDrop(e, acc.id)}
+                      onDragEnd={handleHtmlDragEnd}
+                      onClick={() => {
+                        if (justDraggedRef.current || isDraggingRef.current) return;
+                        if (window.VoraletHaptics) {
+                          window.VoraletHaptics.tap();
+                        }
+                        setExpandedCardId(isExpanded ? null : acc.id);
+                      }}
+                      className={`relative w-full rounded-2xl bg-[#0284C7] dark:bg-[#0369A1] p-4 text-white select-none cursor-pointer ios-card-stack-item ${
+                        isDragging
+                          ? 'is-dragging'
+                          : isDragTarget
+                          ? 'is-drag-target'
+                          : isExpanded
+                          ? 'is-lifted'
+                          : hasAnySelected
+                          ? 'is-dimmed'
+                          : 'shadow-md hover:shadow-lg'
+                      }`}
+                    >
+                      {/* Top row: Type chip/badge, priority indicator, and drag handle */}
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-xl bg-white/20 border border-white/25 flex items-center justify-center text-white">
+                            <Icon name={iconName} className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-sky-100 block">
+                                {typeLabel}
+                              </span>
+                              {index === 0 ? (
+                                <span className="px-1.5 py-0.5 rounded-full bg-amber-400 text-slate-950 text-[9px] font-extrabold tracking-wide flex items-center gap-0.5 shadow-xs">
+                                  <span>★</span>
+                                  <span>Utama</span>
+                                </span>
+                              ) : (
+                                <span className="px-1.5 py-0.2 rounded-md bg-white/15 text-sky-100 text-[9px] font-semibold">
+                                  #{index + 1}
+                                </span>
+                              )}
+                            </div>
+                            <h4 className="text-sm font-extrabold text-white truncate leading-tight">
+                              {acc.name}
+                            </h4>
+                          </div>
                         </div>
-                        <div>
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-sky-100 block">
-                            {typeLabel}
-                          </span>
-                          <h4 className="text-sm font-extrabold text-white truncate leading-tight">
-                            {acc.name}
-                          </h4>
-                        </div>
-                      </div>
 
-                      {/* Card chip indicator */}
-                      <div className="px-2 py-0.5 rounded-md bg-white/15 border border-white/20 text-[9px] font-mono font-bold tracking-wider text-sky-100">
-                        {maskedNumber}
-                      </div>
-                    </div>
-
-                    {/* Bottom row: Saldo and status */}
-                    <div className="pt-2 border-t border-white/15 flex items-end justify-between">
-                      <div>
-                        <span className="text-[9px] font-semibold uppercase tracking-wider text-sky-200/90 block mb-0.5">
-                          Saldo Tersedia
-                        </span>
-                        <div className="text-lg sm:text-xl font-black tracking-tight text-white">
-                          {hideBalance ? 'Rp ••••••••' : formatIDR(bal)}
-                        </div>
-                      </div>
-
-                      <div className="text-right">
-                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-sky-100 bg-white/15 px-2 py-0.5 rounded-lg">
-                          <span>{isExpanded ? 'Tutup Opsi' : 'Kelola'}</span>
-                          <Icon name={isExpanded ? 'chevron-up' : 'chevron-down'} className="w-3 h-3" />
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Expanded Pocket Actions & Recent Mutations */}
-                    {isExpanded && (
-                      <div className="mt-3.5 pt-3 border-t border-white/20 space-y-3 animate-ios-spring-pop text-slate-800 dark:text-slate-100" onClick={(e) => e.stopPropagation()}>
-                        {/* Quick Action Buttons */}
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (onOpenAddTx) onOpenAddTx(acc.id);
-                            }}
-                            className="flex-1 py-2 px-2 bg-white text-[#0284C7] text-[11px] font-bold rounded-xl flex items-center justify-center gap-1 shadow-xs hover:bg-sky-50 transition-colors ios-btn-tap"
-                          >
-                            <Icon name="plus" className="w-3.5 h-3.5" />
-                            <span>Catat Mutasi</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e) => handleStartEdit(acc, e)}
-                            className="py-2 px-3 bg-white/20 hover:bg-white/30 text-white text-[11px] font-bold rounded-xl flex items-center gap-1 border border-white/30 transition-colors ios-btn-tap"
-                          >
-                            <Icon name="edit" className="w-3.5 h-3.5" />
-                            <span>Edit</span>
-                          </button>
+                        {/* Right elements: Card number & Drag handle */}
+                        <div className="flex items-center gap-2">
+                          <div className="px-2 py-0.5 rounded-md bg-white/15 border border-white/20 text-[9px] font-mono font-bold tracking-wider text-sky-100">
+                            {maskedNumber}
+                          </div>
                           {safeAccounts.length > 1 && (
+                            <div
+                              role="button"
+                              tabIndex={0}
+                              title="Tahan & geser untuk mengatur urutan prioritas"
+                              aria-label={`Geser untuk atur urutan ${acc.name}`}
+                              onPointerDown={(e) => handleDragHandlePointerDown(acc.id, e)}
+                              onClick={(e) => e.stopPropagation()}
+                              className="p-1.5 -mr-1 rounded-lg text-white/70 hover:text-white hover:bg-white/20 active:bg-white/30 cursor-grab active:cursor-grabbing transition-colors touch-none select-none flex items-center justify-center"
+                              style={{ touchAction: 'none' }}
+                            >
+                              <Icon name="grip-vertical" className="w-4 h-4" />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Bottom row: Saldo and status */}
+                      <div className="pt-2 border-t border-white/15 flex items-end justify-between">
+                        <div>
+                          <span className="text-[9px] font-semibold uppercase tracking-wider text-sky-200/90 block mb-0.5">
+                            Saldo Tersedia
+                          </span>
+                          <div className="text-lg sm:text-xl font-black tracking-tight text-white">
+                            {hideBalance ? 'Rp ••••••••' : formatIDR(bal)}
+                          </div>
+                        </div>
+
+                        <div className="text-right flex items-center gap-1.5">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-sky-100 bg-white/15 px-2 py-0.5 rounded-lg">
+                            <span>{isExpanded ? 'Tutup Opsi' : 'Kelola'}</span>
+                            <Icon name={isExpanded ? 'chevron-up' : 'chevron-down'} className="w-3 h-3" />
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Expanded Pocket Actions & Recent Mutations */}
+                      {isExpanded && (
+                        <div className="mt-3.5 pt-3 border-t border-white/20 space-y-3 animate-ios-spring-pop text-slate-800 dark:text-slate-100" onClick={(e) => e.stopPropagation()}>
+                          {/* Quick Action Buttons */}
+                          <div className="flex gap-2">
                             <button
                               type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onDeleteAccount(acc.id);
+                              onClick={() => {
+                                if (onOpenAddTx) onOpenAddTx(acc.id);
                               }}
-                              className="py-2 px-2.5 bg-rose-500/80 hover:bg-rose-600 text-white text-[11px] font-bold rounded-xl flex items-center gap-1 border border-rose-400/40 transition-colors ios-btn-tap"
+                              className="flex-1 py-2 px-2 bg-white text-[#0284C7] text-[11px] font-bold rounded-xl flex items-center justify-center gap-1 shadow-xs hover:bg-sky-50 transition-colors ios-btn-tap"
                             >
-                              <Icon name="trash" className="w-3.5 h-3.5" />
+                              <Icon name="plus" className="w-3.5 h-3.5" />
+                              <span>Catat Mutasi</span>
                             </button>
-                          )}
-                        </div>
+                            <button
+                              type="button"
+                              onClick={(e) => handleStartEdit(acc, e)}
+                              className="py-2 px-3 bg-white/20 hover:bg-white/30 text-white text-[11px] font-bold rounded-xl flex items-center gap-1 border border-white/30 transition-colors ios-btn-tap"
+                            >
+                              <Icon name="edit" className="w-3.5 h-3.5" />
+                              <span>Edit</span>
+                            </button>
+                            {safeAccounts.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onDeleteAccount(acc.id);
+                                }}
+                                className="py-2 px-2.5 bg-rose-500/80 hover:bg-rose-600 text-white text-[11px] font-bold rounded-xl flex items-center gap-1 border border-rose-400/40 transition-colors ios-btn-tap"
+                              >
+                                <Icon name="trash" className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
 
-                        {/* Recent Mutations for this account */}
-                        <div className="space-y-1.5 pt-1">
-                          <p className="text-[10px] font-bold text-sky-100 uppercase tracking-wider">
-                            Mutasi Terakhir
-                          </p>
-                          {accountTxs.length === 0 ? (
-                            <p className="text-[11px] text-sky-200/80 py-1 italic">Belum ada mutasi di kantong ini.</p>
-                          ) : (
-                            accountTxs.map(tx => (
-                              <div key={tx.id} className="flex items-center justify-between py-1.5 px-2.5 rounded-xl bg-black/15 text-xs text-white">
-                                <span className="truncate max-w-[150px] font-medium text-sky-50">
-                                  {tx.notes || tx.category || 'Mutasi'}
-                                </span>
-                                <span className="font-bold text-white">
-                                  {tx.type === 'INCOME' ? '+' : '-'}{formatIDR(tx.amount)}
-                                </span>
+                          {/* Priority Reordering Controls (Quick Tap Alternative) */}
+                          {safeAccounts.length > 1 && (
+                            <div className="flex items-center justify-between py-1 px-1.5 bg-white/10 rounded-xl text-white">
+                              <div className="text-[10px] font-bold text-sky-100 uppercase tracking-wider pl-1 flex items-center gap-1">
+                                <Icon name="grip-vertical" className="w-3 h-3 text-sky-200" />
+                                <span>Prioritas: {index === 0 ? 'Akun Utama' : `Urutan #${index + 1}`}</span>
                               </div>
-                            ))
+                              <div className="flex items-center gap-1">
+                                {index > 0 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleMoveAccount(acc.id, 'top')}
+                                    className="px-2 py-1 bg-amber-400 hover:bg-amber-300 text-slate-950 text-[10px] font-black rounded-lg shadow-xs transition-colors flex items-center gap-1 ios-btn-tap"
+                                    title="Jadikan akun utama di posisi teratas"
+                                  >
+                                    <span>★ Jadikan Utama</span>
+                                  </button>
+                                )}
+                                {index > 0 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleMoveAccount(acc.id, 'up')}
+                                    className="p-1.5 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-colors ios-btn-tap"
+                                    title="Naikkan urutan"
+                                    aria-label="Naikkan urutan"
+                                  >
+                                    <Icon name="arrow-up" className="w-3 h-3" strokeWidth={2.5} />
+                                  </button>
+                                )}
+                                {index < safeAccounts.length - 1 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleMoveAccount(acc.id, 'down')}
+                                    className="p-1.5 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-colors ios-btn-tap"
+                                    title="Turunkan urutan"
+                                    aria-label="Turunkan urutan"
+                                  >
+                                    <Icon name="arrow-down" className="w-3 h-3" strokeWidth={2.5} />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
                           )}
+
+                          {/* Recent Mutations for this account */}
+                          <div className="space-y-1.5 pt-1">
+                            <p className="text-[10px] font-bold text-sky-100 uppercase tracking-wider">
+                              Mutasi Terakhir
+                            </p>
+                            {accountTxs.length === 0 ? (
+                              <p className="text-[11px] text-sky-200/80 py-1 italic">Belum ada mutasi di kantong ini.</p>
+                            ) : (
+                              accountTxs.map(tx => (
+                                <div key={tx.id} className="flex items-center justify-between py-1.5 px-2.5 rounded-xl bg-black/15 text-xs text-white">
+                                  <span className="truncate max-w-[150px] font-medium text-sky-50">
+                                    {tx.notes || tx.category || 'Mutasi'}
+                                  </span>
+                                  <span className="font-bold text-white">
+                                    {tx.type === 'INCOME' ? '+' : '-'}{formatIDR(tx.amount)}
+                                  </span>
+                                </div>
+                              ))
+                            )}
+                          </div>
                         </div>
-                      </div>
+                      )}
+                    </div>
+                    {showIndicatorAfter && (
+                      <div className="ios-card-drop-indicator" />
                     )}
-                  </div>
+                  </React.Fragment>
                 );
               })
             )}
@@ -8878,6 +9401,8 @@
       onClearNewlyAddedTx
     }) => {
       const [searchQuery, setSearchQuery] = useState('');
+      const [isSearchFocused, setIsSearchFocused] = useState(false);
+      const searchBlurTimeoutRef = useRef(null);
       const [filterType, setFilterType] = useState('ALL'); // ALL | EXPENSE | INCOME
       const [selectedAccountFilter, setSelectedAccountFilter] = useState('ALL');
       const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('ALL');
@@ -9212,23 +9737,48 @@
             {/* Live Search & Date Range Filter */}
             <div className="space-y-2 mb-3">
               <div className="flex items-center gap-2">
-                <div className="relative flex-1">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                <div className={`relative tx-search-container ${isSearchFocused ? 'is-focused' : 'flex-1'}`}>
+                  <span className={`absolute left-3 top-1/2 -translate-y-1/2 transition-colors ${
+                    isSearchFocused ? 'text-brand dark:text-sky-400' : 'text-slate-400'
+                  }`}>
                     <Icon name="search" className="w-3.5 h-3.5" />
                   </span>
                   <input
                     type="text"
                     value={searchQuery}
-                    onFocus={handleGlobalInputFocus}
-                    onBlur={handleGlobalInputBlur}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Cari transaksi atau catatan..."
+                    onFocus={(e) => {
+                      if (searchBlurTimeoutRef.current) {
+                        clearTimeout(searchBlurTimeoutRef.current);
+                        searchBlurTimeoutRef.current = null;
+                      }
+                      setIsSearchFocused(true);
+                      handleGlobalInputFocus(e);
+                    }}
+                    onBlur={(e) => {
+                      handleGlobalInputBlur(e);
+                      // If user stopped typing and input is empty, collapse back smoothly
+                      if (!searchQuery.trim()) {
+                        searchBlurTimeoutRef.current = setTimeout(() => {
+                          setIsSearchFocused(false);
+                        }, 120);
+                      }
+                    }}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      if (!isSearchFocused) setIsSearchFocused(true);
+                    }}
+                    placeholder={isSearchFocused ? "Ketik untuk mencari transaksi, catatan, atau kategori..." : "Cari transaksi atau catatan..."}
                     className="w-full pl-8 pr-8 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand"
                   />
                   {searchQuery && (
                     <button
                       type="button"
-                      onClick={() => setSearchQuery('')}
+                      onClick={() => {
+                        setSearchQuery('');
+                        if (window.VoraletHaptics?.tap) {
+                          window.VoraletHaptics.tap();
+                        }
+                      }}
                       className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5"
                     >
                       <Icon name="x" className="w-3.5 h-3.5" />
@@ -9240,7 +9790,9 @@
                 <button
                   type="button"
                   onClick={() => setIsDateFilterOpen(!isDateFilterOpen)}
-                  className={`relative p-2 rounded-xl border flex items-center justify-center transition-all ios-btn-tap shrink-0 ${
+                  className={`relative p-2 rounded-xl border flex items-center justify-center transition-all ios-btn-tap shrink-0 tx-search-sibling-btn ${
+                    isSearchFocused ? 'is-compact' : ''
+                  } ${
                     hasActiveDateFilter
                       ? 'bg-brand text-white border-brand shadow-sm'
                       : isDateFilterOpen
@@ -9261,7 +9813,9 @@
                   <button
                     type="button"
                     onClick={onOpenCsvImport}
-                    className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 hover:bg-sky-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-brand dark:hover:text-sky-400 hover:border-brand/40 flex items-center justify-center transition-all ios-btn-tap shrink-0"
+                    className={`p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 hover:bg-sky-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-brand dark:hover:text-sky-400 hover:border-brand/40 flex items-center justify-center transition-all ios-btn-tap shrink-0 tx-search-sibling-btn ${
+                      isSearchFocused ? 'is-compact' : ''
+                    }`}
                     title="Impor Transaksi dari File CSV"
                     aria-label="Impor Transaksi CSV"
                   >
@@ -9432,6 +9986,24 @@
     });
 
     // =========================================================================
+    // 10.5 THEME CROSS-FADE TRANSITION OVERLAY
+    // =========================================================================
+    /**
+     * Authentic iOS Theme Cross-Fade Transition Overlay
+     * Displays a fading veil of the previous theme during mode changes so color shifts dissolve seamlessly.
+     */
+    const ThemeCrossfadeOverlay = React.memo(({ transition }) => {
+      if (!transition) return null;
+      return (
+        <div
+          key={transition.id}
+          className={`ios-theme-crossfade-overlay ${transition.from === 'dark' ? 'from-dark' : 'from-light'}`}
+          aria-hidden="true"
+        />
+      );
+    });
+
+    // =========================================================================
     // 11. ROOT APP COMPONENT WITH HORIZONTAL SWIPE NAVIGATION
     // =========================================================================
     const App = () => {
@@ -9450,6 +10022,8 @@
       const [safeBudget, setSafeBudget] = useState(() => StorageService.getSafeBudget());
       const [hideBalance, setHideBalance] = useState(() => StorageService.getHideBalance());
       const [theme, setTheme] = useState(() => StorageService.getTheme());
+      const [themeTransition, setThemeTransition] = useState(null);
+      const transitionTimeoutRef = useRef(null);
 
       const [activeTab, setActiveTab] = useState('dashboard'); // dashboard | debts | savings | analytics
       const [toastMsg, setToastMsg] = useState('');
@@ -9501,12 +10075,40 @@
         setToastMsg(msg);
       }, []);
 
-      // Theme toggle with full DOM synchronization
-      const toggleTheme = useCallback(() => {
+      // Clean up theme transition timer and classes on unmount
+      useEffect(() => {
+        return () => {
+          if (transitionTimeoutRef.current) {
+            clearTimeout(transitionTimeoutRef.current);
+          }
+          document.documentElement.classList.remove('theme-crossfade-active');
+        };
+      }, []);
+
+      // Theme toggle with smooth cross-fade transition overlay and full DOM synchronization
+      const triggerThemeChange = useCallback((nextTheme) => {
         setTheme(prev => {
-          const next = prev === 'dark' ? 'light' : 'dark';
-          StorageService.setTheme(next);
-          if (next === 'dark') {
+          if (prev === nextTheme) return prev;
+          const prevTheme = prev;
+
+          if (transitionTimeoutRef.current) {
+            clearTimeout(transitionTimeoutRef.current);
+          }
+
+          // Trigger cross-fade overlay starting from previous theme ambient backdrop
+          setThemeTransition({
+            from: prevTheme,
+            to: nextTheme,
+            id: Date.now()
+          });
+
+          // Enable global smooth transitions for all UI elements during mode change
+          document.documentElement.classList.add('theme-crossfade-active');
+
+          StorageService.setTheme(nextTheme);
+
+          // Synchronize DOM classes
+          if (nextTheme === 'dark') {
             document.documentElement.classList.add('dark');
             if (document.body) document.body.classList.add('dark');
             const rootEl = document.getElementById('root');
@@ -9517,10 +10119,22 @@
             const rootEl = document.getElementById('root');
             if (rootEl) rootEl.classList.remove('dark');
           }
-          showToast(next === 'dark' ? 'Mode Gelap diaktifkan 🌙' : 'Mode Terang diaktifkan ☀️');
-          return next;
+
+          showToast(nextTheme === 'dark' ? 'Mode Gelap diaktifkan 🌙' : 'Mode Terang diaktifkan ☀️');
+
+          // Schedule cleanup once the 380ms cross-fade completes
+          transitionTimeoutRef.current = setTimeout(() => {
+            setThemeTransition(null);
+            document.documentElement.classList.remove('theme-crossfade-active');
+          }, 420);
+
+          return nextTheme;
         });
       }, [showToast]);
+
+      const toggleTheme = useCallback(() => {
+        triggerThemeChange(theme === 'dark' ? 'light' : 'dark');
+      }, [theme, triggerThemeChange]);
 
       useEffect(() => {
         const isDark = theme === 'dark';
@@ -9545,8 +10159,7 @@
         const handleOsThemeChange = (e) => {
           const isSystemDark = typeof e.matches === 'boolean' ? e.matches : mediaQuery.matches;
           const nextTheme = isSystemDark ? 'dark' : 'light';
-          setTheme(nextTheme);
-          StorageService.setTheme(nextTheme);
+          triggerThemeChange(nextTheme);
         };
 
         // Sync initial state with system OS theme preference
@@ -9573,7 +10186,7 @@
             mediaQuery.removeListener(handleOsThemeChange);
           }
         };
-      }, []);
+      }, [triggerThemeChange]);
 
       // Global Mobile Keyboard Handling
       useEffect(() => {
@@ -9755,14 +10368,23 @@ Tindakan ini tidak dapat dibatalkan.`);
         showToast('Dompet berhasil dibuat');
       }, []);
 
-      const handleEditAccount = useCallback((accId, data) => {
+      const handleEditAccount = useCallback((arg1, arg2) => {
+        const accId = (arg1 && typeof arg1 === 'object') ? arg1.id : arg1;
+        const data = (arg1 && typeof arg1 === 'object') ? arg1 : arg2;
         setAccounts(prev => {
           const next = prev.map(a => a.id === accId ? { ...a, ...data } : a);
           StorageService.setAccounts(next);
           return next;
         });
         showToast('Dompet diperbarui');
-      }, []);
+      }, [showToast]);
+
+      const handleReorderAccounts = useCallback((newAccounts) => {
+        if (!Array.isArray(newAccounts)) return;
+        setAccounts(newAccounts);
+        StorageService.setAccounts(newAccounts);
+        showToast('Prioritas kantong diperbarui 💳');
+      }, [showToast]);
 
       const handleDeleteAccount = useCallback((accId) => {
         if ((accounts || []).length <= 1) {
@@ -10106,34 +10728,40 @@ Tindakan ini tidak dapat dibatalkan.`);
 
       if (!pin) {
         return (
-          <OnboardingFlow
-            onComplete={(initialData) => {
-              setPin(initialData.pin);
-              setName(initialData.name);
-              setUsername(initialData.username);
-              setAvatar(initialData.avatar);
-              setAccounts(initialData.accounts);
-              setTransactions(initialData.transactions);
-              setSavingsGoals(initialData.savingsGoals);
-              setDebts(initialData.debts);
-              setIsUnlocked(true);
-            }}
-          />
+          <React.Fragment>
+            <OnboardingFlow
+              onComplete={(initialData) => {
+                setPin(initialData.pin);
+                setName(initialData.name);
+                setUsername(initialData.username);
+                setAvatar(initialData.avatar);
+                setAccounts(initialData.accounts);
+                setTransactions(initialData.transactions);
+                setSavingsGoals(initialData.savingsGoals);
+                setDebts(initialData.debts);
+                setIsUnlocked(true);
+              }}
+            />
+            <ThemeCrossfadeOverlay transition={themeTransition} />
+          </React.Fragment>
         );
       }
 
       if (!isUnlocked) {
         return (
-          <ReturningUserPinScreen
-            storedPin={pin}
-            userName={name}
-            username={username}
-            avatar={avatar}
-            theme={theme}
-            onToggleTheme={toggleTheme}
-            onUnlock={() => setIsUnlocked(true)}
-            onResetPin={handleResetPin}
-          />
+          <React.Fragment>
+            <ReturningUserPinScreen
+              storedPin={pin}
+              userName={name}
+              username={username}
+              avatar={avatar}
+              theme={theme}
+              onToggleTheme={toggleTheme}
+              onUnlock={() => setIsUnlocked(true)}
+              onResetPin={handleResetPin}
+            />
+            <ThemeCrossfadeOverlay transition={themeTransition} />
+          </React.Fragment>
         );
       }
 
@@ -10141,6 +10769,7 @@ Tindakan ini tidak dapat dibatalkan.`);
 
       return (
         <div className={`h-[100dvh] flex flex-col ${theme === 'dark' ? 'dark bg-[#0F172A] text-[#F8FAFC]' : 'bg-slate-50 text-[#0F172A]'} overflow-hidden select-none transition-colors duration-300 ease-in-out`}>
+          <ThemeCrossfadeOverlay transition={themeTransition} />
           {toastMsg && <Toast message={toastMsg} onClose={() => setToastMsg('')} />}
 
           {/* iOS Background Depth Stacking Layer */}
@@ -10194,7 +10823,9 @@ Tindakan ini tidak dapat dibatalkan.`);
                   onAddAccount={handleAddAccount}
                   onUpdateAccount={handleEditAccount}
                   onDeleteAccount={handleDeleteAccount}
+                  onReorderAccounts={handleReorderAccounts}
                   onOpenAddTx={handleOpenAddTxFromAccount}
+                  onToast={showToast}
                 />
               )}
 

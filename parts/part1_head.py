@@ -375,6 +375,178 @@ HTML_HEAD = """<!DOCTYPE html>
       text-shadow: 0 1px 1px rgba(0, 0, 0, 0.4), 0 -1px 0 rgba(255, 255, 255, 0.2);
     }
 
+    /* CardsView Card Stack Spring-Based Lift Animation & Depth */
+    .ios-card-stack-item {
+      position: relative;
+      transition: transform 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275), 
+                  box-shadow 0.45s cubic-bezier(0.16, 1, 0.3, 1), 
+                  opacity 0.35s ease, 
+                  filter 0.35s ease;
+      will-change: transform, box-shadow;
+      transform-origin: center center;
+    }
+    .ios-card-stack-item.is-lifted {
+      transform: translate3d(0, -7px, 0) scale(1.02);
+      box-shadow: 0 22px 42px -10px rgba(2, 132, 199, 0.48), 
+                  0 8px 20px -4px rgba(0, 0, 0, 0.2), 
+                  0 0 0 1.5px rgba(255, 255, 255, 0.5),
+                  inset 0 1px 2px rgba(255, 255, 255, 0.4);
+      z-index: 20 !important;
+    }
+    html.dark .ios-card-stack-item.is-lifted, .dark .ios-card-stack-item.is-lifted {
+      box-shadow: 0 24px 48px -10px rgba(0, 0, 0, 0.75), 
+                  0 10px 24px -4px rgba(3, 105, 161, 0.45), 
+                  0 0 0 1.5px rgba(56, 189, 248, 0.45),
+                  inset 0 1px 2px rgba(255, 255, 255, 0.3);
+    }
+    .ios-card-stack-item.is-dimmed {
+      transform: translate3d(0, 0, 0) scale(0.985);
+      opacity: 0.86;
+      filter: brightness(0.96);
+      box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.12);
+    }
+    html.dark .ios-card-stack-item.is-dimmed, .dark .ios-card-stack-item.is-dimmed {
+      filter: brightness(0.9);
+    }
+    .ios-card-stack-item:active:not(.is-lifted):not(.is-dragging) {
+      transform: translate3d(0, 1px, 0) scale(0.98);
+      transition-duration: 0.12s;
+    }
+
+    /* CardsView Drag & Drop Reordering Styles */
+    .ios-card-stack-item.is-dragging {
+      opacity: 0.94;
+      transform: scale(1.035) translate3d(0, -4px, 0) !important;
+      box-shadow: 0 28px 50px -12px rgba(2, 132, 199, 0.55),
+                  0 12px 24px -6px rgba(0, 0, 0, 0.25),
+                  0 0 0 2px rgba(255, 255, 255, 0.85),
+                  inset 0 1px 2px rgba(255, 255, 255, 0.5) !important;
+      z-index: 50 !important;
+      cursor: grabbing !important;
+      transition: box-shadow 0.2s ease, opacity 0.2s ease, transform 0.15s ease !important;
+    }
+    html.dark .ios-card-stack-item.is-dragging, .dark .ios-card-stack-item.is-dragging {
+      box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.85),
+                  0 14px 28px -6px rgba(3, 105, 161, 0.5),
+                  0 0 0 2px rgba(56, 189, 248, 0.8),
+                  inset 0 1px 2px rgba(255, 255, 255, 0.4) !important;
+    }
+    .ios-card-stack-item.is-drag-target {
+      transform: scale(0.99) translate3d(0, 2px, 0);
+      opacity: 0.75;
+      outline: 2px dashed rgba(2, 132, 199, 0.6);
+      outline-offset: 3px;
+    }
+    html.dark .ios-card-stack-item.is-drag-target {
+      outline-color: rgba(56, 189, 248, 0.7);
+    }
+    .ios-card-drop-indicator {
+      height: 4px;
+      margin: -2px 10px;
+      border-radius: 9999px;
+      background: linear-gradient(90deg, #38BDF8 0%, #0284C7 50%, #38BDF8 100%);
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.9);
+      animation: iosDropPulse 1.2s ease-in-out infinite;
+      z-index: 45;
+      pointer-events: none;
+    }
+    @keyframes iosDropPulse {
+      0%, 100% { opacity: 0.7; transform: scaleY(1); }
+      50% { opacity: 1; transform: scaleY(1.5); }
+    }
+
+    /* Transaction Search Bar Expand & Collapse Animation */
+    .tx-search-container {
+      transition: all 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+      will-change: transform, box-shadow, flex;
+    }
+    .tx-search-container.is-focused {
+      flex: 1 1 100% !important;
+      transform: scale3d(1.008, 1.008, 1);
+    }
+    .tx-search-container input {
+      transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .tx-search-container.is-focused input {
+      box-shadow: 0 4px 14px -2px rgba(2, 132, 199, 0.22),
+                  0 0 0 3px rgba(56, 189, 248, 0.25);
+      border-color: #0284C7 !important;
+    }
+    html.dark .tx-search-container.is-focused input, .dark .tx-search-container.is-focused input {
+      box-shadow: 0 4px 18px -2px rgba(3, 105, 161, 0.35),
+                  0 0 0 3px rgba(56, 189, 248, 0.3);
+      border-color: #38BDF8 !important;
+    }
+    .tx-search-sibling-btn {
+      transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+      will-change: opacity, transform, max-width, margin, padding;
+    }
+    .tx-search-sibling-btn.is-compact {
+      opacity: 0.88;
+      transform: scale(0.96);
+    }
+
+    /* iOS Theme Cross-Fade Transition Overlay */
+    .ios-theme-crossfade-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 99999;
+      animation: iosThemeCrossfade 380ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
+      will-change: opacity;
+      transform: translateZ(0);
+    }
+    .ios-theme-crossfade-overlay.from-light {
+      background: #F8FAFC;
+      background: radial-gradient(circle at 50% 35%, #FFFFFF 0%, #F8FAFC 65%, #F1F5F9 100%);
+    }
+    .ios-theme-crossfade-overlay.from-dark {
+      background: #0F172A;
+      background: radial-gradient(circle at 50% 35%, #1E293B 0%, #0F172A 65%, #020617 100%);
+    }
+    @keyframes iosThemeCrossfade {
+      0% {
+        opacity: 0.95;
+      }
+      100% {
+        opacity: 0;
+      }
+    }
+
+    /* Active cross-fade global smoothing during theme transitions */
+    .theme-crossfade-active,
+    .theme-crossfade-active *,
+    .theme-crossfade-active *::before,
+    .theme-crossfade-active *::after {
+      transition: background-color 380ms cubic-bezier(0.32, 0.72, 0, 1),
+                  border-color 380ms cubic-bezier(0.32, 0.72, 0, 1),
+                  color 380ms cubic-bezier(0.32, 0.72, 0, 1),
+                  fill 380ms cubic-bezier(0.32, 0.72, 0, 1),
+                  stroke 380ms cubic-bezier(0.32, 0.72, 0, 1),
+                  box-shadow 380ms cubic-bezier(0.32, 0.72, 0, 1) !important;
+    }
+
+    /* Browser View Transitions API cross-fade overlay specs */
+    ::view-transition-old(root) {
+      animation: 380ms cubic-bezier(0.32, 0.72, 0, 1) both iosViewTransitionFadeOut;
+    }
+    ::view-transition-new(root) {
+      animation: 380ms cubic-bezier(0.32, 0.72, 0, 1) both iosViewTransitionFadeIn;
+    }
+    @keyframes iosViewTransitionFadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+    @keyframes iosViewTransitionFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
     /* Keypad Button */
     .ios-keypad-btn {
       transition: transform 150ms ease-out, opacity 150ms ease-out, background-color 150ms ease;

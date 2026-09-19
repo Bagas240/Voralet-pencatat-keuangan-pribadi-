@@ -790,7 +790,9 @@ PART7_VIEWS = """
       onAddAccount,
       onUpdateAccount,
       onDeleteAccount,
-      onOpenAddTx
+      onReorderAccounts,
+      onOpenAddTx,
+      onToast
     }) => {
       const [isAdding, setIsAdding] = useState(false);
       const [editingAcc, setEditingAcc] = useState(null);
@@ -800,8 +802,217 @@ PART7_VIEWS = """
       const [color, setColor] = useState('#0284C7');
       const [expandedCardId, setExpandedCardId] = useState(null);
 
+      // Drag and drop reordering state
+      const [draggedId, setDraggedId] = useState(null);
+      const [dragOverId, setDragOverId] = useState(null);
+      const [dragPosition, setDragPosition] = useState(null); // 'before' | 'after'
+      const isDraggingRef = useRef(false);
+      const justDraggedRef = useRef(false);
+      const cardRefs = useRef({});
+      const touchStateRef = useRef(null);
+
       const safeAccounts = Array.isArray(accounts) ? accounts : [];
       const safeTransactions = Array.isArray(transactions) ? transactions : [];
+
+      // Reorder account programmatically (e.g. Move up/down/top)
+      const handleMoveAccount = useCallback((accId, direction) => {
+        const idx = safeAccounts.findIndex(a => a.id === accId);
+        if (idx === -1) return;
+        const next = [...safeAccounts];
+        const [moved] = next.splice(idx, 1);
+        if (direction === 'top') {
+          next.unshift(moved);
+        } else if (direction === 'up' && idx > 0) {
+          next.splice(idx - 1, 0, moved);
+        } else if (direction === 'down' && idx < safeAccounts.length - 1) {
+          next.splice(idx + 1, 0, moved);
+        } else {
+          return;
+        }
+        if (onReorderAccounts) {
+          onReorderAccounts(next);
+        }
+        if (window.VoraletHaptics?.notification) {
+          window.VoraletHaptics.notification('success');
+        } else if (window.VoraletHaptics?.tap) {
+          window.VoraletHaptics.tap();
+        }
+      }, [safeAccounts, onReorderAccounts]);
+
+      // Pointer & Touch drag handler for mobile WebView and desktop
+      const handleDragHandlePointerDown = useCallback((accId, e) => {
+        if (e.button !== 0 && e.pointerType === 'mouse') return;
+        e.stopPropagation();
+
+        setExpandedCardId(null);
+        const pointerId = e.pointerId;
+        const startY = e.clientY;
+        const startX = e.clientX;
+
+        if (window.VoraletHaptics?.tap) {
+          window.VoraletHaptics.tap();
+        }
+
+        touchStateRef.current = {
+          accId,
+          pointerId,
+          startY,
+          startX,
+          isStarted: false
+        };
+
+        const handlePointerMove = (moveEv) => {
+          if (!touchStateRef.current || touchStateRef.current.pointerId !== moveEv.pointerId) return;
+          const deltaY = moveEv.clientY - touchStateRef.current.startY;
+          const deltaX = moveEv.clientX - touchStateRef.current.startX;
+
+          if (!touchStateRef.current.isStarted) {
+            if (Math.abs(deltaY) > 6 || Math.abs(deltaX) > 6) {
+              touchStateRef.current.isStarted = true;
+              isDraggingRef.current = true;
+              setDraggedId(accId);
+              if (window.VoraletHaptics?.selection) {
+                window.VoraletHaptics.selection();
+              }
+            } else {
+              return;
+            }
+          }
+
+          if (moveEv.cancelable) {
+            moveEv.preventDefault();
+          }
+
+          const currentClientY = moveEv.clientY;
+          let foundId = null;
+          let foundPos = null;
+
+          for (const a of safeAccounts) {
+            const el = cardRefs.current[a.id];
+            if (!el) continue;
+            const rect = el.getBoundingClientRect();
+            if (currentClientY >= rect.top && currentClientY <= rect.bottom) {
+              foundId = a.id;
+              const midY = rect.top + rect.height / 2;
+              foundPos = currentClientY < midY ? 'before' : 'after';
+              break;
+            }
+          }
+
+          if (foundId) {
+            setDragOverId(foundId);
+            setDragPosition(foundPos);
+          }
+        };
+
+        const handlePointerUp = (upEv) => {
+          if (!touchStateRef.current || touchStateRef.current.pointerId !== upEv.pointerId) return;
+
+          window.removeEventListener('pointermove', handlePointerMove);
+          window.removeEventListener('pointerup', handlePointerUp);
+          window.removeEventListener('pointercancel', handlePointerUp);
+
+          const wasStarted = touchStateRef.current.isStarted;
+          touchStateRef.current = null;
+
+          if (wasStarted) {
+            justDraggedRef.current = true;
+            setTimeout(() => {
+              justDraggedRef.current = false;
+            }, 300);
+
+            setDraggedId(currDragged => {
+              setDragOverId(currOver => {
+                setDragPosition(currPos => {
+                  if (currDragged && currOver && currDragged !== currOver) {
+                    const fromIdx = safeAccounts.findIndex(a => a.id === currDragged);
+                    const toIdx = safeAccounts.findIndex(a => a.id === currOver);
+                    if (fromIdx !== -1 && toIdx !== -1) {
+                      const next = [...safeAccounts];
+                      const [moved] = next.splice(fromIdx, 1);
+                      const finalIdx = next.findIndex(a => a.id === currOver);
+                      const insertIdx = currPos === 'after' ? finalIdx + 1 : finalIdx;
+                      next.splice(insertIdx, 0, moved);
+
+                      if (onReorderAccounts) {
+                        onReorderAccounts(next);
+                      }
+                      if (window.VoraletHaptics?.notification) {
+                        window.VoraletHaptics.notification('success');
+                      } else if (window.VoraletHaptics?.tap) {
+                        window.VoraletHaptics.tap();
+                      }
+                    }
+                  }
+                  return null;
+                });
+                return null;
+              });
+              return null;
+            });
+            isDraggingRef.current = false;
+          }
+        };
+
+        window.addEventListener('pointermove', handlePointerMove, { passive: false });
+        window.addEventListener('pointerup', handlePointerUp);
+        window.addEventListener('pointercancel', handlePointerUp);
+      }, [safeAccounts, onReorderAccounts]);
+
+      // HTML5 Drag and Drop handlers for desktop
+      const handleHtmlDragStart = (e, accId) => {
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', accId);
+        setDraggedId(accId);
+        isDraggingRef.current = true;
+        setExpandedCardId(null);
+      };
+
+      const handleHtmlDragOver = (e, accId) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        const el = cardRefs.current[accId];
+        if (el) {
+          const rect = el.getBoundingClientRect();
+          const midY = rect.top + rect.height / 2;
+          const pos = e.clientY < midY ? 'before' : 'after';
+          setDragOverId(accId);
+          setDragPosition(pos);
+        }
+      };
+
+      const handleHtmlDrop = (e, targetAccId) => {
+        e.preventDefault();
+        const sourceAccId = e.dataTransfer.getData('text/plain') || draggedId;
+        if (sourceAccId && targetAccId && sourceAccId !== targetAccId) {
+          const fromIdx = safeAccounts.findIndex(a => a.id === sourceAccId);
+          const toIdx = safeAccounts.findIndex(a => a.id === targetAccId);
+          if (fromIdx !== -1 && toIdx !== -1) {
+            const next = [...safeAccounts];
+            const [moved] = next.splice(fromIdx, 1);
+            const finalIdx = next.findIndex(a => a.id === targetAccId);
+            const insertIdx = dragPosition === 'after' ? finalIdx + 1 : finalIdx;
+            next.splice(insertIdx, 0, moved);
+            if (onReorderAccounts) {
+              onReorderAccounts(next);
+            }
+            if (window.VoraletHaptics?.notification) {
+              window.VoraletHaptics.notification('success');
+            }
+          }
+        }
+        setDraggedId(null);
+        setDragOverId(null);
+        setDragPosition(null);
+        isDraggingRef.current = false;
+      };
+
+      const handleHtmlDragEnd = () => {
+        setDraggedId(null);
+        setDragOverId(null);
+        setDragPosition(null);
+        isDraggingRef.current = false;
+      };
 
       // Calculate total balance across all pockets
       const totalBalance = useMemo(() => {
@@ -983,7 +1194,14 @@ PART7_VIEWS = """
               <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 Daftar Kantong ({safeAccounts.length})
               </span>
-              <span className="text-[10px] text-slate-400">Ketuk kantong untuk mutasi & opsi</span>
+              {safeAccounts.length > 1 ? (
+                <span className="text-[10px] text-slate-400 flex items-center gap-1 font-medium">
+                  <Icon name="grip-vertical" className="w-3 h-3 text-sky-500" />
+                  <span>Tahan & geser untuk atur prioritas</span>
+                </span>
+              ) : (
+                <span className="text-[10px] text-slate-400">Ketuk kantong untuk mutasi & opsi</span>
+              )}
             </div>
 
             {safeAccounts.length === 0 ? (
@@ -993,9 +1211,15 @@ PART7_VIEWS = """
                 <p className="text-[11px] text-slate-400 mt-1">Tambahkan kantong pertama Anda untuk mulai mengelola dana.</p>
               </div>
             ) : (
-              safeAccounts.map((acc) => {
+              safeAccounts.map((acc, index) => {
                 const bal = Ledger.getAccountBalance(acc.id, safeAccounts, safeTransactions);
                 const isExpanded = expandedCardId === acc.id;
+                const hasAnySelected = expandedCardId !== null;
+                const isDragging = draggedId === acc.id;
+                const isDragTarget = dragOverId === acc.id && draggedId !== acc.id;
+                const showIndicatorBefore = isDragTarget && dragPosition === 'before';
+                const showIndicatorAfter = isDragTarget && dragPosition === 'after';
+
                 const normType = String(acc.type || '').toUpperCase();
                 const isCash = normType === 'CASH' || normType === 'TUNAI';
                 const isEWallet = normType.includes('WALLET') || normType === 'EWALLET';
@@ -1013,112 +1237,213 @@ PART7_VIEWS = """
                   : `•••• ${String(acc.id || '8829').replace(/\D/g, '').slice(-4) || '8829'}`;
 
                 return (
-                  <div
-                    key={acc.id}
-                    onClick={() => setExpandedCardId(isExpanded ? null : acc.id)}
-                    className="relative w-full rounded-2xl bg-[#0284C7] dark:bg-[#0369A1] p-4 text-white shadow-md select-none cursor-pointer ios-card-tap transition-transform duration-200"
-                  >
-                    {/* Top row: Type chip/badge and brand/card type icon */}
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-xl bg-white/20 border border-white/25 flex items-center justify-center text-white">
-                          <Icon name={iconName} className="w-4 h-4" />
+                  <React.Fragment key={acc.id}>
+                    {showIndicatorBefore && (
+                      <div className="ios-card-drop-indicator" />
+                    )}
+                    <div
+                      ref={el => { cardRefs.current[acc.id] = el; }}
+                      draggable={safeAccounts.length > 1}
+                      onDragStart={(e) => handleHtmlDragStart(e, acc.id)}
+                      onDragOver={(e) => handleHtmlDragOver(e, acc.id)}
+                      onDrop={(e) => handleHtmlDrop(e, acc.id)}
+                      onDragEnd={handleHtmlDragEnd}
+                      onClick={() => {
+                        if (justDraggedRef.current || isDraggingRef.current) return;
+                        if (window.VoraletHaptics) {
+                          window.VoraletHaptics.tap();
+                        }
+                        setExpandedCardId(isExpanded ? null : acc.id);
+                      }}
+                      className={`relative w-full rounded-2xl bg-[#0284C7] dark:bg-[#0369A1] p-4 text-white select-none cursor-pointer ios-card-stack-item ${
+                        isDragging
+                          ? 'is-dragging'
+                          : isDragTarget
+                          ? 'is-drag-target'
+                          : isExpanded
+                          ? 'is-lifted'
+                          : hasAnySelected
+                          ? 'is-dimmed'
+                          : 'shadow-md hover:shadow-lg'
+                      }`}
+                    >
+                      {/* Top row: Type chip/badge, priority indicator, and drag handle */}
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-xl bg-white/20 border border-white/25 flex items-center justify-center text-white">
+                            <Icon name={iconName} className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-sky-100 block">
+                                {typeLabel}
+                              </span>
+                              {index === 0 ? (
+                                <span className="px-1.5 py-0.5 rounded-full bg-amber-400 text-slate-950 text-[9px] font-extrabold tracking-wide flex items-center gap-0.5 shadow-xs">
+                                  <span>★</span>
+                                  <span>Utama</span>
+                                </span>
+                              ) : (
+                                <span className="px-1.5 py-0.2 rounded-md bg-white/15 text-sky-100 text-[9px] font-semibold">
+                                  #{index + 1}
+                                </span>
+                              )}
+                            </div>
+                            <h4 className="text-sm font-extrabold text-white truncate leading-tight">
+                              {acc.name}
+                            </h4>
+                          </div>
                         </div>
-                        <div>
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-sky-100 block">
-                            {typeLabel}
-                          </span>
-                          <h4 className="text-sm font-extrabold text-white truncate leading-tight">
-                            {acc.name}
-                          </h4>
-                        </div>
-                      </div>
 
-                      {/* Card chip indicator */}
-                      <div className="px-2 py-0.5 rounded-md bg-white/15 border border-white/20 text-[9px] font-mono font-bold tracking-wider text-sky-100">
-                        {maskedNumber}
-                      </div>
-                    </div>
-
-                    {/* Bottom row: Saldo and status */}
-                    <div className="pt-2 border-t border-white/15 flex items-end justify-between">
-                      <div>
-                        <span className="text-[9px] font-semibold uppercase tracking-wider text-sky-200/90 block mb-0.5">
-                          Saldo Tersedia
-                        </span>
-                        <div className="text-lg sm:text-xl font-black tracking-tight text-white">
-                          {hideBalance ? 'Rp ••••••••' : formatIDR(bal)}
-                        </div>
-                      </div>
-
-                      <div className="text-right">
-                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-sky-100 bg-white/15 px-2 py-0.5 rounded-lg">
-                          <span>{isExpanded ? 'Tutup Opsi' : 'Kelola'}</span>
-                          <Icon name={isExpanded ? 'chevron-up' : 'chevron-down'} className="w-3 h-3" />
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Expanded Pocket Actions & Recent Mutations */}
-                    {isExpanded && (
-                      <div className="mt-3.5 pt-3 border-t border-white/20 space-y-3 animate-ios-spring-pop text-slate-800 dark:text-slate-100" onClick={(e) => e.stopPropagation()}>
-                        {/* Quick Action Buttons */}
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (onOpenAddTx) onOpenAddTx(acc.id);
-                            }}
-                            className="flex-1 py-2 px-2 bg-white text-[#0284C7] text-[11px] font-bold rounded-xl flex items-center justify-center gap-1 shadow-xs hover:bg-sky-50 transition-colors ios-btn-tap"
-                          >
-                            <Icon name="plus" className="w-3.5 h-3.5" />
-                            <span>Catat Mutasi</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e) => handleStartEdit(acc, e)}
-                            className="py-2 px-3 bg-white/20 hover:bg-white/30 text-white text-[11px] font-bold rounded-xl flex items-center gap-1 border border-white/30 transition-colors ios-btn-tap"
-                          >
-                            <Icon name="edit" className="w-3.5 h-3.5" />
-                            <span>Edit</span>
-                          </button>
+                        {/* Right elements: Card number & Drag handle */}
+                        <div className="flex items-center gap-2">
+                          <div className="px-2 py-0.5 rounded-md bg-white/15 border border-white/20 text-[9px] font-mono font-bold tracking-wider text-sky-100">
+                            {maskedNumber}
+                          </div>
                           {safeAccounts.length > 1 && (
+                            <div
+                              role="button"
+                              tabIndex={0}
+                              title="Tahan & geser untuk mengatur urutan prioritas"
+                              aria-label={`Geser untuk atur urutan ${acc.name}`}
+                              onPointerDown={(e) => handleDragHandlePointerDown(acc.id, e)}
+                              onClick={(e) => e.stopPropagation()}
+                              className="p-1.5 -mr-1 rounded-lg text-white/70 hover:text-white hover:bg-white/20 active:bg-white/30 cursor-grab active:cursor-grabbing transition-colors touch-none select-none flex items-center justify-center"
+                              style={{ touchAction: 'none' }}
+                            >
+                              <Icon name="grip-vertical" className="w-4 h-4" />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Bottom row: Saldo and status */}
+                      <div className="pt-2 border-t border-white/15 flex items-end justify-between">
+                        <div>
+                          <span className="text-[9px] font-semibold uppercase tracking-wider text-sky-200/90 block mb-0.5">
+                            Saldo Tersedia
+                          </span>
+                          <div className="text-lg sm:text-xl font-black tracking-tight text-white">
+                            {hideBalance ? 'Rp ••••••••' : formatIDR(bal)}
+                          </div>
+                        </div>
+
+                        <div className="text-right flex items-center gap-1.5">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-sky-100 bg-white/15 px-2 py-0.5 rounded-lg">
+                            <span>{isExpanded ? 'Tutup Opsi' : 'Kelola'}</span>
+                            <Icon name={isExpanded ? 'chevron-up' : 'chevron-down'} className="w-3 h-3" />
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Expanded Pocket Actions & Recent Mutations */}
+                      {isExpanded && (
+                        <div className="mt-3.5 pt-3 border-t border-white/20 space-y-3 animate-ios-spring-pop text-slate-800 dark:text-slate-100" onClick={(e) => e.stopPropagation()}>
+                          {/* Quick Action Buttons */}
+                          <div className="flex gap-2">
                             <button
                               type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onDeleteAccount(acc.id);
+                              onClick={() => {
+                                if (onOpenAddTx) onOpenAddTx(acc.id);
                               }}
-                              className="py-2 px-2.5 bg-rose-500/80 hover:bg-rose-600 text-white text-[11px] font-bold rounded-xl flex items-center gap-1 border border-rose-400/40 transition-colors ios-btn-tap"
+                              className="flex-1 py-2 px-2 bg-white text-[#0284C7] text-[11px] font-bold rounded-xl flex items-center justify-center gap-1 shadow-xs hover:bg-sky-50 transition-colors ios-btn-tap"
                             >
-                              <Icon name="trash" className="w-3.5 h-3.5" />
+                              <Icon name="plus" className="w-3.5 h-3.5" />
+                              <span>Catat Mutasi</span>
                             </button>
-                          )}
-                        </div>
+                            <button
+                              type="button"
+                              onClick={(e) => handleStartEdit(acc, e)}
+                              className="py-2 px-3 bg-white/20 hover:bg-white/30 text-white text-[11px] font-bold rounded-xl flex items-center gap-1 border border-white/30 transition-colors ios-btn-tap"
+                            >
+                              <Icon name="edit" className="w-3.5 h-3.5" />
+                              <span>Edit</span>
+                            </button>
+                            {safeAccounts.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onDeleteAccount(acc.id);
+                                }}
+                                className="py-2 px-2.5 bg-rose-500/80 hover:bg-rose-600 text-white text-[11px] font-bold rounded-xl flex items-center gap-1 border border-rose-400/40 transition-colors ios-btn-tap"
+                              >
+                                <Icon name="trash" className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
 
-                        {/* Recent Mutations for this account */}
-                        <div className="space-y-1.5 pt-1">
-                          <p className="text-[10px] font-bold text-sky-100 uppercase tracking-wider">
-                            Mutasi Terakhir
-                          </p>
-                          {accountTxs.length === 0 ? (
-                            <p className="text-[11px] text-sky-200/80 py-1 italic">Belum ada mutasi di kantong ini.</p>
-                          ) : (
-                            accountTxs.map(tx => (
-                              <div key={tx.id} className="flex items-center justify-between py-1.5 px-2.5 rounded-xl bg-black/15 text-xs text-white">
-                                <span className="truncate max-w-[150px] font-medium text-sky-50">
-                                  {tx.notes || tx.category || 'Mutasi'}
-                                </span>
-                                <span className="font-bold text-white">
-                                  {tx.type === 'INCOME' ? '+' : '-'}{formatIDR(tx.amount)}
-                                </span>
+                          {/* Priority Reordering Controls (Quick Tap Alternative) */}
+                          {safeAccounts.length > 1 && (
+                            <div className="flex items-center justify-between py-1 px-1.5 bg-white/10 rounded-xl text-white">
+                              <div className="text-[10px] font-bold text-sky-100 uppercase tracking-wider pl-1 flex items-center gap-1">
+                                <Icon name="grip-vertical" className="w-3 h-3 text-sky-200" />
+                                <span>Prioritas: {index === 0 ? 'Akun Utama' : `Urutan #${index + 1}`}</span>
                               </div>
-                            ))
+                              <div className="flex items-center gap-1">
+                                {index > 0 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleMoveAccount(acc.id, 'top')}
+                                    className="px-2 py-1 bg-amber-400 hover:bg-amber-300 text-slate-950 text-[10px] font-black rounded-lg shadow-xs transition-colors flex items-center gap-1 ios-btn-tap"
+                                    title="Jadikan akun utama di posisi teratas"
+                                  >
+                                    <span>★ Jadikan Utama</span>
+                                  </button>
+                                )}
+                                {index > 0 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleMoveAccount(acc.id, 'up')}
+                                    className="p-1.5 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-colors ios-btn-tap"
+                                    title="Naikkan urutan"
+                                    aria-label="Naikkan urutan"
+                                  >
+                                    <Icon name="arrow-up" className="w-3 h-3" strokeWidth={2.5} />
+                                  </button>
+                                )}
+                                {index < safeAccounts.length - 1 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleMoveAccount(acc.id, 'down')}
+                                    className="p-1.5 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-colors ios-btn-tap"
+                                    title="Turunkan urutan"
+                                    aria-label="Turunkan urutan"
+                                  >
+                                    <Icon name="arrow-down" className="w-3 h-3" strokeWidth={2.5} />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
                           )}
+
+                          {/* Recent Mutations for this account */}
+                          <div className="space-y-1.5 pt-1">
+                            <p className="text-[10px] font-bold text-sky-100 uppercase tracking-wider">
+                              Mutasi Terakhir
+                            </p>
+                            {accountTxs.length === 0 ? (
+                              <p className="text-[11px] text-sky-200/80 py-1 italic">Belum ada mutasi di kantong ini.</p>
+                            ) : (
+                              accountTxs.map(tx => (
+                                <div key={tx.id} className="flex items-center justify-between py-1.5 px-2.5 rounded-xl bg-black/15 text-xs text-white">
+                                  <span className="truncate max-w-[150px] font-medium text-sky-50">
+                                    {tx.notes || tx.category || 'Mutasi'}
+                                  </span>
+                                  <span className="font-bold text-white">
+                                    {tx.type === 'INCOME' ? '+' : '-'}{formatIDR(tx.amount)}
+                                  </span>
+                                </div>
+                              ))
+                            )}
+                          </div>
                         </div>
-                      </div>
+                      )}
+                    </div>
+                    {showIndicatorAfter && (
+                      <div className="ios-card-drop-indicator" />
                     )}
-                  </div>
+                  </React.Fragment>
                 );
               })
             )}
