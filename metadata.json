@@ -1,6 +1,6 @@
 {
   "name": "Voralet",
-  "description": "Aplikasi pencatat keuangan pribadi modern v2.6.0 untuk Android dengan fitur scan struk belanja otomatis via kamera perangkat, brankas PIN lokal, pelacak hutang piutang, dan analisis pengeluaran cerdas.",
+  "description": "Aplikasi pencatat keuangan pribadi modern v2.6.0 untuk Android dengan brankas PIN lokal, multi-kantong digital, pelacak hutang piutang, dan grafik arus kas offline.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

@@ -1782,13 +1782,13 @@ PART7_VIEWS = """
 
             {/* SLIDING PILL BACKGROUND - Smooth spring when releasing, instantaneous when dragging */}
             <div
-              className={`absolute top-0 bottom-0 rounded-full bg-[#0284C7] dark:bg-[#38BDF8] shadow-sm pointer-events-none ${
+              className={`absolute top-0 bottom-0 rounded-full bg-[#0284C7] dark:bg-[#38BDF8] shadow-sm pointer-events-none will-change-transform ${
                 isDragging ? 'transition-none' : 'transition-all duration-300'
               }`}
               style={{
                 left: `${pillLeftPercent}%`,
                 width: `${pillWidthPercent}%`,
-                transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)'
+                transitionTimingFunction: 'cubic-bezier(0.28, 0.84, 0.42, 1)'
               }}
             />
 
@@ -1800,7 +1800,7 @@ PART7_VIEWS = """
               style={{
                 clipPath: `inset(0 ${Math.max(0, 100 - (pillLeftPercent + pillWidthPercent))}% 0 ${pillLeftPercent}% round 9999px)`,
                 WebkitClipPath: `inset(0 ${Math.max(0, 100 - (pillLeftPercent + pillWidthPercent))}% 0 ${pillLeftPercent}% round 9999px)`,
-                transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)'
+                transitionTimingFunction: 'cubic-bezier(0.28, 0.84, 0.42, 1)'
               }}
             >
               <div className="w-full h-full flex items-center justify-around">
@@ -1811,7 +1811,7 @@ PART7_VIEWS = """
                   >
                     <Icon
                       name={t.icon}
-                      className="w-5 h-5 flex-shrink-0 aspect-square"
+                      className={`w-5 h-5 flex-shrink-0 aspect-square ${currentTab === t.id ? 'animate-ios-icon-bounce' : ''}`}
                       strokeWidth={2.4}
                     />
                   </div>

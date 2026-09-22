@@ -58,9 +58,11 @@ PART8_APP = """
         if (offsetX < -45) {
           // Revealed delete
           setOffsetX(-70);
+          if (window.VoraletHaptics) window.VoraletHaptics.tap();
         } else if (offsetX > 45) {
           // Revealed edit
           setOffsetX(70);
+          if (window.VoraletHaptics) window.VoraletHaptics.tap();
         } else {
           setOffsetX(0);
         }
@@ -128,7 +130,7 @@ PART8_APP = """
             }}
             style={{
               transform: `translate3d(${offsetX}px, 0, 0)`,
-              transition: isDragging ? 'none' : 'transform 0.25s cubic-bezier(0.32, 0.72, 0, 1)'
+              transition: isDragging ? 'none' : 'transform 0.32s cubic-bezier(0.28, 0.84, 0.42, 1)'
             }}
             className={`relative bg-white dark:bg-slate-800 flex items-center justify-between h-full px-1.5 ${!isLast ? 'ios-hairline' : ''} ios-touch-item ${
               isNewlyAdded ? 'animate-tx-highlight rounded-xl' : ''

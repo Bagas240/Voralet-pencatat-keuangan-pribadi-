@@ -209,7 +209,9 @@ HTML_HEAD = """<!DOCTYPE html>
   <style>
     :root {
       --ios-ease: cubic-bezier(0.32, 0.72, 0, 1);
-      --ios-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      --ios-spring: cubic-bezier(0.175, 0.885, 0.32, 1.25);
+      --ios-fluid: cubic-bezier(0.28, 0.84, 0.42, 1);
+      --ios-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
     }
     * {
       -webkit-tap-highlight-color: transparent;
@@ -317,37 +319,45 @@ HTML_HEAD = """<!DOCTYPE html>
       scrollbar-width: none;
     }
 
-    /* Tactile Touch Animation (Ultra-Responsive 120 FPS Physics) */
+    /* Tactile Touch Animation (Authentic Apple iOS Spring Physics 120 FPS) */
     .ios-btn-tap, .ios-touch-item {
-      transition: transform 0.12s cubic-bezier(0.2, 0, 0, 1), opacity 0.12s ease;
+      transition: transform 0.36s cubic-bezier(0.175, 0.885, 0.32, 1.25), opacity 0.22s cubic-bezier(0.32, 0.72, 0, 1);
       user-select: none;
       -webkit-user-select: none;
       will-change: transform, opacity;
       transform: translate3d(0, 0, 0);
       touch-action: manipulation;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
     }
     .ios-btn-tap:active, .ios-touch-item:active {
-      transform: translate3d(0, 0, 0) scale(0.97) !important;
-      opacity: 0.88;
+      transform: scale3d(0.955, 0.955, 1) translate3d(0, 0, 0) !important;
+      opacity: 0.82;
+      transition: transform 0.08s cubic-bezier(0.2, 0, 0, 1), opacity 0.08s ease;
     }
     .ios-card-tap {
-      transition: transform 0.12s cubic-bezier(0.2, 0, 0, 1), opacity 0.12s ease;
+      transition: transform 0.38s cubic-bezier(0.175, 0.885, 0.32, 1.2), opacity 0.25s cubic-bezier(0.32, 0.72, 0, 1), box-shadow 0.38s cubic-bezier(0.32, 0.72, 0, 1);
       user-select: none;
       -webkit-user-select: none;
-      will-change: transform, opacity;
+      will-change: transform, opacity, box-shadow;
       transform: translate3d(0, 0, 0);
       touch-action: manipulation;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
     }
     .ios-card-tap:active {
-      transform: translate3d(0, 0, 0) scale(0.98) !important;
-      opacity: 0.92;
+      transform: scale3d(0.975, 0.975, 1) translate3d(0, 0, 0) !important;
+      opacity: 0.90;
+      transition: transform 0.08s cubic-bezier(0.2, 0, 0, 1), opacity 0.08s ease;
     }
 
     /* Navigation, view transitions, and bottom sheets */
     .ios-view-transition, .animate-ios-tab-view {
-      transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+      transition: transform 0.28s cubic-bezier(0.28, 0.84, 0.42, 1), opacity 0.24s cubic-bezier(0.32, 0.72, 0, 1);
       will-change: transform, opacity;
       transform: translate3d(0, 0, 0);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
     }
 
     /* Apple Wallet Dynamic Card Stack & Motion */
@@ -569,13 +579,21 @@ HTML_HEAD = """<!DOCTYPE html>
       to { opacity: 1; }
     }
 
-    /* Keypad Button */
+    /* Keypad Button with iOS Spring Physics */
     .ios-keypad-btn {
-      transition: transform 150ms ease-out, opacity 150ms ease-out, background-color 150ms ease;
+      transition: transform 0.32s cubic-bezier(0.175, 0.885, 0.32, 1.25), opacity 0.2s ease, background-color 0.2s ease;
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+      will-change: transform, opacity;
+      transform: translate3d(0, 0, 0);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
     }
     .ios-keypad-btn:active {
-      transform: scale3d(0.92, 0.92, 1) !important;
-      opacity: 0.76;
+      transform: scale3d(0.91, 0.91, 1) translate3d(0, 0, 0) !important;
+      opacity: 0.72;
+      transition: transform 0.07s cubic-bezier(0.2, 0, 0, 1), opacity 0.07s ease;
     }
 
     /* iOS Native Modal Sheet Stacking Layer (Hardware composited, zero re-layout) */
@@ -591,18 +609,24 @@ HTML_HEAD = """<!DOCTYPE html>
     /* Ultra-Smooth Spring Pop for Dialogs & Alert Toasts */
     @keyframes iosSpringPop {
       0% {
-        transform: scale(0.92);
+        transform: scale3d(0.88, 0.88, 1) translate3d(0, 0, 0);
         opacity: 0;
       }
+      70% {
+        transform: scale3d(1.025, 1.025, 1) translate3d(0, 0, 0);
+        opacity: 1;
+      }
       100% {
-        transform: scale(1);
+        transform: scale3d(1, 1, 1) translate3d(0, 0, 0);
         opacity: 1;
       }
     }
     .animate-ios-spring-pop {
-      animation: iosSpringPop 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation: iosSpringPop 0.32s cubic-bezier(0.175, 0.885, 0.32, 1.25) forwards;
       will-change: transform, opacity;
       transform: translateZ(0);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
     }
 
     /* iOS Modal & Sheet Keyframes (Compositor-only 120 FPS GPU Physics) */
@@ -631,26 +655,26 @@ HTML_HEAD = """<!DOCTYPE html>
       100% { opacity: 0; }
     }
     .animate-ios-sheet {
-      animation: iosSheetEnter 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation: iosSheetEnter 0.34s cubic-bezier(0.28, 0.84, 0.42, 1) forwards;
       will-change: transform;
       transform: translateZ(0);
       -webkit-backface-visibility: hidden;
       backface-visibility: hidden;
     }
     .animate-ios-sheet-exit {
-      animation: iosSheetExit 0.2s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+      animation: iosSheetExit 0.24s cubic-bezier(0.32, 0.72, 0, 1) forwards;
       will-change: transform;
       transform: translateZ(0);
       -webkit-backface-visibility: hidden;
       backface-visibility: hidden;
     }
     .animate-ios-backdrop {
-      animation: iosBackdropFadeIn 0.22s ease-out forwards;
+      animation: iosBackdropFadeIn 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards;
       will-change: opacity;
       transform: translateZ(0);
     }
     .animate-ios-backdrop-exit {
-      animation: iosBackdropFadeOut 0.18s ease-in forwards;
+      animation: iosBackdropFadeOut 0.22s cubic-bezier(0.32, 0.72, 0, 1) forwards;
       will-change: opacity;
       transform: translateZ(0);
     }
@@ -659,49 +683,49 @@ HTML_HEAD = """<!DOCTYPE html>
     @keyframes iosTabSlideForward {
       0% {
         opacity: 0;
-        transform: translate3d(16px, 0, 0);
+        transform: translate3d(24px, 0, 0) scale3d(0.98, 0.98, 1);
       }
       100% {
         opacity: 1;
-        transform: translate3d(0, 0, 0);
+        transform: translate3d(0, 0, 0) scale3d(1, 1, 1);
       }
     }
     @keyframes iosTabSlideBackward {
       0% {
         opacity: 0;
-        transform: translate3d(-16px, 0, 0);
+        transform: translate3d(-24px, 0, 0) scale3d(0.98, 0.98, 1);
       }
       100% {
         opacity: 1;
-        transform: translate3d(0, 0, 0);
+        transform: translate3d(0, 0, 0) scale3d(1, 1, 1);
       }
     }
     @keyframes iosTabFadeIn {
       0% {
         opacity: 0;
-        transform: translate3d(0, 8px, 0);
+        transform: scale3d(0.98, 0.98, 1) translate3d(0, 6px, 0);
       }
       100% {
         opacity: 1;
-        transform: translate3d(0, 0, 0);
+        transform: scale3d(1, 1, 1) translate3d(0, 0, 0);
       }
     }
     .animate-ios-tab-slide-forward {
-      animation: iosTabSlideForward 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation: iosTabSlideForward 0.28s cubic-bezier(0.28, 0.84, 0.42, 1) forwards;
       will-change: transform, opacity;
       transform: translateZ(0);
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
     }
     .animate-ios-tab-slide-backward {
-      animation: iosTabSlideBackward 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation: iosTabSlideBackward 0.28s cubic-bezier(0.28, 0.84, 0.42, 1) forwards;
       will-change: transform, opacity;
       transform: translateZ(0);
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
     }
     .animate-ios-tab-view {
-      animation: iosTabFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation: iosTabFadeIn 0.28s cubic-bezier(0.28, 0.84, 0.42, 1) forwards;
       will-change: transform, opacity;
       transform: translateZ(0);
       backface-visibility: hidden;
@@ -712,15 +736,15 @@ HTML_HEAD = """<!DOCTYPE html>
     @keyframes dashboardCardEntry {
       0% {
         opacity: 0;
-        transform: translate3d(0, 8px, 0);
+        transform: translate3d(0, 14px, 0) scale3d(0.985, 0.985, 1);
       }
       100% {
         opacity: 1;
-        transform: translate3d(0, 0, 0);
+        transform: translate3d(0, 0, 0) scale3d(1, 1, 1);
       }
     }
     .animate-dashboard-card {
-      animation: dashboardCardEntry 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+      animation: dashboardCardEntry 0.32s cubic-bezier(0.28, 0.84, 0.42, 1) both;
       will-change: transform, opacity;
       transform: translateZ(0);
       backface-visibility: hidden;
@@ -742,15 +766,15 @@ HTML_HEAD = """<!DOCTYPE html>
     @keyframes txCardEntry {
       0% {
         opacity: 0;
-        transform: translate3d(0, 10px, 0);
+        transform: translate3d(0, 10px, 0) scale3d(0.99, 0.99, 1);
       }
       100% {
         opacity: 1;
-        transform: translate3d(0, 0, 0);
+        transform: translate3d(0, 0, 0) scale3d(1, 1, 1);
       }
     }
     .animate-tx-card-entry {
-      animation: txCardEntry 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+      animation: txCardEntry 0.28s cubic-bezier(0.28, 0.84, 0.42, 1) both;
       will-change: transform, opacity;
       transform: translateZ(0);
       backface-visibility: hidden;
@@ -761,26 +785,21 @@ HTML_HEAD = """<!DOCTYPE html>
       0% {
         opacity: 0;
         max-height: 0px;
-        transform: translate3d(0, -16px, 0) scale(0.97);
-        filter: blur(1.5px);
+        transform: translate3d(0, -14px, 0) scale(0.96);
       }
-      40% {
-        opacity: 0.85;
-        filter: blur(0px);
-      }
-      75% {
+      60% {
+        opacity: 0.9;
         max-height: 82px;
-        transform: translate3d(0, 1px, 0) scale(1.002);
+        transform: translate3d(0, 2px, 0) scale(1.01);
       }
       100% {
         opacity: 1;
         max-height: 82px;
         transform: translate3d(0, 0, 0) scale(1);
-        filter: none;
       }
     }
     .animate-tx-slide-in {
-      animation: txSlideIn 0.46s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation: txSlideIn 0.42s cubic-bezier(0.175, 0.885, 0.32, 1.2) forwards;
       overflow: hidden;
       will-change: transform, opacity, max-height;
     }
@@ -790,7 +809,6 @@ HTML_HEAD = """<!DOCTYPE html>
         opacity: 1;
         max-height: 82px;
         transform: translate3d(0, 0, 0) scale(1);
-        filter: none;
       }
       30% {
         opacity: 0.65;
@@ -800,7 +818,6 @@ HTML_HEAD = """<!DOCTYPE html>
         opacity: 0;
         transform: translate3d(32px, 0, 0) scale(0.94);
         max-height: 48px;
-        filter: blur(1px);
       }
       100% {
         opacity: 0;
@@ -813,7 +830,7 @@ HTML_HEAD = """<!DOCTYPE html>
       }
     }
     .animate-tx-fade-out {
-      animation: txFadeOut 0.36s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+      animation: txFadeOut 0.32s cubic-bezier(0.32, 0.72, 0, 1) forwards;
       pointer-events: none;
       overflow: hidden;
       will-change: opacity, transform, max-height;
@@ -866,21 +883,30 @@ HTML_HEAD = """<!DOCTYPE html>
       }
     }
 
-    /* iOS Spring Banner Toast */
+    /* iOS Spring Banner Toast (Dynamic Island Physics) */
     @keyframes iosToastSpringDown {
-      0% { transform: translate3d(-50%, -100%, 0) scale(0.9); opacity: 0; }
-      70% { transform: translate3d(-50%, 8px, 0) scale(1.02); opacity: 1; }
-      100% { transform: translate3d(-50%, 0, 0) scale(1); opacity: 1; }
+      0% { transform: translate3d(-50%, -100%, 0) scale3d(0.88, 0.88, 1); opacity: 0; }
+      65% { transform: translate3d(-50%, 6px, 0) scale3d(1.025, 1.025, 1); opacity: 1; }
+      85% { transform: translate3d(-50%, -2px, 0) scale3d(0.99, 0.99, 1); opacity: 1; }
+      100% { transform: translate3d(-50%, 0, 0) scale3d(1, 1, 1); opacity: 1; }
     }
     @keyframes iosToastSpringUp {
-      0% { transform: translate3d(-50%, 0, 0) scale(1); opacity: 1; }
-      100% { transform: translate3d(-50%, -100%, 0) scale(0.9); opacity: 0; }
+      0% { transform: translate3d(-50%, 0, 0) scale3d(1, 1, 1); opacity: 1; }
+      100% { transform: translate3d(-50%, -100%, 0) scale3d(0.9, 0.9, 1); opacity: 0; }
     }
     .animate-ios-toast {
-      animation: iosToastSpringDown 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      animation: iosToastSpringDown 0.44s cubic-bezier(0.175, 0.885, 0.32, 1.25) forwards;
+      will-change: transform, opacity;
+      transform: translateZ(0);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
     }
     .animate-ios-toast-exit {
-      animation: iosToastSpringUp 0.25s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+      animation: iosToastSpringUp 0.26s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+      will-change: transform, opacity;
+      transform: translateZ(0);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
     }
 
     /* Modal Backdrop & Card */
@@ -951,12 +977,31 @@ HTML_HEAD = """<!DOCTYPE html>
 
     /* Popover spring */
     @keyframes popoverSpring {
-      0% { transform: scale(0.8); opacity: 0; }
-      60% { transform: scale(1.03); opacity: 1; }
-      100% { transform: scale(1); opacity: 1; }
+      0% { transform: scale3d(0.85, 0.85, 1) translate3d(0, 0, 0); opacity: 0; }
+      65% { transform: scale3d(1.025, 1.025, 1) translate3d(0, 0, 0); opacity: 1; }
+      85% { transform: scale3d(0.99, 0.99, 1) translate3d(0, 0, 0); }
+      100% { transform: scale3d(1, 1, 1) translate3d(0, 0, 0); opacity: 1; }
     }
     .animate-popover {
-      animation: popoverSpring 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      animation: popoverSpring 0.32s cubic-bezier(0.175, 0.885, 0.32, 1.25) forwards;
+      will-change: transform, opacity;
+      transform: translateZ(0);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+
+    /* Apple SF Symbols Tap Bounce (iOS 17/18) */
+    @keyframes iosIconBounce {
+      0% { transform: scale3d(1, 1, 1); }
+      30% { transform: scale3d(0.8, 0.8, 1); }
+      60% { transform: scale3d(1.18, 1.18, 1); }
+      85% { transform: scale3d(0.95, 0.95, 1); }
+      100% { transform: scale3d(1, 1, 1); }
+    }
+    .animate-ios-icon-bounce {
+      animation: iosIconBounce 0.42s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+      will-change: transform;
+      transform: translateZ(0);
     }
 
     /* Shake animation */
@@ -973,24 +1018,25 @@ HTML_HEAD = """<!DOCTYPE html>
     /* iOS PIN Pop and Spring Animations */
     @keyframes iosPinPop {
       0% {
-        transform: scale(0.45);
+        transform: scale3d(0.45, 0.45, 1);
         opacity: 0.4;
       }
       50% {
-        transform: scale(1.35);
+        transform: scale3d(1.3, 1.3, 1);
         opacity: 1;
       }
       75% {
-        transform: scale(0.92);
+        transform: scale3d(0.94, 0.94, 1);
       }
       100% {
-        transform: scale(1);
+        transform: scale3d(1, 1, 1);
         opacity: 1;
       }
     }
     .animate-ios-pin-pop {
-      animation: iosPinPop 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      animation: iosPinPop 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.25) forwards;
       will-change: transform, opacity;
+      transform: translateZ(0);
     }
 
     @keyframes iosPinShake {

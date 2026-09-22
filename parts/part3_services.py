@@ -49,8 +49,7 @@ PART3_SERVICES = """
       THEME: 'voralet_theme',
       AVATAR: 'voralet_avatar',
       CUSTOM_CATEGORIES: 'voralet_custom_categories',
-      TUTORIAL_COMPLETED: 'voralet_tutorial_completed',
-      GEMINI_API_KEY: 'voralet_gemini_api_key'
+      TUTORIAL_COMPLETED: 'voralet_tutorial_completed'
     };
 
     // =========================================================================
@@ -686,19 +685,6 @@ PART3_SERVICES = """
       setTutorialCompleted: (val) => {
         SafeStorage.setItem(STORAGE_KEYS.TUTORIAL_COMPLETED, val ? 'true' : 'false');
       },
-      getGeminiApiKey: () => {
-        try {
-          if (typeof window !== 'undefined' && window.AndroidBridge && typeof window.AndroidBridge.getGeminiApiKey === 'function') {
-            const nativeKey = window.AndroidBridge.getGeminiApiKey();
-            if (nativeKey && nativeKey.trim()) return nativeKey.trim();
-          }
-        } catch (e) {}
-        return SafeStorage.getItem(STORAGE_KEYS.GEMINI_API_KEY) || '';
-      },
-      setGeminiApiKey: (val) => {
-        if (val) SafeStorage.setItem(STORAGE_KEYS.GEMINI_API_KEY, val.trim());
-        else SafeStorage.removeItem(STORAGE_KEYS.GEMINI_API_KEY);
-      },
       clearAll: () => {
         Object.values(STORAGE_KEYS).forEach(k => SafeStorage.removeItem(k));
       }
@@ -997,12 +983,13 @@ PART3_SERVICES = """
       const widthPct = options.length > 0 ? 100 / options.length : 100;
       return (
         <div className={`relative p-1 bg-slate-100 dark:bg-slate-900 rounded-2xl flex items-center select-none ${className}`}>
-          {/* Sliding pill background */}
+          {/* Sliding pill background (hardware composited GPU transform) */}
           <div
-            className="absolute top-1 bottom-1 rounded-xl bg-white dark:bg-slate-800 shadow-sm border border-slate-200/50 dark:border-slate-700/60 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
+            className="absolute top-1 bottom-1 rounded-xl bg-white dark:bg-slate-800 shadow-sm border border-slate-200/50 dark:border-slate-700/60 transition-transform duration-300 ease-[cubic-bezier(0.28,0.84,0.42,1)] will-change-transform pointer-events-none"
             style={{
               width: `calc(${widthPct}% - 4px)`,
-              left: `calc(${activeIndex * widthPct}% + 2px)`
+              left: '2px',
+              transform: `translate3d(${activeIndex * 100}%, 0, 0)`
             }}
           />
           {options.map((opt) => {
@@ -1011,13 +998,18 @@ PART3_SERVICES = """
               <button
                 key={opt.value}
                 type="button"
-                onClick={() => onChange(opt.value)}
+                onClick={() => {
+                  if (opt.value !== value) {
+                    if (window.VoraletHaptics) window.VoraletHaptics.tap();
+                    onChange(opt.value);
+                  }
+                }}
                 className={`relative z-10 flex-1 py-2 text-center text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors duration-200 ios-btn-tap ${
                   isSelected ? 'text-slate-900 dark:text-white font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'
                 }`}
               >
                 {opt.icon && (
-                  <Icon name={opt.icon} className={`w-3.5 h-3.5 ${opt.iconColor || ''}`} strokeWidth={2.4} />
+                  <Icon name={opt.icon} className={`w-3.5 h-3.5 ${opt.iconColor || ''} ${isSelected ? 'animate-ios-icon-bounce' : ''}`} strokeWidth={2.4} />
                 )}
                 <span>{opt.label}</span>
               </button>

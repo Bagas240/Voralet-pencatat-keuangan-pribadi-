@@ -13,6 +13,25 @@ import android.webkit.WebView
  */
 object VoraletWebViewConfig {
 
+    val isEmulator: Boolean by lazy {
+        (Build.FINGERPRINT.startsWith("generic")
+                || Build.FINGERPRINT.startsWith("unknown")
+                || Build.MODEL.contains("google_sdk")
+                || Build.MODEL.contains("Emulator")
+                || Build.MODEL.contains("Android SDK built for x86")
+                || Build.MANUFACTURER.contains("Genymotion")
+                || Build.HARDWARE.contains("goldfish")
+                || Build.HARDWARE.contains("ranchu")
+                || Build.PRODUCT.contains("sdk_gphone")
+                || Build.PRODUCT.contains("sdk_google")
+                || Build.PRODUCT.contains("google_sdk")
+                || Build.PRODUCT.contains("sdk")
+                || Build.PRODUCT.contains("sdk_x86")
+                || Build.PRODUCT.contains("vbox86p")
+                || Build.PRODUCT.contains("emulator")
+                || Build.PRODUCT.contains("simulator"))
+    }
+
     @Suppress("DEPRECATION")
     @SuppressLint("SetJavaScriptEnabled")
     fun applySettings(
@@ -30,8 +49,14 @@ object VoraletWebViewConfig {
             isHorizontalScrollBarEnabled = false
             isNestedScrollingEnabled = false
 
-            // Explicit GPU hardware acceleration layer for 120 FPS high refresh rate rendering
-            setLayerType(View.LAYER_TYPE_HARDWARE, null)
+            // On virtual emulator environments (headless Mesa Gallium/Virgl without DRM rendernodes),
+            // use LAYER_TYPE_SOFTWARE to prevent Mesa from failing to open /dev/dri/renderD*
+            // On real physical hardware devices, use LAYER_TYPE_NONE for full native GPU acceleration
+            if (isEmulator) {
+                setLayerType(View.LAYER_TYPE_SOFTWARE, null)
+            } else {
+                setLayerType(View.LAYER_TYPE_NONE, null)
+            }
 
             settings.apply {
                 javaScriptEnabled = true
@@ -59,8 +84,10 @@ object VoraletWebViewConfig {
                 setSupportMultipleWindows(false)
                 textZoom = 100 // Maintain precise layout geometry
 
-                // Pre-rasterize offscreen layers so bottom sheets, tabs, and list scrolling are instantaneous
-                setOffscreenPreRaster(true)
+                // Pre-rasterize offscreen layers only on real devices to avoid extra EGL contexts on emulator
+                if (!isEmulator) {
+                    setOffscreenPreRaster(true)
+                }
             }
         }
     }

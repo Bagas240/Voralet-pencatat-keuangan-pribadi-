@@ -646,11 +646,15 @@ PART2_ICONS = """
       const handleTouchMove = (e) => {
         if (!isDragging.current || !e.touches || e.touches.length === 0) return;
         const delta = e.touches[0].clientY - startY.current;
+        const card = (handleRef.current && handleRef.current.closest) ? handleRef.current.closest('.ios-modal-card') : null;
+        if (!card) return;
+
         if (delta > 0) {
-          const card = (handleRef.current && handleRef.current.closest) ? handleRef.current.closest('.ios-modal-card') : null;
-          if (card) {
-            card.style.transform = `translate3d(0, ${delta}px, 0)`;
-          }
+          card.style.transform = `translate3d(0, ${delta}px, 0)`;
+        } else {
+          // iOS rubber-band physics when pulling upwards
+          const damp = -Math.pow(-delta, 0.72) * 1.4;
+          card.style.transform = `translate3d(0, ${damp}px, 0)`;
         }
       };
 
@@ -662,17 +666,19 @@ PART2_ICONS = """
         const delta = endY - startY.current;
 
         if (card) {
-          if (delta > 70) {
-            card.style.transition = 'transform 0.22s cubic-bezier(0.32, 0.72, 0, 1)';
+          if (delta > 80) {
+            card.style.transition = 'transform 0.28s cubic-bezier(0.32, 0.72, 0, 1)';
             card.style.transform = 'translate3d(0, 100%, 0)';
+            if (window.VoraletHaptics) window.VoraletHaptics.tap();
             setTimeout(() => {
               if (typeof onDismiss === 'function') onDismiss();
-            }, 200);
+            }, 240);
           } else {
-            card.style.transition = 'transform 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+            // Authentic iOS spring snap-back
+            card.style.transition = 'transform 0.38s cubic-bezier(0.175, 0.885, 0.32, 1.25)';
             card.style.transform = 'translate3d(0, 0, 0)';
           }
-        } else if (delta > 70) {
+        } else if (delta > 80) {
           if (typeof onDismiss === 'function') onDismiss();
         }
       };

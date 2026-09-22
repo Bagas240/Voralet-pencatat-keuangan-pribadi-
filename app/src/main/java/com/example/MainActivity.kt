@@ -86,14 +86,8 @@ class MainActivity : ComponentActivity() {
         WebView.setWebContentsDebuggingEnabled(false)
         enableEdgeToEdge()
 
-        // Explicit Window-level Hardware Acceleration for Butter-Smooth 120 FPS
-        window.setFlags(
-            WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
-            WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED
-        )
-
-        // Lock / prioritize High Refresh Rate (90Hz / 120Hz) on devices like Infinix Hot 60 Pro
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        // Lock / prioritize High Refresh Rate (90Hz / 120Hz) on physical devices (e.g. Infinix, Samsung, Xiaomi)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !VoraletWebViewConfig.isEmulator) {
             window.decorView.post {
                 try {
                     val currentDisplay = display

@@ -542,19 +542,29 @@ PART6_MODALS = """
 
       return (
         <div
-          onClick={onSelect}
-          className="w-full relative select-none mb-3"
+          onClick={(e) => {
+            if (onSelect) onSelect(e);
+          }}
+          className="w-full relative select-none mb-2.5"
         >
-          {/* Main Flat Card Container - Solid Blue (#0284C7), No Gradient */}
+          {/* Main Card Container - Apple Wallet Pass with Dynamic Elevation */}
           <div
-            className={`w-full rounded-2xl bg-[#0284C7] dark:bg-[#0369A1] text-white border ${
-              isSelected ? 'border-sky-300 ring-2 ring-sky-400/50 shadow-md' : 'border-transparent shadow-xs'
-            } transition-all duration-300 ease-out cursor-pointer p-4 ios-card-tap`}
+            className={`w-full rounded-[22px] bg-[#0284C7] dark:bg-[#0369A1] text-white border ${
+              isSelected ? 'border-sky-300 ring-2 ring-sky-400/50' : 'border-white/20'
+            } transition-all duration-300 ease-out cursor-pointer p-4 ios-card-tap relative overflow-hidden`}
+            style={{
+              boxShadow: isSelected
+                ? '0 22px 42px -10px rgba(2, 132, 199, 0.45), 0 8px 18px -4px rgba(0, 0, 0, 0.25), inset 0 1px 2px rgba(255, 255, 255, 0.35)'
+                : '0 8px 22px -4px rgba(0, 0, 0, 0.22), 0 2px 6px -1px rgba(0, 0, 0, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.25)',
+            }}
           >
+            {/* Top Hairline Gloss Accent (iOS Wallet Glass Edge) */}
+            <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-white/35 to-transparent pointer-events-none" />
+
             {/* TOP BAR / ALWAYS VISIBLE HEADER */}
             <div className="relative z-10 flex items-center justify-between gap-3 mb-3">
               <div className="flex items-center gap-2.5 min-w-0 pr-1">
-                <div className="w-8 h-8 rounded-xl bg-white/20 border border-white/25 flex items-center justify-center shrink-0 text-white">
+                <div className="w-8 h-8 rounded-xl bg-white/20 border border-white/25 flex items-center justify-center shrink-0 text-white shadow-xs">
                   {renderCardIcon()}
                 </div>
                 <div className="min-w-0">
@@ -568,7 +578,7 @@ PART6_MODALS = """
                       </span>
                     )}
                   </div>
-                  <span className="text-[10px] text-sky-100 block">
+                  <span className="text-[10px] text-sky-100 block font-medium">
                     {typeLabel}
                   </span>
                 </div>
@@ -584,12 +594,14 @@ PART6_MODALS = """
             <div className="relative z-10 pt-2 border-t border-white/15 flex items-end justify-between">
               <div>
                 <span className="text-[9px] font-medium uppercase tracking-wider text-sky-200 block mb-0.5">Saldo</span>
-                <div className="font-black text-sm sm:text-base text-white">
+                <div className="font-black text-sm sm:text-base text-white tracking-tight">
                   {hideBalance ? 'Rp ••••••••' : formatIDR(balance)}
                 </div>
               </div>
-              <span className="text-[10px] text-sky-100 font-semibold bg-white/15 px-2 py-0.5 rounded-lg">
-                {isSelected ? 'Terpilih' : 'Ketuk opsi'}
+              <span className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full transition-all ${
+                isSelected ? 'bg-white text-[#0284C7] shadow-xs' : 'bg-white/15 text-sky-100'
+              }`}>
+                {isSelected ? '✓ Terpilih' : 'Ketuk opsi'}
               </span>
             </div>
 
@@ -607,7 +619,7 @@ PART6_MODALS = """
 
           {/* EXPANDED ACTION DOCK (Catat Mutasi, Edit Kartu, Hapus) */}
           {isSelected && (
-            <div className="mt-3 p-3 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 shadow-lg animate-ios-spring-pop">
+            <div className="mt-2.5 p-3 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 shadow-xl animate-ios-spring-pop">
               <div className="grid grid-cols-3 gap-2">
                 <button
                   type="button"
@@ -710,6 +722,13 @@ PART6_MODALS = """
       };
 
       const handleCardSelect = (accId) => {
+        try {
+          if (window.VoraletHaptics && typeof window.VoraletHaptics.tap === 'function') {
+            window.VoraletHaptics.tap();
+          } else if (typeof HapticFeedback !== 'undefined' && HapticFeedback.selection) {
+            HapticFeedback.selection();
+          }
+        } catch (e) {}
         setSelectedId(prev => (prev === accId ? null : accId));
       };
 
@@ -772,12 +791,12 @@ PART6_MODALS = """
         setIsAdding(false);
       };
 
-      // Stack container dynamic height for smooth Apple Wallet layout
+      // Dynamic Apple Wallet Stack Height calculation
       const selectedIndex = safeAccounts.findIndex(a => a.id === selectedId);
       const isAnySelected = selectedIndex !== -1;
       const stackHeight = isAnySelected
-        ? 290 + Math.max(0, safeAccounts.length - 1) * 60 + 50
-        : Math.max(0, safeAccounts.length - 1) * 62 + 95;
+        ? ((selectedIndex > 0 ? (selectedIndex * 24 + 14) : 0) + 230 + Math.max(0, safeAccounts.length - 1 - selectedIndex) * 36 + 45)
+        : (Math.max(0, safeAccounts.length - 1) * 62 + 155);
 
       return (
         <div
@@ -880,42 +899,61 @@ PART6_MODALS = """
                       </div>
                     ) : (
                       <div
-                        style={{ minHeight: `${stackHeight}px` }}
-                        className="relative w-full transition-all duration-300"
+                        style={{
+                          minHeight: `${stackHeight}px`,
+                          transition: 'min-height 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.15)'
+                        }}
+                        className="relative w-full"
                       >
                         {safeAccounts.map((acc, idx) => {
                           const bal = Ledger.getAccountBalance(acc.id, safeAccounts, safeTransactions);
                           const isSelected = selectedId === acc.id;
 
-                          // Non-selected cards positioning when a card is opened
+                          // Dynamic Apple Wallet stacking physics
                           let shiftY = idx * 62;
-                          let shiftScale = 1 - (safeAccounts.length - 1 - idx) * 0.015;
+                          let shiftScale = 1 - (safeAccounts.length - 1 - idx) * 0.012;
                           let shiftOpacity = 1;
+                          let shiftFilter = 'none';
                           let shiftZ = 10 + idx;
 
                           if (selectedId) {
                             if (isSelected) {
-                              shiftY = 0;
-                              shiftScale = 1;
-                              shiftZ = 60;
+                              // Selected card pops forward, lifts smoothly into spotlight position
+                              shiftY = selectedIndex > 0 ? (selectedIndex * 24 + 14) : 0;
+                              shiftScale = 1.0;
+                              shiftOpacity = 1.0;
+                              shiftFilter = 'none';
+                              shiftZ = 50;
+                            } else if (idx < selectedIndex) {
+                              // Cards situated ABOVE the selected card tuck smoothly into top stacked tabs
+                              shiftY = idx * 24;
+                              shiftScale = 0.94 + idx * 0.01;
+                              shiftOpacity = 0.72;
+                              shiftFilter = 'brightness(0.92)';
+                              shiftZ = 5 + idx;
                             } else {
-                              const posBelow = idx > selectedIndex ? idx - 1 : idx;
-                              shiftY = 270 + posBelow * 58;
-                              shiftScale = 0.96;
-                              shiftOpacity = 0.88;
+                              // Cards situated BELOW the selected card slide down smoothly into bottom deck
+                              const selectedBottomY = (selectedIndex > 0 ? (selectedIndex * 24 + 14) : 0) + 230;
+                              const posBelow = idx - selectedIndex - 1;
+                              shiftY = selectedBottomY + posBelow * 36;
+                              shiftScale = 0.96 - posBelow * 0.014;
+                              shiftOpacity = 0.84;
+                              shiftFilter = 'brightness(0.95)';
+                              shiftZ = 20 + idx;
                             }
                           }
 
                           return (
                             <div
                               key={acc.id}
-                              onClick={() => handleCardSelect(acc.id)}
                               style={{
-                                transform: `translate3d(0, ${shiftY}px, 0) scale(${shiftScale})`,
+                                transform: `translate3d(0, ${shiftY}px, 0) scale3d(${shiftScale}, ${shiftScale}, 1)`,
                                 zIndex: shiftZ,
                                 opacity: shiftOpacity,
-                                transition: 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.15), opacity 0.35s ease, box-shadow 0.35s ease',
+                                filter: shiftFilter,
+                                transition: 'transform 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.15), opacity 0.32s cubic-bezier(0.25, 1, 0.5, 1), filter 0.32s ease, box-shadow 0.4s ease',
                                 transformOrigin: 'top center',
+                                willChange: 'transform, opacity, filter',
                               }}
                               className="absolute top-0 inset-x-0 cursor-pointer select-none"
                             >
