@@ -1038,6 +1038,7 @@ PART8_APP = """
       const [isDebtModalOpen, setIsDebtModalOpen] = useState(false);
       const [isDevModalOpen, setIsDevModalOpen] = useState(false);
       const [isCsvImportModalOpen, setIsCsvImportModalOpen] = useState(false);
+      const [isMonthlyPdfModalOpen, setIsMonthlyPdfModalOpen] = useState(false);
       const [isTutorialOpen, setIsTutorialOpen] = useState(false);
 
       // Auto-trigger tutorial on first run once unlocked
@@ -1424,10 +1425,12 @@ PART8_APP = """
         showToast('Target impian dihapus');
       }, []);
 
-      const handleDepositGoal = useCallback((goalId, amount, mode) => {
+      const handleDepositGoal = useCallback((goalId, amount, mode, accountId, customNotes) => {
+        let goalTitle = 'Kantong Impian';
         setSavingsGoals(prev => {
           const next = prev.map(g => {
             if (g.id === goalId) {
+              goalTitle = g.title || g.name || 'Kantong Impian';
               const cur = Number(g.currentAmount) || 0;
               const nextAmt = mode === 'DEPOSIT' ? cur + amount : Math.max(0, cur - amount);
               return { ...g, currentAmount: nextAmt };
@@ -1437,8 +1440,29 @@ PART8_APP = """
           StorageService.setSavingsGoals(next);
           return next;
         });
-        showToast(mode === 'DEPOSIT' ? 'Tabungan disetor' : 'Tabungan ditarik');
-      }, []);
+
+        // Record transaction into account and transactions list
+        const chosenAccountId = accountId || accounts[0]?.id;
+        if (chosenAccountId && amount > 0) {
+          const isDeposit = mode === 'DEPOSIT';
+          const defaultNote = isDeposit ? `Nabung: ${goalTitle}` : `Ambil Tabungan: ${goalTitle}`;
+          const finalNote = customNotes && customNotes.trim() ? customNotes.trim() : defaultNote;
+
+          const newTx = {
+            id: 'tx_sav_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
+            accountId: chosenAccountId,
+            type: isDeposit ? 'EXPENSE' : 'INCOME',
+            amount: amount,
+            category: 'tabungan',
+            date: new Date().toISOString().split('T')[0],
+            notes: finalNote,
+            createdAt: new Date().toISOString()
+          };
+          handleAddTransaction(newTx);
+        }
+
+        showToast(mode === 'DEPOSIT' ? 'Tabungan disetor & dicatat di mutasi' : 'Tabungan ditarik & dicatat di mutasi');
+      }, [accounts, handleAddTransaction, showToast]);
 
       // Debts
       const handleAddDebt = useCallback((debtData) => {
@@ -1463,6 +1487,74 @@ PART8_APP = """
         showToast('Catatan disimpan');
       }, [showToast]);
 
+      const handlePayDebt = useCallback((debtId, paymentData) => {
+        if (!paymentData || !paymentData.amount) return;
+        const { amount, accountId, date, notes } = paymentData;
+        let debtRecord = null;
+
+        setDebts(prev => {
+          const next = prev.map(d => {
+            if (d.id === debtId) {
+              const currentPaid = Number(d.paidAmount) || 0;
+              const newPaid = currentPaid + amount;
+              const totalAmount = Number(d.amount) || 0;
+              const isFullyPaid = newPaid >= totalAmount && totalAmount > 0;
+
+              const chosenAccount = accounts.find(a => a.id === accountId);
+              const payRecord = {
+                id: 'pay_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
+                amount: amount,
+                date: date || new Date().toISOString().split('T')[0],
+                accountId: accountId || '',
+                accountName: chosenAccount?.name || 'Kantong',
+                notes: notes || (d.type === 'HUTANG' ? `Bayar hutang ke ${d.personName}` : `Terima piutang dari ${d.personName}`)
+              };
+
+              const existingPayments = Array.isArray(d.payments) ? d.payments : [];
+
+              const updatedDebt = {
+                ...d,
+                paidAmount: newPaid,
+                isPaid: isFullyPaid,
+                status: isFullyPaid ? 'LUNAS' : 'BELUM_LUNAS',
+                payments: [payRecord, ...existingPayments]
+              };
+              debtRecord = updatedDebt;
+              return updatedDebt;
+            }
+            return d;
+          });
+          StorageService.setDebts(next);
+          return next;
+        });
+
+        // Record real transaction in transactions list
+        if (debtRecord && amount > 0) {
+          const isHutang = debtRecord.type === 'HUTANG';
+          const chosenAccountId = accountId || accounts[0]?.id;
+          if (chosenAccountId) {
+            const defaultNote = isHutang
+              ? `Bayar hutang: ${debtRecord.personName}`
+              : `Terima piutang: ${debtRecord.personName}`;
+            const finalNote = notes && notes.trim() ? notes.trim() : defaultNote;
+
+            const newTx = {
+              id: 'tx_debt_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
+              accountId: chosenAccountId,
+              type: isHutang ? 'EXPENSE' : 'INCOME',
+              amount: amount,
+              category: 'hutang',
+              date: date || new Date().toISOString().split('T')[0],
+              notes: finalNote,
+              createdAt: new Date().toISOString()
+            };
+            handleAddTransaction(newTx);
+          }
+
+          showToast(isHutang ? 'Pembayaran hutang dicatat di mutasi' : 'Penerimaan piutang dicatat di mutasi');
+        }
+      }, [accounts, handleAddTransaction, showToast]);
+
       const handleToggleDebtStatus = useCallback((debtId) => {
         setDebts(prev => {
           const next = prev.map(d => {
@@ -1472,7 +1564,8 @@ PART8_APP = """
               return {
                 ...d,
                 isPaid: newPaid,
-                status: newPaid ? 'LUNAS' : 'BELUM_LUNAS'
+                status: newPaid ? 'LUNAS' : 'BELUM_LUNAS',
+                paidAmount: newPaid ? (Number(d.amount) || 0) : 0
               };
             }
             return d;
@@ -1746,17 +1839,15 @@ PART8_APP = """
         );
       }
 
-      const isAnyModalOpen = isTxModalOpen || isAccModalOpen || isSavingsModalOpen || isSettingsModalOpen || isDebtModalOpen || isDevModalOpen;
+      const isAnyModalOpen = isTxModalOpen || isAccModalOpen || isSavingsModalOpen || isSettingsModalOpen || isDebtModalOpen || isDevModalOpen || isMonthlyPdfModalOpen || isCsvImportModalOpen;
 
       return (
         <div className={`h-[100dvh] flex flex-col ${theme === 'dark' ? 'dark bg-[#0F172A] text-[#F8FAFC]' : 'bg-slate-50 text-[#0F172A]'} overflow-hidden select-none transition-colors duration-300 ease-in-out`}>
           <ThemeCrossfadeOverlay transition={themeTransition} />
           {toastMsg && <Toast message={toastMsg} onClose={() => setToastMsg('')} />}
 
-          {/* iOS Background Depth Stacking Layer */}
-          <div className={`ios-modal-depth-layer flex-1 flex flex-col w-full h-full overflow-hidden ${
-            isAnyModalOpen ? 'ios-modal-depth-stacked' : ''
-          }`}>
+          {/* Main App Viewport */}
+          <div className="flex-1 flex flex-col w-full h-full overflow-hidden">
             <main
               onTouchStart={handleScreenTouchStart}
               onTouchEnd={handleScreenTouchEnd}
@@ -1813,7 +1904,9 @@ PART8_APP = """
               {activeTab === 'debts' && (
                 <DebtsView
                   debts={debts}
+                  accounts={accounts}
                   onAddDebt={handleAddDebt}
+                  onPayDebt={handlePayDebt}
                   onToggleStatus={handleToggleDebtStatus}
                   onDeleteDebt={handleDeleteDebt}
                   hideBalance={hideBalance}
@@ -1824,6 +1917,7 @@ PART8_APP = """
               {activeTab === 'savings' && (
                 <SavingsView
                   savingsGoals={savingsGoals}
+                  accounts={accounts}
                   onOpenNewGoal={handleOpenNewSavingsGoal}
                   onEditGoal={handleEditSavingsGoal}
                   onDeleteGoal={handleDeleteGoal}
@@ -1840,6 +1934,7 @@ PART8_APP = """
                   savingsGoals={savingsGoals}
                   hideBalance={hideBalance}
                   customCategories={customCategories}
+                  onOpenMonthlyPdfReport={() => setIsMonthlyPdfModalOpen(true)}
                 />
               )}
             </ErrorBoundary>
@@ -1898,6 +1993,7 @@ PART8_APP = """
             onDeleteCustomCategory={handleDeleteCustomCategory}
             onOpenDeveloperGate={() => setIsDevModalOpen(true)}
             onReplayTutorial={() => setIsTutorialOpen(true)}
+            onOpenMonthlyPdfReport={() => setIsMonthlyPdfModalOpen(true)}
           />
 
           <CsvImportModal
@@ -1916,6 +2012,18 @@ PART8_APP = """
             transactions={transactions}
             debts={debts}
             savingsGoals={savingsGoals}
+          />
+
+          <MonthlyPdfReportModal
+            isOpen={isMonthlyPdfModalOpen}
+            onClose={() => setIsMonthlyPdfModalOpen(false)}
+            transactions={transactions}
+            accounts={accounts}
+            debts={debts}
+            savingsGoals={savingsGoals}
+            customCategories={customCategories}
+            userProfile={memoizedUserProfile}
+            hideBalance={hideBalance}
           />
 
           <NonIntrusiveTutorialModal

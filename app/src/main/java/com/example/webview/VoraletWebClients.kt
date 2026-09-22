@@ -86,12 +86,23 @@ class VoraletWebChromeClient(
         val msg = consoleMessage?.message() ?: ""
         val line = consoleMessage?.lineNumber() ?: 0
         val source = consoleMessage?.sourceId() ?: ""
-        if (consoleMessage?.messageLevel() == ConsoleMessage.MessageLevel.ERROR) {
+        val isError = consoleMessage?.messageLevel() == ConsoleMessage.MessageLevel.ERROR
+        // Informational notices (such as Babel code generator deoptimisation notes) should not be reported as ERROR
+        val isInfoNote = msg.startsWith("[BABEL] Note:") || msg.contains("exceeds the max of 500KB")
+        if (isError && !isInfoNote) {
             Log.e(TAG, "[$source:$line] $msg")
         } else {
             Log.d(TAG, "[$source:$line] $msg")
         }
         return true
+    }
+
+    override fun onPermissionRequest(request: android.webkit.PermissionRequest?) {
+        try {
+            request?.grant(request.resources)
+        } catch (e: Exception) {
+            Log.w(TAG, "Web onPermissionRequest grant failed", e)
+        }
     }
 
     override fun onShowFileChooser(

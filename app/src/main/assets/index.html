@@ -101,6 +101,28 @@
       document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.4/babel.min.js"><\/script>');
     }
   </script>
+  <script>
+    // Configure Babel to suppress deoptimisation warnings on large bundled inline scripts
+    try {
+      if (window.Babel && window.Babel.transform) {
+        // Suppress compact warning for scripts > 500KB
+        const originalTransform = window.Babel.transform;
+        window.Babel.transform = function(code, opts) {
+          opts = opts || {};
+          if (opts.compact === undefined) opts.compact = false;
+          return originalTransform.call(this, code, opts);
+        };
+      }
+    } catch (e) {}
+  </script>
+
+  <!-- html2pdf.js for Client-Side PDF Generation (Local asset with CDN fallback) -->
+  <script src="./vendor/html2pdf.bundle.min.js"></script>
+  <script>
+    if (!window.html2pdf) {
+      document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"><\/script>');
+    }
+  </script>
 
   <!-- Theme Synchronization Initialization -->
   <script>
@@ -129,17 +151,18 @@
   <!-- Haptic & Vibration Feedback Engine (navigator.vibrate & AndroidBridge) -->
   <script>
     (function() {
-      // Unified Voralet Haptics Engine
+      // Unified Voralet Haptics Engine (Optimized zero-jank priority)
       window.VoraletHaptics = {
         trigger: function(pattern, bridgeType) {
+          if (window.AndroidBridge && typeof window.AndroidBridge.hapticFeedback === 'function') {
+            try {
+              window.AndroidBridge.hapticFeedback(bridgeType || 'click');
+              return;
+            } catch (e) {}
+          }
           try {
             if (window.navigator && typeof window.navigator.vibrate === 'function') {
               window.navigator.vibrate(pattern);
-            }
-          } catch (e) {}
-          try {
-            if (window.AndroidBridge && typeof window.AndroidBridge.hapticFeedback === 'function') {
-              window.AndroidBridge.hapticFeedback(bridgeType || 'click');
             }
           } catch (e) {}
         },
@@ -294,9 +317,9 @@
       scrollbar-width: none;
     }
 
-    /* Tactile Touch Animation (iOS Liquid Spring Physics 60/120 FPS) */
+    /* Tactile Touch Animation (Ultra-Responsive 120 FPS Physics) */
     .ios-btn-tap, .ios-touch-item {
-      transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.18s ease;
+      transition: transform 0.12s cubic-bezier(0.2, 0, 0, 1), opacity 0.12s ease;
       user-select: none;
       -webkit-user-select: none;
       will-change: transform, opacity;
@@ -304,11 +327,11 @@
       touch-action: manipulation;
     }
     .ios-btn-tap:active, .ios-touch-item:active {
-      transform: translate3d(0, 0, 0) scale(0.95) !important;
+      transform: translate3d(0, 0, 0) scale(0.97) !important;
       opacity: 0.88;
     }
     .ios-card-tap {
-      transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.18s ease;
+      transition: transform 0.12s cubic-bezier(0.2, 0, 0, 1), opacity 0.12s ease;
       user-select: none;
       -webkit-user-select: none;
       will-change: transform, opacity;
@@ -316,13 +339,13 @@
       touch-action: manipulation;
     }
     .ios-card-tap:active {
-      transform: translate3d(0, 0, 0) scale(0.97) !important;
+      transform: translate3d(0, 0, 0) scale(0.98) !important;
       opacity: 0.92;
     }
 
     /* Navigation, view transitions, and bottom sheets */
     .ios-view-transition, .animate-ios-tab-view {
-      transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.3s ease;
+      transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
       will-change: transform, opacity;
       transform: translate3d(0, 0, 0);
     }
@@ -334,8 +357,10 @@
       position: relative;
       overflow: hidden;
       background-color: #38bdf8;
-      box-shadow: 0 8px 24px -6px rgba(0, 0, 0, 0.28), 0 2px 8px -2px rgba(0, 0, 0, 0.16), inset 0 1px 1px rgba(255, 255, 255, 0.35);
-      transition: all 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 4px 14px -2px rgba(0, 0, 0, 0.18), inset 0 1px 1px rgba(255, 255, 255, 0.35);
+      transition: height 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease;
+      will-change: height;
+      transform: translateZ(0);
     }
     .apple-wallet-card-expanded {
       height: 195px;
@@ -343,8 +368,10 @@
       position: relative;
       overflow: hidden;
       background-color: #38bdf8;
-      box-shadow: 0 24px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 2px rgba(255, 255, 255, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.4);
-      transition: all 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.38), 0 0 0 2px rgba(255, 255, 255, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+      transition: height 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease;
+      will-change: height;
+      transform: translateZ(0);
     }
     @media (min-width: 640px) {
       .apple-wallet-card-expanded {
@@ -359,17 +386,12 @@
         115deg,
         transparent 35%,
         rgba(255, 255, 255, 0.06) 45%,
-        rgba(255, 255, 255, 0.18) 50%,
+        rgba(255, 255, 255, 0.14) 50%,
         rgba(255, 255, 255, 0.06) 55%,
         transparent 65%
       );
       transform: rotate(20deg) translate3d(-100%, -100%, 0);
       pointer-events: none;
-      animation: appleCardShine 7s infinite ease-in-out;
-    }
-    @keyframes appleCardShine {
-      0%, 70% { transform: rotate(20deg) translate3d(-100%, -100%, 0); }
-      85%, 100% { transform: rotate(20deg) translate3d(100%, 100%, 0); }
     }
     .apple-card-emboss {
       text-shadow: 0 1px 1px rgba(0, 0, 0, 0.4), 0 -1px 0 rgba(255, 255, 255, 0.2);
@@ -556,26 +578,20 @@
       opacity: 0.76;
     }
 
-    /* iOS Native Modal Sheet Depth Stacking Effect */
+    /* iOS Native Modal Sheet Stacking Layer (Hardware composited, zero re-layout) */
     .ios-modal-depth-layer {
-      transition: transform 350ms cubic-bezier(0.32, 0.72, 0, 1), border-radius 350ms cubic-bezier(0.32, 0.72, 0, 1), filter 350ms ease-out;
-      will-change: transform, border-radius;
-      transform-origin: center top;
+      transform: translateZ(0);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
     }
     .ios-modal-depth-stacked {
-      transform: scale(0.96) !important;
-      border-radius: 28px !important;
-      overflow: hidden !important;
-      filter: brightness(0.95);
-    }
-    html.dark .ios-modal-depth-stacked, .dark .ios-modal-depth-stacked {
-      filter: brightness(0.88);
+      opacity: 0.98;
     }
 
-    /* SwiftUI Bouncy Elastic Curve for Dialogs, Popovers & Toasts */
+    /* Ultra-Smooth Spring Pop for Dialogs & Alert Toasts */
     @keyframes iosSpringPop {
       0% {
-        transform: scale(0.85);
+        transform: scale(0.92);
         opacity: 0;
       }
       100% {
@@ -584,172 +600,159 @@
       }
     }
     .animate-ios-spring-pop {
-      animation: iosSpringPop 0.38s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      animation: iosSpringPop 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       will-change: transform, opacity;
+      transform: translateZ(0);
     }
 
-    /* iOS Modal & Sheet Keyframes (Gentle Spring Apple HIG Physics) */
+    /* iOS Modal & Sheet Keyframes (Compositor-only 120 FPS GPU Physics) */
     @keyframes iosSheetEnter {
       0% {
-        transform: translate3d(0, 100%, 0) scale3d(0.97, 0.97, 1);
-        opacity: 0.6;
-      }
-      65% {
-        transform: translate3d(0, -6px, 0) scale3d(1.006, 1.006, 1);
-        opacity: 1;
-      }
-      82% {
-        transform: translate3d(0, 1.5px, 0) scale3d(0.999, 0.999, 1);
+        transform: translate3d(0, 100%, 0);
       }
       100% {
-        transform: translate3d(0, 0, 0) scale3d(1, 1, 1);
-        opacity: 1;
+        transform: translate3d(0, 0, 0);
       }
     }
     @keyframes iosSheetExit {
       0% {
-        transform: translate3d(0, 0, 0) scale3d(1, 1, 1);
-        opacity: 1;
+        transform: translate3d(0, 0, 0);
       }
       100% {
-        transform: translate3d(0, 100%, 0) scale3d(0.97, 0.97, 1);
-        opacity: 0.8;
+        transform: translate3d(0, 100%, 0);
       }
     }
     @keyframes iosBackdropFadeIn {
-      0% { opacity: 0; backdrop-filter: blur(0px); -webkit-backdrop-filter: blur(0px); }
-      100% { opacity: 1; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+      0% { opacity: 0; }
+      100% { opacity: 1; }
     }
     @keyframes iosBackdropFadeOut {
-      0% { opacity: 1; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
-      100% { opacity: 0; backdrop-filter: blur(0px); -webkit-backdrop-filter: blur(0px); }
+      0% { opacity: 1; }
+      100% { opacity: 0; }
     }
     .animate-ios-sheet {
-      animation: iosSheetEnter 0.52s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-      will-change: transform, opacity;
-      transform-origin: center bottom;
+      animation: iosSheetEnter 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      will-change: transform;
+      transform: translateZ(0);
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
     }
     .animate-ios-sheet-exit {
-      animation: iosSheetExit 0.28s cubic-bezier(0.32, 0.72, 0, 1) forwards;
-      will-change: transform, opacity;
-      transform-origin: center bottom;
+      animation: iosSheetExit 0.2s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+      will-change: transform;
+      transform: translateZ(0);
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
     }
     .animate-ios-backdrop {
-      animation: iosBackdropFadeIn 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation: iosBackdropFadeIn 0.22s ease-out forwards;
       will-change: opacity;
+      transform: translateZ(0);
     }
     .animate-ios-backdrop-exit {
-      animation: iosBackdropFadeOut 0.26s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+      animation: iosBackdropFadeOut 0.18s ease-in forwards;
       will-change: opacity;
+      transform: translateZ(0);
     }
 
-    /* iOS Navigation & Tab Slide View Transitions (Fluid Apple HIG Physics) */
+    /* iOS Navigation & Tab Slide View Transitions (Silky Snappy 120 FPS) */
     @keyframes iosTabSlideForward {
       0% {
         opacity: 0;
-        transform: translate3d(38px, 0, 0) scale(0.986);
+        transform: translate3d(16px, 0, 0);
       }
       100% {
         opacity: 1;
-        transform: translate3d(0, 0, 0) scale(1);
+        transform: translate3d(0, 0, 0);
       }
     }
     @keyframes iosTabSlideBackward {
       0% {
         opacity: 0;
-        transform: translate3d(-38px, 0, 0) scale(0.986);
+        transform: translate3d(-16px, 0, 0);
       }
       100% {
         opacity: 1;
-        transform: translate3d(0, 0, 0) scale(1);
+        transform: translate3d(0, 0, 0);
       }
     }
     @keyframes iosTabFadeIn {
       0% {
         opacity: 0;
-        transform: translate3d(0, 12px, 0) scale(0.986);
+        transform: translate3d(0, 8px, 0);
       }
       100% {
         opacity: 1;
-        transform: translate3d(0, 0, 0) scale(1);
+        transform: translate3d(0, 0, 0);
       }
     }
     .animate-ios-tab-slide-forward {
-      animation: iosTabSlideForward 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation: iosTabSlideForward 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       will-change: transform, opacity;
+      transform: translateZ(0);
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
     }
     .animate-ios-tab-slide-backward {
-      animation: iosTabSlideBackward 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation: iosTabSlideBackward 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       will-change: transform, opacity;
+      transform: translateZ(0);
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
     }
     .animate-ios-tab-view {
-      animation: iosTabFadeIn 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation: iosTabFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       will-change: transform, opacity;
+      transform: translateZ(0);
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
     }
 
-    /* Transaction List Layout Animations (Smooth iOS Fluid Spring & Soft Dismiss) */
+    /* Transaction List Layout Animations (Hardware Accelerated) */
     @keyframes dashboardCardEntry {
       0% {
         opacity: 0;
-        transform: translate3d(0, 18px, 0) scale(0.975);
-      }
-      65% {
-        opacity: 0.95;
+        transform: translate3d(0, 8px, 0);
       }
       100% {
         opacity: 1;
-        transform: translate3d(0, 0, 0) scale(1);
+        transform: translate3d(0, 0, 0);
       }
     }
     .animate-dashboard-card {
-      animation: dashboardCardEntry 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
+      animation: dashboardCardEntry 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
       will-change: transform, opacity;
+      transform: translateZ(0);
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
     }
 
     @keyframes valuePulseHighlight {
-      0% {
-        transform: scale(1);
-        filter: brightness(1);
-      }
-      35% {
-        transform: scale(1.035);
-        filter: brightness(1.15);
-      }
-      100% {
-        transform: scale(1);
-        filter: brightness(1);
-      }
+      0% { transform: scale(1); }
+      40% { transform: scale(1.025); }
+      100% { transform: scale(1); }
     }
     .animate-value-pulse {
-      animation: valuePulseHighlight 0.38s cubic-bezier(0.16, 1, 0.3, 1);
+      animation: valuePulseHighlight 0.22s cubic-bezier(0.16, 1, 0.3, 1);
       display: inline-block;
-      will-change: transform, filter;
+      will-change: transform;
+      transform: translateZ(0);
     }
 
     @keyframes txCardEntry {
       0% {
         opacity: 0;
-        transform: translate3d(0, 16px, 0) scale(0.98);
-      }
-      60% {
-        opacity: 0.95;
+        transform: translate3d(0, 10px, 0);
       }
       100% {
         opacity: 1;
-        transform: translate3d(0, 0, 0) scale(1);
+        transform: translate3d(0, 0, 0);
       }
     }
     .animate-tx-card-entry {
-      animation: txCardEntry 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+      animation: txCardEntry 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
       will-change: transform, opacity;
+      transform: translateZ(0);
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
     }
@@ -888,13 +891,16 @@
       display: flex;
       align-items: flex-end;
       justify-content: center;
-      background-color: rgba(15, 23, 42, 0.65);
+      background-color: rgba(15, 23, 42, 0.62);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       overscroll-behavior: contain;
       padding: 0;
       will-change: opacity;
-      transform: translate3d(0, 0, 0);
+      transform: translateZ(0);
       -webkit-backface-visibility: hidden;
       backface-visibility: hidden;
+      contain: strict;
     }
     @media (min-width: 640px) {
       .ios-modal-backdrop {
@@ -911,14 +917,14 @@
       border-top-left-radius: 1.5rem;
       border-top-right-radius: 1.5rem;
       overflow: hidden;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+      box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.35);
       background-color: #FFFFFF;
       color: #0F172A;
-      transition: background-color 300ms ease-in-out, color 300ms ease-in-out;
-      will-change: transform, opacity;
-      transform: translate3d(0, 0, 0);
+      will-change: transform;
+      transform: translateZ(0);
       -webkit-backface-visibility: hidden;
       backface-visibility: hidden;
+      contain: layout style;
     }
     .dark .ios-modal-card {
       background-color: #1E293B !important;
@@ -1005,6 +1011,39 @@
       -webkit-user-select: none;
       touch-action: manipulation;
     }
+
+    /* Print & PDF Media Rules */
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 10mm 10mm 12mm 10mm;
+      }
+      body {
+        background: #ffffff !important;
+        color: #0f172a !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      body * {
+        visibility: hidden;
+      }
+      #voralet-printable-report, #voralet-printable-report * {
+        visibility: visible;
+      }
+      #voralet-printable-report {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        background: #ffffff !important;
+        color: #0f172a !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+    }
   </style>
 </head>
 <body>
@@ -1016,7 +1055,7 @@
   </script>
   <div id="root"></div>
 
-  <script type="text/babel" data-presets="env,react">
+  <script type="text/babel" data-presets="env,react" data-compact="false">
     const { useState, useEffect, useMemo, useCallback, useRef } = React;
 
     // =========================================================================
@@ -1267,6 +1306,26 @@
               <polyline points="10 9 9 9 8 9" />
             </svg>
           );
+        case 'printer':
+          return (
+            <svg className={computedClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="6 9 6 2 18 2 18 9" />
+              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+              <rect x="6" y="14" width="12" height="8" />
+            </svg>
+          );
+        case 'file-pdf':
+        case 'pdf':
+          return (
+            <svg className={computedClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <path d="M9 13v4" />
+              <path d="M9 13h2a1.5 1.5 0 0 0 0-3H9" />
+              <path d="M13 13v4" />
+              <path d="M13 13h1.5a1.5 1.5 0 0 1 1.5 1.5v1a1.5 1.5 0 0 1-1.5 1.5H13" />
+            </svg>
+          );
         case 'check-circle':
           return (
             <svg className={computedClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
@@ -1375,6 +1434,23 @@
             <svg className={computedClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
               <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
               <circle cx="12" cy="13" r="4" />
+            </svg>
+          );
+        case 'image':
+        case 'photo':
+          return (
+            <svg className={computedClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+              <circle cx="8.5" cy="8.5" r="1.5" />
+              <polyline points="21 15 16 10 5 21" />
+            </svg>
+          );
+        case 'refresh':
+        case 'rotate-cw':
+          return (
+            <svg className={computedClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="23 4 23 10 17 10" />
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
             </svg>
           );
         case 'food':
@@ -1897,7 +1973,8 @@
       THEME: 'voralet_theme',
       AVATAR: 'voralet_avatar',
       CUSTOM_CATEGORIES: 'voralet_custom_categories',
-      TUTORIAL_COMPLETED: 'voralet_tutorial_completed'
+      TUTORIAL_COMPLETED: 'voralet_tutorial_completed',
+      GEMINI_API_KEY: 'voralet_gemini_api_key'
     };
 
     // =========================================================================
@@ -2194,18 +2271,31 @@
         const personName = Validators.sanitizeText(debt.personName, 40);
         const amount = Validators.sanitizeNumber(debt.amount, 0);
         if (!personName || amount <= 0) return null;
-        const isPaid = Boolean(debt.isPaid || debt.status === 'LUNAS');
+        const paidAmount = Validators.sanitizeNumber(debt.paidAmount, 0);
+        const isPaidExplicit = Boolean(debt.isPaid || debt.status === 'LUNAS');
+        const isPaid = isPaidExplicit || (paidAmount >= amount && amount > 0);
         const note = Validators.sanitizeText(debt.note || debt.notes || '', 100);
+        const rawPayments = Array.isArray(debt.payments) ? debt.payments : [];
+        const payments = rawPayments.map(p => ({
+          id: String(p.id || ('pay_' + Date.now())),
+          amount: Validators.sanitizeNumber(p.amount, 0),
+          date: p.date || new Date().toISOString().split('T')[0],
+          accountId: String(p.accountId || ''),
+          accountName: Validators.sanitizeText(p.accountName || '', 30),
+          notes: Validators.sanitizeText(p.notes || '', 80)
+        })).filter(p => p.amount > 0);
         return {
           id: String(debt.id || ('debt_' + Date.now())),
           personName,
           type: debt.type === 'PIUTANG' ? 'PIUTANG' : 'HUTANG',
           amount,
+          paidAmount,
           dueDate: debt.dueDate || '',
           isPaid,
           status: isPaid ? 'LUNAS' : 'BELUM_LUNAS',
           note,
           notes: note,
+          payments,
           createdAt: debt.createdAt || new Date().toISOString()
         };
       },
@@ -2520,6 +2610,19 @@
       setTutorialCompleted: (val) => {
         SafeStorage.setItem(STORAGE_KEYS.TUTORIAL_COMPLETED, val ? 'true' : 'false');
       },
+      getGeminiApiKey: () => {
+        try {
+          if (typeof window !== 'undefined' && window.AndroidBridge && typeof window.AndroidBridge.getGeminiApiKey === 'function') {
+            const nativeKey = window.AndroidBridge.getGeminiApiKey();
+            if (nativeKey && nativeKey.trim()) return nativeKey.trim();
+          }
+        } catch (e) {}
+        return SafeStorage.getItem(STORAGE_KEYS.GEMINI_API_KEY) || '';
+      },
+      setGeminiApiKey: (val) => {
+        if (val) SafeStorage.setItem(STORAGE_KEYS.GEMINI_API_KEY, val.trim());
+        else SafeStorage.removeItem(STORAGE_KEYS.GEMINI_API_KEY);
+      },
       clearAll: () => {
         Object.values(STORAGE_KEYS).forEach(k => SafeStorage.removeItem(k));
       }
@@ -2617,8 +2720,8 @@
       calculateMilestones: (accounts, transactions, savingsGoals, debts) => {
         const totalBalance = Ledger.getTotalBalance(accounts, transactions);
         const totalSavings = (savingsGoals || []).reduce((sum, g) => sum + (Number(g.currentAmount) || 0), 0);
-        const unpaidDebts = (debts || []).filter(d => !d.isPaid && d.type === 'HUTANG').reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
-        const unpaidReceivables = (debts || []).filter(d => !d.isPaid && d.type === 'PIUTANG').reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
+        const unpaidDebts = (debts || []).filter(d => !d.isPaid && d.status !== 'LUNAS' && d.type === 'HUTANG').reduce((sum, d) => sum + Math.max(0, (Number(d.amount) || 0) - (Number(d.paidAmount) || 0)), 0);
+        const unpaidReceivables = (debts || []).filter(d => !d.isPaid && d.status !== 'LUNAS' && d.type === 'PIUTANG').reduce((sum, d) => sum + Math.max(0, (Number(d.amount) || 0) - (Number(d.paidAmount) || 0)), 0);
 
         const milestones = [
           {
@@ -2699,6 +2802,8 @@
       { id: 'transport', label: 'Transportasi', icon: 'transport', type: 'EXPENSE' },
       { id: 'belanja', label: 'Belanja', icon: 'shopping', type: 'EXPENSE' },
       { id: 'tagihan', label: 'Tagihan & Utilitas', icon: 'bill', type: 'EXPENSE' },
+      { id: 'tabungan', label: 'Tabungan Impian', icon: 'target', type: 'ALL' },
+      { id: 'hutang', label: 'Hutang & Piutang', icon: 'receipt', type: 'ALL' },
       { id: 'hiburan', label: 'Hiburan', icon: 'entertainment', type: 'EXPENSE' },
       { id: 'kesehatan', label: 'Kesehatan', icon: 'health', type: 'EXPENSE' },
       { id: 'gaji', label: 'Gaji & Honor', icon: 'salary', type: 'INCOME' },
@@ -2791,7 +2896,7 @@
       reader.readAsDataURL(file);
     };
 
-    // Reusable Avatar
+        // Reusable Avatar
     const Avatar = ({ avatar, name, size = "w-9 h-9", textSize = "text-xs", className = "" }) => {
       if (avatar) {
         return (
@@ -3134,6 +3239,645 @@
       // Generate a ready-to-download CSV template
       getCSVTemplate: () => {
         return "Tanggal,Jenis,Nominal,Kategori,Catatan,Dompet\r\n2026-09-15,Pengeluaran,35000,Makan & Minum,Makan siang nasi padang,Dompet Utama\r\n2026-09-15,Pemasukan,5000000,Gaji & Honor,Gaji bulanan,Dompet Utama\r\n2026-09-16,Pengeluaran,20000,Transportasi,Bensin motor,Dompet Utama";
+      }
+    };
+
+    // =========================================================================
+    // MONTHLY FINANCIAL REPORT PDF & PRINT ENGINE
+    // =========================================================================
+    const PdfReportService = {
+      MONTH_NAMES_ID: [
+        'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+      ],
+
+      getMonthLabel: (year, month) => {
+        const mIdx = Number(month) - 1;
+        const name = PdfReportService.MONTH_NAMES_ID[mIdx] || `Bulan ${month}`;
+        return `${name} ${year}`;
+      },
+
+      getAvailableMonths: (transactions = []) => {
+        const periodSet = new Set();
+        const now = new Date();
+        const curKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        periodSet.add(curKey);
+
+        // Also add last month by default for convenience
+        const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const lastKey = `${lastMonthDate.getFullYear()}-${String(lastMonthDate.getMonth() + 1).padStart(2, '0')}`;
+        periodSet.add(lastKey);
+
+        if (Array.isArray(transactions)) {
+          transactions.forEach(t => {
+            if (t && t.date && typeof t.date === 'string') {
+              const prefix = t.date.slice(0, 7);
+              if (/^\d{4}-\d{2}$/.test(prefix)) {
+                periodSet.add(prefix);
+              }
+            }
+          });
+        }
+
+        const sorted = Array.from(periodSet).sort((a, b) => b.localeCompare(a));
+        return sorted.map(key => {
+          const [yr, mo] = key.split('-');
+          return {
+            key,
+            year: Number(yr),
+            month: Number(mo),
+            label: PdfReportService.getMonthLabel(yr, mo)
+          };
+        });
+      },
+
+      computeMonthlyData: ({
+        transactions = [],
+        accounts = [],
+        debts = [],
+        savingsGoals = [],
+        customCategories = [],
+        periodKey,
+        accountId = 'ALL'
+      }) => {
+        const [yrStr, moStr] = (periodKey || '').split('-');
+        const year = Number(yrStr) || new Date().getFullYear();
+        const month = Number(moStr) || (new Date().getMonth() + 1);
+        const periodLabel = PdfReportService.getMonthLabel(year, month);
+
+        const safeTxs = Array.isArray(transactions) ? transactions : [];
+        const safeAccs = Array.isArray(accounts) ? accounts : [];
+        const safeDebts = Array.isArray(debts) ? debts : [];
+        const safeGoals = Array.isArray(savingsGoals) ? savingsGoals : [];
+
+        // Filter transactions for specified month and optional account
+        const monthTxs = safeTxs.filter(t => {
+          if (!t || !t.date || !t.date.startsWith(periodKey)) return false;
+          if (accountId && accountId !== 'ALL' && t.accountId !== accountId) return false;
+          return true;
+        }).sort((a, b) => {
+          // Sort descending by date, then created
+          const dateCmp = (b.date || '').localeCompare(a.date || '');
+          if (dateCmp !== 0) return dateCmp;
+          return (b.createdAt || '').localeCompare(a.createdAt || '');
+        });
+
+        let totalIncome = 0;
+        let totalExpense = 0;
+        let incomeCount = 0;
+        let expenseCount = 0;
+        const categoryMap = {};
+
+        monthTxs.forEach(t => {
+          const amt = Number(t.amount) || 0;
+          if (t.type === 'INCOME') {
+            totalIncome += amt;
+            incomeCount++;
+          } else if (t.type === 'EXPENSE') {
+            totalExpense += amt;
+            expenseCount++;
+            const catId = t.category || 'lainnya';
+            if (!categoryMap[catId]) {
+              categoryMap[catId] = { amount: 0, count: 0 };
+            }
+            categoryMap[catId].amount += amt;
+            categoryMap[catId].count += 1;
+          }
+        });
+
+        const netCashflow = totalIncome - totalExpense;
+        const savingsRate = totalIncome > 0
+          ? Math.max(0, Math.round(((totalIncome - totalExpense) / totalIncome) * 100))
+          : 0;
+
+        // Categories breakdown sorted descending by expense amount
+        const categoryBreakdown = Object.entries(categoryMap).map(([catId, info]) => {
+          const cat = getCategoryById(catId, customCategories);
+          const pct = totalExpense > 0 ? Math.round((info.amount / totalExpense) * 100) : 0;
+          return {
+            id: catId,
+            label: cat.label || catId,
+            icon: cat.icon || '🏷️',
+            amount: info.amount,
+            count: info.count,
+            percentage: pct
+          };
+        }).sort((a, b) => b.amount - a.amount);
+
+        // Account mutations this month
+        const accountsSummary = safeAccs.map(acc => {
+          let accIncome = 0;
+          let accExpense = 0;
+          let accCount = 0;
+          monthTxs.forEach(t => {
+            if (t.accountId === acc.id) {
+              accCount++;
+              const amt = Number(t.amount) || 0;
+              if (t.type === 'INCOME') accIncome += amt;
+              else if (t.type === 'EXPENSE') accExpense += amt;
+            }
+          });
+          return {
+            id: acc.id,
+            name: acc.name,
+            type: acc.type,
+            balance: Number(acc.balance) || 0,
+            income: accIncome,
+            expense: accExpense,
+            net: accIncome - accExpense,
+            txCount: accCount
+          };
+        });
+
+        // Debts and Receivables Summary
+        let activeHutang = 0;
+        let activePiutang = 0;
+        safeDebts.forEach(d => {
+          const isLunas = d.isPaid || d.status === 'LUNAS';
+          if (!isLunas) {
+            const tot = Number(d.amount) || 0;
+            const paid = Number(d.paidAmount) || 0;
+            const rem = Math.max(0, tot - paid);
+            if (d.type === 'HUTANG') activeHutang += rem;
+            else if (d.type === 'PIUTANG') activePiutang += rem;
+          }
+        });
+
+        const selectedAccountObj = accountId !== 'ALL'
+          ? safeAccs.find(a => a.id === accountId)
+          : null;
+
+        return {
+          periodKey,
+          year,
+          month,
+          periodLabel,
+          accountId,
+          accountName: selectedAccountObj ? selectedAccountObj.name : 'Semua Kantong Keuangan',
+          totalIncome,
+          totalExpense,
+          netCashflow,
+          savingsRate,
+          transactionCount: monthTxs.length,
+          incomeCount,
+          expenseCount,
+          categoryBreakdown,
+          accountsSummary,
+          activeHutang,
+          activePiutang,
+          debtsCount: safeDebts.length,
+          savingsGoalsCount: safeGoals.length,
+          transactions: monthTxs
+        };
+      },
+
+      generateReportHtml: (data, userProfile = {}) => {
+        const userName = userProfile.name || 'Pengguna Voralet';
+        const nowStr = new Date().toLocaleDateString('id-ID', {
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+
+        const netClass = data.netCashflow >= 0 ? 'text-emerald' : 'text-rose';
+        const netSign = data.netCashflow >= 0 ? '+' : '';
+
+        // Build categories rows
+        let categoriesHtml = '';
+        if (data.categoryBreakdown.length === 0) {
+          categoriesHtml = '<tr><td colspan="4" class="text-center text-muted" style="padding:16px;">Tidak ada catatan pengeluaran pada periode ini.</td></tr>';
+        } else {
+          data.categoryBreakdown.forEach((cat, idx) => {
+            categoriesHtml += `
+              <tr>
+                <td style="text-align:center;width:40px;">${idx + 1}</td>
+                <td><span style="font-size:14px;margin-right:6px;">${cat.icon}</span><strong>${cat.label}</strong></td>
+                <td style="text-align:center;width:80px;">${cat.count}x</td>
+                <td style="text-align:right;font-weight:bold;width:140px;">${formatIDR(cat.amount)}</td>
+                <td style="text-align:right;width:70px;"><span class="badge badge-gray">${cat.percentage}%</span></td>
+              </tr>
+            `;
+          });
+        }
+
+        // Build account summary rows
+        let accountsHtml = '';
+        data.accountsSummary.forEach(acc => {
+          accountsHtml += `
+            <tr>
+              <td><strong>${acc.name}</strong> <span class="badge badge-gray" style="font-size:9px;">${acc.type}</span></td>
+              <td style="text-align:right;" class="text-emerald">+${formatIDR(acc.income)}</td>
+              <td style="text-align:right;" class="text-rose">-${formatIDR(acc.expense)}</td>
+              <td style="text-align:right;font-weight:bold;">${formatIDR(acc.balance)}</td>
+            </tr>
+          `;
+        });
+
+        // Build transactions list rows
+        let txRowsHtml = '';
+        if (data.transactions.length === 0) {
+          txRowsHtml = '<tr><td colspan="6" class="text-center text-muted" style="padding:24px;">Tidak ada riwayat transaksi pada bulan ini.</td></tr>';
+        } else {
+          data.transactions.forEach((tx, idx) => {
+            const isInc = tx.type === 'INCOME';
+            const cat = getCategoryById(tx.category || 'lainnya');
+            txRowsHtml += `
+              <tr style="background:${idx % 2 === 1 ? '#f8fafc' : '#ffffff'};">
+                <td style="width:40px;text-align:center;color:#64748b;font-size:11px;">${idx + 1}</td>
+                <td style="width:90px;white-space:nowrap;font-size:11px;font-weight:600;">${formatDateID(tx.date)}</td>
+                <td style="width:140px;font-size:11px;"><span style="margin-right:4px;">${cat.icon || '🏷️'}</span>${cat.label || tx.category}</td>
+                <td style="font-size:11px;">${tx.notes ? tx.notes : '<span style="color:#94a3b8;font-style:italic;">Tanpa catatan</span>'}</td>
+                <td style="width:70px;text-align:center;">
+                  <span class="badge ${isInc ? 'badge-emerald' : 'badge-rose'}" style="font-size:9px;">
+                    ${isInc ? 'MASUK' : 'KELUAR'}
+                  </span>
+                </td>
+                <td style="width:130px;text-align:right;font-weight:bold;font-size:12px;" class="${isInc ? 'text-emerald' : 'text-rose'}">
+                  ${isInc ? '+' : '-'}${formatIDR(tx.amount)}
+                </td>
+              </tr>
+            `;
+          });
+        }
+
+        return `<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <title>Laporan Keuangan Voralet - ${data.periodLabel}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      color: #0f172a;
+      background: #ffffff;
+      padding: 24px;
+      font-size: 12px;
+      line-height: 1.4;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .report-container {
+      max-width: 820px;
+      margin: 0 auto;
+      background: #ffffff;
+    }
+    .header-table {
+      width: 100%;
+      border-bottom: 2px solid #0284c7;
+      padding-bottom: 14px;
+      margin-bottom: 16px;
+    }
+    .brand-title {
+      font-size: 24px;
+      font-weight: 800;
+      color: #0284c7;
+      letter-spacing: -0.5px;
+    }
+    .brand-subtitle {
+      font-size: 11px;
+      color: #64748b;
+      margin-top: 2px;
+    }
+    .doc-meta {
+      text-align: right;
+      font-size: 11px;
+      color: #475569;
+    }
+    .doc-meta strong {
+      color: #0f172a;
+    }
+    .kpi-grid {
+      display: table;
+      width: 100%;
+      table-layout: fixed;
+      margin-bottom: 18px;
+    }
+    .kpi-cell {
+      display: table-cell;
+      padding: 10px 12px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      background: #f8fafc;
+      width: 25%;
+      vertical-align: top;
+    }
+    .kpi-cell + .kpi-cell {
+      border-left: none;
+    }
+    .kpi-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #64748b;
+      letter-spacing: 0.3px;
+      margin-bottom: 4px;
+    }
+    .kpi-value {
+      font-size: 15px;
+      font-weight: 800;
+      color: #0f172a;
+    }
+    .kpi-sub {
+      font-size: 10px;
+      color: #94a3b8;
+      margin-top: 2px;
+    }
+    .section-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #1e293b;
+      margin: 18px 0 8px 0;
+      padding-bottom: 4px;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+      margin-bottom: 16px;
+    }
+    table.data-table th {
+      background: #f1f5f9;
+      color: #334155;
+      font-weight: 700;
+      text-align: left;
+      padding: 8px 10px;
+      border: 1px solid #cbd5e1;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    table.data-table td {
+      padding: 7px 10px;
+      border: 1px solid #e2e8f0;
+      color: #1e293b;
+      vertical-align: middle;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 10px;
+      line-height: 1;
+    }
+    .badge-emerald { background: #dcfce7; color: #15803d; }
+    .badge-rose { background: #ffe4e6; color: #be123c; }
+    .badge-gray { background: #e2e8f0; color: #475569; }
+    .text-emerald { color: #16a34a !important; }
+    .text-rose { color: #e11d48 !important; }
+    .text-muted { color: #64748b !important; }
+    .text-center { text-align: center; }
+    .text-right { text-align: right; }
+    .footer-box {
+      margin-top: 24px;
+      padding-top: 14px;
+      border-top: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: #94a3b8;
+    }
+    .signature-row {
+      margin-top: 30px;
+      display: table;
+      width: 100%;
+    }
+    .signature-col {
+      display: table-cell;
+      width: 50%;
+      vertical-align: top;
+    }
+    .signature-line {
+      margin-top: 45px;
+      width: 160px;
+      border-bottom: 1px solid #0f172a;
+    }
+    @media print {
+      body { padding: 0; }
+      .report-container { width: 100%; max-width: 100%; }
+      @page { margin: 12mm 10mm 12mm 10mm; }
+    }
+  </style>
+</head>
+<body>
+  <div class="report-container" id="voralet-pdf-report-content">
+    <!-- Header -->
+    <table class="header-table">
+      <tr>
+        <td style="vertical-align:middle;">
+          <div class="brand-title">VORALET</div>
+          <div class="brand-subtitle">Laporan Keuangan Bulanan & Rekap Arus Kas</div>
+        </td>
+        <td class="doc-meta" style="vertical-align:middle;">
+          <div>Periode Laporan: <strong>${data.periodLabel}</strong></div>
+          <div>Kantong / Akun: <strong>${data.accountName}</strong></div>
+          <div>Pemilik Akun: <strong>${userName}</strong></div>
+          <div style="font-size:10px;color:#94a3b8;margin-top:2px;">Dicetak: ${nowStr}</div>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Executive KPI Summary Cards -->
+    <div class="kpi-grid">
+      <div class="kpi-cell">
+        <div class="kpi-label">Total Pemasukan</div>
+        <div class="kpi-value text-emerald">+${formatIDR(data.totalIncome)}</div>
+        <div class="kpi-sub">${data.incomeCount} transaksi masuk</div>
+      </div>
+      <div class="kpi-cell">
+        <div class="kpi-label">Total Pengeluaran</div>
+        <div class="kpi-value text-rose">-${formatIDR(data.totalExpense)}</div>
+        <div class="kpi-sub">${data.expenseCount} transaksi keluar</div>
+      </div>
+      <div class="kpi-cell">
+        <div class="kpi-label">Arus Kas Bersih</div>
+        <div class="kpi-value ${netClass}">${netSign}${formatIDR(data.netCashflow)}</div>
+        <div class="kpi-sub">${data.netCashflow >= 0 ? 'Surplus / Hemat' : 'Defisit Arus Kas'}</div>
+      </div>
+      <div class="kpi-cell">
+        <div class="kpi-label">Rasio Penghematan</div>
+        <div class="kpi-value" style="color:#0284c7;">${data.savingsRate}%</div>
+        <div class="kpi-sub">${data.transactionCount} total transaksi</div>
+      </div>
+    </div>
+
+    <!-- Category Expense Breakdown Table -->
+    <div class="section-title">
+      <span>1. Rincian Pengeluaran per Kategori</span>
+      <span style="font-size:11px;font-weight:normal;color:#64748b;">Total: ${formatIDR(data.totalExpense)}</span>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="text-align:center;width:40px;">No</th>
+          <th>Kategori Pengeluaran</th>
+          <th style="text-align:center;width:80px;">Frekuensi</th>
+          <th style="text-align:right;width:140px;">Total Nominal (Rp)</th>
+          <th style="text-align:right;width:70px;">Porsi</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${categoriesHtml}
+      </tbody>
+    </table>
+
+    <!-- Account Mutation Summary Table -->
+    <div class="section-title">
+      <span>2. Ringkasan Saldo & Mutasi Kantong Keuangan</span>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Nama Kantong / Rekening</th>
+          <th style="text-align:right;">Total Masuk</th>
+          <th style="text-align:right;">Total Keluar</th>
+          <th style="text-align:right;">Saldo Terkini</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${accountsHtml}
+      </tbody>
+    </table>
+
+    <!-- Complete Transaction Log Table -->
+    <div class="section-title">
+      <span>3. Riwayat Mutasi Transaksi Detail (${data.transactionCount} Catatan)</span>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="width:40px;text-align:center;">No</th>
+          <th style="width:90px;">Tanggal</th>
+          <th style="width:140px;">Kategori</th>
+          <th>Deskripsi / Catatan</th>
+          <th style="width:70px;text-align:center;">Jenis</th>
+          <th style="width:130px;text-align:right;">Nominal (Rp)</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${txRowsHtml}
+      </tbody>
+    </table>
+
+    <!-- Signatures & Disclaimer -->
+    <div class="signature-row">
+      <div class="signature-col">
+        <div style="font-size:11px;color:#64748b;">Catatan Tambahan:</div>
+        <div style="font-size:10px;color:#94a3b8;margin-top:3px;max-width:300px;">
+          Laporan ini diterbitkan otomatis dari aplikasi Voralet sebagai bukti mutasi pembukuan finansial pribadi yang valid.
+        </div>
+      </div>
+      <div class="signature-col" style="text-align:right;">
+        <div style="font-size:11px;color:#64748b;">Pemilik Laporan,</div>
+        <div class="signature-line" style="margin-left:auto;"></div>
+        <div style="font-size:11px;font-weight:bold;margin-top:4px;">${userName}</div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer-box">
+      <div>Voralet Finance Engine • Dokumen Laporan Resmi</div>
+      <div>Halaman 1 • Periode ${data.periodLabel}</div>
+    </div>
+  </div>
+</body>
+</html>`;
+      },
+
+      exportDirectPdf: async (htmlContent, filename = 'Laporan_Keuangan_Voralet.pdf') => {
+        try {
+          if (window.html2pdf) {
+            // Create a temporary offscreen container for html2pdf
+            const container = document.createElement('div');
+            container.innerHTML = htmlContent;
+            container.style.position = 'fixed';
+            container.style.left = '-9999px';
+            container.style.top = '0';
+            container.style.width = '800px';
+            container.style.background = '#ffffff';
+            document.body.appendChild(container);
+
+            const element = container.querySelector('#voralet-pdf-report-content') || container;
+
+            const opt = {
+              margin: [8, 8, 10, 8],
+              filename: filename,
+              image: { type: 'jpeg', quality: 0.98 },
+              html2canvas: {
+                scale: 2,
+                useCORS: true,
+                letterRendering: true,
+                logging: false,
+                backgroundColor: '#ffffff'
+              },
+              jsPDF: {
+                unit: 'mm',
+                format: 'a4',
+                orientation: 'portrait'
+              }
+            };
+
+            await window.html2pdf().set(opt).from(element).save();
+            document.body.removeChild(container);
+            return true;
+          }
+          return false;
+        } catch (e) {
+          console.error('[PdfReportService] Error generating PDF:', e);
+          return false;
+        }
+      },
+
+      printOrSavePdf: (htmlContent, jobTitle = 'Laporan Keuangan Voralet') => {
+        try {
+          // Check if running inside Android Native App with Native Print Bridge
+          if (window.AndroidBridge && typeof window.AndroidBridge.printHtml === 'function') {
+            window.AndroidBridge.printHtml(htmlContent, jobTitle);
+            return true;
+          }
+
+          // In Browser or PWA: Print via clean hidden iframe
+          const iframe = document.createElement('iframe');
+          iframe.style.position = 'fixed';
+          iframe.style.right = '0';
+          iframe.style.bottom = '0';
+          iframe.style.width = '0';
+          iframe.style.height = '0';
+          iframe.style.border = '0';
+          document.body.appendChild(iframe);
+
+          iframe.contentDocument.open();
+          iframe.contentDocument.write(htmlContent);
+          iframe.contentDocument.close();
+
+          setTimeout(() => {
+            try {
+              iframe.contentWindow.focus();
+              iframe.contentWindow.print();
+            } catch (err) {
+              window.print();
+            }
+            setTimeout(() => {
+              try {
+                document.body.removeChild(iframe);
+              } catch (e) {}
+            }, 3000);
+          }, 350);
+
+          return true;
+        } catch (e) {
+          console.error('[PdfReportService] Print trigger error:', e);
+          window.print();
+          return false;
+        }
       }
     };
 
@@ -4346,16 +5090,404 @@
       );
     };
 
-    const DebtsView = ({ debts, onAddDebt, onToggleStatus, onDeleteDebt, hideBalance, onEditDebt, onModalChange }) => {
+    // =========================================================================
+    // 5.1 MODAL BAYAR HUTANG / TERIMA PIUTANG
+    // =========================================================================
+    const PayDebtModal = ({ isOpen, onClose, debt, accounts = [], onConfirmPayment }) => {
+      if (!isOpen || !debt) return null;
+
+      const isHutang = debt.type === 'HUTANG';
+      const totalAmount = Number(debt.amount) || 0;
+      const paidAmount = Number(debt.paidAmount) || 0;
+      const remainingAmount = Math.max(0, totalAmount - paidAmount);
+      const nextInstallmentNum = (debt.payments?.length || 0) + 1;
+
+      // Mode: 'CICILAN' (bayar bertahap/cicilan) vs 'LUNAS' (bayar lunas penuh)
+      const [payMode, setPayMode] = useState(() => (remainingAmount > 100000 || paidAmount > 0) ? 'CICILAN' : 'LUNAS');
+      const [payAmountStr, setPayAmountStr] = useState(() => {
+        if (remainingAmount <= 0) return '';
+        if (paidAmount > 0) {
+          // Default to half of remaining for installment
+          const half = Math.round(remainingAmount / 2);
+          return half > 0 ? String(half) : String(remainingAmount);
+        }
+        return String(remainingAmount);
+      });
+      const [accountId, setAccountId] = useState(() => accounts[0]?.id || '');
+      const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
+      const [notes, setNotes] = useState(() => (
+        isHutang
+          ? `Cicilan ke-${nextInstallmentNum}: ${debt.personName}`
+          : `Terima cicilan ke-${nextInstallmentNum}: ${debt.personName}`
+      ));
+      const [error, setError] = useState('');
+      const [isClosing, setIsClosing] = useState(false);
+
+      useEffect(() => {
+        if (debt) {
+          const tot = Number(debt.amount) || 0;
+          const paid = Number(debt.paidAmount) || 0;
+          const rem = Math.max(0, tot - paid);
+          const nextNum = (debt.payments?.length || 0) + 1;
+          
+          if (paid > 0) {
+            setPayMode('CICILAN');
+            const half = Math.round(rem / 2);
+            setPayAmountStr(half > 0 ? String(half) : String(rem));
+            setNotes(isHutang ? `Cicilan ke-${nextNum}: ${debt.personName}` : `Terima cicilan ke-${nextNum}: ${debt.personName}`);
+          } else {
+            setPayAmountStr(rem > 0 ? String(rem) : '');
+            setNotes(isHutang ? `Bayar hutang ke ${debt.personName}` : `Terima piutang dari ${debt.personName}`);
+          }
+          if (accounts.length > 0 && !accounts.some(a => a.id === accountId)) {
+            setAccountId(accounts[0].id);
+          }
+        }
+      }, [debt, accounts]);
+
+      const handleClose = () => {
+        setIsClosing(true);
+        setTimeout(() => {
+          setIsClosing(false);
+          onClose();
+        }, 220);
+      };
+
+      const handleSelectMode = (mode) => {
+        setPayMode(mode);
+        setError('');
+        if (mode === 'LUNAS') {
+          setPayAmountStr(String(remainingAmount));
+          setNotes(isHutang ? `Pelunasan hutang: ${debt.personName}` : `Pelunasan piutang: ${debt.personName}`);
+        } else {
+          // Cicilan mode default to 50% or appropriate slice
+          const half = Math.round(remainingAmount / 2);
+          setPayAmountStr(half > 0 ? String(half) : String(remainingAmount));
+          setNotes(isHutang ? `Cicilan ke-${nextInstallmentNum}: ${debt.personName}` : `Terima cicilan ke-${nextInstallmentNum}: ${debt.personName}`);
+        }
+      };
+
+      const handleQuickPercent = (pct) => {
+        const val = Math.round(remainingAmount * pct);
+        setPayAmountStr(val > 0 ? String(val) : '');
+        setError('');
+        if (pct === 1) {
+          setPayMode('LUNAS');
+          setNotes(isHutang ? `Pelunasan hutang: ${debt.personName}` : `Pelunasan piutang: ${debt.personName}`);
+        } else {
+          setPayMode('CICILAN');
+          setNotes(isHutang ? `Cicilan ke-${nextInstallmentNum} (${Math.round(pct * 100)}%): ${debt.personName}` : `Terima cicilan ke-${nextInstallmentNum} (${Math.round(pct * 100)}%): ${debt.personName}`);
+        }
+      };
+
+      const handleAddQuickAmount = (delta) => {
+        const current = parseRawNumber(payAmountStr) || 0;
+        const nextVal = Math.min(remainingAmount, current + delta);
+        setPayAmountStr(String(nextVal));
+        setError('');
+      };
+
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        const num = parseRawNumber(payAmountStr);
+        if (num <= 0) {
+          setError('Nominal pembayaran cicilan harus lebih dari 0');
+          return;
+        }
+        if (!accountId) {
+          setError('Pilih dompet / kantong terlebih dahulu');
+          return;
+        }
+        HapticFeedback.save();
+        onConfirmPayment({
+          amount: num,
+          accountId,
+          date,
+          notes: notes.trim()
+        });
+        handleClose();
+      };
+
+      const currentInputAmt = parseRawNumber(payAmountStr);
+      const estRemainingAfter = Math.max(0, remainingAmount - currentInputAmt);
+
+      return (
+        <div className={`ios-modal-backdrop ${isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'}`}
+             onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}>
+          <div className={`ios-modal-card bg-white dark:bg-slate-800 ${isClosing ? 'animate-ios-sheet-exit' : 'animate-ios-sheet'}`}>
+            <ModalDragHandle onDismiss={handleClose} />
+            <div className="ios-modal-header px-5 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800">
+              <div className="flex items-center gap-2">
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+                  isHutang ? 'bg-rose-100 dark:bg-rose-900/50 text-rose-600' : 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600'
+                }`}>
+                  <Icon name={isHutang ? 'arrow-up-right' : 'arrow-down-left'} className="w-4 h-4" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                    <span>{isHutang ? 'Bayar Hutang' : 'Terima Piutang'}</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-semibold">
+                      Cicilan #{nextInstallmentNum}
+                    </span>
+                  </h2>
+                  <p className="text-[10px] text-slate-400 truncate max-w-[200px]">
+                    {debt.personName}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleClose}
+                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors ios-btn-tap"
+                aria-label="Tutup"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="ios-modal-body flex-1 overflow-y-auto pb-28 p-4 sm:p-5 space-y-4 no-scrollbar">
+              {/* Payment Mode Selector: Cicil vs Lunas */}
+              <div className="grid grid-cols-2 p-1 bg-slate-100 dark:bg-slate-900 rounded-xl text-xs font-semibold">
+                <button
+                  type="button"
+                  onClick={() => handleSelectMode('CICILAN')}
+                  className={`py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-all ios-btn-tap ${
+                    payMode === 'CICILAN'
+                      ? 'bg-white dark:bg-slate-800 text-brand dark:text-sky-400 shadow-xs font-bold'
+                      : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                  }`}
+                >
+                  <Icon name="calendar" className="w-3.5 h-3.5" />
+                  <span>Bayar Cicilan</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSelectMode('LUNAS')}
+                  className={`py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-all ios-btn-tap ${
+                    payMode === 'LUNAS'
+                      ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs font-bold'
+                      : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                  }`}
+                >
+                  <Icon name="check" className="w-3.5 h-3.5" />
+                  <span>Bayar Lunas</span>
+                </button>
+              </div>
+
+              {/* Debt Overview Card */}
+              <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-500 dark:text-slate-400">Total Tagihan Awal:</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">{formatIDR(totalAmount)}</span>
+                </div>
+                {paidAmount > 0 && (
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-500 dark:text-slate-400">
+                      Telah Dicicil ({debt.payments?.length || 1}x):
+                    </span>
+                    <span className="font-semibold text-emerald-600">{formatIDR(paidAmount)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-xs pt-1 border-t border-slate-200 dark:border-slate-800 font-bold">
+                  <span className={isHutang ? 'text-rose-600' : 'text-emerald-600'}>Sisa Belum Terbayar:</span>
+                  <span className={isHutang ? 'text-rose-600' : 'text-emerald-600'}>{formatIDR(remainingAmount)}</span>
+                </div>
+              </div>
+
+              {/* Amount Input */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    {payMode === 'CICILAN' ? `Nominal Cicilan ke-${nextInstallmentNum} (Rp)` : 'Nominal Pelunasan Penuh (Rp)'}
+                  </label>
+                  {remainingAmount > 0 && (
+                    <span className="text-[10px] text-slate-400">
+                      Maks: {formatIDR(remainingAmount)}
+                    </span>
+                  )}
+                </div>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  required
+                  value={payAmountStr ? formatIDR(parseRawNumber(payAmountStr)) : ''}
+                  onFocus={handleGlobalInputFocus}
+                  onBlur={handleGlobalInputBlur}
+                  onChange={(e) => {
+                    const num = parseRawNumber(e.target.value);
+                    setPayAmountStr(num ? num.toString() : '');
+                    setError('');
+                  }}
+                  placeholder="Rp 0"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-base font-bold text-slate-900 dark:text-white focus:outline-none focus:border-brand"
+                  autoFocus
+                />
+                {error && <p className="text-xs text-rose-500 mt-1">{error}</p>}
+
+                {/* Quick percent / installment split buttons */}
+                {remainingAmount > 0 && (
+                  <div className="space-y-1.5 mt-2">
+                    <div className="flex gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => handleQuickPercent(0.25)}
+                        className="flex-1 py-1.5 px-2 bg-slate-100 dark:bg-slate-700/80 hover:bg-slate-200 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-lg ios-btn-tap"
+                      >
+                        25%
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleQuickPercent(0.5)}
+                        className="flex-1 py-1.5 px-2 bg-slate-100 dark:bg-slate-700/80 hover:bg-slate-200 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-lg ios-btn-tap"
+                      >
+                        50% (½)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleQuickPercent(0.75)}
+                        className="flex-1 py-1.5 px-2 bg-slate-100 dark:bg-slate-700/80 hover:bg-slate-200 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-lg ios-btn-tap"
+                      >
+                        75% (¾)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleQuickPercent(1)}
+                        className="flex-1 py-1.5 px-2 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-xs font-bold rounded-lg border border-emerald-200 dark:border-emerald-800/80 ios-btn-tap"
+                      >
+                        Lunas
+                      </button>
+                    </div>
+
+                    {/* Quick amount increment chips for fast installment entry */}
+                    {remainingAmount >= 50000 && (
+                      <div className="flex gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+                        {[50000, 100000, 200000, 500000].filter(d => d < remainingAmount).map(delta => (
+                          <button
+                            key={delta}
+                            type="button"
+                            onClick={() => handleAddQuickAmount(delta)}
+                            className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-600 dark:text-slate-300 text-[11px] font-medium rounded-lg shrink-0 ios-btn-tap"
+                          >
+                            +{formatIDR(delta)}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Account / Kantong Selector */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  {isHutang ? 'Bayar dari Kantong Sumber' : 'Terima ke Kantong Tujuan'}
+                </label>
+                {accounts.length === 0 ? (
+                  <p className="text-xs text-amber-600 bg-amber-50 p-2.5 rounded-lg border border-amber-200">
+                    Belum ada kantong keuangan aktif.
+                  </p>
+                ) : (
+                  <select
+                    value={accountId}
+                    onFocus={handleGlobalInputFocus}
+                    onBlur={handleGlobalInputBlur}
+                    onChange={(e) => setAccountId(e.target.value)}
+                    className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand"
+                  >
+                    {accounts.map(acc => (
+                      <option key={acc.id} value={acc.id}>
+                        {acc.name} ({acc.type})
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              {/* Date and Notes */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Tanggal</label>
+                  <input
+                    type="date"
+                    value={date}
+                    onFocus={handleGlobalInputFocus}
+                    onBlur={handleGlobalInputBlur}
+                    onChange={(e) => setDate(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Catatan</label>
+                  <input
+                    type="text"
+                    maxLength={60}
+                    value={notes}
+                    onFocus={handleGlobalInputFocus}
+                    onBlur={handleGlobalInputBlur}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Contoh: Cicilan tahap 1"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand"
+                  />
+                </div>
+              </div>
+
+              {/* Simulation Result */}
+              {currentInputAmt > 0 && (
+                <div className="p-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl text-xs space-y-1 text-emerald-800 dark:text-emerald-300">
+                  <div className="flex justify-between">
+                    <span>Status setelah cicilan ini:</span>
+                    <strong>{estRemainingAfter <= 0 ? '✓ LUNAS SEPENUHNYA' : `Sisa ${formatIDR(estRemainingAfter)}`}</strong>
+                  </div>
+                  <p className="text-[10px] text-emerald-700 dark:text-emerald-400 font-normal">
+                    Transaksi {isHutang ? 'pengeluaran' : 'pemasukan'} otomatis dicatat ke riwayat mutasi dompet.
+                  </p>
+                </div>
+              )}
+
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={accounts.length === 0}
+                  className={`w-full py-3 text-white font-semibold text-sm rounded-xl transition-colors shadow-sm ios-btn-tap ${
+                    isHutang ? 'bg-rose-600 hover:bg-rose-700' : 'bg-emerald-600 hover:bg-emerald-700'
+                  }`}
+                >
+                  {isHutang
+                    ? (estRemainingAfter <= 0 ? 'Konfirmasi Pelunasan Penuh' : `Konfirmasi Bayar Cicilan (${formatIDR(currentInputAmt)})`)
+                    : (estRemainingAfter <= 0 ? 'Konfirmasi Pelunasan Penuh' : `Konfirmasi Terima Cicilan (${formatIDR(currentInputAmt)})`)}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      );
+    };
+
+    const DebtsView = ({
+      debts,
+      accounts = [],
+      onAddDebt,
+      onPayDebt,
+      onToggleStatus,
+      onDeleteDebt,
+      hideBalance,
+      onEditDebt,
+      onModalChange
+    }) => {
       const [filterTab, setFilterTab] = useState('ALL'); // ALL | HUTANG | PIUTANG
       const [isModalOpen, setIsModalOpen] = useState(false);
       const [selectedDebt, setSelectedDebt] = useState(null);
+      const [payingDebt, setPayingDebt] = useState(null);
+      const [expandedPaymentsId, setExpandedPaymentsId] = useState(null);
 
       useEffect(() => {
         if (typeof onModalChange === 'function') {
-          onModalChange(isModalOpen);
+          onModalChange(isModalOpen || Boolean(payingDebt));
         }
-      }, [isModalOpen, onModalChange]);
+      }, [isModalOpen, payingDebt, onModalChange]);
 
       const safeDebts = Array.isArray(debts) ? debts : [];
 
@@ -4363,11 +5495,13 @@
         let totalHutang = 0;
         let totalPiutang = 0;
         safeDebts.forEach(d => {
-          const isSettled = d.isPaid || d.status === 'LUNAS';
+          const isSettled = Boolean(d.isPaid || d.status === 'LUNAS');
           if (!isSettled) {
-            const amt = Number(d.amount) || 0;
-            if (d.type === 'HUTANG') totalHutang += amt;
-            else totalPiutang += amt;
+            const tot = Number(d.amount) || 0;
+            const paid = Number(d.paidAmount) || 0;
+            const rem = Math.max(0, tot - paid);
+            if (d.type === 'HUTANG') totalHutang += rem;
+            else totalPiutang += rem;
           }
         });
         return { totalHutang, totalPiutang, net: totalPiutang - totalHutang };
@@ -4384,7 +5518,7 @@
           <div className="flex items-center justify-between pt-1">
             <div>
               <h2 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">Hutang & Piutang</h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Kelola pinjaman dan jatuh tempo</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Kelola pinjaman dan pelunasan tercatat</p>
             </div>
             <button
               type="button"
@@ -4403,7 +5537,7 @@
           <div className="grid grid-cols-2 gap-3">
             <div className="ios-inset-group">
               <span className="text-[10px] font-bold uppercase tracking-wider text-rose-500 block mb-1">
-                Hutang Saya (Belum Lunas)
+                Sisa Hutang Saya
               </span>
               <div className="text-lg font-bold text-slate-900 dark:text-white">
                 {hideBalance ? 'Rp ••••••' : formatIDR(totals.totalHutang)}
@@ -4411,7 +5545,7 @@
             </div>
             <div className="ios-inset-group">
               <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-500 block mb-1">
-                Piutang Saya (Dipinjam)
+                Sisa Piutang Saya
               </span>
               <div className="text-lg font-bold text-slate-900 dark:text-white">
                 {hideBalance ? 'Rp ••••••' : formatIDR(totals.totalPiutang)}
@@ -4473,79 +5607,195 @@
             </div>
           ) : (
             <div className="ios-inset-group space-y-3">
-              {filteredList.map((item, idx) => (
-                <div
-                  key={item.id}
-                  className={`flex items-center justify-between pb-3 ${idx !== filteredList.length - 1 ? 'ios-hairline' : ''}`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${
-                      item.type === 'HUTANG'
-                        ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400'
-                        : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400'
-                    }`}>
-                      <Icon name={item.type === 'HUTANG' ? 'arrow-up-right' : 'arrow-down-left'} className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-slate-900 dark:text-white">{item.personName}</span>
-                        <span className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full ${
-                          (item.isPaid || item.status === 'LUNAS')
-                            ? 'bg-slate-100 dark:bg-slate-700 text-slate-500'
-                            : item.type === 'HUTANG'
-                              ? 'bg-rose-100 dark:bg-rose-900/50 text-rose-700 dark:text-rose-300'
-                              : 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300'
-                        }`}>
-                          {(item.isPaid || item.status === 'LUNAS') ? 'LUNAS' : item.type === 'HUTANG' ? 'HUTANG' : 'PIUTANG'}
-                        </span>
-                      </div>
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                        {item.notes || item.note || 'Tanpa keterangan'}
-                        {item.dueDate && ` • Tempo: ${formatDateID(item.dueDate)}`}
-                      </div>
-                    </div>
-                  </div>
+              {filteredList.map((item, idx) => {
+                const totalAmt = Number(item.amount) || 0;
+                const paidAmt = Number(item.paidAmount) || 0;
+                const remAmt = Math.max(0, totalAmt - paidAmt);
+                const isSettled = Boolean(item.isPaid || item.status === 'LUNAS' || (paidAmt >= totalAmt && totalAmt > 0));
+                const pct = totalAmt > 0 ? Math.min(100, Math.round((paidAmt / totalAmt) * 100)) : 0;
+                const paymentsList = Array.isArray(item.payments) ? item.payments : [];
+                const hasPayments = paymentsList.length > 0;
+                const isHistoryOpen = expandedPaymentsId === item.id;
 
-                  <div className="flex items-center gap-2">
-                    <div className="text-right">
-                      <div className={`text-xs font-bold ${
-                        item.type === 'HUTANG' ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'
-                      }`}>
-                        {hideBalance ? 'Rp ••••••' : formatIDR(item.amount)}
+                return (
+                  <div
+                    key={item.id}
+                    className={`pb-3 ${idx !== filteredList.length - 1 ? 'ios-hairline' : ''}`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start gap-3">
+                        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 mt-0.5 ${
+                          item.type === 'HUTANG'
+                            ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400'
+                            : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400'
+                        }`}>
+                          <Icon name={item.type === 'HUTANG' ? 'arrow-up-right' : 'arrow-down-left'} className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-slate-900 dark:text-white">{item.personName}</span>
+                            <span className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full ${
+                              isSettled
+                                ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300'
+                                : paidAmt > 0
+                                  ? 'bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300'
+                                  : item.type === 'HUTANG'
+                                    ? 'bg-rose-100 dark:bg-rose-900/50 text-rose-700 dark:text-rose-300'
+                                    : 'bg-sky-100 dark:bg-sky-900/50 text-sky-700 dark:text-sky-300'
+                            }`}>
+                              {isSettled ? 'LUNAS' : paidAmt > 0 ? `DICICIL (${paymentsList.length}x) • ${pct}%` : item.type}
+                            </span>
+                          </div>
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                            {item.notes || item.note || 'Tanpa keterangan'}
+                            {item.dueDate && ` • Tempo: ${formatDateID(item.dueDate)}`}
+                          </div>
+                        </div>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => onToggleStatus(item.id)}
-                        className="text-[10px] font-semibold text-brand dark:text-sky-400 hover:underline"
-                      >
-                        {(item.isPaid || item.status === 'LUNAS') ? 'Tandai Belum' : 'Tandai Lunas'}
-                      </button>
+
+                      <div className="text-right shrink-0">
+                        <div className={`text-xs font-bold ${
+                          isSettled
+                            ? 'text-slate-400 dark:text-slate-500 line-through'
+                            : item.type === 'HUTANG' ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'
+                        }`}>
+                          {hideBalance ? 'Rp ••••••' : (paidAmt > 0 && !isSettled ? formatIDR(remAmt) : formatIDR(totalAmt))}
+                        </div>
+                        {paidAmt > 0 && !isSettled && (
+                          <div className="text-[10px] text-slate-400">
+                            dari {hideBalance ? '••••' : formatIDR(totalAmt)}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedDebt(item);
-                        setIsModalOpen(true);
-                      }}
-                      className="p-1.5 text-slate-400 hover:text-brand rounded-lg ios-btn-tap"
-                      title="Edit"
-                    >
-                      <Icon name="edit" className="w-4 h-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onDeleteDebt(item.id)}
-                      className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg ios-btn-tap"
-                      title="Hapus"
-                    >
-                      <Icon name="trash" className="w-4 h-4" />
-                    </button>
+
+                    {/* Progress Bar for Partial Payments */}
+                    {paidAmt > 0 && !isSettled && (
+                      <div className="mt-2.5">
+                        <div className="flex justify-between text-[10px] text-slate-500 dark:text-slate-400 mb-1">
+                          <span>Terbayar: {hideBalance ? '••••' : formatIDR(paidAmt)}</span>
+                          <span>Sisa: {hideBalance ? '••••' : formatIDR(remAmt)}</span>
+                        </div>
+                        <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-emerald-500 rounded-full transition-all duration-300"
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Actions Row */}
+                    <div className="flex items-center justify-between gap-2 mt-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+                      <div className="flex items-center gap-1.5">
+                        {!isSettled && (
+                          <button
+                            type="button"
+                            onClick={() => setPayingDebt(item)}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 shadow-xs transition-colors ios-btn-tap ${
+                              item.type === 'HUTANG'
+                                ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-300 hover:bg-rose-100 border border-rose-200/60 dark:border-rose-800'
+                                : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-300 hover:bg-emerald-100 border border-emerald-200/60 dark:border-emerald-800'
+                            }`}
+                          >
+                            <Icon name="check" className="w-3.5 h-3.5" />
+                            <span>
+                              {item.type === 'HUTANG'
+                                ? (paidAmt > 0 ? 'Lanjut Cicil' : 'Bayar / Cicil')
+                                : (paidAmt > 0 ? 'Terima Cicilan' : 'Terima / Cicil')}
+                            </span>
+                          </button>
+                        )}
+
+                        {hasPayments && (
+                          <button
+                            type="button"
+                            onClick={() => setExpandedPaymentsId(isHistoryOpen ? null : item.id)}
+                            className="px-2.5 py-1.5 rounded-xl text-[11px] font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 transition-colors ios-btn-tap flex items-center gap-1"
+                          >
+                            <span>Riwayat Cicilan ({paymentsList.length})</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={`transform transition-transform ${isHistoryOpen ? 'rotate-180' : ''}`}>
+                              <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => onToggleStatus(item.id)}
+                          className="text-[10px] font-semibold text-brand dark:text-sky-400 hover:underline px-1.5 py-1"
+                        >
+                          {isSettled ? 'Tandai Belum' : 'Tandai Lunas'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedDebt(item);
+                            setIsModalOpen(true);
+                          }}
+                          className="p-1.5 text-slate-400 hover:text-brand rounded-lg ios-btn-tap"
+                          title="Edit"
+                        >
+                          <Icon name="edit" className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onDeleteDebt(item.id)}
+                          className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg ios-btn-tap"
+                          title="Hapus"
+                        >
+                          <Icon name="trash" className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Expandable Payment History Details */}
+                    {isHistoryOpen && hasPayments && (
+                      <div className="mt-2.5 p-3 bg-slate-50 dark:bg-slate-900/70 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-2 animate-ios-sheet">
+                        <div className="flex items-center justify-between text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                          <span className="flex items-center gap-1">
+                            <Icon name="clock" className="w-3.5 h-3.5 text-brand" />
+                            Riwayat Pembayaran Cicilan:
+                          </span>
+                          <span className="text-emerald-600 font-extrabold">{formatIDR(paidAmt)}</span>
+                        </div>
+                        <div className="space-y-1.5 max-h-40 overflow-y-auto no-scrollbar pt-1">
+                          {paymentsList.map((pay, pIdx) => (
+                            <div
+                              key={pay.id || pIdx}
+                              className="p-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-xs"
+                            >
+                              <div>
+                                <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-sky-100 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 font-bold">
+                                    #{pIdx + 1}
+                                  </span>
+                                  <span>{formatDateID(pay.date)}</span>
+                                  {pay.accountName && (
+                                    <span className="text-[10px] font-normal px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 rounded text-slate-600 dark:text-slate-300">
+                                      {pay.accountName}
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-[10px] text-slate-400 mt-0.5">{pay.notes || 'Cicilan pembayaran'}</p>
+                              </div>
+                              <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                                +{formatIDR(pay.amount)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
 
+          {/* Add / Edit Debt Modal */}
           {isModalOpen && (
             <DebtModal
               isOpen={isModalOpen}
@@ -4554,6 +5804,22 @@
               onSaveDebt={(data) => {
                 onAddDebt(data);
                 setIsModalOpen(false);
+              }}
+            />
+          )}
+
+          {/* Pay Debt Modal */}
+          {payingDebt && (
+            <PayDebtModal
+              isOpen={Boolean(payingDebt)}
+              debt={payingDebt}
+              accounts={accounts}
+              onClose={() => setPayingDebt(null)}
+              onConfirmPayment={(paymentData) => {
+                if (typeof onPayDebt === 'function') {
+                  onPayDebt(payingDebt.id, paymentData);
+                }
+                setPayingDebt(null);
               }}
             />
           )}
@@ -5821,7 +7087,7 @@
       );
     };
 
-    const SettingsModal = ({ isOpen, onClose, userProfile, onUpdateProfile, onHardReset, onImportData, onExportData, onOpenCsvImport, onExportCsv, theme, onToggleTheme, customCategories = [], onSaveCustomCategory, onDeleteCustomCategory, onOpenDeveloperGate, onReplayTutorial }) => {
+    const SettingsModal = ({ isOpen, onClose, userProfile, onUpdateProfile, onHardReset, onImportData, onExportData, onOpenCsvImport, onExportCsv, theme, onToggleTheme, customCategories = [], onSaveCustomCategory, onDeleteCustomCategory, onOpenDeveloperGate, onReplayTutorial, onOpenMonthlyPdfReport }) => {
       const [name, setName] = useState(userProfile.name || '');
       const [username, setUsername] = useState(userProfile.username || '');
       const [avatar, setAvatar] = useState(userProfile.avatar || '');
@@ -6416,6 +7682,19 @@
                     <input type="file" accept=".json" className="hidden" onChange={handleFileImport} />
                   </label>
                 </div>
+
+                {/* Ekspor Laporan Bulanan PDF */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleClose();
+                    if (onOpenMonthlyPdfReport) onOpenMonthlyPdfReport();
+                  }}
+                  className="w-full py-2.5 bg-sky-50 hover:bg-sky-100 dark:bg-slate-700/60 dark:hover:bg-slate-700 text-brand dark:text-sky-300 text-xs font-bold rounded-xl border border-sky-200/80 dark:border-slate-600 flex items-center justify-center gap-2 ios-btn-tap shadow-xs"
+                >
+                  <Icon name="file-pdf" className="w-4 h-4" />
+                  <span>Ekspor Laporan Keuangan Bulanan (PDF)</span>
+                </button>
               </div>
 
               {/* Profile / About Section with Brand Logo */}
@@ -7313,23 +8592,551 @@
     };
 
     // =========================================================================
+    // MONTHLY FINANCIAL REPORT EXPORT MODAL (PDF & PRINT)
+    // =========================================================================
+    const MonthlyPdfReportModal = ({
+      isOpen,
+      onClose,
+      transactions = [],
+      accounts = [],
+      debts = [],
+      savingsGoals = [],
+      customCategories = [],
+      userProfile = {},
+      hideBalance
+    }) => {
+      if (!isOpen) return null;
+
+      const [isClosing, setIsClosing] = useState(false);
+      const availableMonths = useMemo(() => {
+        return PdfReportService.getAvailableMonths(transactions);
+      }, [transactions]);
+
+      const [selectedPeriod, setSelectedPeriod] = useState(
+        availableMonths.length > 0 ? availableMonths[0].key : new Date().toISOString().slice(0, 7)
+      );
+      const [selectedAccountId, setSelectedAccountId] = useState('ALL');
+      const [isExporting, setIsExporting] = useState(false);
+      const [statusMessage, setStatusMessage] = useState({ text: '', isError: false });
+      const [activeTab, setActiveTab] = useState('PREVIEW'); // 'PREVIEW' | 'CATEGORIES' | 'TRANSACTIONS'
+
+      const handleClose = () => {
+        setIsClosing(true);
+        setTimeout(() => {
+          setIsClosing(false);
+          onClose();
+        }, 220);
+      };
+
+      // Reset state when opening
+      useEffect(() => {
+        if (isOpen) {
+          setIsClosing(false);
+          if (availableMonths.length > 0 && !availableMonths.some(m => m.key === selectedPeriod)) {
+            setSelectedPeriod(availableMonths[0].key);
+          }
+          setStatusMessage({ text: '', isError: false });
+          setIsExporting(false);
+        }
+      }, [isOpen]);
+
+      // Computed report data
+      const reportData = useMemo(() => {
+        return PdfReportService.computeMonthlyData({
+          transactions,
+          accounts,
+          debts,
+          savingsGoals,
+          customCategories,
+          periodKey: selectedPeriod,
+          accountId: selectedAccountId
+        });
+      }, [transactions, accounts, debts, savingsGoals, customCategories, selectedPeriod, selectedAccountId]);
+
+      // HTML Document for printing / export
+      const reportHtml = useMemo(() => {
+        return PdfReportService.generateReportHtml(reportData, userProfile);
+      }, [reportData, userProfile]);
+
+      const handleDownloadPdf = async () => {
+        try {
+          setIsExporting(true);
+          setStatusMessage({ text: 'Menyiapkan dan menyusun dokumen PDF...', isError: false });
+          HapticFeedback.tap();
+
+          const filename = `Laporan_Keuangan_Voralet_${reportData.periodKey.replace('-', '_')}.pdf`;
+          const success = await PdfReportService.exportDirectPdf(reportHtml, filename);
+
+          if (success) {
+            setStatusMessage({ text: 'Dokumen PDF berhasil disimpan ke memori perangkat!', isError: false });
+            HapticFeedback.save();
+            setTimeout(() => setStatusMessage({ text: '', isError: false }), 4500);
+          } else {
+            setStatusMessage({ text: 'Membuka dialog cetak sistem untuk menyimpan PDF...', isError: false });
+            PdfReportService.printOrSavePdf(reportHtml, `Laporan Keuangan Voralet ${reportData.periodLabel}`);
+          }
+        } catch (e) {
+          console.error(e);
+          setStatusMessage({ text: 'Membuka dialog cetak / simpan sistem...', isError: false });
+          PdfReportService.printOrSavePdf(reportHtml, `Laporan Keuangan Voralet ${reportData.periodLabel}`);
+        } finally {
+          setIsExporting(false);
+        }
+      };
+
+      const handlePrintSystem = () => {
+        HapticFeedback.tap();
+        setStatusMessage({ text: 'Membuka dialog cetak sistem (Print / Save as PDF)...', isError: false });
+        PdfReportService.printOrSavePdf(reportHtml, `Laporan Keuangan Voralet ${reportData.periodLabel}`);
+        setTimeout(() => setStatusMessage({ text: '', isError: false }), 4000);
+      };
+
+      const now = new Date();
+      const thisMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const lastMonthKey = `${lastMonthDate.getFullYear()}-${String(lastMonthDate.getMonth() + 1).padStart(2, '0')}`;
+
+      return (
+        <div className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 ${isClosing ? 'animate-ios-fade-out' : 'animate-ios-fade-in'}`}>
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity" onClick={handleClose} />
+
+          <div
+            className={`relative w-full max-w-lg bg-white dark:bg-slate-800 rounded-t-[32px] sm:rounded-3xl shadow-2xl border-t sm:border border-slate-100 dark:border-slate-700 flex flex-col max-h-[92dvh] sm:max-h-[85vh] overflow-hidden ${
+              isClosing ? 'animate-ios-sheet-down' : 'animate-ios-sheet-up'
+            }`}
+          >
+            {/* Sheet Handle */}
+            <div className="w-12 h-1 bg-slate-300 dark:bg-slate-600 rounded-full mx-auto mt-3 mb-1 shrink-0 sm:hidden" />
+
+            {/* Modal Header */}
+            <div className="px-5 py-3.5 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-9 h-9 rounded-xl bg-brand text-white flex items-center justify-center shrink-0 shadow-xs">
+                  <Icon name="file-pdf" className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white truncate leading-tight">
+                    Ekspor Laporan Bulanan (PDF)
+                  </h3>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                    Arsip pengeluaran & pembukuan mutasi A4
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleClose}
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 flex items-center justify-center transition-colors ios-btn-tap shrink-0"
+              >
+                <Icon name="x" className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Scrollable Body */}
+            <div className="p-4 space-y-4 overflow-y-auto flex-1 overscroll-contain">
+              {/* Filter Controls Card */}
+              <div className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-3">
+                <div className="flex flex-col sm:flex-row gap-2.5">
+                  {/* Period Selector */}
+                  <div className="flex-1 space-y-1">
+                    <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                      <Icon name="calendar" className="w-3.5 h-3.5 text-brand" />
+                      <span>Periode Bulan</span>
+                    </label>
+                    <select
+                      value={selectedPeriod}
+                      onChange={(e) => setSelectedPeriod(e.target.value)}
+                      className="w-full px-3 py-2 text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-brand"
+                    >
+                      {availableMonths.map((m) => (
+                        <option key={m.key} value={m.key}>
+                          {m.label} {m.key === thisMonthKey ? '(Bulan Ini)' : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Account Selector */}
+                  <div className="flex-1 space-y-1">
+                    <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                      <Icon name="credit-card" className="w-3.5 h-3.5 text-brand" />
+                      <span>Kantong / Rekening</span>
+                    </label>
+                    <select
+                      value={selectedAccountId}
+                      onChange={(e) => setSelectedAccountId(e.target.value)}
+                      className="w-full px-3 py-2 text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-brand"
+                    >
+                      <option value="ALL">Semua Kantong Keuangan</option>
+                      {accounts.map((acc) => (
+                        <option key={acc.id} value={acc.id}>
+                          {acc.name} ({acc.type})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Quick Period Buttons */}
+                <div className="flex items-center gap-2 pt-0.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedPeriod(thisMonthKey);
+                      HapticFeedback.tap();
+                    }}
+                    className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-colors ios-btn-tap ${
+                      selectedPeriod === thisMonthKey
+                        ? 'bg-brand text-white shadow-xs'
+                        : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
+                    }`}
+                  >
+                    Bulan Ini
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedPeriod(lastMonthKey);
+                      HapticFeedback.tap();
+                    }}
+                    className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-colors ios-btn-tap ${
+                      selectedPeriod === lastMonthKey
+                        ? 'bg-brand text-white shadow-xs'
+                        : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
+                    }`}
+                  >
+                    Bulan Lalu
+                  </button>
+                </div>
+              </div>
+
+              {/* Status Message Notification */}
+              {statusMessage.text && (
+                <div
+                  className={`p-3 rounded-xl text-xs font-semibold flex items-center gap-2 animate-ios-fade-in ${
+                    statusMessage.isError
+                      ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800'
+                      : 'bg-sky-50 dark:bg-sky-950/40 text-brand dark:text-sky-400 border border-sky-200 dark:border-sky-800'
+                  }`}
+                >
+                  <Icon name={statusMessage.isError ? 'alert-triangle' : 'check-circle'} className="w-4 h-4 shrink-0" />
+                  <span className="flex-1">{statusMessage.text}</span>
+                </div>
+              )}
+
+              {/* Monthly Overview Metric Chips */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+                <div className="p-2.5 bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-slate-200/60 dark:border-slate-700/60">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Pemasukan</div>
+                  <div className="text-xs font-bold text-emerald-600 dark:text-emerald-400 mt-0.5 truncate">
+                    +{formatIDR(reportData.totalIncome)}
+                  </div>
+                  <div className="text-[9px] text-slate-400">{reportData.incomeCount} transaksi</div>
+                </div>
+
+                <div className="p-2.5 bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-slate-200/60 dark:border-slate-700/60">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Pengeluaran</div>
+                  <div className="text-xs font-bold text-rose-600 dark:text-rose-400 mt-0.5 truncate">
+                    -{formatIDR(reportData.totalExpense)}
+                  </div>
+                  <div className="text-[9px] text-slate-400">{reportData.expenseCount} transaksi</div>
+                </div>
+
+                <div className="p-2.5 bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-slate-200/60 dark:border-slate-700/60">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Arus Bersih</div>
+                  <div
+                    className={`text-xs font-bold mt-0.5 truncate ${
+                      reportData.netCashflow >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+                    }`}
+                  >
+                    {reportData.netCashflow >= 0 ? '+' : ''}{formatIDR(reportData.netCashflow)}
+                  </div>
+                  <div className="text-[9px] text-slate-400">
+                    {reportData.netCashflow >= 0 ? 'Surplus' : 'Defisit'}
+                  </div>
+                </div>
+
+                <div className="p-2.5 bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-slate-200/60 dark:border-slate-700/60">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Mutasi</div>
+                  <div className="text-xs font-bold text-brand dark:text-sky-400 mt-0.5 truncate">
+                    {reportData.transactionCount} Transaksi
+                  </div>
+                  <div className="text-[9px] text-slate-400">Hemat {reportData.savingsRate}%</div>
+                </div>
+              </div>
+
+              {/* Segmented Control for In-Modal Tab */}
+              <SegmentedControl
+                options={[
+                  { value: 'PREVIEW', label: 'Pratinjau PDF' },
+                  { value: 'CATEGORIES', label: 'Pengeluaran' },
+                  { value: 'TRANSACTIONS', label: 'Daftar Mutasi' }
+                ]}
+                value={activeTab}
+                onChange={setActiveTab}
+                className="w-full"
+              />
+
+              {/* TAB 1: PREVIEW PAPER LAYOUT */}
+              {activeTab === 'PREVIEW' && (
+                <div className="p-3 bg-slate-100 dark:bg-slate-900/80 rounded-2xl border border-slate-200 dark:border-slate-700">
+                  <div className="bg-white text-slate-900 p-4 rounded-xl shadow-xs border border-slate-200 space-y-3.5 text-[11px]">
+                    {/* Simulated Document Header */}
+                    <div className="border-b-2 border-brand pb-2.5 flex justify-between items-center">
+                      <div>
+                        <div className="text-base font-extrabold text-brand tracking-tight">VORALET</div>
+                        <div className="text-[10px] text-slate-500 font-medium">Laporan Keuangan & Rekap Mutasi</div>
+                      </div>
+                      <div className="text-right text-[10px]">
+                        <div className="font-bold text-slate-800">{reportData.periodLabel}</div>
+                        <div className="text-slate-500">{reportData.accountName}</div>
+                      </div>
+                    </div>
+
+                    {/* Executive KPI Grid */}
+                    <div className="grid grid-cols-3 gap-2 text-center bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                      <div>
+                        <div className="text-[9px] uppercase font-bold text-slate-500">Pemasukan</div>
+                        <div className="font-bold text-emerald-600 text-xs mt-0.5">+{formatIDR(reportData.totalIncome)}</div>
+                      </div>
+                      <div>
+                        <div className="text-[9px] uppercase font-bold text-slate-500">Pengeluaran</div>
+                        <div className="font-bold text-rose-600 text-xs mt-0.5">-{formatIDR(reportData.totalExpense)}</div>
+                      </div>
+                      <div>
+                        <div className="text-[9px] uppercase font-bold text-slate-500">Selisih Bersih</div>
+                        <div className={`font-bold text-xs mt-0.5 ${reportData.netCashflow >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                          {reportData.netCashflow >= 0 ? '+' : ''}{formatIDR(reportData.netCashflow)}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Brief Category Section */}
+                    <div>
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 flex justify-between">
+                        <span>Pengeluaran per Kategori</span>
+                        <span>{reportData.categoryBreakdown.length} Kategori</span>
+                      </div>
+                      <div className="space-y-1">
+                        {reportData.categoryBreakdown.slice(0, 4).map((cat) => (
+                          <div key={cat.id} className="flex items-center justify-between py-0.5 text-[10px] border-b border-slate-100 last:border-0">
+                            <span className="flex items-center gap-1 truncate">
+                              <span>{cat.icon}</span>
+                              <span className="font-medium text-slate-700 truncate">{cat.label}</span>
+                            </span>
+                            <span className="font-bold text-slate-900 shrink-0 ml-2">
+                              {formatIDR(cat.amount)} ({cat.percentage}%)
+                            </span>
+                          </div>
+                        ))}
+                        {reportData.categoryBreakdown.length === 0 && (
+                          <div className="text-center py-2 text-slate-400 text-[10px]">Tidak ada pengeluaran di periode ini</div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Brief Transactions Section */}
+                    <div>
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 flex justify-between">
+                        <span>Cuplikan Mutasi Terkini</span>
+                        <span>{reportData.transactionCount} Entri</span>
+                      </div>
+                      <div className="space-y-1">
+                        {reportData.transactions.slice(0, 4).map((tx, idx) => (
+                          <div key={idx} className="flex items-center justify-between py-0.5 text-[10px] border-b border-slate-100 last:border-0">
+                            <span className="truncate text-slate-700">
+                              <span className="text-slate-400 font-mono mr-1.5">{formatDateID(tx.date).slice(0, 6)}</span>
+                              <span>{tx.notes || tx.category}</span>
+                            </span>
+                            <span className={`font-bold shrink-0 ml-2 ${tx.type === 'INCOME' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                              {tx.type === 'INCOME' ? '+' : '-'}{formatIDR(tx.amount)}
+                            </span>
+                          </div>
+                        ))}
+                        {reportData.transactions.length === 0 && (
+                          <div className="text-center py-2 text-slate-400 text-[10px]">Belum ada mutasi di periode ini</div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Simulated Document Footer */}
+                    <div className="pt-2 border-t border-slate-200 flex justify-between text-[9px] text-slate-400">
+                      <span>Dokumen Resmi Voralet Finance Engine</span>
+                      <span>Format Cetak A4 Standard</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 2: CATEGORY BREAKDOWN TAB */}
+              {activeTab === 'CATEGORIES' && (
+                <div className="space-y-2">
+                  {reportData.categoryBreakdown.length === 0 ? (
+                    <div className="text-center py-8 text-slate-400 text-xs">
+                      Tidak ada catatan pengeluaran pada bulan {reportData.periodLabel}
+                    </div>
+                  ) : (
+                    reportData.categoryBreakdown.map((cat) => (
+                      <div
+                        key={cat.id}
+                        className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-between gap-3"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span className="text-xl shrink-0">{cat.icon}</span>
+                          <div className="min-w-0">
+                            <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                              {cat.label}
+                            </h4>
+                            <p className="text-[10px] text-slate-400">
+                              {cat.count}x transaksi ({cat.percentage}% dari total pengeluaran)
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <div className="text-xs font-bold text-rose-600 dark:text-rose-400">
+                            {formatIDR(cat.amount)}
+                          </div>
+                          <div className="w-16 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full mt-1 overflow-hidden">
+                            <div className="h-full bg-rose-500 rounded-full" style={{ width: `${cat.percentage}%` }} />
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+
+              {/* TAB 3: COMPLETE TRANSACTIONS LOG */}
+              {activeTab === 'TRANSACTIONS' && (
+                <div className="space-y-1.5 max-h-60 overflow-y-auto pr-1">
+                  {reportData.transactions.length === 0 ? (
+                    <div className="text-center py-8 text-slate-400 text-xs">
+                      Belum ada transaksi tercatat pada bulan {reportData.periodLabel}
+                    </div>
+                  ) : (
+                    reportData.transactions.map((tx, idx) => {
+                      const isInc = tx.type === 'INCOME';
+                      const cat = getCategoryById(tx.category || 'lainnya', customCategories);
+                      return (
+                        <div
+                          key={tx.id || idx}
+                          className="p-2.5 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between gap-2 text-xs"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="text-base shrink-0">{cat.icon || '🏷️'}</span>
+                            <div className="min-w-0">
+                              <div className="font-semibold text-slate-900 dark:text-white truncate leading-tight">
+                                {tx.notes || cat.label || tx.category}
+                              </div>
+                              <div className="text-[10px] text-slate-400 mt-0.5">
+                                {formatDateID(tx.date)} • {cat.label}
+                              </div>
+                            </div>
+                          </div>
+                          <div className={`font-bold shrink-0 text-right ${isInc ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                            {isInc ? '+' : '-'}{formatIDR(tx.amount)}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Modal Bottom Actions */}
+            <div className="p-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col sm:flex-row gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={handleDownloadPdf}
+                disabled={isExporting}
+                className="flex-1 py-3 bg-brand hover:bg-brand-hover disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-xs ios-btn-tap flex items-center justify-center gap-2"
+              >
+                {isExporting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>Menyusun PDF...</span>
+                  </>
+                ) : (
+                  <>
+                    <Icon name="download" className="w-4 h-4" />
+                    <span>Unduh Dokumen PDF (.pdf)</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={handlePrintSystem}
+                disabled={isExporting}
+                className="py-3 px-4 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs ios-btn-tap flex items-center justify-center gap-2"
+              >
+                <Icon name="printer" className="w-4 h-4 text-brand" />
+                <span>Cetak / Simpan PDF Sistem</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // =========================================================================
     // 7. VIEWS: SAVINGS GOALS, ANALYTICS & FLOATING CAPSULE NAVIGATION
     // =========================================================================
-    const SavingsView = ({ savingsGoals, onOpenNewGoal, onEditGoal, onDeleteGoal, onDepositGoal, hideBalance }) => {
+    const SavingsView = ({ savingsGoals, accounts = [], onOpenNewGoal, onEditGoal, onDeleteGoal, onDepositGoal, hideBalance }) => {
       const [depositGoal, setDepositGoal] = useState(null);
       const [depositAmount, setDepositAmount] = useState('');
       const [depositMode, setDepositMode] = useState('DEPOSIT'); // DEPOSIT | WITHDRAW
+      const [selectedAccountId, setSelectedAccountId] = useState('');
+      const [customNotes, setCustomNotes] = useState('');
+      const [error, setError] = useState('');
 
       const safeGoals = Array.isArray(savingsGoals) ? savingsGoals : [];
+
+      useEffect(() => {
+        if (depositGoal) {
+          if (accounts.length > 0 && (!selectedAccountId || !accounts.some(a => a.id === selectedAccountId))) {
+            setSelectedAccountId(accounts[0].id);
+          }
+          setError('');
+          setCustomNotes(
+            depositMode === 'DEPOSIT'
+              ? `Nabung: ${depositGoal.title}`
+              : `Ambil Tabungan: ${depositGoal.title}`
+          );
+        }
+      }, [depositGoal, depositMode, accounts]);
 
       const handleDepositSubmit = (e) => {
         e.preventDefault();
         const amt = parseRawNumber(depositAmount);
-        if (amt <= 0 || !depositGoal) return;
+        if (!depositGoal) return;
+        if (amt <= 0) {
+          setError('Nominal harus lebih dari 0');
+          return;
+        }
+
+        const currentAmt = Number(depositGoal.currentAmount) || 0;
+        if (depositMode === 'WITHDRAW' && amt > currentAmt) {
+          setError(`Maksimal penarikan adalah ${formatIDR(currentAmt)}`);
+          return;
+        }
+
+        if (!selectedAccountId && accounts.length > 0) {
+          setError('Pilih kantong dompet terlebih dahulu');
+          return;
+        }
+
         HapticFeedback.save();
-        onDepositGoal(depositGoal.id, amt, depositMode);
+        onDepositGoal(depositGoal.id, amt, depositMode, selectedAccountId, customNotes);
         setDepositGoal(null);
         setDepositAmount('');
+        setError('');
+      };
+
+      const handleQuickAmount = (val) => {
+        setDepositAmount(String(val));
+        setError('');
       };
 
       return (
@@ -7462,70 +9269,228 @@
             </div>
           )}
 
-          {/* Deposit/Withdraw Mini Modal */}
-          {depositGoal && (
-            <div className="ios-modal-backdrop animate-ios-backdrop" onClick={(e) => { if (e.target === e.currentTarget) setDepositGoal(null); }}>
-              <div className="ios-modal-card bg-white dark:bg-slate-800 p-5 animate-ios-sheet max-w-sm mx-auto rounded-[24px]">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-700">
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                    {depositMode === 'DEPOSIT' ? 'Setor Tabungan' : 'Tarik Saldo Impian'}
-                  </h3>
-                  <button
-                    type="button"
-                    onClick={() => setDepositGoal(null)}
-                    className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors ios-btn-tap shrink-0"
-                    aria-label="Tutup"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 flex-shrink-0 aspect-square">
-                      <line x1="18" y1="6" x2="6" y2="18"></line>
-                      <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                  </button>
-                </div>
+          {/* Deposit/Withdraw Modal */}
+          {depositGoal && (() => {
+            const currentAmt = Number(depositGoal.currentAmount) || 0;
+            const targetAmt = Number(depositGoal.targetAmount) || 0;
+            const remTarget = Math.max(0, targetAmt - currentAmt);
 
-                <form onSubmit={handleDepositSubmit} className="space-y-4 pt-3">
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Target: <span className="font-semibold text-slate-800 dark:text-slate-200">{depositGoal.title}</span>
-                  </p>
-
-                  <div>
-                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">Nominal (Rp)</label>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      required
-                      value={depositAmount ? formatIDR(parseRawNumber(depositAmount)) : ''}
-                      onFocus={handleGlobalInputFocus}
-                      onBlur={handleGlobalInputBlur}
-                      onChange={(e) => {
-                        const num = parseRawNumber(e.target.value);
-                        setDepositAmount(num ? num.toString() : '');
-                      }}
-                      placeholder="Rp 0"
-                      className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:border-brand"
-                      autoFocus
-                    />
-                  </div>
-
-                  <div className="flex gap-2">
+            return (
+              <div className="ios-modal-backdrop animate-ios-backdrop" onClick={(e) => { if (e.target === e.currentTarget) setDepositGoal(null); }}>
+                <div className="ios-modal-card bg-white dark:bg-slate-800 p-5 animate-ios-sheet max-w-sm mx-auto rounded-[24px]">
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-700">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${
+                        depositMode === 'DEPOSIT'
+                          ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600'
+                          : 'bg-amber-100 dark:bg-amber-900/50 text-amber-600'
+                      }`}>
+                        <Icon name={depositMode === 'DEPOSIT' ? 'plus' : 'arrow-down-left'} className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                          {depositMode === 'DEPOSIT' ? 'Setor Tabungan (Nabung)' : 'Tarik Saldo Impian'}
+                        </h3>
+                        <p className="text-[10px] text-slate-400 truncate max-w-[200px]">
+                          {depositGoal.title}
+                        </p>
+                      </div>
+                    </div>
                     <button
                       type="button"
                       onClick={() => setDepositGoal(null)}
-                      className="flex-1 py-2.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl ios-btn-tap"
+                      className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors ios-btn-tap shrink-0"
+                      aria-label="Tutup"
                     >
-                      Batal
-                    </button>
-                    <button
-                      type="submit"
-                      className="flex-1 py-2.5 bg-[#0284C7] text-white text-xs font-semibold rounded-xl hover:bg-[#0369A1] ios-btn-tap"
-                    >
-                      Konfirmasi
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 flex-shrink-0 aspect-square">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                      </svg>
                     </button>
                   </div>
-                </form>
+
+                  <form onSubmit={handleDepositSubmit} className="space-y-3.5 pt-3">
+                    {/* Goal Progress Info */}
+                    <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-1.5 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-slate-500 dark:text-slate-400">Saldo Impian Saat Ini:</span>
+                        <strong className="text-emerald-600">{formatIDR(currentAmt)}</strong>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-500 dark:text-slate-400">Target Total:</span>
+                        <span className="font-semibold text-slate-700 dark:text-slate-300">{formatIDR(targetAmt)}</span>
+                      </div>
+                      {depositMode === 'DEPOSIT' && remTarget > 0 && (
+                        <div className="flex justify-between pt-1 border-t border-slate-200 dark:border-slate-800 text-[11px]">
+                          <span className="text-slate-500">Kurang untuk target:</span>
+                          <span className="font-bold text-brand dark:text-sky-400">{formatIDR(remTarget)}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Amount Input */}
+                    <div>
+                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                        Nominal {depositMode === 'DEPOSIT' ? 'Nabung' : 'Tarik'} (Rp)
+                      </label>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        required
+                        value={depositAmount ? formatIDR(parseRawNumber(depositAmount)) : ''}
+                        onFocus={handleGlobalInputFocus}
+                        onBlur={handleGlobalInputBlur}
+                        onChange={(e) => {
+                          const num = parseRawNumber(e.target.value);
+                          setDepositAmount(num ? num.toString() : '');
+                          setError('');
+                        }}
+                        placeholder="Rp 0"
+                        className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-base font-bold text-slate-900 dark:text-white focus:outline-none focus:border-brand"
+                        autoFocus
+                      />
+
+                      {/* Quick chips */}
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        {depositMode === 'DEPOSIT' ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => handleQuickAmount(50000)}
+                              className="px-2.5 py-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-[11px] font-semibold rounded-lg ios-btn-tap"
+                            >
+                              +50 rb
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleQuickAmount(100000)}
+                              className="px-2.5 py-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-[11px] font-semibold rounded-lg ios-btn-tap"
+                            >
+                              +100 rb
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleQuickAmount(500000)}
+                              className="px-2.5 py-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-[11px] font-semibold rounded-lg ios-btn-tap"
+                            >
+                              +500 rb
+                            </button>
+                            {remTarget > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => handleQuickAmount(remTarget)}
+                                className="px-2.5 py-1 bg-sky-50 dark:bg-slate-700 text-brand dark:text-sky-400 text-[11px] font-bold rounded-lg border border-sky-200/60 dark:border-slate-600 ios-btn-tap"
+                              >
+                                Penuhkan
+                              </button>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => handleQuickAmount(Math.round(currentAmt * 0.25))}
+                              className="px-2.5 py-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-[11px] font-semibold rounded-lg ios-btn-tap"
+                            >
+                              25%
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleQuickAmount(Math.round(currentAmt * 0.5))}
+                              className="px-2.5 py-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-[11px] font-semibold rounded-lg ios-btn-tap"
+                            >
+                              50%
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleQuickAmount(currentAmt)}
+                              className="px-2.5 py-1 bg-amber-50 dark:bg-slate-700 text-amber-700 dark:text-amber-400 text-[11px] font-bold rounded-lg border border-amber-200/60 dark:border-slate-600 ios-btn-tap"
+                            >
+                              Semua Saldo
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Account Selector */}
+                    <div>
+                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                        {depositMode === 'DEPOSIT' ? 'Sumber Dana (Kantong):' : 'Tujuan Dana (Kantong):'}
+                      </label>
+                      {accounts.length === 0 ? (
+                        <p className="text-xs text-amber-600 bg-amber-50 p-2.5 rounded-lg border border-amber-200">
+                          Belum ada kantong keuangan aktif.
+                        </p>
+                      ) : (
+                        <select
+                          value={selectedAccountId}
+                          onFocus={handleGlobalInputFocus}
+                          onBlur={handleGlobalInputBlur}
+                          onChange={(e) => {
+                            setSelectedAccountId(e.target.value);
+                            setError('');
+                          }}
+                          className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand"
+                        >
+                          {accounts.map(acc => (
+                            <option key={acc.id} value={acc.id}>
+                              {acc.name} ({acc.type})
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+
+                    {/* Notes */}
+                    <div>
+                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                        Catatan Transaksi
+                      </label>
+                      <input
+                        type="text"
+                        maxLength={60}
+                        value={customNotes}
+                        onFocus={handleGlobalInputFocus}
+                        onBlur={handleGlobalInputBlur}
+                        onChange={(e) => setCustomNotes(e.target.value)}
+                        placeholder="Keterangan transaksi"
+                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand"
+                      />
+                    </div>
+
+                    {/* Explanatory Banner */}
+                    <div className="p-2.5 bg-sky-50/80 dark:bg-sky-950/30 rounded-xl border border-sky-100 dark:border-sky-900/40 text-[11px] text-sky-800 dark:text-sky-300">
+                      Transaksi otomatis dicatat ke riwayat mutasi sebagai <strong>{depositMode === 'DEPOSIT' ? 'Pengeluaran (Tabungan)' : 'Pemasukan (Tarik Tabungan)'}</strong>.
+                    </div>
+
+                    {error && <p className="text-xs text-rose-500 font-semibold">{error}</p>}
+
+                    <div className="flex gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setDepositGoal(null)}
+                        className="flex-1 py-2.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl ios-btn-tap"
+                      >
+                        Batal
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={accounts.length === 0}
+                        className={`flex-1 py-2.5 text-white text-xs font-bold rounded-xl transition-colors shadow-sm ios-btn-tap ${
+                          depositMode === 'DEPOSIT'
+                            ? 'bg-emerald-600 hover:bg-emerald-700'
+                            : 'bg-brand hover:bg-brand-hover'
+                        }`}
+                      >
+                        {depositMode === 'DEPOSIT' ? 'Simpan Setoran' : 'Tarik Saldo'}
+                      </button>
+                    </div>
+                  </form>
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
         </div>
       );
     };
@@ -7545,7 +9510,7 @@
       '#64748B'  // Slate
     ];
 
-    const AnalyticsView = ({ transactions = [], accounts = [], debts = [], savingsGoals = [], hideBalance, customCategories = [] }) => {
+    const AnalyticsView = ({ transactions = [], accounts = [], debts = [], savingsGoals = [], hideBalance, customCategories = [], onOpenMonthlyPdfReport }) => {
       const [trendMode, setTrendMode] = useState('MONTHLY'); // MONTHLY (last 6 months) | YEARLY
       const [selectedCatId, setSelectedCatId] = useState(null);
       const safeTxs = Array.isArray(transactions) ? transactions : [];
@@ -7760,6 +9725,31 @@
               <h2 className="text-base font-bold text-slate-900 dark:text-white">Analisis & Tren Keuangan</h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">Statistik arus kas, hutang, dan impian</p>
             </div>
+          </div>
+
+          {/* Action Card: Ekspor Laporan Bulanan PDF */}
+          <div className="p-3.5 rounded-2xl bg-gradient-to-r from-sky-500/10 via-brand/10 to-indigo-500/10 border border-sky-200/80 dark:border-slate-700 flex items-center justify-between gap-3 shadow-xs">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-9 h-9 rounded-xl bg-brand text-white flex items-center justify-center shrink-0 shadow-xs">
+                <Icon name="file-pdf" className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                  Ekspor Laporan Bulanan (PDF)
+                </h4>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                  Unduh atau cetak dokumen A4 mutasi & pengeluaran
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={onOpenMonthlyPdfReport}
+              className="px-3 py-1.5 bg-brand hover:bg-brand-hover text-white text-xs font-bold rounded-xl shrink-0 shadow-xs ios-btn-tap flex items-center gap-1.5"
+            >
+              <Icon name="download" className="w-3.5 h-3.5" />
+              <span>Buka PDF</span>
+            </button>
           </div>
 
           {/* Segmented Control for Trend Period */}
@@ -10100,6 +12090,7 @@
       const [isDebtModalOpen, setIsDebtModalOpen] = useState(false);
       const [isDevModalOpen, setIsDevModalOpen] = useState(false);
       const [isCsvImportModalOpen, setIsCsvImportModalOpen] = useState(false);
+      const [isMonthlyPdfModalOpen, setIsMonthlyPdfModalOpen] = useState(false);
       const [isTutorialOpen, setIsTutorialOpen] = useState(false);
 
       // Auto-trigger tutorial on first run once unlocked
@@ -10492,10 +12483,12 @@ Tindakan ini tidak dapat dibatalkan.`);
         showToast('Target impian dihapus');
       }, []);
 
-      const handleDepositGoal = useCallback((goalId, amount, mode) => {
+      const handleDepositGoal = useCallback((goalId, amount, mode, accountId, customNotes) => {
+        let goalTitle = 'Kantong Impian';
         setSavingsGoals(prev => {
           const next = prev.map(g => {
             if (g.id === goalId) {
+              goalTitle = g.title || g.name || 'Kantong Impian';
               const cur = Number(g.currentAmount) || 0;
               const nextAmt = mode === 'DEPOSIT' ? cur + amount : Math.max(0, cur - amount);
               return { ...g, currentAmount: nextAmt };
@@ -10505,8 +12498,29 @@ Tindakan ini tidak dapat dibatalkan.`);
           StorageService.setSavingsGoals(next);
           return next;
         });
-        showToast(mode === 'DEPOSIT' ? 'Tabungan disetor' : 'Tabungan ditarik');
-      }, []);
+
+        // Record transaction into account and transactions list
+        const chosenAccountId = accountId || accounts[0]?.id;
+        if (chosenAccountId && amount > 0) {
+          const isDeposit = mode === 'DEPOSIT';
+          const defaultNote = isDeposit ? `Nabung: ${goalTitle}` : `Ambil Tabungan: ${goalTitle}`;
+          const finalNote = customNotes && customNotes.trim() ? customNotes.trim() : defaultNote;
+
+          const newTx = {
+            id: 'tx_sav_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
+            accountId: chosenAccountId,
+            type: isDeposit ? 'EXPENSE' : 'INCOME',
+            amount: amount,
+            category: 'tabungan',
+            date: new Date().toISOString().split('T')[0],
+            notes: finalNote,
+            createdAt: new Date().toISOString()
+          };
+          handleAddTransaction(newTx);
+        }
+
+        showToast(mode === 'DEPOSIT' ? 'Tabungan disetor & dicatat di mutasi' : 'Tabungan ditarik & dicatat di mutasi');
+      }, [accounts, handleAddTransaction, showToast]);
 
       // Debts
       const handleAddDebt = useCallback((debtData) => {
@@ -10531,6 +12545,74 @@ Tindakan ini tidak dapat dibatalkan.`);
         showToast('Catatan disimpan');
       }, [showToast]);
 
+      const handlePayDebt = useCallback((debtId, paymentData) => {
+        if (!paymentData || !paymentData.amount) return;
+        const { amount, accountId, date, notes } = paymentData;
+        let debtRecord = null;
+
+        setDebts(prev => {
+          const next = prev.map(d => {
+            if (d.id === debtId) {
+              const currentPaid = Number(d.paidAmount) || 0;
+              const newPaid = currentPaid + amount;
+              const totalAmount = Number(d.amount) || 0;
+              const isFullyPaid = newPaid >= totalAmount && totalAmount > 0;
+
+              const chosenAccount = accounts.find(a => a.id === accountId);
+              const payRecord = {
+                id: 'pay_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
+                amount: amount,
+                date: date || new Date().toISOString().split('T')[0],
+                accountId: accountId || '',
+                accountName: chosenAccount?.name || 'Kantong',
+                notes: notes || (d.type === 'HUTANG' ? `Bayar hutang ke ${d.personName}` : `Terima piutang dari ${d.personName}`)
+              };
+
+              const existingPayments = Array.isArray(d.payments) ? d.payments : [];
+
+              const updatedDebt = {
+                ...d,
+                paidAmount: newPaid,
+                isPaid: isFullyPaid,
+                status: isFullyPaid ? 'LUNAS' : 'BELUM_LUNAS',
+                payments: [payRecord, ...existingPayments]
+              };
+              debtRecord = updatedDebt;
+              return updatedDebt;
+            }
+            return d;
+          });
+          StorageService.setDebts(next);
+          return next;
+        });
+
+        // Record real transaction in transactions list
+        if (debtRecord && amount > 0) {
+          const isHutang = debtRecord.type === 'HUTANG';
+          const chosenAccountId = accountId || accounts[0]?.id;
+          if (chosenAccountId) {
+            const defaultNote = isHutang
+              ? `Bayar hutang: ${debtRecord.personName}`
+              : `Terima piutang: ${debtRecord.personName}`;
+            const finalNote = notes && notes.trim() ? notes.trim() : defaultNote;
+
+            const newTx = {
+              id: 'tx_debt_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
+              accountId: chosenAccountId,
+              type: isHutang ? 'EXPENSE' : 'INCOME',
+              amount: amount,
+              category: 'hutang',
+              date: date || new Date().toISOString().split('T')[0],
+              notes: finalNote,
+              createdAt: new Date().toISOString()
+            };
+            handleAddTransaction(newTx);
+          }
+
+          showToast(isHutang ? 'Pembayaran hutang dicatat di mutasi' : 'Penerimaan piutang dicatat di mutasi');
+        }
+      }, [accounts, handleAddTransaction, showToast]);
+
       const handleToggleDebtStatus = useCallback((debtId) => {
         setDebts(prev => {
           const next = prev.map(d => {
@@ -10540,7 +12622,8 @@ Tindakan ini tidak dapat dibatalkan.`);
               return {
                 ...d,
                 isPaid: newPaid,
-                status: newPaid ? 'LUNAS' : 'BELUM_LUNAS'
+                status: newPaid ? 'LUNAS' : 'BELUM_LUNAS',
+                paidAmount: newPaid ? (Number(d.amount) || 0) : 0
               };
             }
             return d;
@@ -10814,17 +12897,15 @@ Tindakan ini tidak dapat dibatalkan.`);
         );
       }
 
-      const isAnyModalOpen = isTxModalOpen || isAccModalOpen || isSavingsModalOpen || isSettingsModalOpen || isDebtModalOpen || isDevModalOpen;
+      const isAnyModalOpen = isTxModalOpen || isAccModalOpen || isSavingsModalOpen || isSettingsModalOpen || isDebtModalOpen || isDevModalOpen || isMonthlyPdfModalOpen || isCsvImportModalOpen;
 
       return (
         <div className={`h-[100dvh] flex flex-col ${theme === 'dark' ? 'dark bg-[#0F172A] text-[#F8FAFC]' : 'bg-slate-50 text-[#0F172A]'} overflow-hidden select-none transition-colors duration-300 ease-in-out`}>
           <ThemeCrossfadeOverlay transition={themeTransition} />
           {toastMsg && <Toast message={toastMsg} onClose={() => setToastMsg('')} />}
 
-          {/* iOS Background Depth Stacking Layer */}
-          <div className={`ios-modal-depth-layer flex-1 flex flex-col w-full h-full overflow-hidden ${
-            isAnyModalOpen ? 'ios-modal-depth-stacked' : ''
-          }`}>
+          {/* Main App Viewport */}
+          <div className="flex-1 flex flex-col w-full h-full overflow-hidden">
             <main
               onTouchStart={handleScreenTouchStart}
               onTouchEnd={handleScreenTouchEnd}
@@ -10881,7 +12962,9 @@ Tindakan ini tidak dapat dibatalkan.`);
               {activeTab === 'debts' && (
                 <DebtsView
                   debts={debts}
+                  accounts={accounts}
                   onAddDebt={handleAddDebt}
+                  onPayDebt={handlePayDebt}
                   onToggleStatus={handleToggleDebtStatus}
                   onDeleteDebt={handleDeleteDebt}
                   hideBalance={hideBalance}
@@ -10892,6 +12975,7 @@ Tindakan ini tidak dapat dibatalkan.`);
               {activeTab === 'savings' && (
                 <SavingsView
                   savingsGoals={savingsGoals}
+                  accounts={accounts}
                   onOpenNewGoal={handleOpenNewSavingsGoal}
                   onEditGoal={handleEditSavingsGoal}
                   onDeleteGoal={handleDeleteGoal}
@@ -10908,6 +12992,7 @@ Tindakan ini tidak dapat dibatalkan.`);
                   savingsGoals={savingsGoals}
                   hideBalance={hideBalance}
                   customCategories={customCategories}
+                  onOpenMonthlyPdfReport={() => setIsMonthlyPdfModalOpen(true)}
                 />
               )}
             </ErrorBoundary>
@@ -10966,6 +13051,7 @@ Tindakan ini tidak dapat dibatalkan.`);
             onDeleteCustomCategory={handleDeleteCustomCategory}
             onOpenDeveloperGate={() => setIsDevModalOpen(true)}
             onReplayTutorial={() => setIsTutorialOpen(true)}
+            onOpenMonthlyPdfReport={() => setIsMonthlyPdfModalOpen(true)}
           />
 
           <CsvImportModal
@@ -10984,6 +13070,18 @@ Tindakan ini tidak dapat dibatalkan.`);
             transactions={transactions}
             debts={debts}
             savingsGoals={savingsGoals}
+          />
+
+          <MonthlyPdfReportModal
+            isOpen={isMonthlyPdfModalOpen}
+            onClose={() => setIsMonthlyPdfModalOpen(false)}
+            transactions={transactions}
+            accounts={accounts}
+            debts={debts}
+            savingsGoals={savingsGoals}
+            customCategories={customCategories}
+            userProfile={memoizedUserProfile}
+            hideBalance={hideBalance}
           />
 
           <NonIntrusiveTutorialModal

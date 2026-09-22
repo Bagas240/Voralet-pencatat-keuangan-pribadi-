@@ -101,6 +101,28 @@ HTML_HEAD = """<!DOCTYPE html>
       document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.4/babel.min.js"><\/script>');
     }
   </script>
+  <script>
+    // Configure Babel to suppress deoptimisation warnings on large bundled inline scripts
+    try {
+      if (window.Babel && window.Babel.transform) {
+        // Suppress compact warning for scripts > 500KB
+        const originalTransform = window.Babel.transform;
+        window.Babel.transform = function(code, opts) {
+          opts = opts || {};
+          if (opts.compact === undefined) opts.compact = false;
+          return originalTransform.call(this, code, opts);
+        };
+      }
+    } catch (e) {}
+  </script>
+
+  <!-- html2pdf.js for Client-Side PDF Generation (Local asset with CDN fallback) -->
+  <script src="./vendor/html2pdf.bundle.min.js"></script>
+  <script>
+    if (!window.html2pdf) {
+      document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"><\/script>');
+    }
+  </script>
 
   <!-- Theme Synchronization Initialization -->
   <script>
@@ -129,17 +151,18 @@ HTML_HEAD = """<!DOCTYPE html>
   <!-- Haptic & Vibration Feedback Engine (navigator.vibrate & AndroidBridge) -->
   <script>
     (function() {
-      // Unified Voralet Haptics Engine
+      // Unified Voralet Haptics Engine (Optimized zero-jank priority)
       window.VoraletHaptics = {
         trigger: function(pattern, bridgeType) {
+          if (window.AndroidBridge && typeof window.AndroidBridge.hapticFeedback === 'function') {
+            try {
+              window.AndroidBridge.hapticFeedback(bridgeType || 'click');
+              return;
+            } catch (e) {}
+          }
           try {
             if (window.navigator && typeof window.navigator.vibrate === 'function') {
               window.navigator.vibrate(pattern);
-            }
-          } catch (e) {}
-          try {
-            if (window.AndroidBridge && typeof window.AndroidBridge.hapticFeedback === 'function') {
-              window.AndroidBridge.hapticFeedback(bridgeType || 'click');
             }
           } catch (e) {}
         },
@@ -294,9 +317,9 @@ HTML_HEAD = """<!DOCTYPE html>
       scrollbar-width: none;
     }
 
-    /* Tactile Touch Animation (iOS Liquid Spring Physics 60/120 FPS) */
+    /* Tactile Touch Animation (Ultra-Responsive 120 FPS Physics) */
     .ios-btn-tap, .ios-touch-item {
-      transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.18s ease;
+      transition: transform 0.12s cubic-bezier(0.2, 0, 0, 1), opacity 0.12s ease;
       user-select: none;
       -webkit-user-select: none;
       will-change: transform, opacity;
@@ -304,11 +327,11 @@ HTML_HEAD = """<!DOCTYPE html>
       touch-action: manipulation;
     }
     .ios-btn-tap:active, .ios-touch-item:active {
-      transform: translate3d(0, 0, 0) scale(0.95) !important;
+      transform: translate3d(0, 0, 0) scale(0.97) !important;
       opacity: 0.88;
     }
     .ios-card-tap {
-      transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.18s ease;
+      transition: transform 0.12s cubic-bezier(0.2, 0, 0, 1), opacity 0.12s ease;
       user-select: none;
       -webkit-user-select: none;
       will-change: transform, opacity;
@@ -316,13 +339,13 @@ HTML_HEAD = """<!DOCTYPE html>
       touch-action: manipulation;
     }
     .ios-card-tap:active {
-      transform: translate3d(0, 0, 0) scale(0.97) !important;
+      transform: translate3d(0, 0, 0) scale(0.98) !important;
       opacity: 0.92;
     }
 
     /* Navigation, view transitions, and bottom sheets */
     .ios-view-transition, .animate-ios-tab-view {
-      transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.3s ease;
+      transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
       will-change: transform, opacity;
       transform: translate3d(0, 0, 0);
     }
@@ -334,8 +357,10 @@ HTML_HEAD = """<!DOCTYPE html>
       position: relative;
       overflow: hidden;
       background-color: #38bdf8;
-      box-shadow: 0 8px 24px -6px rgba(0, 0, 0, 0.28), 0 2px 8px -2px rgba(0, 0, 0, 0.16), inset 0 1px 1px rgba(255, 255, 255, 0.35);
-      transition: all 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 4px 14px -2px rgba(0, 0, 0, 0.18), inset 0 1px 1px rgba(255, 255, 255, 0.35);
+      transition: height 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease;
+      will-change: height;
+      transform: translateZ(0);
     }
     .apple-wallet-card-expanded {
       height: 195px;
@@ -343,8 +368,10 @@ HTML_HEAD = """<!DOCTYPE html>
       position: relative;
       overflow: hidden;
       background-color: #38bdf8;
-      box-shadow: 0 24px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 2px rgba(255, 255, 255, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.4);
-      transition: all 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.38), 0 0 0 2px rgba(255, 255, 255, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+      transition: height 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease;
+      will-change: height;
+      transform: translateZ(0);
     }
     @media (min-width: 640px) {
       .apple-wallet-card-expanded {
@@ -359,17 +386,12 @@ HTML_HEAD = """<!DOCTYPE html>
         115deg,
         transparent 35%,
         rgba(255, 255, 255, 0.06) 45%,
-        rgba(255, 255, 255, 0.18) 50%,
+        rgba(255, 255, 255, 0.14) 50%,
         rgba(255, 255, 255, 0.06) 55%,
         transparent 65%
       );
       transform: rotate(20deg) translate3d(-100%, -100%, 0);
       pointer-events: none;
-      animation: appleCardShine 7s infinite ease-in-out;
-    }
-    @keyframes appleCardShine {
-      0%, 70% { transform: rotate(20deg) translate3d(-100%, -100%, 0); }
-      85%, 100% { transform: rotate(20deg) translate3d(100%, 100%, 0); }
     }
     .apple-card-emboss {
       text-shadow: 0 1px 1px rgba(0, 0, 0, 0.4), 0 -1px 0 rgba(255, 255, 255, 0.2);
@@ -556,26 +578,20 @@ HTML_HEAD = """<!DOCTYPE html>
       opacity: 0.76;
     }
 
-    /* iOS Native Modal Sheet Depth Stacking Effect */
+    /* iOS Native Modal Sheet Stacking Layer (Hardware composited, zero re-layout) */
     .ios-modal-depth-layer {
-      transition: transform 350ms cubic-bezier(0.32, 0.72, 0, 1), border-radius 350ms cubic-bezier(0.32, 0.72, 0, 1), filter 350ms ease-out;
-      will-change: transform, border-radius;
-      transform-origin: center top;
+      transform: translateZ(0);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
     }
     .ios-modal-depth-stacked {
-      transform: scale(0.96) !important;
-      border-radius: 28px !important;
-      overflow: hidden !important;
-      filter: brightness(0.95);
-    }
-    html.dark .ios-modal-depth-stacked, .dark .ios-modal-depth-stacked {
-      filter: brightness(0.88);
+      opacity: 0.98;
     }
 
-    /* SwiftUI Bouncy Elastic Curve for Dialogs, Popovers & Toasts */
+    /* Ultra-Smooth Spring Pop for Dialogs & Alert Toasts */
     @keyframes iosSpringPop {
       0% {
-        transform: scale(0.85);
+        transform: scale(0.92);
         opacity: 0;
       }
       100% {
@@ -584,172 +600,159 @@ HTML_HEAD = """<!DOCTYPE html>
       }
     }
     .animate-ios-spring-pop {
-      animation: iosSpringPop 0.38s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      animation: iosSpringPop 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       will-change: transform, opacity;
+      transform: translateZ(0);
     }
 
-    /* iOS Modal & Sheet Keyframes (Gentle Spring Apple HIG Physics) */
+    /* iOS Modal & Sheet Keyframes (Compositor-only 120 FPS GPU Physics) */
     @keyframes iosSheetEnter {
       0% {
-        transform: translate3d(0, 100%, 0) scale3d(0.97, 0.97, 1);
-        opacity: 0.6;
-      }
-      65% {
-        transform: translate3d(0, -6px, 0) scale3d(1.006, 1.006, 1);
-        opacity: 1;
-      }
-      82% {
-        transform: translate3d(0, 1.5px, 0) scale3d(0.999, 0.999, 1);
+        transform: translate3d(0, 100%, 0);
       }
       100% {
-        transform: translate3d(0, 0, 0) scale3d(1, 1, 1);
-        opacity: 1;
+        transform: translate3d(0, 0, 0);
       }
     }
     @keyframes iosSheetExit {
       0% {
-        transform: translate3d(0, 0, 0) scale3d(1, 1, 1);
-        opacity: 1;
+        transform: translate3d(0, 0, 0);
       }
       100% {
-        transform: translate3d(0, 100%, 0) scale3d(0.97, 0.97, 1);
-        opacity: 0.8;
+        transform: translate3d(0, 100%, 0);
       }
     }
     @keyframes iosBackdropFadeIn {
-      0% { opacity: 0; backdrop-filter: blur(0px); -webkit-backdrop-filter: blur(0px); }
-      100% { opacity: 1; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+      0% { opacity: 0; }
+      100% { opacity: 1; }
     }
     @keyframes iosBackdropFadeOut {
-      0% { opacity: 1; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
-      100% { opacity: 0; backdrop-filter: blur(0px); -webkit-backdrop-filter: blur(0px); }
+      0% { opacity: 1; }
+      100% { opacity: 0; }
     }
     .animate-ios-sheet {
-      animation: iosSheetEnter 0.52s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-      will-change: transform, opacity;
-      transform-origin: center bottom;
+      animation: iosSheetEnter 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      will-change: transform;
+      transform: translateZ(0);
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
     }
     .animate-ios-sheet-exit {
-      animation: iosSheetExit 0.28s cubic-bezier(0.32, 0.72, 0, 1) forwards;
-      will-change: transform, opacity;
-      transform-origin: center bottom;
+      animation: iosSheetExit 0.2s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+      will-change: transform;
+      transform: translateZ(0);
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
     }
     .animate-ios-backdrop {
-      animation: iosBackdropFadeIn 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation: iosBackdropFadeIn 0.22s ease-out forwards;
       will-change: opacity;
+      transform: translateZ(0);
     }
     .animate-ios-backdrop-exit {
-      animation: iosBackdropFadeOut 0.26s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+      animation: iosBackdropFadeOut 0.18s ease-in forwards;
       will-change: opacity;
+      transform: translateZ(0);
     }
 
-    /* iOS Navigation & Tab Slide View Transitions (Fluid Apple HIG Physics) */
+    /* iOS Navigation & Tab Slide View Transitions (Silky Snappy 120 FPS) */
     @keyframes iosTabSlideForward {
       0% {
         opacity: 0;
-        transform: translate3d(38px, 0, 0) scale(0.986);
+        transform: translate3d(16px, 0, 0);
       }
       100% {
         opacity: 1;
-        transform: translate3d(0, 0, 0) scale(1);
+        transform: translate3d(0, 0, 0);
       }
     }
     @keyframes iosTabSlideBackward {
       0% {
         opacity: 0;
-        transform: translate3d(-38px, 0, 0) scale(0.986);
+        transform: translate3d(-16px, 0, 0);
       }
       100% {
         opacity: 1;
-        transform: translate3d(0, 0, 0) scale(1);
+        transform: translate3d(0, 0, 0);
       }
     }
     @keyframes iosTabFadeIn {
       0% {
         opacity: 0;
-        transform: translate3d(0, 12px, 0) scale(0.986);
+        transform: translate3d(0, 8px, 0);
       }
       100% {
         opacity: 1;
-        transform: translate3d(0, 0, 0) scale(1);
+        transform: translate3d(0, 0, 0);
       }
     }
     .animate-ios-tab-slide-forward {
-      animation: iosTabSlideForward 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation: iosTabSlideForward 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       will-change: transform, opacity;
+      transform: translateZ(0);
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
     }
     .animate-ios-tab-slide-backward {
-      animation: iosTabSlideBackward 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation: iosTabSlideBackward 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       will-change: transform, opacity;
+      transform: translateZ(0);
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
     }
     .animate-ios-tab-view {
-      animation: iosTabFadeIn 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation: iosTabFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       will-change: transform, opacity;
+      transform: translateZ(0);
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
     }
 
-    /* Transaction List Layout Animations (Smooth iOS Fluid Spring & Soft Dismiss) */
+    /* Transaction List Layout Animations (Hardware Accelerated) */
     @keyframes dashboardCardEntry {
       0% {
         opacity: 0;
-        transform: translate3d(0, 18px, 0) scale(0.975);
-      }
-      65% {
-        opacity: 0.95;
+        transform: translate3d(0, 8px, 0);
       }
       100% {
         opacity: 1;
-        transform: translate3d(0, 0, 0) scale(1);
+        transform: translate3d(0, 0, 0);
       }
     }
     .animate-dashboard-card {
-      animation: dashboardCardEntry 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
+      animation: dashboardCardEntry 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
       will-change: transform, opacity;
+      transform: translateZ(0);
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
     }
 
     @keyframes valuePulseHighlight {
-      0% {
-        transform: scale(1);
-        filter: brightness(1);
-      }
-      35% {
-        transform: scale(1.035);
-        filter: brightness(1.15);
-      }
-      100% {
-        transform: scale(1);
-        filter: brightness(1);
-      }
+      0% { transform: scale(1); }
+      40% { transform: scale(1.025); }
+      100% { transform: scale(1); }
     }
     .animate-value-pulse {
-      animation: valuePulseHighlight 0.38s cubic-bezier(0.16, 1, 0.3, 1);
+      animation: valuePulseHighlight 0.22s cubic-bezier(0.16, 1, 0.3, 1);
       display: inline-block;
-      will-change: transform, filter;
+      will-change: transform;
+      transform: translateZ(0);
     }
 
     @keyframes txCardEntry {
       0% {
         opacity: 0;
-        transform: translate3d(0, 16px, 0) scale(0.98);
-      }
-      60% {
-        opacity: 0.95;
+        transform: translate3d(0, 10px, 0);
       }
       100% {
         opacity: 1;
-        transform: translate3d(0, 0, 0) scale(1);
+        transform: translate3d(0, 0, 0);
       }
     }
     .animate-tx-card-entry {
-      animation: txCardEntry 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+      animation: txCardEntry 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
       will-change: transform, opacity;
+      transform: translateZ(0);
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
     }
@@ -888,13 +891,16 @@ HTML_HEAD = """<!DOCTYPE html>
       display: flex;
       align-items: flex-end;
       justify-content: center;
-      background-color: rgba(15, 23, 42, 0.65);
+      background-color: rgba(15, 23, 42, 0.62);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       overscroll-behavior: contain;
       padding: 0;
       will-change: opacity;
-      transform: translate3d(0, 0, 0);
+      transform: translateZ(0);
       -webkit-backface-visibility: hidden;
       backface-visibility: hidden;
+      contain: strict;
     }
     @media (min-width: 640px) {
       .ios-modal-backdrop {
@@ -911,14 +917,14 @@ HTML_HEAD = """<!DOCTYPE html>
       border-top-left-radius: 1.5rem;
       border-top-right-radius: 1.5rem;
       overflow: hidden;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+      box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.35);
       background-color: #FFFFFF;
       color: #0F172A;
-      transition: background-color 300ms ease-in-out, color 300ms ease-in-out;
-      will-change: transform, opacity;
-      transform: translate3d(0, 0, 0);
+      will-change: transform;
+      transform: translateZ(0);
       -webkit-backface-visibility: hidden;
       backface-visibility: hidden;
+      contain: layout style;
     }
     .dark .ios-modal-card {
       background-color: #1E293B !important;
@@ -1005,6 +1011,39 @@ HTML_HEAD = """<!DOCTYPE html>
       -webkit-user-select: none;
       touch-action: manipulation;
     }
+
+    /* Print & PDF Media Rules */
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 10mm 10mm 12mm 10mm;
+      }
+      body {
+        background: #ffffff !important;
+        color: #0f172a !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      body * {
+        visibility: hidden;
+      }
+      #voralet-printable-report, #voralet-printable-report * {
+        visibility: visible;
+      }
+      #voralet-printable-report {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        background: #ffffff !important;
+        color: #0f172a !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+    }
   </style>
 </head>
 <body>
@@ -1016,6 +1055,6 @@ HTML_HEAD = """<!DOCTYPE html>
   </script>
   <div id="root"></div>
 
-  <script type="text/babel" data-presets="env,react">
+  <script type="text/babel" data-presets="env,react" data-compact="false">
     const { useState, useEffect, useMemo, useCallback, useRef } = React;
 """

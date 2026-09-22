@@ -7,6 +7,7 @@ import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.ViewGroup
+import android.view.WindowManager
 import android.webkit.ValueCallback
 import android.webkit.WebView
 import androidx.activity.ComponentActivity
@@ -17,8 +18,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -41,6 +40,7 @@ import java.io.File
 /**
  * Main Activity for Voralet Personal Finance App v2.6.0.
  * Architected with Clean Principles, Edge-to-Edge display, and Hardware Accelerated Web Engine.
+ * Optimized for high-refresh-rate displays (90Hz / 120Hz) and zero-jank 120 FPS animations.
  */
 class MainActivity : ComponentActivity() {
 
@@ -86,14 +86,36 @@ class MainActivity : ComponentActivity() {
         WebView.setWebContentsDebuggingEnabled(false)
         enableEdgeToEdge()
 
+        // Explicit Window-level Hardware Acceleration for Butter-Smooth 120 FPS
+        window.setFlags(
+            WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
+            WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED
+        )
+
+        // Lock / prioritize High Refresh Rate (90Hz / 120Hz) on devices like Infinix Hot 60 Pro
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            window.decorView.post {
+                try {
+                    val currentDisplay = display
+                    val modes = currentDisplay?.supportedModes
+                    val highestMode = modes?.maxByOrNull { it.refreshRate }
+                    if (highestMode != null && highestMode.refreshRate > 60f) {
+                        val lp = window.attributes
+                        lp.preferredDisplayModeId = highestMode.modeId
+                        window.attributes = lp
+                    }
+                } catch (t: Throwable) {
+                    Log.d(TAG, "Display refresh rate optimization notice: ${t.message}")
+                }
+            }
+        }
+
         setContent {
             MyApplicationTheme {
                 val bgColor = MaterialTheme.colorScheme.background
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .statusBarsPadding()
-                        .imePadding()
                         .background(bgColor)
                 ) {
                     VoraletWebViewContainer(

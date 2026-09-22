@@ -10,6 +10,7 @@ import android.os.Vibrator
 import android.os.VibratorManager
 import android.util.Log
 import android.webkit.JavascriptInterface
+import android.webkit.WebView
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
 
@@ -126,4 +127,70 @@ class AndroidNativeBridge(
      */
     @JavascriptInterface
     fun isHardwareAccelerated(): Boolean = true
+
+    /**
+     * Check if camera permission is granted.
+     */
+    @JavascriptInterface
+    fun hasCameraPermission(): Boolean {
+        return androidx.core.content.ContextCompat.checkSelfPermission(
+            activity,
+            android.Manifest.permission.CAMERA
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+    }
+
+    /**
+     * Request camera permission from the system.
+     */
+    @JavascriptInterface
+    fun requestCameraPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            activity.runOnUiThread {
+                activity.requestPermissions(
+                    arrayOf(android.Manifest.permission.CAMERA),
+                    1001
+                )
+            }
+        }
+    }
+
+    /**
+     * Print or export HTML report to PDF via Android PrintManager.
+     */
+    @JavascriptInterface
+    fun printHtml(htmlContent: String?, jobTitle: String?) {
+        if (htmlContent.isNullOrBlank()) return
+        val title = jobTitle ?: "Laporan Keuangan Voralet"
+        activity.runOnUiThread {
+            try {
+                val tempWebView = WebView(activity)
+                tempWebView.webViewClient = object : android.webkit.WebViewClient() {
+                    override fun onPageFinished(view: WebView?, url: String?) {
+                        super.onPageFinished(view, url)
+                        try {
+                            val printManager = activity.getSystemService(Context.PRINT_SERVICE) as? android.print.PrintManager
+                            if (printManager != null && view != null) {
+                                val printAdapter = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                                    view.createPrintDocumentAdapter(title)
+                                } else {
+                                    @Suppress("DEPRECATION")
+                                    view.createPrintDocumentAdapter()
+                                }
+                                val printAttributes = android.print.PrintAttributes.Builder()
+                                    .setMediaSize(android.print.PrintAttributes.MediaSize.ISO_A4)
+                                    .setMinMargins(android.print.PrintAttributes.Margins.NO_MARGINS)
+                                    .build()
+                                printManager.print(title, printAdapter, printAttributes)
+                            }
+                        } catch (t: Throwable) {
+                            Log.e(TAG, "Print error in onPageFinished", t)
+                        }
+                    }
+                }
+                tempWebView.loadDataWithBaseURL(null, htmlContent, "text/html", "UTF-8", null)
+            } catch (t: Throwable) {
+                Log.e(TAG, "Failed to initialize print webview", t)
+            }
+        }
+    }
 }

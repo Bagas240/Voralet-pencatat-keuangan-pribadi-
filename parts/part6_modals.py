@@ -1259,7 +1259,7 @@ PART6_MODALS = """
       );
     };
 
-    const SettingsModal = ({ isOpen, onClose, userProfile, onUpdateProfile, onHardReset, onImportData, onExportData, onOpenCsvImport, onExportCsv, theme, onToggleTheme, customCategories = [], onSaveCustomCategory, onDeleteCustomCategory, onOpenDeveloperGate, onReplayTutorial }) => {
+    const SettingsModal = ({ isOpen, onClose, userProfile, onUpdateProfile, onHardReset, onImportData, onExportData, onOpenCsvImport, onExportCsv, theme, onToggleTheme, customCategories = [], onSaveCustomCategory, onDeleteCustomCategory, onOpenDeveloperGate, onReplayTutorial, onOpenMonthlyPdfReport }) => {
       const [name, setName] = useState(userProfile.name || '');
       const [username, setUsername] = useState(userProfile.username || '');
       const [avatar, setAvatar] = useState(userProfile.avatar || '');
@@ -1854,6 +1854,19 @@ PART6_MODALS = """
                     <input type="file" accept=".json" className="hidden" onChange={handleFileImport} />
                   </label>
                 </div>
+
+                {/* Ekspor Laporan Bulanan PDF */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleClose();
+                    if (onOpenMonthlyPdfReport) onOpenMonthlyPdfReport();
+                  }}
+                  className="w-full py-2.5 bg-sky-50 hover:bg-sky-100 dark:bg-slate-700/60 dark:hover:bg-slate-700 text-brand dark:text-sky-300 text-xs font-bold rounded-xl border border-sky-200/80 dark:border-slate-600 flex items-center justify-center gap-2 ios-btn-tap shadow-xs"
+                >
+                  <Icon name="file-pdf" className="w-4 h-4" />
+                  <span>Ekspor Laporan Keuangan Bulanan (PDF)</span>
+                </button>
               </div>
 
               {/* Profile / About Section with Brand Logo */}
@@ -2744,6 +2757,495 @@ PART6_MODALS = """
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // =========================================================================
+    // MONTHLY FINANCIAL REPORT EXPORT MODAL (PDF & PRINT)
+    // =========================================================================
+    const MonthlyPdfReportModal = ({
+      isOpen,
+      onClose,
+      transactions = [],
+      accounts = [],
+      debts = [],
+      savingsGoals = [],
+      customCategories = [],
+      userProfile = {},
+      hideBalance
+    }) => {
+      if (!isOpen) return null;
+
+      const [isClosing, setIsClosing] = useState(false);
+      const availableMonths = useMemo(() => {
+        return PdfReportService.getAvailableMonths(transactions);
+      }, [transactions]);
+
+      const [selectedPeriod, setSelectedPeriod] = useState(
+        availableMonths.length > 0 ? availableMonths[0].key : new Date().toISOString().slice(0, 7)
+      );
+      const [selectedAccountId, setSelectedAccountId] = useState('ALL');
+      const [isExporting, setIsExporting] = useState(false);
+      const [statusMessage, setStatusMessage] = useState({ text: '', isError: false });
+      const [activeTab, setActiveTab] = useState('PREVIEW'); // 'PREVIEW' | 'CATEGORIES' | 'TRANSACTIONS'
+
+      const handleClose = () => {
+        setIsClosing(true);
+        setTimeout(() => {
+          setIsClosing(false);
+          onClose();
+        }, 220);
+      };
+
+      // Reset state when opening
+      useEffect(() => {
+        if (isOpen) {
+          setIsClosing(false);
+          if (availableMonths.length > 0 && !availableMonths.some(m => m.key === selectedPeriod)) {
+            setSelectedPeriod(availableMonths[0].key);
+          }
+          setStatusMessage({ text: '', isError: false });
+          setIsExporting(false);
+        }
+      }, [isOpen]);
+
+      // Computed report data
+      const reportData = useMemo(() => {
+        return PdfReportService.computeMonthlyData({
+          transactions,
+          accounts,
+          debts,
+          savingsGoals,
+          customCategories,
+          periodKey: selectedPeriod,
+          accountId: selectedAccountId
+        });
+      }, [transactions, accounts, debts, savingsGoals, customCategories, selectedPeriod, selectedAccountId]);
+
+      // HTML Document for printing / export
+      const reportHtml = useMemo(() => {
+        return PdfReportService.generateReportHtml(reportData, userProfile);
+      }, [reportData, userProfile]);
+
+      const handleDownloadPdf = async () => {
+        try {
+          setIsExporting(true);
+          setStatusMessage({ text: 'Menyiapkan dan menyusun dokumen PDF...', isError: false });
+          HapticFeedback.tap();
+
+          const filename = `Laporan_Keuangan_Voralet_${reportData.periodKey.replace('-', '_')}.pdf`;
+          const success = await PdfReportService.exportDirectPdf(reportHtml, filename);
+
+          if (success) {
+            setStatusMessage({ text: 'Dokumen PDF berhasil disimpan ke memori perangkat!', isError: false });
+            HapticFeedback.save();
+            setTimeout(() => setStatusMessage({ text: '', isError: false }), 4500);
+          } else {
+            setStatusMessage({ text: 'Membuka dialog cetak sistem untuk menyimpan PDF...', isError: false });
+            PdfReportService.printOrSavePdf(reportHtml, `Laporan Keuangan Voralet ${reportData.periodLabel}`);
+          }
+        } catch (e) {
+          console.error(e);
+          setStatusMessage({ text: 'Membuka dialog cetak / simpan sistem...', isError: false });
+          PdfReportService.printOrSavePdf(reportHtml, `Laporan Keuangan Voralet ${reportData.periodLabel}`);
+        } finally {
+          setIsExporting(false);
+        }
+      };
+
+      const handlePrintSystem = () => {
+        HapticFeedback.tap();
+        setStatusMessage({ text: 'Membuka dialog cetak sistem (Print / Save as PDF)...', isError: false });
+        PdfReportService.printOrSavePdf(reportHtml, `Laporan Keuangan Voralet ${reportData.periodLabel}`);
+        setTimeout(() => setStatusMessage({ text: '', isError: false }), 4000);
+      };
+
+      const now = new Date();
+      const thisMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const lastMonthKey = `${lastMonthDate.getFullYear()}-${String(lastMonthDate.getMonth() + 1).padStart(2, '0')}`;
+
+      return (
+        <div className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 ${isClosing ? 'animate-ios-fade-out' : 'animate-ios-fade-in'}`}>
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity" onClick={handleClose} />
+
+          <div
+            className={`relative w-full max-w-lg bg-white dark:bg-slate-800 rounded-t-[32px] sm:rounded-3xl shadow-2xl border-t sm:border border-slate-100 dark:border-slate-700 flex flex-col max-h-[92dvh] sm:max-h-[85vh] overflow-hidden ${
+              isClosing ? 'animate-ios-sheet-down' : 'animate-ios-sheet-up'
+            }`}
+          >
+            {/* Sheet Handle */}
+            <div className="w-12 h-1 bg-slate-300 dark:bg-slate-600 rounded-full mx-auto mt-3 mb-1 shrink-0 sm:hidden" />
+
+            {/* Modal Header */}
+            <div className="px-5 py-3.5 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-9 h-9 rounded-xl bg-brand text-white flex items-center justify-center shrink-0 shadow-xs">
+                  <Icon name="file-pdf" className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white truncate leading-tight">
+                    Ekspor Laporan Bulanan (PDF)
+                  </h3>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                    Arsip pengeluaran & pembukuan mutasi A4
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleClose}
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 flex items-center justify-center transition-colors ios-btn-tap shrink-0"
+              >
+                <Icon name="x" className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Scrollable Body */}
+            <div className="p-4 space-y-4 overflow-y-auto flex-1 overscroll-contain">
+              {/* Filter Controls Card */}
+              <div className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-3">
+                <div className="flex flex-col sm:flex-row gap-2.5">
+                  {/* Period Selector */}
+                  <div className="flex-1 space-y-1">
+                    <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                      <Icon name="calendar" className="w-3.5 h-3.5 text-brand" />
+                      <span>Periode Bulan</span>
+                    </label>
+                    <select
+                      value={selectedPeriod}
+                      onChange={(e) => setSelectedPeriod(e.target.value)}
+                      className="w-full px-3 py-2 text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-brand"
+                    >
+                      {availableMonths.map((m) => (
+                        <option key={m.key} value={m.key}>
+                          {m.label} {m.key === thisMonthKey ? '(Bulan Ini)' : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Account Selector */}
+                  <div className="flex-1 space-y-1">
+                    <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                      <Icon name="credit-card" className="w-3.5 h-3.5 text-brand" />
+                      <span>Kantong / Rekening</span>
+                    </label>
+                    <select
+                      value={selectedAccountId}
+                      onChange={(e) => setSelectedAccountId(e.target.value)}
+                      className="w-full px-3 py-2 text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-brand"
+                    >
+                      <option value="ALL">Semua Kantong Keuangan</option>
+                      {accounts.map((acc) => (
+                        <option key={acc.id} value={acc.id}>
+                          {acc.name} ({acc.type})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Quick Period Buttons */}
+                <div className="flex items-center gap-2 pt-0.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedPeriod(thisMonthKey);
+                      HapticFeedback.tap();
+                    }}
+                    className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-colors ios-btn-tap ${
+                      selectedPeriod === thisMonthKey
+                        ? 'bg-brand text-white shadow-xs'
+                        : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
+                    }`}
+                  >
+                    Bulan Ini
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedPeriod(lastMonthKey);
+                      HapticFeedback.tap();
+                    }}
+                    className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-colors ios-btn-tap ${
+                      selectedPeriod === lastMonthKey
+                        ? 'bg-brand text-white shadow-xs'
+                        : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
+                    }`}
+                  >
+                    Bulan Lalu
+                  </button>
+                </div>
+              </div>
+
+              {/* Status Message Notification */}
+              {statusMessage.text && (
+                <div
+                  className={`p-3 rounded-xl text-xs font-semibold flex items-center gap-2 animate-ios-fade-in ${
+                    statusMessage.isError
+                      ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800'
+                      : 'bg-sky-50 dark:bg-sky-950/40 text-brand dark:text-sky-400 border border-sky-200 dark:border-sky-800'
+                  }`}
+                >
+                  <Icon name={statusMessage.isError ? 'alert-triangle' : 'check-circle'} className="w-4 h-4 shrink-0" />
+                  <span className="flex-1">{statusMessage.text}</span>
+                </div>
+              )}
+
+              {/* Monthly Overview Metric Chips */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+                <div className="p-2.5 bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-slate-200/60 dark:border-slate-700/60">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Pemasukan</div>
+                  <div className="text-xs font-bold text-emerald-600 dark:text-emerald-400 mt-0.5 truncate">
+                    +{formatIDR(reportData.totalIncome)}
+                  </div>
+                  <div className="text-[9px] text-slate-400">{reportData.incomeCount} transaksi</div>
+                </div>
+
+                <div className="p-2.5 bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-slate-200/60 dark:border-slate-700/60">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Pengeluaran</div>
+                  <div className="text-xs font-bold text-rose-600 dark:text-rose-400 mt-0.5 truncate">
+                    -{formatIDR(reportData.totalExpense)}
+                  </div>
+                  <div className="text-[9px] text-slate-400">{reportData.expenseCount} transaksi</div>
+                </div>
+
+                <div className="p-2.5 bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-slate-200/60 dark:border-slate-700/60">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Arus Bersih</div>
+                  <div
+                    className={`text-xs font-bold mt-0.5 truncate ${
+                      reportData.netCashflow >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+                    }`}
+                  >
+                    {reportData.netCashflow >= 0 ? '+' : ''}{formatIDR(reportData.netCashflow)}
+                  </div>
+                  <div className="text-[9px] text-slate-400">
+                    {reportData.netCashflow >= 0 ? 'Surplus' : 'Defisit'}
+                  </div>
+                </div>
+
+                <div className="p-2.5 bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-slate-200/60 dark:border-slate-700/60">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Mutasi</div>
+                  <div className="text-xs font-bold text-brand dark:text-sky-400 mt-0.5 truncate">
+                    {reportData.transactionCount} Transaksi
+                  </div>
+                  <div className="text-[9px] text-slate-400">Hemat {reportData.savingsRate}%</div>
+                </div>
+              </div>
+
+              {/* Segmented Control for In-Modal Tab */}
+              <SegmentedControl
+                options={[
+                  { value: 'PREVIEW', label: 'Pratinjau PDF' },
+                  { value: 'CATEGORIES', label: 'Pengeluaran' },
+                  { value: 'TRANSACTIONS', label: 'Daftar Mutasi' }
+                ]}
+                value={activeTab}
+                onChange={setActiveTab}
+                className="w-full"
+              />
+
+              {/* TAB 1: PREVIEW PAPER LAYOUT */}
+              {activeTab === 'PREVIEW' && (
+                <div className="p-3 bg-slate-100 dark:bg-slate-900/80 rounded-2xl border border-slate-200 dark:border-slate-700">
+                  <div className="bg-white text-slate-900 p-4 rounded-xl shadow-xs border border-slate-200 space-y-3.5 text-[11px]">
+                    {/* Simulated Document Header */}
+                    <div className="border-b-2 border-brand pb-2.5 flex justify-between items-center">
+                      <div>
+                        <div className="text-base font-extrabold text-brand tracking-tight">VORALET</div>
+                        <div className="text-[10px] text-slate-500 font-medium">Laporan Keuangan & Rekap Mutasi</div>
+                      </div>
+                      <div className="text-right text-[10px]">
+                        <div className="font-bold text-slate-800">{reportData.periodLabel}</div>
+                        <div className="text-slate-500">{reportData.accountName}</div>
+                      </div>
+                    </div>
+
+                    {/* Executive KPI Grid */}
+                    <div className="grid grid-cols-3 gap-2 text-center bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                      <div>
+                        <div className="text-[9px] uppercase font-bold text-slate-500">Pemasukan</div>
+                        <div className="font-bold text-emerald-600 text-xs mt-0.5">+{formatIDR(reportData.totalIncome)}</div>
+                      </div>
+                      <div>
+                        <div className="text-[9px] uppercase font-bold text-slate-500">Pengeluaran</div>
+                        <div className="font-bold text-rose-600 text-xs mt-0.5">-{formatIDR(reportData.totalExpense)}</div>
+                      </div>
+                      <div>
+                        <div className="text-[9px] uppercase font-bold text-slate-500">Selisih Bersih</div>
+                        <div className={`font-bold text-xs mt-0.5 ${reportData.netCashflow >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                          {reportData.netCashflow >= 0 ? '+' : ''}{formatIDR(reportData.netCashflow)}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Brief Category Section */}
+                    <div>
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 flex justify-between">
+                        <span>Pengeluaran per Kategori</span>
+                        <span>{reportData.categoryBreakdown.length} Kategori</span>
+                      </div>
+                      <div className="space-y-1">
+                        {reportData.categoryBreakdown.slice(0, 4).map((cat) => (
+                          <div key={cat.id} className="flex items-center justify-between py-0.5 text-[10px] border-b border-slate-100 last:border-0">
+                            <span className="flex items-center gap-1 truncate">
+                              <span>{cat.icon}</span>
+                              <span className="font-medium text-slate-700 truncate">{cat.label}</span>
+                            </span>
+                            <span className="font-bold text-slate-900 shrink-0 ml-2">
+                              {formatIDR(cat.amount)} ({cat.percentage}%)
+                            </span>
+                          </div>
+                        ))}
+                        {reportData.categoryBreakdown.length === 0 && (
+                          <div className="text-center py-2 text-slate-400 text-[10px]">Tidak ada pengeluaran di periode ini</div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Brief Transactions Section */}
+                    <div>
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 flex justify-between">
+                        <span>Cuplikan Mutasi Terkini</span>
+                        <span>{reportData.transactionCount} Entri</span>
+                      </div>
+                      <div className="space-y-1">
+                        {reportData.transactions.slice(0, 4).map((tx, idx) => (
+                          <div key={idx} className="flex items-center justify-between py-0.5 text-[10px] border-b border-slate-100 last:border-0">
+                            <span className="truncate text-slate-700">
+                              <span className="text-slate-400 font-mono mr-1.5">{formatDateID(tx.date).slice(0, 6)}</span>
+                              <span>{tx.notes || tx.category}</span>
+                            </span>
+                            <span className={`font-bold shrink-0 ml-2 ${tx.type === 'INCOME' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                              {tx.type === 'INCOME' ? '+' : '-'}{formatIDR(tx.amount)}
+                            </span>
+                          </div>
+                        ))}
+                        {reportData.transactions.length === 0 && (
+                          <div className="text-center py-2 text-slate-400 text-[10px]">Belum ada mutasi di periode ini</div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Simulated Document Footer */}
+                    <div className="pt-2 border-t border-slate-200 flex justify-between text-[9px] text-slate-400">
+                      <span>Dokumen Resmi Voralet Finance Engine</span>
+                      <span>Format Cetak A4 Standard</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 2: CATEGORY BREAKDOWN TAB */}
+              {activeTab === 'CATEGORIES' && (
+                <div className="space-y-2">
+                  {reportData.categoryBreakdown.length === 0 ? (
+                    <div className="text-center py-8 text-slate-400 text-xs">
+                      Tidak ada catatan pengeluaran pada bulan {reportData.periodLabel}
+                    </div>
+                  ) : (
+                    reportData.categoryBreakdown.map((cat) => (
+                      <div
+                        key={cat.id}
+                        className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-between gap-3"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span className="text-xl shrink-0">{cat.icon}</span>
+                          <div className="min-w-0">
+                            <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                              {cat.label}
+                            </h4>
+                            <p className="text-[10px] text-slate-400">
+                              {cat.count}x transaksi ({cat.percentage}% dari total pengeluaran)
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <div className="text-xs font-bold text-rose-600 dark:text-rose-400">
+                            {formatIDR(cat.amount)}
+                          </div>
+                          <div className="w-16 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full mt-1 overflow-hidden">
+                            <div className="h-full bg-rose-500 rounded-full" style={{ width: `${cat.percentage}%` }} />
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+
+              {/* TAB 3: COMPLETE TRANSACTIONS LOG */}
+              {activeTab === 'TRANSACTIONS' && (
+                <div className="space-y-1.5 max-h-60 overflow-y-auto pr-1">
+                  {reportData.transactions.length === 0 ? (
+                    <div className="text-center py-8 text-slate-400 text-xs">
+                      Belum ada transaksi tercatat pada bulan {reportData.periodLabel}
+                    </div>
+                  ) : (
+                    reportData.transactions.map((tx, idx) => {
+                      const isInc = tx.type === 'INCOME';
+                      const cat = getCategoryById(tx.category || 'lainnya', customCategories);
+                      return (
+                        <div
+                          key={tx.id || idx}
+                          className="p-2.5 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between gap-2 text-xs"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="text-base shrink-0">{cat.icon || '🏷️'}</span>
+                            <div className="min-w-0">
+                              <div className="font-semibold text-slate-900 dark:text-white truncate leading-tight">
+                                {tx.notes || cat.label || tx.category}
+                              </div>
+                              <div className="text-[10px] text-slate-400 mt-0.5">
+                                {formatDateID(tx.date)} • {cat.label}
+                              </div>
+                            </div>
+                          </div>
+                          <div className={`font-bold shrink-0 text-right ${isInc ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                            {isInc ? '+' : '-'}{formatIDR(tx.amount)}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Modal Bottom Actions */}
+            <div className="p-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col sm:flex-row gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={handleDownloadPdf}
+                disabled={isExporting}
+                className="flex-1 py-3 bg-brand hover:bg-brand-hover disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-xs ios-btn-tap flex items-center justify-center gap-2"
+              >
+                {isExporting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>Menyusun PDF...</span>
+                  </>
+                ) : (
+                  <>
+                    <Icon name="download" className="w-4 h-4" />
+                    <span>Unduh Dokumen PDF (.pdf)</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={handlePrintSystem}
+                disabled={isExporting}
+                className="py-3 px-4 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs ios-btn-tap flex items-center justify-center gap-2"
+              >
+                <Icon name="printer" className="w-4 h-4 text-brand" />
+                <span>Cetak / Simpan PDF Sistem</span>
+              </button>
             </div>
           </div>
         </div>

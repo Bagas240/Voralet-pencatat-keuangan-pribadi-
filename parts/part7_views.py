@@ -2,21 +2,60 @@ PART7_VIEWS = """
     // =========================================================================
     // 7. VIEWS: SAVINGS GOALS, ANALYTICS & FLOATING CAPSULE NAVIGATION
     // =========================================================================
-    const SavingsView = ({ savingsGoals, onOpenNewGoal, onEditGoal, onDeleteGoal, onDepositGoal, hideBalance }) => {
+    const SavingsView = ({ savingsGoals, accounts = [], onOpenNewGoal, onEditGoal, onDeleteGoal, onDepositGoal, hideBalance }) => {
       const [depositGoal, setDepositGoal] = useState(null);
       const [depositAmount, setDepositAmount] = useState('');
       const [depositMode, setDepositMode] = useState('DEPOSIT'); // DEPOSIT | WITHDRAW
+      const [selectedAccountId, setSelectedAccountId] = useState('');
+      const [customNotes, setCustomNotes] = useState('');
+      const [error, setError] = useState('');
 
       const safeGoals = Array.isArray(savingsGoals) ? savingsGoals : [];
+
+      useEffect(() => {
+        if (depositGoal) {
+          if (accounts.length > 0 && (!selectedAccountId || !accounts.some(a => a.id === selectedAccountId))) {
+            setSelectedAccountId(accounts[0].id);
+          }
+          setError('');
+          setCustomNotes(
+            depositMode === 'DEPOSIT'
+              ? `Nabung: ${depositGoal.title}`
+              : `Ambil Tabungan: ${depositGoal.title}`
+          );
+        }
+      }, [depositGoal, depositMode, accounts]);
 
       const handleDepositSubmit = (e) => {
         e.preventDefault();
         const amt = parseRawNumber(depositAmount);
-        if (amt <= 0 || !depositGoal) return;
+        if (!depositGoal) return;
+        if (amt <= 0) {
+          setError('Nominal harus lebih dari 0');
+          return;
+        }
+
+        const currentAmt = Number(depositGoal.currentAmount) || 0;
+        if (depositMode === 'WITHDRAW' && amt > currentAmt) {
+          setError(`Maksimal penarikan adalah ${formatIDR(currentAmt)}`);
+          return;
+        }
+
+        if (!selectedAccountId && accounts.length > 0) {
+          setError('Pilih kantong dompet terlebih dahulu');
+          return;
+        }
+
         HapticFeedback.save();
-        onDepositGoal(depositGoal.id, amt, depositMode);
+        onDepositGoal(depositGoal.id, amt, depositMode, selectedAccountId, customNotes);
         setDepositGoal(null);
         setDepositAmount('');
+        setError('');
+      };
+
+      const handleQuickAmount = (val) => {
+        setDepositAmount(String(val));
+        setError('');
       };
 
       return (
@@ -149,70 +188,228 @@ PART7_VIEWS = """
             </div>
           )}
 
-          {/* Deposit/Withdraw Mini Modal */}
-          {depositGoal && (
-            <div className="ios-modal-backdrop animate-ios-backdrop" onClick={(e) => { if (e.target === e.currentTarget) setDepositGoal(null); }}>
-              <div className="ios-modal-card bg-white dark:bg-slate-800 p-5 animate-ios-sheet max-w-sm mx-auto rounded-[24px]">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-700">
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                    {depositMode === 'DEPOSIT' ? 'Setor Tabungan' : 'Tarik Saldo Impian'}
-                  </h3>
-                  <button
-                    type="button"
-                    onClick={() => setDepositGoal(null)}
-                    className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors ios-btn-tap shrink-0"
-                    aria-label="Tutup"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 flex-shrink-0 aspect-square">
-                      <line x1="18" y1="6" x2="6" y2="18"></line>
-                      <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                  </button>
-                </div>
+          {/* Deposit/Withdraw Modal */}
+          {depositGoal && (() => {
+            const currentAmt = Number(depositGoal.currentAmount) || 0;
+            const targetAmt = Number(depositGoal.targetAmount) || 0;
+            const remTarget = Math.max(0, targetAmt - currentAmt);
 
-                <form onSubmit={handleDepositSubmit} className="space-y-4 pt-3">
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Target: <span className="font-semibold text-slate-800 dark:text-slate-200">{depositGoal.title}</span>
-                  </p>
-
-                  <div>
-                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">Nominal (Rp)</label>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      required
-                      value={depositAmount ? formatIDR(parseRawNumber(depositAmount)) : ''}
-                      onFocus={handleGlobalInputFocus}
-                      onBlur={handleGlobalInputBlur}
-                      onChange={(e) => {
-                        const num = parseRawNumber(e.target.value);
-                        setDepositAmount(num ? num.toString() : '');
-                      }}
-                      placeholder="Rp 0"
-                      className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:border-brand"
-                      autoFocus
-                    />
-                  </div>
-
-                  <div className="flex gap-2">
+            return (
+              <div className="ios-modal-backdrop animate-ios-backdrop" onClick={(e) => { if (e.target === e.currentTarget) setDepositGoal(null); }}>
+                <div className="ios-modal-card bg-white dark:bg-slate-800 p-5 animate-ios-sheet max-w-sm mx-auto rounded-[24px]">
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-700">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${
+                        depositMode === 'DEPOSIT'
+                          ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600'
+                          : 'bg-amber-100 dark:bg-amber-900/50 text-amber-600'
+                      }`}>
+                        <Icon name={depositMode === 'DEPOSIT' ? 'plus' : 'arrow-down-left'} className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                          {depositMode === 'DEPOSIT' ? 'Setor Tabungan (Nabung)' : 'Tarik Saldo Impian'}
+                        </h3>
+                        <p className="text-[10px] text-slate-400 truncate max-w-[200px]">
+                          {depositGoal.title}
+                        </p>
+                      </div>
+                    </div>
                     <button
                       type="button"
                       onClick={() => setDepositGoal(null)}
-                      className="flex-1 py-2.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl ios-btn-tap"
+                      className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors ios-btn-tap shrink-0"
+                      aria-label="Tutup"
                     >
-                      Batal
-                    </button>
-                    <button
-                      type="submit"
-                      className="flex-1 py-2.5 bg-[#0284C7] text-white text-xs font-semibold rounded-xl hover:bg-[#0369A1] ios-btn-tap"
-                    >
-                      Konfirmasi
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 flex-shrink-0 aspect-square">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                      </svg>
                     </button>
                   </div>
-                </form>
+
+                  <form onSubmit={handleDepositSubmit} className="space-y-3.5 pt-3">
+                    {/* Goal Progress Info */}
+                    <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-1.5 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-slate-500 dark:text-slate-400">Saldo Impian Saat Ini:</span>
+                        <strong className="text-emerald-600">{formatIDR(currentAmt)}</strong>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-500 dark:text-slate-400">Target Total:</span>
+                        <span className="font-semibold text-slate-700 dark:text-slate-300">{formatIDR(targetAmt)}</span>
+                      </div>
+                      {depositMode === 'DEPOSIT' && remTarget > 0 && (
+                        <div className="flex justify-between pt-1 border-t border-slate-200 dark:border-slate-800 text-[11px]">
+                          <span className="text-slate-500">Kurang untuk target:</span>
+                          <span className="font-bold text-brand dark:text-sky-400">{formatIDR(remTarget)}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Amount Input */}
+                    <div>
+                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                        Nominal {depositMode === 'DEPOSIT' ? 'Nabung' : 'Tarik'} (Rp)
+                      </label>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        required
+                        value={depositAmount ? formatIDR(parseRawNumber(depositAmount)) : ''}
+                        onFocus={handleGlobalInputFocus}
+                        onBlur={handleGlobalInputBlur}
+                        onChange={(e) => {
+                          const num = parseRawNumber(e.target.value);
+                          setDepositAmount(num ? num.toString() : '');
+                          setError('');
+                        }}
+                        placeholder="Rp 0"
+                        className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-base font-bold text-slate-900 dark:text-white focus:outline-none focus:border-brand"
+                        autoFocus
+                      />
+
+                      {/* Quick chips */}
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        {depositMode === 'DEPOSIT' ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => handleQuickAmount(50000)}
+                              className="px-2.5 py-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-[11px] font-semibold rounded-lg ios-btn-tap"
+                            >
+                              +50 rb
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleQuickAmount(100000)}
+                              className="px-2.5 py-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-[11px] font-semibold rounded-lg ios-btn-tap"
+                            >
+                              +100 rb
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleQuickAmount(500000)}
+                              className="px-2.5 py-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-[11px] font-semibold rounded-lg ios-btn-tap"
+                            >
+                              +500 rb
+                            </button>
+                            {remTarget > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => handleQuickAmount(remTarget)}
+                                className="px-2.5 py-1 bg-sky-50 dark:bg-slate-700 text-brand dark:text-sky-400 text-[11px] font-bold rounded-lg border border-sky-200/60 dark:border-slate-600 ios-btn-tap"
+                              >
+                                Penuhkan
+                              </button>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => handleQuickAmount(Math.round(currentAmt * 0.25))}
+                              className="px-2.5 py-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-[11px] font-semibold rounded-lg ios-btn-tap"
+                            >
+                              25%
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleQuickAmount(Math.round(currentAmt * 0.5))}
+                              className="px-2.5 py-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-[11px] font-semibold rounded-lg ios-btn-tap"
+                            >
+                              50%
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleQuickAmount(currentAmt)}
+                              className="px-2.5 py-1 bg-amber-50 dark:bg-slate-700 text-amber-700 dark:text-amber-400 text-[11px] font-bold rounded-lg border border-amber-200/60 dark:border-slate-600 ios-btn-tap"
+                            >
+                              Semua Saldo
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Account Selector */}
+                    <div>
+                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                        {depositMode === 'DEPOSIT' ? 'Sumber Dana (Kantong):' : 'Tujuan Dana (Kantong):'}
+                      </label>
+                      {accounts.length === 0 ? (
+                        <p className="text-xs text-amber-600 bg-amber-50 p-2.5 rounded-lg border border-amber-200">
+                          Belum ada kantong keuangan aktif.
+                        </p>
+                      ) : (
+                        <select
+                          value={selectedAccountId}
+                          onFocus={handleGlobalInputFocus}
+                          onBlur={handleGlobalInputBlur}
+                          onChange={(e) => {
+                            setSelectedAccountId(e.target.value);
+                            setError('');
+                          }}
+                          className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand"
+                        >
+                          {accounts.map(acc => (
+                            <option key={acc.id} value={acc.id}>
+                              {acc.name} ({acc.type})
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+
+                    {/* Notes */}
+                    <div>
+                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                        Catatan Transaksi
+                      </label>
+                      <input
+                        type="text"
+                        maxLength={60}
+                        value={customNotes}
+                        onFocus={handleGlobalInputFocus}
+                        onBlur={handleGlobalInputBlur}
+                        onChange={(e) => setCustomNotes(e.target.value)}
+                        placeholder="Keterangan transaksi"
+                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand"
+                      />
+                    </div>
+
+                    {/* Explanatory Banner */}
+                    <div className="p-2.5 bg-sky-50/80 dark:bg-sky-950/30 rounded-xl border border-sky-100 dark:border-sky-900/40 text-[11px] text-sky-800 dark:text-sky-300">
+                      Transaksi otomatis dicatat ke riwayat mutasi sebagai <strong>{depositMode === 'DEPOSIT' ? 'Pengeluaran (Tabungan)' : 'Pemasukan (Tarik Tabungan)'}</strong>.
+                    </div>
+
+                    {error && <p className="text-xs text-rose-500 font-semibold">{error}</p>}
+
+                    <div className="flex gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setDepositGoal(null)}
+                        className="flex-1 py-2.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl ios-btn-tap"
+                      >
+                        Batal
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={accounts.length === 0}
+                        className={`flex-1 py-2.5 text-white text-xs font-bold rounded-xl transition-colors shadow-sm ios-btn-tap ${
+                          depositMode === 'DEPOSIT'
+                            ? 'bg-emerald-600 hover:bg-emerald-700'
+                            : 'bg-brand hover:bg-brand-hover'
+                        }`}
+                      >
+                        {depositMode === 'DEPOSIT' ? 'Simpan Setoran' : 'Tarik Saldo'}
+                      </button>
+                    </div>
+                  </form>
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
         </div>
       );
     };
@@ -232,7 +429,7 @@ PART7_VIEWS = """
       '#64748B'  // Slate
     ];
 
-    const AnalyticsView = ({ transactions = [], accounts = [], debts = [], savingsGoals = [], hideBalance, customCategories = [] }) => {
+    const AnalyticsView = ({ transactions = [], accounts = [], debts = [], savingsGoals = [], hideBalance, customCategories = [], onOpenMonthlyPdfReport }) => {
       const [trendMode, setTrendMode] = useState('MONTHLY'); // MONTHLY (last 6 months) | YEARLY
       const [selectedCatId, setSelectedCatId] = useState(null);
       const safeTxs = Array.isArray(transactions) ? transactions : [];
@@ -447,6 +644,31 @@ PART7_VIEWS = """
               <h2 className="text-base font-bold text-slate-900 dark:text-white">Analisis & Tren Keuangan</h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">Statistik arus kas, hutang, dan impian</p>
             </div>
+          </div>
+
+          {/* Action Card: Ekspor Laporan Bulanan PDF */}
+          <div className="p-3.5 rounded-2xl bg-gradient-to-r from-sky-500/10 via-brand/10 to-indigo-500/10 border border-sky-200/80 dark:border-slate-700 flex items-center justify-between gap-3 shadow-xs">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-9 h-9 rounded-xl bg-brand text-white flex items-center justify-center shrink-0 shadow-xs">
+                <Icon name="file-pdf" className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                  Ekspor Laporan Bulanan (PDF)
+                </h4>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                  Unduh atau cetak dokumen A4 mutasi & pengeluaran
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={onOpenMonthlyPdfReport}
+              className="px-3 py-1.5 bg-brand hover:bg-brand-hover text-white text-xs font-bold rounded-xl shrink-0 shadow-xs ios-btn-tap flex items-center gap-1.5"
+            >
+              <Icon name="download" className="w-3.5 h-3.5" />
+              <span>Buka PDF</span>
+            </button>
           </div>
 
           {/* Segmented Control for Trend Period */}

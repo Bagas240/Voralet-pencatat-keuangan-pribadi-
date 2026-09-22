@@ -28,13 +28,15 @@ object VoraletWebViewConfig {
             overScrollMode = View.OVER_SCROLL_NEVER
             isVerticalScrollBarEnabled = false
             isHorizontalScrollBarEnabled = false
+            isNestedScrollingEnabled = false
 
-            // Default layer rendering with automatic fallback on emulated/headless environments without direct DRM rendernodes
-            setLayerType(View.LAYER_TYPE_NONE, null)
+            // Explicit GPU hardware acceleration layer for 120 FPS high refresh rate rendering
+            setLayerType(View.LAYER_TYPE_HARDWARE, null)
 
             settings.apply {
                 javaScriptEnabled = true
                 domStorageEnabled = true
+                databaseEnabled = true
 
                 // Security Hardening: Never allow local file URLs to access arbitrary files or external origins
                 allowFileAccess = true
@@ -56,6 +58,9 @@ object VoraletWebViewConfig {
                 cacheMode = WebSettings.LOAD_DEFAULT
                 setSupportMultipleWindows(false)
                 textZoom = 100 // Maintain precise layout geometry
+
+                // Pre-rasterize offscreen layers so bottom sheets, tabs, and list scrolling are instantaneous
+                setOffscreenPreRaster(true)
             }
         }
     }
