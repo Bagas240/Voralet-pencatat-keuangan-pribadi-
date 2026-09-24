@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "node server.ts",
     "start": "node server.ts",
-    "build": "python build_index.py"
+    "build": "python3 build_index.py || python build_index.py"
   },
   "dependencies": {}
 }

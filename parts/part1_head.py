@@ -208,10 +208,16 @@ HTML_HEAD = """<!DOCTYPE html>
 
   <style>
     :root {
-      --ios-ease: cubic-bezier(0.32, 0.72, 0, 1);
-      --ios-spring: cubic-bezier(0.175, 0.885, 0.32, 1.25);
-      --ios-fluid: cubic-bezier(0.28, 0.84, 0.42, 1);
-      --ios-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --ios-ease: cubic-bezier(0.25, 1, 0.5, 1);
+      --ios-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --ios-bouncy: cubic-bezier(0.34, 1.68, 0.64, 1);
+      --ios-fluid: cubic-bezier(0.16, 1, 0.3, 1);
+      --ios-snap: cubic-bezier(0.2, 0.9, 0.3, 1);
+      --ios-overshoot: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      --glass-light-bg: rgba(255, 255, 255, 0.84);
+      --glass-light-border: rgba(255, 255, 255, 0.82);
+      --glass-dark-bg: rgba(30, 41, 59, 0.82);
+      --glass-dark-border: rgba(255, 255, 255, 0.16);
     }
     * {
       -webkit-tap-highlight-color: transparent;
@@ -222,7 +228,7 @@ HTML_HEAD = """<!DOCTYPE html>
       width: 100%;
       margin: 0;
       padding: 0;
-      overscroll-behavior: none;
+      overscroll-behavior-y: contain;
       -webkit-overflow-scrolling: touch;
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
       background-color: #F8FAFC;
@@ -237,52 +243,148 @@ HTML_HEAD = """<!DOCTYPE html>
       height: 100%;
       width: 100%;
       overflow: hidden;
-      background-color: #F8FAFC;
+      background: transparent;
       color: #0F172A;
-      transition: background-color 300ms ease-in-out, color 300ms ease-in-out;
+      position: relative;
     }
     html.dark #root {
-      background-color: #0F172A !important;
+      background: transparent !important;
       color: #F8FAFC !important;
     }
 
-    /* iOS Inset Grouped Block */
-    .ios-inset-group {
-      border-radius: 22px;
-      background-color: #FFFFFF;
-      padding: 1rem;
-      border: 1px solid #E2E8F0;
-      box-shadow: 0 2px 10px -1px rgba(15, 23, 42, 0.07), 0 1px 3px -1px rgba(15, 23, 42, 0.04);
-      transition: background-color 300ms ease-in-out, border-color 300ms ease-in-out, color 300ms ease-in-out, box-shadow 300ms ease-in-out;
+    /* iOS 26 Dynamic Ambient Liquid Glass Canvas (Composited Background) */
+    .ios-liquid-bg {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+      background: #F8FAFC;
+      transform: translateZ(0);
+      will-change: transform;
     }
-    .dark .ios-inset-group {
-      background-color: #1E293B !important;
-      border-color: #334155 !important;
-      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.45), 0 2px 8px -1px rgba(0, 0, 0, 0.3) !important;
+    .ios-liquid-orb-1 {
+      position: absolute;
+      top: -12%;
+      left: -10%;
+      width: 85vw;
+      height: 85vw;
+      max-width: 500px;
+      max-height: 500px;
+      border-radius: 9999px;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.28) 0%, rgba(2, 132, 199, 0.12) 50%, transparent 75%);
+      filter: blur(48px);
+      animation: liquidOrbFloat1 18s ease-in-out infinite alternate;
+      transform: translateZ(0);
+      will-change: transform;
+    }
+    .ios-liquid-orb-2 {
+      position: absolute;
+      bottom: 8%;
+      right: -12%;
+      width: 90vw;
+      height: 90vw;
+      max-width: 520px;
+      max-height: 520px;
+      border-radius: 9999px;
+      background: radial-gradient(circle, rgba(2, 132, 199, 0.20) 0%, rgba(56, 189, 248, 0.08) 55%, transparent 75%);
+      filter: blur(52px);
+      animation: liquidOrbFloat2 24s ease-in-out infinite alternate;
+      transform: translateZ(0);
+      will-change: transform;
+    }
+    .dark .ios-liquid-bg, html.dark .ios-liquid-bg {
+      background: #0F172A !important;
+    }
+    .dark .ios-liquid-orb-1, html.dark .ios-liquid-orb-1 {
+      background: radial-gradient(circle, rgba(2, 132, 199, 0.35) 0%, rgba(56, 189, 248, 0.14) 50%, transparent 75%) !important;
+    }
+    .dark .ios-liquid-orb-2, html.dark .ios-liquid-orb-2 {
+      background: radial-gradient(circle, rgba(14, 165, 233, 0.25) 0%, rgba(3, 105, 161, 0.10) 55%, transparent 75%) !important;
+    }
+    @keyframes liquidOrbFloat1 {
+      0% { transform: translate3d(0, 0, 0) scale(1); }
+      50% { transform: translate3d(7%, 10%, 0) scale(1.08); }
+      100% { transform: translate3d(-5%, 5%, 0) scale(0.96); }
+    }
+    @keyframes liquidOrbFloat2 {
+      0% { transform: translate3d(0, 0, 0) scale(1); }
+      50% { transform: translate3d(-8%, -7%, 0) scale(1.06); }
+      100% { transform: translate3d(6%, -10%, 0) scale(0.94); }
+    }
+
+    /* iOS 26 Liquid Glass Inset Grouped Block (Optimized 120 FPS Compositor) */
+    .ios-inset-group, .ios-liquid-glass {
+      position: relative;
+      border-radius: 24px;
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.88) 0%, rgba(240, 249, 255, 0.74) 100%);
+      backdrop-filter: blur(14px) saturate(180%);
+      -webkit-backdrop-filter: blur(14px) saturate(180%);
+      padding: 1.15rem;
+      border: 1.2px solid rgba(255, 255, 255, 0.85);
+      box-shadow: 0 10px 30px -6px rgba(2, 132, 199, 0.09),
+                  0 4px 12px -2px rgba(15, 23, 42, 0.03),
+                  inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.95),
+                  inset 0 -1px 1px 0 rgba(2, 132, 199, 0.04);
+      transition: background 300ms ease, border-color 300ms ease, color 300ms ease, box-shadow 300ms ease, transform 0.45s cubic-bezier(0.34, 1.68, 0.64, 1);
+      contain: layout style;
+      transform: translateZ(0);
+      will-change: transform;
+    }
+    .dark .ios-inset-group, html.dark .ios-inset-group,
+    .dark .ios-liquid-glass, html.dark .ios-liquid-glass {
+      background: linear-gradient(145deg, rgba(30, 41, 59, 0.86) 0%, rgba(15, 23, 42, 0.78) 100%) !important;
+      backdrop-filter: blur(14px) saturate(190%) !important;
+      -webkit-backdrop-filter: blur(14px) saturate(190%) !important;
+      border: 1.2px solid rgba(255, 255, 255, 0.16) !important;
+      box-shadow: 0 16px 42px -8px rgba(0, 0, 0, 0.68),
+                  0 4px 16px -2px rgba(3, 105, 161, 0.22),
+                  inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.20),
+                  inset 0 -1px 1px 0 rgba(0, 0, 0, 0.4) !important;
       color: #F8FAFC !important;
+    }
+
+    /* iOS 26 Liquid Glass Pill & Tag Badges */
+    .ios-glass-pill {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.82) 0%, rgba(224, 242, 254, 0.65) 100%);
+      backdrop-filter: blur(14px) saturate(180%);
+      -webkit-backdrop-filter: blur(14px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.75);
+      box-shadow: 0 4px 14px -2px rgba(2, 132, 199, 0.12),
+                  inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.90);
+    }
+    .dark .ios-glass-pill, html.dark .ios-glass-pill {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.82) 0%, rgba(15, 23, 42, 0.75) 100%) !important;
+      backdrop-filter: blur(14px) saturate(190%) !important;
+      -webkit-backdrop-filter: blur(14px) saturate(190%) !important;
+      border: 1px solid rgba(255, 255, 255, 0.16) !important;
+      box-shadow: 0 6px 18px -2px rgba(0, 0, 0, 0.45),
+                  inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.2) !important;
     }
 
     /* iOS Floating & Capsule Shadows */
     .ios-drop-shadow {
-      box-shadow: 0 6px 20px -3px rgba(15, 23, 42, 0.1), 0 2px 6px -2px rgba(15, 23, 42, 0.05);
+      box-shadow: 0 8px 24px -4px rgba(2, 132, 199, 0.12), 0 2px 8px -2px rgba(15, 23, 42, 0.05);
     }
     .dark .ios-drop-shadow {
-      box-shadow: 0 8px 24px -3px rgba(0, 0, 0, 0.55), 0 2px 8px -2px rgba(0, 0, 0, 0.4);
+      box-shadow: 0 10px 28px -4px rgba(0, 0, 0, 0.65), 0 2px 8px -2px rgba(0, 0, 0, 0.4);
     }
     .ios-nav-shadow {
-      box-shadow: 0 14px 36px -6px rgba(15, 23, 42, 0.22), 0 4px 14px -2px rgba(15, 23, 42, 0.1);
+      box-shadow: 0 16px 40px -6px rgba(15, 23, 42, 0.2), 0 4px 16px -2px rgba(15, 23, 42, 0.08);
     }
     .dark .ios-nav-shadow {
-      box-shadow: 0 18px 40px -6px rgba(0, 0, 0, 0.75), 0 4px 16px -2px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08);
+      box-shadow: 0 20px 44px -6px rgba(0, 0, 0, 0.8), 0 4px 18px -2px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.08);
     }
 
     /* Hairline Divider */
     .ios-hairline {
-      border-bottom: 1px solid #E2E8F0;
+      border-bottom: 1px solid rgba(226, 232, 240, 0.8);
       transition: border-color 300ms ease-in-out;
     }
     .dark .ios-hairline, html.dark .ios-hairline {
-      border-bottom: 1px solid #334155 !important;
+      border-bottom: 1px solid rgba(51, 65, 85, 0.8) !important;
     }
 
     /* Bulletproof Fallbacks for Dark Mode */
@@ -319,41 +421,42 @@ HTML_HEAD = """<!DOCTYPE html>
       scrollbar-width: none;
     }
 
-    /* Tactile Touch Animation (Authentic Apple iOS Spring Physics 120 FPS) */
+    /* Tactile Touch Animation (Authentic Apple iOS Bouncy Spring Physics 120 FPS) */
     .ios-btn-tap, .ios-touch-item {
-      transition: transform 0.36s cubic-bezier(0.175, 0.885, 0.32, 1.25), opacity 0.22s cubic-bezier(0.32, 0.72, 0, 1);
+      transition: transform 0.44s cubic-bezier(0.34, 1.68, 0.64, 1), opacity 0.16s ease;
       user-select: none;
       -webkit-user-select: none;
-      will-change: transform, opacity;
+      will-change: transform;
       transform: translate3d(0, 0, 0);
       touch-action: manipulation;
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
     }
     .ios-btn-tap:active, .ios-touch-item:active {
-      transform: scale3d(0.955, 0.955, 1) translate3d(0, 0, 0) !important;
-      opacity: 0.82;
-      transition: transform 0.08s cubic-bezier(0.2, 0, 0, 1), opacity 0.08s ease;
+      transform: scale3d(0.92, 0.92, 1) translate3d(0, 0, 0) !important;
+      opacity: 0.78;
+      transition: transform 0.08s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.08s ease;
     }
     .ios-card-tap {
-      transition: transform 0.38s cubic-bezier(0.175, 0.885, 0.32, 1.2), opacity 0.25s cubic-bezier(0.32, 0.72, 0, 1), box-shadow 0.38s cubic-bezier(0.32, 0.72, 0, 1);
+      transition: transform 0.46s cubic-bezier(0.34, 1.68, 0.64, 1), opacity 0.18s ease, box-shadow 0.35s ease;
       user-select: none;
       -webkit-user-select: none;
-      will-change: transform, opacity, box-shadow;
+      will-change: transform, box-shadow;
       transform: translate3d(0, 0, 0);
       touch-action: manipulation;
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
     }
     .ios-card-tap:active {
-      transform: scale3d(0.975, 0.975, 1) translate3d(0, 0, 0) !important;
-      opacity: 0.90;
-      transition: transform 0.08s cubic-bezier(0.2, 0, 0, 1), opacity 0.08s ease;
+      transform: scale3d(0.95, 0.95, 1) translate3d(0, 0, 0) !important;
+      opacity: 0.88;
+      box-shadow: 0 4px 12px -2px rgba(2, 132, 199, 0.15) !important;
+      transition: transform 0.08s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.08s ease;
     }
 
     /* Navigation, view transitions, and bottom sheets */
     .ios-view-transition, .animate-ios-tab-view {
-      transition: transform 0.28s cubic-bezier(0.28, 0.84, 0.42, 1), opacity 0.24s cubic-bezier(0.32, 0.72, 0, 1);
+      transition: transform 0.34s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.26s cubic-bezier(0.32, 0.72, 0, 1);
       will-change: transform, opacity;
       transform: translate3d(0, 0, 0);
       backface-visibility: hidden;
@@ -407,70 +510,146 @@ HTML_HEAD = """<!DOCTYPE html>
       text-shadow: 0 1px 1px rgba(0, 0, 0, 0.4), 0 -1px 0 rgba(255, 255, 255, 0.2);
     }
 
-    /* CardsView Card Stack Spring-Based Lift Animation & Depth */
+    /* CardsView Card Stack Spring-Based Lift Animation & Depth (Authentic Apple Wallet Bouncy Physics) */
     .ios-card-stack-item {
       position: relative;
-      transition: transform 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275), 
-                  box-shadow 0.45s cubic-bezier(0.16, 1, 0.3, 1), 
-                  opacity 0.35s ease, 
-                  filter 0.35s ease;
+      transition: transform 0.48s cubic-bezier(0.34, 1.68, 0.64, 1), 
+                  box-shadow 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), 
+                  opacity 0.32s ease, 
+                  filter 0.32s ease;
       will-change: transform, box-shadow;
       transform-origin: center center;
+      touch-action: pan-y;
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
     }
     .ios-card-stack-item.is-lifted {
-      transform: translate3d(0, -7px, 0) scale(1.02);
-      box-shadow: 0 22px 42px -10px rgba(2, 132, 199, 0.48), 
-                  0 8px 20px -4px rgba(0, 0, 0, 0.2), 
-                  0 0 0 1.5px rgba(255, 255, 255, 0.5),
-                  inset 0 1px 2px rgba(255, 255, 255, 0.4);
-      z-index: 20 !important;
+      animation: iosWalletCardSpringLift 0.46s cubic-bezier(0.34, 1.68, 0.64, 1) forwards;
+      box-shadow: 0 24px 48px -10px rgba(2, 132, 199, 0.45), 
+                  0 10px 22px -4px rgba(0, 0, 0, 0.22), 
+                  0 0 0 1.5px rgba(255, 255, 255, 0.65),
+                  inset 0 1.5px 2px rgba(255, 255, 255, 0.55);
+      z-index: 30 !important;
+    }
+    @keyframes iosWalletCardSpringLift {
+      0% {
+        transform: translate3d(0, 0, 0) scale3d(1, 1, 1);
+      }
+      45% {
+        transform: translate3d(0, -13px, 0) scale3d(1.034, 1.034, 1);
+      }
+      75% {
+        transform: translate3d(0, -8px, 0) scale3d(1.020, 1.020, 1);
+      }
+      100% {
+        transform: translate3d(0, -9px, 0) scale3d(1.026, 1.026, 1);
+      }
     }
     html.dark .ios-card-stack-item.is-lifted, .dark .ios-card-stack-item.is-lifted {
-      box-shadow: 0 24px 48px -10px rgba(0, 0, 0, 0.75), 
-                  0 10px 24px -4px rgba(3, 105, 161, 0.45), 
-                  0 0 0 1.5px rgba(56, 189, 248, 0.45),
-                  inset 0 1px 2px rgba(255, 255, 255, 0.3);
+      box-shadow: 0 26px 52px -10px rgba(0, 0, 0, 0.78), 
+                  0 12px 26px -4px rgba(3, 105, 161, 0.48), 
+                  0 0 0 1.5px rgba(56, 189, 248, 0.55),
+                  inset 0 1.5px 2px rgba(255, 255, 255, 0.35);
     }
     .ios-card-stack-item.is-dimmed {
-      transform: translate3d(0, 0, 0) scale(0.985);
-      opacity: 0.86;
-      filter: brightness(0.96);
-      box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.12);
+      animation: iosWalletCardSpringStackDown 0.42s cubic-bezier(0.34, 1.68, 0.64, 1) forwards;
+      opacity: 0.82;
+      filter: brightness(0.93) saturate(0.9);
+      box-shadow: 0 4px 10px -2px rgba(0, 0, 0, 0.12);
+    }
+    @keyframes iosWalletCardSpringStackDown {
+      0% {
+        transform: translate3d(0, 0, 0) scale3d(1, 1, 1);
+      }
+      50% {
+        transform: translate3d(0, 8px, 0) scale3d(0.965, 0.965, 1);
+      }
+      100% {
+        transform: translate3d(0, 5px, 0) scale3d(0.976, 0.976, 1);
+      }
     }
     html.dark .ios-card-stack-item.is-dimmed, .dark .ios-card-stack-item.is-dimmed {
-      filter: brightness(0.9);
+      filter: brightness(0.85) saturate(0.88);
     }
     .ios-card-stack-item:active:not(.is-lifted):not(.is-dragging) {
-      transform: translate3d(0, 1px, 0) scale(0.98);
-      transition-duration: 0.12s;
+      transform: translate3d(0, 2px, 0) scale3d(0.978, 0.978, 1);
+      transition-duration: 0.1s;
     }
 
-    /* CardsView Drag & Drop Reordering Styles */
+    /* CardsView Drag & Drop Reordering & Apple Wallet Floating Physics */
     .ios-card-stack-item.is-dragging {
-      opacity: 0.94;
-      transform: scale(1.035) translate3d(0, -4px, 0) !important;
-      box-shadow: 0 28px 50px -12px rgba(2, 132, 199, 0.55),
-                  0 12px 24px -6px rgba(0, 0, 0, 0.25),
-                  0 0 0 2px rgba(255, 255, 255, 0.85),
-                  inset 0 1px 2px rgba(255, 255, 255, 0.5) !important;
-      z-index: 50 !important;
+      opacity: 0.96;
+      animation: iosWalletCardFloat 0.32s cubic-bezier(0.34, 1.68, 0.64, 1) forwards;
+      box-shadow: 0 32px 60px -12px rgba(2, 132, 199, 0.55),
+                  0 14px 28px -6px rgba(0, 0, 0, 0.30),
+                  0 0 0 2px rgba(255, 255, 255, 0.95),
+                  inset 0 1px 3px rgba(255, 255, 255, 0.65) !important;
+      z-index: 60 !important;
       cursor: grabbing !important;
-      transition: box-shadow 0.2s ease, opacity 0.2s ease, transform 0.15s ease !important;
+      transition: box-shadow 0.2s ease, opacity 0.2s ease !important;
+    }
+    @keyframes iosWalletCardFloat {
+      0% {
+        transform: scale3d(1, 1, 1) rotate(0deg);
+      }
+      55% {
+        transform: scale3d(1.048, 1.048, 1) translate3d(0, -6px, 0) rotate(-1.6deg);
+      }
+      100% {
+        transform: scale3d(1.040, 1.040, 1) translate3d(0, -4px, 0) rotate(-1.1deg);
+      }
     }
     html.dark .ios-card-stack-item.is-dragging, .dark .ios-card-stack-item.is-dragging {
-      box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.85),
-                  0 14px 28px -6px rgba(3, 105, 161, 0.5),
-                  0 0 0 2px rgba(56, 189, 248, 0.8),
-                  inset 0 1px 2px rgba(255, 255, 255, 0.4) !important;
+      box-shadow: 0 34px 64px -12px rgba(0, 0, 0, 0.88),
+                  0 16px 32px -6px rgba(3, 105, 161, 0.55),
+                  0 0 0 2px rgba(56, 189, 248, 0.85),
+                  inset 0 1px 3px rgba(255, 255, 255, 0.45) !important;
+    }
+    .ios-card-stack-item.is-settling {
+      animation: iosWalletDropSettle 0.45s cubic-bezier(0.34, 1.68, 0.64, 1) forwards;
+    }
+    @keyframes iosWalletDropSettle {
+      0% {
+        transform: scale3d(1.04, 1.04, 1) translate3d(0, -4px, 0) rotate(-1.1deg);
+      }
+      45% {
+        transform: scale3d(0.975, 0.975, 1) translate3d(0, 3px, 0) rotate(0.5deg);
+      }
+      75% {
+        transform: scale3d(1.008, 1.008, 1) translate3d(0, -1px, 0) rotate(-0.15deg);
+      }
+      100% {
+        transform: scale3d(1, 1, 1) translate3d(0, 0, 0) rotate(0deg);
+      }
     }
     .ios-card-stack-item.is-drag-target {
-      transform: scale(0.99) translate3d(0, 2px, 0);
-      opacity: 0.75;
-      outline: 2px dashed rgba(2, 132, 199, 0.6);
-      outline-offset: 3px;
+      transform: scale3d(0.985, 0.985, 1) translate3d(0, 2px, 0);
+      opacity: 0.76;
+      outline: 2.5px dashed rgba(2, 132, 199, 0.7);
+      outline-offset: 4px;
+      transition: transform 0.3s cubic-bezier(0.34, 1.68, 0.64, 1), outline 0.2s ease;
     }
     html.dark .ios-card-stack-item.is-drag-target {
-      outline-color: rgba(56, 189, 248, 0.7);
+      outline-color: rgba(56, 189, 248, 0.8);
+    }
+    .ios-wallet-drawer {
+      animation: iosWalletDrawerOpen 0.42s cubic-bezier(0.34, 1.68, 0.64, 1) forwards;
+      will-change: transform, opacity;
+      transform-origin: top center;
+    }
+    @keyframes iosWalletDrawerOpen {
+      0% {
+        opacity: 0;
+        transform: translate3d(0, -10px, 0) scale3d(0.97, 0.97, 1);
+      }
+      65% {
+        opacity: 1;
+        transform: translate3d(0, 2.5px, 0) scale3d(1.008, 1.008, 1);
+      }
+      100% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale3d(1, 1, 1);
+      }
     }
     .ios-card-drop-indicator {
       height: 4px;
@@ -581,7 +760,7 @@ HTML_HEAD = """<!DOCTYPE html>
 
     /* Keypad Button with iOS Spring Physics */
     .ios-keypad-btn {
-      transition: transform 0.32s cubic-bezier(0.175, 0.885, 0.32, 1.25), opacity 0.2s ease, background-color 0.2s ease;
+      transition: transform 0.36s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.18s ease, background-color 0.2s ease;
       touch-action: manipulation;
       user-select: none;
       -webkit-user-select: none;
@@ -591,9 +770,9 @@ HTML_HEAD = """<!DOCTYPE html>
       -webkit-backface-visibility: hidden;
     }
     .ios-keypad-btn:active {
-      transform: scale3d(0.91, 0.91, 1) translate3d(0, 0, 0) !important;
-      opacity: 0.72;
-      transition: transform 0.07s cubic-bezier(0.2, 0, 0, 1), opacity 0.07s ease;
+      transform: scale3d(0.88, 0.88, 1) translate3d(0, 0, 0) !important;
+      opacity: 0.70;
+      transition: transform 0.06s cubic-bezier(0.2, 0, 0, 1), opacity 0.06s ease;
     }
 
     /* iOS Native Modal Sheet Stacking Layer (Hardware composited, zero re-layout) */
@@ -609,11 +788,11 @@ HTML_HEAD = """<!DOCTYPE html>
     /* Ultra-Smooth Spring Pop for Dialogs & Alert Toasts */
     @keyframes iosSpringPop {
       0% {
-        transform: scale3d(0.88, 0.88, 1) translate3d(0, 0, 0);
+        transform: scale3d(0.85, 0.85, 1) translate3d(0, 0, 0);
         opacity: 0;
       }
       70% {
-        transform: scale3d(1.025, 1.025, 1) translate3d(0, 0, 0);
+        transform: scale3d(1.03, 1.03, 1) translate3d(0, 0, 0);
         opacity: 1;
       }
       100% {
@@ -622,28 +801,39 @@ HTML_HEAD = """<!DOCTYPE html>
       }
     }
     .animate-ios-spring-pop {
-      animation: iosSpringPop 0.32s cubic-bezier(0.175, 0.885, 0.32, 1.25) forwards;
+      animation: iosSpringPop 0.38s cubic-bezier(0.34, 1.68, 0.64, 1) forwards;
       will-change: transform, opacity;
       transform: translateZ(0);
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
     }
 
-    /* iOS Modal & Sheet Keyframes (Compositor-only 120 FPS GPU Physics) */
+    /* iOS Modal & Sheet Keyframes (Compositor-only 120 FPS GPU Physics with Bouncy Overshoot) */
     @keyframes iosSheetEnter {
       0% {
-        transform: translate3d(0, 100%, 0);
+        transform: translate3d(0, 105%, 0) scale3d(0.95, 0.95, 1);
+        opacity: 0.8;
+      }
+      68% {
+        transform: translate3d(0, -9px, 0) scale3d(1.012, 1.012, 1);
+        opacity: 1;
+      }
+      84% {
+        transform: translate3d(0, 3px, 0) scale3d(0.997, 0.997, 1);
       }
       100% {
-        transform: translate3d(0, 0, 0);
+        transform: translate3d(0, 0, 0) scale3d(1, 1, 1);
+        opacity: 1;
       }
     }
     @keyframes iosSheetExit {
       0% {
-        transform: translate3d(0, 0, 0);
+        transform: translate3d(0, 0, 0) scale3d(1, 1, 1);
+        opacity: 1;
       }
       100% {
-        transform: translate3d(0, 100%, 0);
+        transform: translate3d(0, 100%, 0) scale3d(0.95, 0.95, 1);
+        opacity: 0;
       }
     }
     @keyframes iosBackdropFadeIn {
@@ -655,26 +845,26 @@ HTML_HEAD = """<!DOCTYPE html>
       100% { opacity: 0; }
     }
     .animate-ios-sheet {
-      animation: iosSheetEnter 0.34s cubic-bezier(0.28, 0.84, 0.42, 1) forwards;
+      animation: iosSheetEnter 0.44s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
       will-change: transform;
       transform: translateZ(0);
       -webkit-backface-visibility: hidden;
       backface-visibility: hidden;
     }
     .animate-ios-sheet-exit {
-      animation: iosSheetExit 0.24s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+      animation: iosSheetExit 0.28s cubic-bezier(0.32, 0.72, 0, 1) forwards;
       will-change: transform;
       transform: translateZ(0);
       -webkit-backface-visibility: hidden;
       backface-visibility: hidden;
     }
     .animate-ios-backdrop {
-      animation: iosBackdropFadeIn 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+      animation: iosBackdropFadeIn 0.35s cubic-bezier(0.25, 1, 0.5, 1) forwards;
       will-change: opacity;
       transform: translateZ(0);
     }
     .animate-ios-backdrop-exit {
-      animation: iosBackdropFadeOut 0.22s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+      animation: iosBackdropFadeOut 0.24s cubic-bezier(0.32, 0.72, 0, 1) forwards;
       will-change: opacity;
       transform: translateZ(0);
     }
@@ -683,7 +873,13 @@ HTML_HEAD = """<!DOCTYPE html>
     @keyframes iosTabSlideForward {
       0% {
         opacity: 0;
-        transform: translate3d(24px, 0, 0) scale3d(0.98, 0.98, 1);
+        transform: translate3d(36px, 0, 0) scale3d(0.96, 0.96, 1);
+      }
+      70% {
+        transform: translate3d(-4px, 0, 0) scale3d(1.008, 1.008, 1);
+      }
+      88% {
+        transform: translate3d(1.5px, 0, 0) scale3d(0.998, 0.998, 1);
       }
       100% {
         opacity: 1;
@@ -693,7 +889,13 @@ HTML_HEAD = """<!DOCTYPE html>
     @keyframes iosTabSlideBackward {
       0% {
         opacity: 0;
-        transform: translate3d(-24px, 0, 0) scale3d(0.98, 0.98, 1);
+        transform: translate3d(-36px, 0, 0) scale3d(0.96, 0.96, 1);
+      }
+      70% {
+        transform: translate3d(4px, 0, 0) scale3d(1.008, 1.008, 1);
+      }
+      88% {
+        transform: translate3d(-1.5px, 0, 0) scale3d(0.998, 0.998, 1);
       }
       100% {
         opacity: 1;
@@ -703,7 +905,10 @@ HTML_HEAD = """<!DOCTYPE html>
     @keyframes iosTabFadeIn {
       0% {
         opacity: 0;
-        transform: scale3d(0.98, 0.98, 1) translate3d(0, 6px, 0);
+        transform: scale3d(0.97, 0.97, 1) translate3d(0, 8px, 0);
+      }
+      75% {
+        transform: scale3d(1.005, 1.005, 1) translate3d(0, -2px, 0);
       }
       100% {
         opacity: 1;
@@ -711,21 +916,21 @@ HTML_HEAD = """<!DOCTYPE html>
       }
     }
     .animate-ios-tab-slide-forward {
-      animation: iosTabSlideForward 0.28s cubic-bezier(0.28, 0.84, 0.42, 1) forwards;
+      animation: iosTabSlideForward 0.36s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
       will-change: transform, opacity;
       transform: translateZ(0);
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
     }
     .animate-ios-tab-slide-backward {
-      animation: iosTabSlideBackward 0.28s cubic-bezier(0.28, 0.84, 0.42, 1) forwards;
+      animation: iosTabSlideBackward 0.36s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
       will-change: transform, opacity;
       transform: translateZ(0);
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
     }
     .animate-ios-tab-view {
-      animation: iosTabFadeIn 0.28s cubic-bezier(0.28, 0.84, 0.42, 1) forwards;
+      animation: iosTabFadeIn 0.34s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
       will-change: transform, opacity;
       transform: translateZ(0);
       backface-visibility: hidden;
@@ -885,31 +1090,31 @@ HTML_HEAD = """<!DOCTYPE html>
 
     /* iOS Spring Banner Toast (Dynamic Island Physics) */
     @keyframes iosToastSpringDown {
-      0% { transform: translate3d(-50%, -100%, 0) scale3d(0.88, 0.88, 1); opacity: 0; }
-      65% { transform: translate3d(-50%, 6px, 0) scale3d(1.025, 1.025, 1); opacity: 1; }
-      85% { transform: translate3d(-50%, -2px, 0) scale3d(0.99, 0.99, 1); opacity: 1; }
+      0% { transform: translate3d(-50%, -120%, 0) scale3d(0.82, 0.82, 1); opacity: 0; }
+      60% { transform: translate3d(-50%, 8px, 0) scale3d(1.035, 1.035, 1); opacity: 1; }
+      82% { transform: translate3d(-50%, -3px, 0) scale3d(0.99, 0.99, 1); }
       100% { transform: translate3d(-50%, 0, 0) scale3d(1, 1, 1); opacity: 1; }
     }
     @keyframes iosToastSpringUp {
       0% { transform: translate3d(-50%, 0, 0) scale3d(1, 1, 1); opacity: 1; }
-      100% { transform: translate3d(-50%, -100%, 0) scale3d(0.9, 0.9, 1); opacity: 0; }
+      100% { transform: translate3d(-50%, -120%, 0) scale3d(0.88, 0.88, 1); opacity: 0; }
     }
     .animate-ios-toast {
-      animation: iosToastSpringDown 0.44s cubic-bezier(0.175, 0.885, 0.32, 1.25) forwards;
+      animation: iosToastSpringDown 0.48s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
       will-change: transform, opacity;
       transform: translateZ(0);
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
     }
     .animate-ios-toast-exit {
-      animation: iosToastSpringUp 0.26s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+      animation: iosToastSpringUp 0.28s cubic-bezier(0.32, 0.72, 0, 1) forwards;
       will-change: transform, opacity;
       transform: translateZ(0);
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
     }
 
-    /* Modal Backdrop & Card */
+    /* Modal Backdrop & Card (iOS 26 Liquid Glass Sheet) */
     .ios-modal-backdrop {
       position: fixed;
       inset: 0;
@@ -917,9 +1122,9 @@ HTML_HEAD = """<!DOCTYPE html>
       display: flex;
       align-items: flex-end;
       justify-content: center;
-      background-color: rgba(15, 23, 42, 0.62);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
+      background-color: rgba(15, 23, 42, 0.55);
+      backdrop-filter: blur(16px) saturate(180%);
+      -webkit-backdrop-filter: blur(16px) saturate(180%);
       overscroll-behavior: contain;
       padding: 0;
       will-change: opacity;
@@ -940,11 +1145,16 @@ HTML_HEAD = """<!DOCTYPE html>
       max-height: 90dvh;
       display: flex;
       flex-direction: column;
-      border-top-left-radius: 1.5rem;
-      border-top-right-radius: 1.5rem;
+      border-top-left-radius: 1.75rem;
+      border-top-right-radius: 1.75rem;
       overflow: hidden;
-      box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.35);
-      background-color: #FFFFFF;
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(32px) saturate(190%);
+      -webkit-backdrop-filter: blur(32px) saturate(190%);
+      border: 1px solid rgba(255, 255, 255, 0.75);
+      border-bottom: none;
+      box-shadow: 0 -12px 42px -10px rgba(15, 23, 42, 0.28),
+                  inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.95);
       color: #0F172A;
       will-change: transform;
       transform: translateZ(0);
@@ -952,10 +1162,15 @@ HTML_HEAD = """<!DOCTYPE html>
       backface-visibility: hidden;
       contain: layout style;
     }
-    .dark .ios-modal-card {
-      background-color: #1E293B !important;
+    .dark .ios-modal-card, html.dark .ios-modal-card {
+      background: rgba(30, 41, 59, 0.88) !important;
+      backdrop-filter: blur(32px) saturate(200%) !important;
+      -webkit-backdrop-filter: blur(32px) saturate(200%) !important;
+      border: 1px solid rgba(255, 255, 255, 0.14) !important;
+      border-bottom: none !important;
+      box-shadow: 0 -14px 48px -8px rgba(0, 0, 0, 0.85),
+                  inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.22) !important;
       color: #F8FAFC !important;
-      border: 1px solid #334155 !important;
     }
     @media (min-width: 640px) {
       .ios-modal-card {

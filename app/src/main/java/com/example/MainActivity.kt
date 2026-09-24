@@ -58,20 +58,15 @@ class MainActivity : ComponentActivity() {
                         WebView.setDataDirectorySuffix(processName)
                     }
                 }
-                val cache = context.cacheDir
-                val dirs = listOf(
-                    File(cache, "WebView"),
-                    File(cache, "WebView/Default"),
-                    File(cache, "WebView/Default/HTTP Cache"),
-                    File(cache, "WebView/Default/HTTP Cache/Code Cache"),
-                    File(cache, "WebView/Default/HTTP Cache/Code Cache/js"),
-                    File(cache, "WebView/Default/HTTP Cache/Code Cache/wasm"),
-                    File(cache, "WebView/Default/HTTP Cache/index-dir"),
-                    File(context.filesDir, "WebView"),
-                    File(context.filesDir, "WebView/Default")
-                )
-                for (dir in dirs) {
-                    if (!dir.exists()) dir.mkdirs()
+                // If a previous version prematurely created empty HTTP Cache directories without the index,
+                // purge them so Chromium Simple Cache can initialize cleanly without reconstruction errors.
+                val defaultDir = File(context.cacheDir, "WebView/Default")
+                val httpCache = File(defaultDir, "HTTP Cache")
+                if (httpCache.exists()) {
+                    val indexFile = File(httpCache, "index-dir/the-real-index")
+                    if (!indexFile.exists()) {
+                        httpCache.deleteRecursively()
+                    }
                 }
             } catch (t: Throwable) {
                 Log.w(TAG, "Storage directory preparation notice: ${t.message}")
@@ -82,8 +77,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         prepareWebViewStorage(this)
-        // Permanently disable WebView remote debugging for tamper protection
-        WebView.setWebContentsDebuggingEnabled(false)
+        // Enable WebView remote debugging only for debug builds
+        WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG)
         enableEdgeToEdge()
 
         // Lock / prioritize High Refresh Rate (90Hz / 120Hz) on physical devices (e.g. Infinix, Samsung, Xiaomi)

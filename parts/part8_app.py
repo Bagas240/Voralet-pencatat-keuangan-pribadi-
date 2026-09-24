@@ -1844,12 +1844,18 @@ PART8_APP = """
       const isAnyModalOpen = isTxModalOpen || isAccModalOpen || isSavingsModalOpen || isSettingsModalOpen || isDebtModalOpen || isDevModalOpen || isMonthlyPdfModalOpen || isCsvImportModalOpen;
 
       return (
-        <div className={`h-[100dvh] flex flex-col ${theme === 'dark' ? 'dark bg-[#0F172A] text-[#F8FAFC]' : 'bg-slate-50 text-[#0F172A]'} overflow-hidden select-none transition-colors duration-300 ease-in-out`}>
+        <div className={`h-[100dvh] flex flex-col ${theme === 'dark' ? 'dark text-[#F8FAFC]' : 'text-[#0F172A]'} bg-transparent overflow-hidden select-none transition-colors duration-300 ease-in-out relative`}>
+          {/* iOS 26 Dynamic Ambient Liquid Glass Canvas */}
+          <div className="ios-liquid-bg" aria-hidden="true">
+            <div className="ios-liquid-orb-1" />
+            <div className="ios-liquid-orb-2" />
+          </div>
+
           <ThemeCrossfadeOverlay transition={themeTransition} />
           {toastMsg && <Toast message={toastMsg} onClose={() => setToastMsg('')} />}
 
           {/* Main App Viewport */}
-          <div className="flex-1 flex flex-col w-full h-full overflow-hidden">
+          <div className="flex-1 flex flex-col w-full h-full overflow-hidden relative z-10">
             <main
               onTouchStart={handleScreenTouchStart}
               onTouchEnd={handleScreenTouchEnd}

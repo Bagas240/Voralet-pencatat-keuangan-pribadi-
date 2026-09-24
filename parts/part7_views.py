@@ -1023,6 +1023,7 @@ PART7_VIEWS = """
       const [initialBalance, setInitialBalance] = useState('');
       const [color, setColor] = useState('#0284C7');
       const [expandedCardId, setExpandedCardId] = useState(null);
+      const [settlingId, setSettlingId] = useState(null);
 
       // Drag and drop reordering state
       const [draggedId, setDraggedId] = useState(null);
@@ -1105,14 +1106,22 @@ PART7_VIEWS = """
             moveEv.preventDefault();
           }
 
+          // Live elastic spring translation on dragged card
+          const el = cardRefs.current[accId];
+          if (el) {
+            const tilt = Math.max(-2.5, Math.min(2.5, deltaX * 0.04));
+            el.style.transform = `translate3d(${Math.round(deltaX * 0.35)}px, ${Math.round(deltaY)}px, 0) scale3d(1.042, 1.042, 1) rotate(${tilt}deg)`;
+            el.style.zIndex = '60';
+          }
+
           const currentClientY = moveEv.clientY;
           let foundId = null;
           let foundPos = null;
 
           for (const a of safeAccounts) {
-            const el = cardRefs.current[a.id];
-            if (!el) continue;
-            const rect = el.getBoundingClientRect();
+            const cardEl = cardRefs.current[a.id];
+            if (!cardEl) continue;
+            const rect = cardEl.getBoundingClientRect();
             if (currentClientY >= rect.top && currentClientY <= rect.bottom) {
               foundId = a.id;
               const midY = rect.top + rect.height / 2;
@@ -1135,13 +1144,22 @@ PART7_VIEWS = """
           window.removeEventListener('pointercancel', handlePointerUp);
 
           const wasStarted = touchStateRef.current.isStarted;
+          const targetAccId = touchStateRef.current.accId;
           touchStateRef.current = null;
+
+          const cardEl = cardRefs.current[targetAccId];
+          if (cardEl) {
+            cardEl.style.transform = '';
+            cardEl.style.zIndex = '';
+          }
 
           if (wasStarted) {
             justDraggedRef.current = true;
+            setSettlingId(targetAccId);
             setTimeout(() => {
               justDraggedRef.current = false;
-            }, 300);
+              setSettlingId(null);
+            }, 450);
 
             setDraggedId(currDragged => {
               setDragOverId(currOver => {
@@ -1180,6 +1198,81 @@ PART7_VIEWS = """
         window.addEventListener('pointerup', handlePointerUp);
         window.addEventListener('pointercancel', handlePointerUp);
       }, [safeAccounts, onReorderAccounts]);
+
+      // Horizontal swipe and interactive elastic spring on card body
+      const handleCardPointerDown = useCallback((accId, e) => {
+        if (e.target.closest('button') || e.target.closest('[role="button"]') || e.target.closest('input') || e.target.closest('select')) {
+          return;
+        }
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+
+        const pointerId = e.pointerId;
+        const startX = e.clientX;
+        const startY = e.clientY;
+        let isSwiping = false;
+
+        const handleCardMove = (moveEv) => {
+          if (moveEv.pointerId !== pointerId) return;
+          const dx = moveEv.clientX - startX;
+          const dy = moveEv.clientY - startY;
+
+          // Check if user is swiping horizontally
+          if (!isSwiping) {
+            if (Math.abs(dx) > 7 && Math.abs(dx) > Math.abs(dy) * 1.1) {
+              isSwiping = true;
+              justDraggedRef.current = true;
+            } else if (Math.abs(dy) > 10) {
+              // Scrolling vertically, cancel tracking
+              window.removeEventListener('pointermove', handleCardMove);
+              window.removeEventListener('pointerup', handleCardUp);
+              window.removeEventListener('pointercancel', handleCardUp);
+              return;
+            }
+          }
+
+          if (isSwiping) {
+            if (moveEv.cancelable) moveEv.preventDefault();
+            // Apple Wallet elastic rubber-band resistance
+            const resistedDx = Math.sign(dx) * Math.pow(Math.abs(dx), 0.72) * 2.2;
+            const cardEl = cardRefs.current[accId];
+            if (cardEl) {
+              const tilt = resistedDx * 0.035;
+              const scaleDown = 1 - Math.min(0.025, Math.abs(dx) * 0.00025);
+              cardEl.style.transform = `translate3d(${resistedDx}px, 0, 0) scale3d(${scaleDown}, ${scaleDown}, 1) rotate(${tilt}deg)`;
+              cardEl.style.transition = 'none';
+            }
+          }
+        };
+
+        const handleCardUp = (upEv) => {
+          if (upEv.pointerId !== pointerId) return;
+          window.removeEventListener('pointermove', handleCardMove);
+          window.removeEventListener('pointerup', handleCardUp);
+          window.removeEventListener('pointercancel', handleCardUp);
+
+          const cardEl = cardRefs.current[accId];
+          if (isSwiping && cardEl) {
+            // Apple Wallet snappy spring snapback
+            cardEl.style.transition = 'transform 0.48s cubic-bezier(0.34, 1.68, 0.64, 1)';
+            cardEl.style.transform = '';
+            if (window.VoraletHaptics?.selection) {
+              window.VoraletHaptics.selection();
+            } else if (window.VoraletHaptics?.tap) {
+              window.VoraletHaptics.tap();
+            }
+            setTimeout(() => {
+              justDraggedRef.current = false;
+              if (cardEl) cardEl.style.transition = '';
+            }, 300);
+          } else {
+            justDraggedRef.current = false;
+          }
+        };
+
+        window.addEventListener('pointermove', handleCardMove, { passive: false });
+        window.addEventListener('pointerup', handleCardUp);
+        window.addEventListener('pointercancel', handleCardUp);
+      }, []);
 
       // HTML5 Drag and Drop handlers for desktop
       const handleHtmlDragStart = (e, accId) => {
@@ -1438,6 +1531,7 @@ PART7_VIEWS = """
                 const isExpanded = expandedCardId === acc.id;
                 const hasAnySelected = expandedCardId !== null;
                 const isDragging = draggedId === acc.id;
+                const isSettling = settlingId === acc.id;
                 const isDragTarget = dragOverId === acc.id && draggedId !== acc.id;
                 const showIndicatorBefore = isDragTarget && dragPosition === 'before';
                 const showIndicatorAfter = isDragTarget && dragPosition === 'after';
@@ -1448,6 +1542,15 @@ PART7_VIEWS = """
                 const isInvest = normType === 'INVESTASI';
                 const iconName = isCash ? 'cash' : isEWallet ? 'smartphone' : isInvest ? 'award' : 'bank';
                 const typeLabel = isCash ? 'Kas Tunai' : isEWallet ? 'E-Wallet' : isInvest ? 'Investasi' : 'Rekening Bank';
+
+                // Distinct Apple Wallet Card Gradients & Styling
+                const cardGradient = isCash
+                  ? 'bg-gradient-to-br from-[#0D9488] via-[#0F766E] to-[#115E59]'
+                  : isEWallet
+                  ? 'bg-gradient-to-br from-[#6366F1] via-[#4F46E5] to-[#3730A3]'
+                  : isInvest
+                  ? 'bg-gradient-to-br from-[#D97706] via-[#B45309] to-[#78350F]'
+                  : 'bg-gradient-to-br from-[#0284C7] via-[#0369A1] to-[#075985]';
 
                 // Get last 4 mutations for this account
                 const accountTxs = safeTransactions
@@ -1470,16 +1573,21 @@ PART7_VIEWS = """
                       onDragOver={(e) => handleHtmlDragOver(e, acc.id)}
                       onDrop={(e) => handleHtmlDrop(e, acc.id)}
                       onDragEnd={handleHtmlDragEnd}
+                      onPointerDown={(e) => handleCardPointerDown(acc.id, e)}
                       onClick={() => {
                         if (justDraggedRef.current || isDraggingRef.current) return;
-                        if (window.VoraletHaptics) {
+                        if (window.VoraletHaptics?.selection) {
+                          window.VoraletHaptics.selection();
+                        } else if (window.VoraletHaptics?.tap) {
                           window.VoraletHaptics.tap();
                         }
                         setExpandedCardId(isExpanded ? null : acc.id);
                       }}
-                      className={`relative w-full rounded-2xl bg-[#0284C7] dark:bg-[#0369A1] p-4 text-white select-none cursor-pointer ios-card-stack-item ${
+                      className={`relative w-full rounded-2xl ${cardGradient} p-4 text-white select-none cursor-pointer overflow-hidden ios-card-stack-item ${
                         isDragging
                           ? 'is-dragging'
+                          : isSettling
+                          ? 'is-settling'
                           : isDragTarget
                           ? 'is-drag-target'
                           : isExpanded
@@ -1489,10 +1597,14 @@ PART7_VIEWS = """
                           : 'shadow-md hover:shadow-lg'
                       }`}
                     >
+                      {/* Apple Wallet Shimmer & Specular Highlights */}
+                      <div className="absolute inset-0 bg-gradient-to-b from-white/20 via-transparent to-black/20 pointer-events-none rounded-2xl" />
+                      <div className="apple-atm-shimmer opacity-30 pointer-events-none" />
+
                       {/* Top row: Type chip/badge, priority indicator, and drag handle */}
-                      <div className="flex items-center justify-between mb-4">
+                      <div className="relative z-10 flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-xl bg-white/20 border border-white/25 flex items-center justify-center text-white">
+                          <div className="w-8 h-8 rounded-xl bg-white/20 border border-white/25 flex items-center justify-center text-white shadow-xs backdrop-blur-xs">
                             <Icon name={iconName} className="w-4 h-4" />
                           </div>
                           <div>
@@ -1511,7 +1623,7 @@ PART7_VIEWS = """
                                 </span>
                               )}
                             </div>
-                            <h4 className="text-sm font-extrabold text-white truncate leading-tight">
+                            <h4 className="text-sm font-extrabold text-white truncate leading-tight apple-card-emboss">
                               {acc.name}
                             </h4>
                           </div>
@@ -1530,7 +1642,7 @@ PART7_VIEWS = """
                               aria-label={`Geser untuk atur urutan ${acc.name}`}
                               onPointerDown={(e) => handleDragHandlePointerDown(acc.id, e)}
                               onClick={(e) => e.stopPropagation()}
-                              className="p-1.5 -mr-1 rounded-lg text-white/70 hover:text-white hover:bg-white/20 active:bg-white/30 cursor-grab active:cursor-grabbing transition-colors touch-none select-none flex items-center justify-center"
+                              className="p-1.5 -mr-1 rounded-lg text-white/80 hover:text-white hover:bg-white/20 active:bg-white/30 cursor-grab active:cursor-grabbing transition-colors touch-none select-none flex items-center justify-center ios-btn-tap"
                               style={{ touchAction: 'none' }}
                             >
                               <Icon name="grip-vertical" className="w-4 h-4" />
@@ -1540,27 +1652,27 @@ PART7_VIEWS = """
                       </div>
 
                       {/* Bottom row: Saldo and status */}
-                      <div className="pt-2 border-t border-white/15 flex items-end justify-between">
+                      <div className="relative z-10 pt-2 border-t border-white/15 flex items-end justify-between">
                         <div>
-                          <span className="text-[9px] font-semibold uppercase tracking-wider text-sky-200/90 block mb-0.5">
+                          <span className="text-[9px] font-semibold uppercase tracking-wider text-sky-100/90 block mb-0.5">
                             Saldo Tersedia
                           </span>
-                          <div className="text-lg sm:text-xl font-black tracking-tight text-white">
+                          <div className="text-lg sm:text-xl font-black tracking-tight text-white apple-card-emboss">
                             {hideBalance ? 'Rp ••••••••' : formatIDR(bal)}
                           </div>
                         </div>
 
                         <div className="text-right flex items-center gap-1.5">
-                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-sky-100 bg-white/15 px-2 py-0.5 rounded-lg">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-sky-100 bg-white/15 px-2 py-0.5 rounded-lg backdrop-blur-xs">
                             <span>{isExpanded ? 'Tutup Opsi' : 'Kelola'}</span>
                             <Icon name={isExpanded ? 'chevron-up' : 'chevron-down'} className="w-3 h-3" />
                           </span>
                         </div>
                       </div>
 
-                      {/* Expanded Pocket Actions & Recent Mutations */}
+                      {/* Expanded Pocket Actions & Recent Mutations (Apple Wallet Spring Drawer) */}
                       {isExpanded && (
-                        <div className="mt-3.5 pt-3 border-t border-white/20 space-y-3 animate-ios-spring-pop text-slate-800 dark:text-slate-100" onClick={(e) => e.stopPropagation()}>
+                        <div className="relative z-10 mt-3.5 pt-3 border-t border-white/20 space-y-3 ios-wallet-drawer text-slate-800 dark:text-slate-100" onClick={(e) => e.stopPropagation()}>
                           {/* Quick Action Buttons */}
                           <div className="flex gap-2">
                             <button
@@ -1758,8 +1870,8 @@ PART7_VIEWS = """
           onMouseMove={(e) => handlePointerMove(e.clientX)}
           onMouseUp={handlePointerUp}
           onMouseLeave={() => { if (isDraggingRef.current) handlePointerUp(); }}
-          className="fixed bottom-5 left-0 right-0 z-50 w-[92%] max-w-[360px] h-14 mx-auto rounded-full bg-[#FFFFFF] dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155] shadow-[0_12px_32px_rgba(15,23,42,0.18)] dark:shadow-[0_16px_36px_rgba(0,0,0,0.6)] select-none touch-none overflow-hidden p-1.5"
-          style={{ willChange: 'transform' }}
+          className="fixed bottom-5 left-0 right-0 z-50 w-[92%] max-w-[360px] h-14 mx-auto rounded-full bg-white/80 dark:bg-[#1E293B]/80 backdrop-blur-[16px] saturate-[190%] border border-white/80 dark:border-white/20 shadow-[0_16px_42px_rgba(2,132,199,0.20),0_4px_14px_rgba(15,23,42,0.08),inset_0_1.5px_2px_rgba(255,255,255,0.95)] dark:shadow-[0_20px_48px_rgba(0,0,0,0.75),0_4px_16px_rgba(3,105,161,0.35),inset_0_1.5px_2px_rgba(255,255,255,0.25)] select-none touch-none overflow-hidden p-1.5 transition-transform duration-300"
+          style={{ willChange: 'transform', transform: 'translateZ(0)' }}
         >
           {/* Inner relative container for precise pixel positioning */}
           <div className="relative w-full h-full">
@@ -1780,27 +1892,27 @@ PART7_VIEWS = """
               ))}
             </div>
 
-            {/* SLIDING PILL BACKGROUND - Smooth spring when releasing, instantaneous when dragging */}
+            {/* SLIDING PILL BACKGROUND - iOS 26 Liquid Glass Fluid Pill with spring curve */}
             <div
-              className={`absolute top-0 bottom-0 rounded-full bg-[#0284C7] dark:bg-[#38BDF8] shadow-sm pointer-events-none will-change-transform ${
-                isDragging ? 'transition-none' : 'transition-all duration-300'
+              className={`absolute top-0 bottom-0 rounded-full bg-gradient-to-r from-[#38BDF8] via-[#0284C7] to-[#0369A1] dark:from-[#38BDF8] dark:via-[#0284C7] dark:to-[#0369A1] shadow-[0_4px_18px_rgba(2,132,199,0.5),inset_0_1.5px_2px_rgba(255,255,255,0.7)] pointer-events-none will-change-transform ${
+                isDragging ? 'transition-none' : 'transition-all duration-350'
               }`}
               style={{
                 left: `${pillLeftPercent}%`,
                 width: `${pillWidthPercent}%`,
-                transitionTimingFunction: 'cubic-bezier(0.28, 0.84, 0.42, 1)'
+                transitionTimingFunction: 'cubic-bezier(0.34, 1.68, 0.64, 1)'
               }}
             />
 
             {/* TOP MASKED LAYER: Brilliant White Icons revealed EXACTLY where the pill is */}
             <div
               className={`absolute inset-0 pointer-events-none overflow-hidden ${
-                isDragging ? 'transition-none' : 'transition-all duration-300'
+                isDragging ? 'transition-none' : 'transition-all duration-350'
               }`}
               style={{
                 clipPath: `inset(0 ${Math.max(0, 100 - (pillLeftPercent + pillWidthPercent))}% 0 ${pillLeftPercent}% round 9999px)`,
                 WebkitClipPath: `inset(0 ${Math.max(0, 100 - (pillLeftPercent + pillWidthPercent))}% 0 ${pillLeftPercent}% round 9999px)`,
-                transitionTimingFunction: 'cubic-bezier(0.28, 0.84, 0.42, 1)'
+                transitionTimingFunction: 'cubic-bezier(0.34, 1.68, 0.64, 1)'
               }}
             >
               <div className="w-full h-full flex items-center justify-around">
