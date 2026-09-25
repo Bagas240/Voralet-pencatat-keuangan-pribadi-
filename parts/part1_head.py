@@ -148,61 +148,21 @@ HTML_HEAD = """<!DOCTYPE html>
     })();
   </script>
 
-  <!-- Haptic & Vibration Feedback Engine (navigator.vibrate & AndroidBridge) -->
+  <!-- Haptic & Vibration Feedback Engine - Disabled per user request -->
   <script>
     (function() {
-      // Unified Voralet Haptics Engine (Optimized zero-jank priority)
+      // Unified Voralet Haptics Engine - Completely silent
       window.VoraletHaptics = {
-        trigger: function(pattern, bridgeType) {
-          if (window.AndroidBridge && typeof window.AndroidBridge.hapticFeedback === 'function') {
-            try {
-              window.AndroidBridge.hapticFeedback(bridgeType || 'click');
-              return;
-            } catch (e) {}
-          }
-          try {
-            if (window.navigator && typeof window.navigator.vibrate === 'function') {
-              window.navigator.vibrate(pattern);
-            }
-          } catch (e) {}
-        },
-        tap: function() {
-          this.trigger(12, 'light');
-        },
-        pinKey: function() {
-          this.trigger(15, 'light');
-        },
-        pinBackspace: function() {
-          this.trigger(20, 'medium');
-        },
-        pinSuccess: function() {
-          this.trigger([30, 60, 40], 'success');
-        },
-        pinError: function() {
-          this.trigger([60, 80, 60, 80, 60], 'heavy');
-        },
-        save: function() {
-          this.trigger([35, 50, 45], 'success');
-        },
-        delete: function() {
-          this.trigger([40, 60, 50], 'heavy');
-        }
+        trigger: function() {},
+        tap: function() {},
+        pinKey: function() {},
+        pinBackspace: function() {},
+        pinSuccess: function() {},
+        pinError: function() {},
+        save: function() {},
+        delete: function() {},
+        selection: function() {}
       };
-
-      // Global event delegation for all button taps, interactive cards, and segmented items
-      var lastHapticTime = 0;
-      document.addEventListener('click', function(e) {
-        var target = e.target;
-        if (!target) return;
-        var btn = target.closest('button, a, input[type="button"], input[type="submit"], .ios-btn-tap, .ios-card-tap, .ios-touch-item, .ios-keypad-btn');
-        if (btn) {
-          var now = Date.now();
-          if (now - lastHapticTime > 60) {
-            lastHapticTime = now;
-            window.VoraletHaptics.tap();
-          }
-        }
-      }, { capture: true, passive: true });
     })();
   </script>
 
@@ -265,103 +225,44 @@ HTML_HEAD = """<!DOCTYPE html>
       transform: translateZ(0);
       will-change: transform;
     }
-    .ios-liquid-orb-1 {
-      position: absolute;
-      top: -12%;
-      left: -10%;
-      width: 85vw;
-      height: 85vw;
-      max-width: 500px;
-      max-height: 500px;
-      border-radius: 9999px;
-      background: radial-gradient(circle, rgba(56, 189, 248, 0.28) 0%, rgba(2, 132, 199, 0.12) 50%, transparent 75%);
-      filter: blur(48px);
-      animation: liquidOrbFloat1 18s ease-in-out infinite alternate;
-      transform: translateZ(0);
-      will-change: transform;
-    }
-    .ios-liquid-orb-2 {
-      position: absolute;
-      bottom: 8%;
-      right: -12%;
-      width: 90vw;
-      height: 90vw;
-      max-width: 520px;
-      max-height: 520px;
-      border-radius: 9999px;
-      background: radial-gradient(circle, rgba(2, 132, 199, 0.20) 0%, rgba(56, 189, 248, 0.08) 55%, transparent 75%);
-      filter: blur(52px);
-      animation: liquidOrbFloat2 24s ease-in-out infinite alternate;
-      transform: translateZ(0);
-      will-change: transform;
+    .ios-liquid-orb-1, .ios-liquid-orb-2 {
+      display: none !important;
     }
     .dark .ios-liquid-bg, html.dark .ios-liquid-bg {
       background: #0F172A !important;
     }
-    .dark .ios-liquid-orb-1, html.dark .ios-liquid-orb-1 {
-      background: radial-gradient(circle, rgba(2, 132, 199, 0.35) 0%, rgba(56, 189, 248, 0.14) 50%, transparent 75%) !important;
-    }
-    .dark .ios-liquid-orb-2, html.dark .ios-liquid-orb-2 {
-      background: radial-gradient(circle, rgba(14, 165, 233, 0.25) 0%, rgba(3, 105, 161, 0.10) 55%, transparent 75%) !important;
-    }
-    @keyframes liquidOrbFloat1 {
-      0% { transform: translate3d(0, 0, 0) scale(1); }
-      50% { transform: translate3d(7%, 10%, 0) scale(1.08); }
-      100% { transform: translate3d(-5%, 5%, 0) scale(0.96); }
-    }
-    @keyframes liquidOrbFloat2 {
-      0% { transform: translate3d(0, 0, 0) scale(1); }
-      50% { transform: translate3d(-8%, -7%, 0) scale(1.06); }
-      100% { transform: translate3d(6%, -10%, 0) scale(0.94); }
-    }
 
-    /* iOS 26 Liquid Glass Inset Grouped Block (Optimized 120 FPS Compositor) */
+    /* iOS Inset Grouped Block - Clean Flat Solid Surfaces (Zero Gradients) */
     .ios-inset-group, .ios-liquid-glass {
       position: relative;
       border-radius: 24px;
-      background: linear-gradient(145deg, rgba(255, 255, 255, 0.88) 0%, rgba(240, 249, 255, 0.74) 100%);
-      backdrop-filter: blur(14px) saturate(180%);
-      -webkit-backdrop-filter: blur(14px) saturate(180%);
+      background: #FFFFFF;
       padding: 1.15rem;
-      border: 1.2px solid rgba(255, 255, 255, 0.85);
-      box-shadow: 0 10px 30px -6px rgba(2, 132, 199, 0.09),
-                  0 4px 12px -2px rgba(15, 23, 42, 0.03),
-                  inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.95),
-                  inset 0 -1px 1px 0 rgba(2, 132, 199, 0.04);
-      transition: background 300ms ease, border-color 300ms ease, color 300ms ease, box-shadow 300ms ease, transform 0.45s cubic-bezier(0.34, 1.68, 0.64, 1);
+      border: 1px solid #E2E8F0;
+      box-shadow: 0 2px 8px -1px rgba(15, 23, 42, 0.04);
+      transition: background 250ms ease, border-color 250ms ease, color 250ms ease;
       contain: layout style;
       transform: translateZ(0);
       will-change: transform;
     }
     .dark .ios-inset-group, html.dark .ios-inset-group,
     .dark .ios-liquid-glass, html.dark .ios-liquid-glass {
-      background: linear-gradient(145deg, rgba(30, 41, 59, 0.86) 0%, rgba(15, 23, 42, 0.78) 100%) !important;
-      backdrop-filter: blur(14px) saturate(190%) !important;
-      -webkit-backdrop-filter: blur(14px) saturate(190%) !important;
-      border: 1.2px solid rgba(255, 255, 255, 0.16) !important;
-      box-shadow: 0 16px 42px -8px rgba(0, 0, 0, 0.68),
-                  0 4px 16px -2px rgba(3, 105, 161, 0.22),
-                  inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.20),
-                  inset 0 -1px 1px 0 rgba(0, 0, 0, 0.4) !important;
+      background: #1E293B !important;
+      border: 1px solid #334155 !important;
+      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.45) !important;
       color: #F8FAFC !important;
     }
 
-    /* iOS 26 Liquid Glass Pill & Tag Badges */
+    /* iOS Flat Pill & Tag Badges - Zero Gradients */
     .ios-glass-pill {
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.82) 0%, rgba(224, 242, 254, 0.65) 100%);
-      backdrop-filter: blur(14px) saturate(180%);
-      -webkit-backdrop-filter: blur(14px) saturate(180%);
-      border: 1px solid rgba(255, 255, 255, 0.75);
-      box-shadow: 0 4px 14px -2px rgba(2, 132, 199, 0.12),
-                  inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.90);
+      background: #F0F9FF;
+      border: 1px solid #BAE6FD;
+      box-shadow: 0 2px 6px -1px rgba(2, 132, 199, 0.08);
     }
     .dark .ios-glass-pill, html.dark .ios-glass-pill {
-      background: linear-gradient(135deg, rgba(30, 41, 59, 0.82) 0%, rgba(15, 23, 42, 0.75) 100%) !important;
-      backdrop-filter: blur(14px) saturate(190%) !important;
-      -webkit-backdrop-filter: blur(14px) saturate(190%) !important;
-      border: 1px solid rgba(255, 255, 255, 0.16) !important;
-      box-shadow: 0 6px 18px -2px rgba(0, 0, 0, 0.45),
-                  inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.2) !important;
+      background: #1E293B !important;
+      border: 1px solid #334155 !important;
+      box-shadow: 0 2px 8px -1px rgba(0, 0, 0, 0.35) !important;
     }
 
     /* iOS Floating & Capsule Shadows */
@@ -493,18 +394,7 @@ HTML_HEAD = """<!DOCTYPE html>
       }
     }
     .apple-atm-shimmer {
-      position: absolute;
-      inset: -50%;
-      background: linear-gradient(
-        115deg,
-        transparent 35%,
-        rgba(255, 255, 255, 0.06) 45%,
-        rgba(255, 255, 255, 0.14) 50%,
-        rgba(255, 255, 255, 0.06) 55%,
-        transparent 65%
-      );
-      transform: rotate(20deg) translate3d(-100%, -100%, 0);
-      pointer-events: none;
+      display: none !important;
     }
     .apple-card-emboss {
       text-shadow: 0 1px 1px rgba(0, 0, 0, 0.4), 0 -1px 0 rgba(255, 255, 255, 0.2);
@@ -655,15 +545,10 @@ HTML_HEAD = """<!DOCTYPE html>
       height: 4px;
       margin: -2px 10px;
       border-radius: 9999px;
-      background: linear-gradient(90deg, #38BDF8 0%, #0284C7 50%, #38BDF8 100%);
-      box-shadow: 0 0 12px rgba(56, 189, 248, 0.9);
-      animation: iosDropPulse 1.2s ease-in-out infinite;
+      background: #0284C7;
+      box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);
       z-index: 45;
       pointer-events: none;
-    }
-    @keyframes iosDropPulse {
-      0%, 100% { opacity: 0.7; transform: scaleY(1); }
-      50% { opacity: 1; transform: scaleY(1.5); }
     }
 
     /* Transaction Search Bar Expand & Collapse Animation */
@@ -714,11 +599,9 @@ HTML_HEAD = """<!DOCTYPE html>
     }
     .ios-theme-crossfade-overlay.from-light {
       background: #F8FAFC;
-      background: radial-gradient(circle at 50% 35%, #FFFFFF 0%, #F8FAFC 65%, #F1F5F9 100%);
     }
     .ios-theme-crossfade-overlay.from-dark {
       background: #0F172A;
-      background: radial-gradient(circle at 50% 35%, #1E293B 0%, #0F172A 65%, #020617 100%);
     }
     @keyframes iosThemeCrossfade {
       0% {
@@ -808,31 +691,31 @@ HTML_HEAD = """<!DOCTYPE html>
       -webkit-backface-visibility: hidden;
     }
 
-    /* iOS Modal & Sheet Keyframes (Compositor-only 120 FPS GPU Physics with Bouncy Overshoot) */
+    /* iOS Modal & Sheet Keyframes (Luxurious Relaxed Bouncy Spring Physics) */
     @keyframes iosSheetEnter {
       0% {
-        transform: translate3d(0, 105%, 0) scale3d(0.95, 0.95, 1);
-        opacity: 0.8;
+        transform: translate3d(0, 100%, 0);
+        opacity: 0.2;
       }
-      68% {
-        transform: translate3d(0, -9px, 0) scale3d(1.012, 1.012, 1);
+      64% {
+        transform: translate3d(0, -10px, 0);
         opacity: 1;
       }
       84% {
-        transform: translate3d(0, 3px, 0) scale3d(0.997, 0.997, 1);
+        transform: translate3d(0, 2px, 0);
       }
       100% {
-        transform: translate3d(0, 0, 0) scale3d(1, 1, 1);
+        transform: translate3d(0, 0, 0);
         opacity: 1;
       }
     }
     @keyframes iosSheetExit {
       0% {
-        transform: translate3d(0, 0, 0) scale3d(1, 1, 1);
+        transform: translate3d(0, 0, 0);
         opacity: 1;
       }
       100% {
-        transform: translate3d(0, 100%, 0) scale3d(0.95, 0.95, 1);
+        transform: translate3d(0, 100%, 0);
         opacity: 0;
       }
     }
@@ -845,26 +728,26 @@ HTML_HEAD = """<!DOCTYPE html>
       100% { opacity: 0; }
     }
     .animate-ios-sheet {
-      animation: iosSheetEnter 0.44s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      animation: iosSheetEnter 0.58s cubic-bezier(0.28, 1.15, 0.42, 1) forwards;
       will-change: transform;
       transform: translateZ(0);
       -webkit-backface-visibility: hidden;
       backface-visibility: hidden;
     }
     .animate-ios-sheet-exit {
-      animation: iosSheetExit 0.28s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+      animation: iosSheetExit 0.38s cubic-bezier(0.32, 0.72, 0, 1) forwards;
       will-change: transform;
       transform: translateZ(0);
       -webkit-backface-visibility: hidden;
       backface-visibility: hidden;
     }
     .animate-ios-backdrop {
-      animation: iosBackdropFadeIn 0.35s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+      animation: iosBackdropFadeIn 0.45s cubic-bezier(0.25, 1, 0.5, 1) forwards;
       will-change: opacity;
       transform: translateZ(0);
     }
     .animate-ios-backdrop-exit {
-      animation: iosBackdropFadeOut 0.24s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+      animation: iosBackdropFadeOut 0.32s cubic-bezier(0.32, 0.72, 0, 1) forwards;
       will-change: opacity;
       transform: translateZ(0);
     }
@@ -1148,13 +1031,10 @@ HTML_HEAD = """<!DOCTYPE html>
       border-top-left-radius: 1.75rem;
       border-top-right-radius: 1.75rem;
       overflow: hidden;
-      background: rgba(255, 255, 255, 0.88);
-      backdrop-filter: blur(32px) saturate(190%);
-      -webkit-backdrop-filter: blur(32px) saturate(190%);
-      border: 1px solid rgba(255, 255, 255, 0.75);
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
       border-bottom: none;
-      box-shadow: 0 -12px 42px -10px rgba(15, 23, 42, 0.28),
-                  inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.95);
+      box-shadow: 0 -10px 32px -6px rgba(15, 23, 42, 0.14);
       color: #0F172A;
       will-change: transform;
       transform: translateZ(0);
@@ -1163,13 +1043,10 @@ HTML_HEAD = """<!DOCTYPE html>
       contain: layout style;
     }
     .dark .ios-modal-card, html.dark .ios-modal-card {
-      background: rgba(30, 41, 59, 0.88) !important;
-      backdrop-filter: blur(32px) saturate(200%) !important;
-      -webkit-backdrop-filter: blur(32px) saturate(200%) !important;
-      border: 1px solid rgba(255, 255, 255, 0.14) !important;
+      background: #1E293B !important;
+      border: 1px solid #334155 !important;
       border-bottom: none !important;
-      box-shadow: 0 -14px 48px -8px rgba(0, 0, 0, 0.85),
-                  inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.22) !important;
+      box-shadow: 0 -12px 38px -6px rgba(0, 0, 0, 0.65) !important;
       color: #F8FAFC !important;
     }
     @media (min-width: 640px) {

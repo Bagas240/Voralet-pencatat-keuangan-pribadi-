@@ -6,7 +6,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.webkit.WebSettings
 import android.webkit.WebView
-import java.io.File
 
 /**
  * Standardized, security-hardened and hardware-accelerated WebView configurator.
@@ -14,18 +13,7 @@ import java.io.File
  */
 object VoraletWebViewConfig {
 
-    val hasDriRenderNode: Boolean by lazy {
-        try {
-            val driDir = File("/dev/dri")
-            driDir.exists() && driDir.listFiles()?.any { it.name.startsWith("renderD") } == true
-        } catch (_: Throwable) {
-            false
-        }
-    }
-
     val isEmulator: Boolean by lazy {
-        if (!hasDriRenderNode) return@lazy true
-
         val fingerprint = Build.FINGERPRINT.lowercase()
         val model = Build.MODEL.lowercase()
         val manufacturer = Build.MANUFACTURER.lowercase()

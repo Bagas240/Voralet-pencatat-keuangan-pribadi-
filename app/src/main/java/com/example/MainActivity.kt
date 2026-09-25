@@ -18,6 +18,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -38,7 +39,7 @@ import com.example.webview.VoraletWebViewConfig
 import java.io.File
 
 /**
- * Main Activity for Voralet Personal Finance App v2.6.0.
+ * Main Activity for Voralet Personal Finance App v2.8.0.
  * Architected with Clean Principles, Edge-to-Edge display, and Hardware Accelerated Web Engine.
  * Optimized for high-refresh-rate displays (90Hz / 120Hz) and zero-jank 120 FPS animations.
  */
@@ -80,6 +81,14 @@ class MainActivity : ComponentActivity() {
         // Enable WebView remote debugging only for debug builds
         WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG)
         enableEdgeToEdge()
+        // Ensure status bar icons are dark/high-contrast by default on light background
+        try {
+            val insetsController = androidx.core.view.WindowCompat.getInsetsController(window, window.decorView)
+            insetsController.isAppearanceLightStatusBars = true
+            insetsController.isAppearanceLightNavigationBars = true
+        } catch (t: Throwable) {
+            Log.d(TAG, "Status bar appearance notice: ${t.message}")
+        }
 
         // Lock / prioritize High Refresh Rate (90Hz / 120Hz) on physical devices (e.g. Infinix, Samsung, Xiaomi)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !VoraletWebViewConfig.isEmulator) {
@@ -106,6 +115,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier
                         .fillMaxSize()
                         .background(bgColor)
+                        .systemBarsPadding()
                 ) {
                     VoraletWebViewContainer(
                         activity = this@MainActivity,

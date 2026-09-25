@@ -387,7 +387,10 @@ PART8_APP = """
       onOpenCsvImport,
       deletingTxIds = new Set(),
       newlyAddedTxIds = new Set(),
-      onClearNewlyAddedTx
+      onClearNewlyAddedTx,
+      dismissedHints = [],
+      onDismissHint,
+      onDismissAllHints
     }) => {
       const [searchQuery, setSearchQuery] = useState('');
       const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -496,6 +499,25 @@ PART8_APP = """
 
       return (
         <div className="space-y-4 pb-28">
+          {/* Active Tutorial Mode Top Banner */}
+          {['profile', 'balance', 'income', 'expense'].some(k => !dismissedHints.includes(k)) && (
+            <div className="flex items-center justify-between p-2.5 rounded-2xl bg-sky-50 dark:bg-slate-800 border border-sky-200/80 dark:border-slate-700 text-xs shadow-xs animate-ios-spring-pop">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-base shrink-0">💡</span>
+                <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 leading-tight">
+                  Petunjuk Penggunaan: Ketuk <strong>[✕]</strong> pada setiap petunjuk tombol untuk menutupnya
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={onDismissAllHints}
+                className="text-[10px] font-bold text-[#0284C7] dark:text-sky-400 hover:opacity-80 px-2 py-1 rounded-lg bg-white dark:bg-slate-700 border border-sky-200 dark:border-slate-600 shrink-0 ios-btn-tap"
+              >
+                Tutup Semua [✕]
+              </button>
+            </div>
+          )}
+
           {/* iOS Profile Header Bar - Compact & Natural without elongated box */}
           <div className="flex items-center justify-between pt-1">
             <div
@@ -504,7 +526,7 @@ PART8_APP = """
               title="Ketuk untuk buka Pengaturan Profil"
             >
               {/* Profile Avatar with clean circular drop shadow so it stands out distinctly from the background */}
-              <div className="relative shrink-0 rounded-full shadow-[0_6px_16px_rgba(15,23,42,0.18)] dark:shadow-[0_8px_24px_rgba(0,0,0,0.65)] ring-2 ring-white dark:ring-slate-700">
+              <div className="relative shrink-0 rounded-full shadow-[0_4px_12px_rgba(15,23,42,0.12)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.6)] ring-2 ring-white dark:ring-slate-700">
                 <Avatar avatar={userProfile.avatar} name={userProfile.name} size="w-11 h-11" textSize="text-base" />
               </div>
               <div className="min-w-0">
@@ -526,9 +548,29 @@ PART8_APP = """
             </div>
           </div>
 
+          {/* Contextual Tutorial Hint: Profil & Pengaturan */}
+          {!dismissedHints.includes('profile') && (
+            <TutorialHintBadge
+              hintId="profile"
+              title="Profil & Pengaturan Akun"
+              desc="Ketuk nama/avatar akun Anda untuk mengubah PIN brankas, nama pengguna, tema gelap/terang, dan unduh cadangan terenkripsi."
+              onDismiss={onDismissHint}
+            />
+          )}
+
+          {/* Contextual Tutorial Hint: Kartu Saldo */}
+          {!dismissedHints.includes('balance') && (
+            <TutorialHintBadge
+              hintId="balance"
+              title="Kartu Ringkasan Saldo"
+              desc="Kartu utama ini menampilkan total saldo gabungan seluruh kantong, serta rekap pemasukan & pengeluaran bulan ini."
+              onDismiss={onDismissHint}
+            />
+          )}
+
           {/* Hero Balance Card - High Contrast Deep Royal Blue in both Light and Dark Mode */}
           <div
-            className="animate-dashboard-card rounded-[22px] p-5 bg-[#0284C7] dark:bg-[#0369A1] text-white border border-[#0369A1] dark:border-sky-600/40 shadow-lg dark:shadow-[0_10px_26px_rgba(3,105,161,0.35)] transition-colors duration-300 ease-in-out"
+            className="animate-dashboard-card rounded-[22px] p-5 bg-[#0284C7] dark:bg-[#0369A1] text-white border border-[#0369A1] dark:border-sky-600/40 shadow-md transition-colors duration-300 ease-in-out"
             style={{ animationDelay: '50ms' }}
           >
             <div className="flex items-center justify-between text-sky-100 mb-1.5">
@@ -576,6 +618,28 @@ PART8_APP = """
               </div>
             </div>
           </div>
+
+          {/* Contextual Tutorial Hints: Tombol Pemasukan & Pengeluaran */}
+          {(!dismissedHints.includes('income') || !dismissedHints.includes('expense')) && (
+            <div className="grid grid-cols-2 gap-2.5">
+              {!dismissedHints.includes('income') ? (
+                <TutorialHintBadge
+                  hintId="income"
+                  title="Tombol Pemasukan"
+                  desc="Gunakan tombol hijau di bawah ini untuk mencatat uang masuk."
+                  onDismiss={onDismissHint}
+                />
+              ) : <div />}
+              {!dismissedHints.includes('expense') ? (
+                <TutorialHintBadge
+                  hintId="expense"
+                  title="Tombol Pengeluaran"
+                  desc="Gunakan tombol merah di bawah ini untuk mencatat pengeluaran harian."
+                  onDismiss={onDismissHint}
+                />
+              ) : <div />}
+            </div>
+          )}
 
           {/* Direct Dual Action Bar: Catat Pemasukan (+) & Catat Pengeluaran (-) with Prominent Icons */}
           <div className="grid grid-cols-2 gap-2.5 animate-dashboard-card" style={{ animationDelay: '90ms' }}>
@@ -1041,25 +1105,34 @@ PART8_APP = """
       const [isDevModalOpen, setIsDevModalOpen] = useState(false);
       const [isCsvImportModalOpen, setIsCsvImportModalOpen] = useState(false);
       const [isMonthlyPdfModalOpen, setIsMonthlyPdfModalOpen] = useState(false);
-      const [isTutorialOpen, setIsTutorialOpen] = useState(false);
 
-      // Auto-trigger tutorial on first run once unlocked
-      useEffect(() => {
-        if (isUnlocked) {
-          const completed = StorageService.getTutorialCompleted();
-          if (!completed) {
-            const timer = setTimeout(() => {
-              setIsTutorialOpen(true);
-            }, 600);
-            return () => clearTimeout(timer);
-          }
+      // Contextual tutorial hints tracking
+      const [dismissedHints, setDismissedHints] = useState(() => StorageService.getDismissedTooltips());
+
+      const handleDismissHint = useCallback((hintId) => {
+        const next = StorageService.dismissTooltip(hintId);
+        setDismissedHints([...next]);
+        const allKeys = ['profile', 'balance', 'income', 'expense', 'nav'];
+        if (allKeys.every(k => next.includes(k))) {
+          StorageService.setTutorialCompleted(true);
         }
-      }, [isUnlocked]);
-
-      const handleDismissTutorial = useCallback(() => {
-        setIsTutorialOpen(false);
-        StorageService.setTutorialCompleted(true);
       }, []);
+
+      const handleDismissAllHints = useCallback(() => {
+        const allKeys = ['profile', 'balance', 'income', 'expense', 'nav'];
+        StorageService.setDismissedTooltips(allKeys);
+        setDismissedHints(allKeys);
+        StorageService.setTutorialCompleted(true);
+        showToast('Semua petunjuk panduan ditutup');
+      }, [showToast]);
+
+      const handleReplayTutorial = useCallback(() => {
+        StorageService.resetTooltips();
+        setDismissedHints([]);
+        setIsSettingsModalOpen(false);
+        setActiveTab('dashboard');
+        showToast('Mode panduan petunjuk fitur diaktifkan kembali! 💡');
+      }, [showToast]);
 
       const showToast = useCallback((msg) => {
         setToastMsg(msg);
@@ -1859,7 +1932,8 @@ PART8_APP = """
             <main
               onTouchStart={handleScreenTouchStart}
               onTouchEnd={handleScreenTouchEnd}
-              className="flex-1 w-full max-w-md mx-auto px-4 pt-3 pb-28 overflow-y-auto no-scrollbar"
+              className="flex-1 w-full max-w-md mx-auto px-4 pt-4 sm:pt-6 pb-28 overflow-y-auto no-scrollbar"
+              style={{ paddingTop: 'max(env(safe-area-inset-top, 0px), 1.25rem)' }}
             >
             <ErrorBoundary>
               {activeTab === 'dashboard' && (
@@ -1891,6 +1965,9 @@ PART8_APP = """
                   deletingTxIds={deletingTxIds}
                   newlyAddedTxIds={newlyAddedTxIds}
                   onClearNewlyAddedTx={handleClearNewlyAddedTx}
+                  dismissedHints={dismissedHints}
+                  onDismissHint={handleDismissHint}
+                  onDismissAllHints={handleDismissAllHints}
                 />
               )}
 
@@ -1948,6 +2025,11 @@ PART8_APP = """
             </ErrorBoundary>
           </main>
 
+          {/* Contextual Tutorial Hint: Navigasi Bawah */}
+          {!dismissedHints.includes('nav') && activeTab === 'dashboard' && (
+            <TutorialNavHint onDismiss={handleDismissHint} />
+          )}
+
           {/* Floating Capsule Bottom Navigation with Fluid Active Pill */}
           <FloatingCapsuleNav currentTab={activeTab} onSelectTab={setActiveTab} />
         </div>
@@ -2000,7 +2082,7 @@ PART8_APP = """
             onSaveCustomCategory={handleSaveCustomCategory}
             onDeleteCustomCategory={handleDeleteCustomCategory}
             onOpenDeveloperGate={() => setIsDevModalOpen(true)}
-            onReplayTutorial={() => setIsTutorialOpen(true)}
+            onReplayTutorial={handleReplayTutorial}
             onOpenMonthlyPdfReport={() => setIsMonthlyPdfModalOpen(true)}
           />
 
@@ -2032,11 +2114,6 @@ PART8_APP = """
             customCategories={customCategories}
             userProfile={memoizedUserProfile}
             hideBalance={hideBalance}
-          />
-
-          <NonIntrusiveTutorialModal
-            isOpen={isTutorialOpen}
-            onDismiss={handleDismissTutorial}
           />
         </div>
       );

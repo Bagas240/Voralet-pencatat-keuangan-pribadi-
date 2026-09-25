@@ -3,37 +3,17 @@ PART3_SERVICES = """
     // 1. DATA LAYER (LOCAL STORAGE SERVICE & LEDGER SYSTEM)
     // =========================================================================
     // =========================================================================
-    // HAPTIC FEEDBACK SERVICE (Tactile engine for vibration & sensory responses)
+    // HAPTIC FEEDBACK SERVICE - Completely silent per user preference
     // =========================================================================
     const HapticFeedback = {
-      tap: () => {
-        if (window.VoraletHaptics) window.VoraletHaptics.tap();
-        else if (window.navigator?.vibrate) window.navigator.vibrate(12);
-      },
-      pinKey: () => {
-        if (window.VoraletHaptics) window.VoraletHaptics.pinKey();
-        else if (window.navigator?.vibrate) window.navigator.vibrate(15);
-      },
-      pinBackspace: () => {
-        if (window.VoraletHaptics) window.VoraletHaptics.pinBackspace();
-        else if (window.navigator?.vibrate) window.navigator.vibrate(20);
-      },
-      pinSuccess: () => {
-        if (window.VoraletHaptics) window.VoraletHaptics.pinSuccess();
-        else if (window.navigator?.vibrate) window.navigator.vibrate([30, 60, 40]);
-      },
-      pinError: () => {
-        if (window.VoraletHaptics) window.VoraletHaptics.pinError();
-        else if (window.navigator?.vibrate) window.navigator.vibrate([60, 80, 60, 80, 60]);
-      },
-      save: () => {
-        if (window.VoraletHaptics) window.VoraletHaptics.save();
-        else if (window.navigator?.vibrate) window.navigator.vibrate([35, 50, 45]);
-      },
-      delete: () => {
-        if (window.VoraletHaptics) window.VoraletHaptics.delete();
-        else if (window.navigator?.vibrate) window.navigator.vibrate([40, 60, 50]);
-      }
+      tap: () => {},
+      pinKey: () => {},
+      pinBackspace: () => {},
+      pinSuccess: () => {},
+      pinError: () => {},
+      save: () => {},
+      delete: () => {},
+      selection: () => {}
     };
 
     const STORAGE_KEYS = {
@@ -49,7 +29,8 @@ PART3_SERVICES = """
       THEME: 'voralet_theme',
       AVATAR: 'voralet_avatar',
       CUSTOM_CATEGORIES: 'voralet_custom_categories',
-      TUTORIAL_COMPLETED: 'voralet_tutorial_completed'
+      TUTORIAL_COMPLETED: 'voralet_tutorial_completed',
+      DISMISSED_TOOLTIPS: 'voralet_dismissed_tooltips'
     };
 
     // =========================================================================
@@ -684,6 +665,30 @@ PART3_SERVICES = """
       },
       setTutorialCompleted: (val) => {
         SafeStorage.setItem(STORAGE_KEYS.TUTORIAL_COMPLETED, val ? 'true' : 'false');
+      },
+      getDismissedTooltips: () => {
+        try {
+          const raw = SafeStorage.getItem(STORAGE_KEYS.DISMISSED_TOOLTIPS);
+          return raw ? JSON.parse(raw) : [];
+        } catch (e) {
+          return [];
+        }
+      },
+      setDismissedTooltips: (list) => {
+        SafeStorage.setItem(STORAGE_KEYS.DISMISSED_TOOLTIPS, JSON.stringify(list || []));
+      },
+      dismissTooltip: (id) => {
+        const current = StorageService.getDismissedTooltips();
+        if (!current.includes(id)) {
+          const next = [...current, id];
+          StorageService.setDismissedTooltips(next);
+          return next;
+        }
+        return current;
+      },
+      resetTooltips: () => {
+        SafeStorage.removeItem(STORAGE_KEYS.DISMISSED_TOOLTIPS);
+        SafeStorage.setItem(STORAGE_KEYS.TUTORIAL_COMPLETED, 'false');
       },
       clearAll: () => {
         Object.values(STORAGE_KEYS).forEach(k => SafeStorage.removeItem(k));

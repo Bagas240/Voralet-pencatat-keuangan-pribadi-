@@ -647,7 +647,7 @@ PART7_VIEWS = """
           </div>
 
           {/* Action Card: Ekspor Laporan Bulanan PDF */}
-          <div className="p-3.5 rounded-2xl bg-gradient-to-r from-sky-500/10 via-brand/10 to-indigo-500/10 border border-sky-200/80 dark:border-slate-700 flex items-center justify-between gap-3 shadow-xs">
+          <div className="p-3.5 rounded-2xl bg-sky-50 dark:bg-slate-800 border border-sky-200/80 dark:border-slate-700 flex items-center justify-between gap-3 shadow-xs">
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="w-9 h-9 rounded-xl bg-brand text-white flex items-center justify-center shrink-0 shadow-xs">
                 <Icon name="file-pdf" className="w-5 h-5" />
@@ -1543,14 +1543,14 @@ PART7_VIEWS = """
                 const iconName = isCash ? 'cash' : isEWallet ? 'smartphone' : isInvest ? 'award' : 'bank';
                 const typeLabel = isCash ? 'Kas Tunai' : isEWallet ? 'E-Wallet' : isInvest ? 'Investasi' : 'Rekening Bank';
 
-                // Distinct Apple Wallet Card Gradients & Styling
-                const cardGradient = isCash
-                  ? 'bg-gradient-to-br from-[#0D9488] via-[#0F766E] to-[#115E59]'
+                // Flat Solid Apple Wallet Card Colors (No Gradients)
+                const cardBg = isCash
+                  ? 'bg-[#0D9488]'
                   : isEWallet
-                  ? 'bg-gradient-to-br from-[#6366F1] via-[#4F46E5] to-[#3730A3]'
+                  ? 'bg-[#4F46E5]'
                   : isInvest
-                  ? 'bg-gradient-to-br from-[#D97706] via-[#B45309] to-[#78350F]'
-                  : 'bg-gradient-to-br from-[#0284C7] via-[#0369A1] to-[#075985]';
+                  ? 'bg-[#B45309]'
+                  : 'bg-[#0284C7]';
 
                 // Get last 4 mutations for this account
                 const accountTxs = safeTransactions
@@ -1583,7 +1583,7 @@ PART7_VIEWS = """
                         }
                         setExpandedCardId(isExpanded ? null : acc.id);
                       }}
-                      className={`relative w-full rounded-2xl ${cardGradient} p-4 text-white select-none cursor-pointer overflow-hidden ios-card-stack-item ${
+                      className={`relative w-full rounded-2xl ${cardBg} p-4 text-white select-none cursor-pointer overflow-hidden ios-card-stack-item ${
                         isDragging
                           ? 'is-dragging'
                           : isSettling
@@ -1597,14 +1597,10 @@ PART7_VIEWS = """
                           : 'shadow-md hover:shadow-lg'
                       }`}
                     >
-                      {/* Apple Wallet Shimmer & Specular Highlights */}
-                      <div className="absolute inset-0 bg-gradient-to-b from-white/20 via-transparent to-black/20 pointer-events-none rounded-2xl" />
-                      <div className="apple-atm-shimmer opacity-30 pointer-events-none" />
-
                       {/* Top row: Type chip/badge, priority indicator, and drag handle */}
                       <div className="relative z-10 flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-xl bg-white/20 border border-white/25 flex items-center justify-center text-white shadow-xs backdrop-blur-xs">
+                          <div className="w-8 h-8 rounded-xl bg-white/20 border border-white/25 flex items-center justify-center text-white shadow-xs">
                             <Icon name={iconName} className="w-4 h-4" />
                           </div>
                           <div>
@@ -1830,8 +1826,6 @@ PART7_VIEWS = """
       const handlePointerDown = (clientX) => {
         isDraggingRef.current = true;
         setIsDragging(true);
-        if (window.VoraletHaptics) window.VoraletHaptics.tap();
-        else if (window.navigator?.vibrate) window.navigator.vibrate(10);
         updatePosFromCoord(clientX);
       };
 
@@ -1850,8 +1844,6 @@ PART7_VIEWS = """
         setDragPos(finalIdx);
         if (tabs[finalIdx] && tabs[finalIdx].id !== currentTab) {
           onSelectTab(tabs[finalIdx].id);
-          if (window.VoraletHaptics) window.VoraletHaptics.tap();
-          else if (window.navigator?.vibrate) window.navigator.vibrate(15);
         }
       };
 
@@ -1870,7 +1862,7 @@ PART7_VIEWS = """
           onMouseMove={(e) => handlePointerMove(e.clientX)}
           onMouseUp={handlePointerUp}
           onMouseLeave={() => { if (isDraggingRef.current) handlePointerUp(); }}
-          className="fixed bottom-5 left-0 right-0 z-50 w-[92%] max-w-[360px] h-14 mx-auto rounded-full bg-white/80 dark:bg-[#1E293B]/80 backdrop-blur-[16px] saturate-[190%] border border-white/80 dark:border-white/20 shadow-[0_16px_42px_rgba(2,132,199,0.20),0_4px_14px_rgba(15,23,42,0.08),inset_0_1.5px_2px_rgba(255,255,255,0.95)] dark:shadow-[0_20px_48px_rgba(0,0,0,0.75),0_4px_16px_rgba(3,105,161,0.35),inset_0_1.5px_2px_rgba(255,255,255,0.25)] select-none touch-none overflow-hidden p-1.5 transition-transform duration-300"
+          className="fixed bottom-5 left-0 right-0 z-50 w-[92%] max-w-[360px] h-14 mx-auto rounded-full bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-700 shadow-md select-none touch-none overflow-hidden p-1.5 transition-transform duration-300"
           style={{ willChange: 'transform', transform: 'translateZ(0)' }}
         >
           {/* Inner relative container for precise pixel positioning */}
@@ -1892,9 +1884,9 @@ PART7_VIEWS = """
               ))}
             </div>
 
-            {/* SLIDING PILL BACKGROUND - iOS 26 Liquid Glass Fluid Pill with spring curve */}
+            {/* SLIDING PILL BACKGROUND - Flat Solid Pill with spring curve (No Gradients) */}
             <div
-              className={`absolute top-0 bottom-0 rounded-full bg-gradient-to-r from-[#38BDF8] via-[#0284C7] to-[#0369A1] dark:from-[#38BDF8] dark:via-[#0284C7] dark:to-[#0369A1] shadow-[0_4px_18px_rgba(2,132,199,0.5),inset_0_1.5px_2px_rgba(255,255,255,0.7)] pointer-events-none will-change-transform ${
+              className={`absolute top-0 bottom-0 rounded-full bg-[#0284C7] dark:bg-[#0284C7] shadow-none pointer-events-none will-change-transform ${
                 isDragging ? 'transition-none' : 'transition-all duration-350'
               }`}
               style={{
@@ -1954,131 +1946,59 @@ PART7_VIEWS = """
     };
 
     // =========================================================================
-    // 9. NON-INTRUSIVE SKIPPABLE ONBOARDING TUTORIAL MODAL
+    // 9. CONTEXTUAL ON-SCREEN TUTORIAL HINTS (PER-BUTTON COACHMARKS WITH [X])
     // =========================================================================
-    const NonIntrusiveTutorialModal = ({ isOpen, onDismiss }) => {
-      const [step, setStep] = useState(0);
-
-      const tutorialSteps = [
-        {
-          title: 'Selamat Datang di Voralet!',
-          desc: 'Brankas keuangan pribadi yang 100% offline, terenkripsi, dan dirancang elegan dengan sensasi iOS.',
-          icon: 'shield-check',
-          badge: 'v2.6.0 Private Vault',
-          color: 'from-sky-500 to-blue-600',
-          detail: 'Semua mutasi, kantong, dan impian Anda tersimpan secara lokal dan aman di perangkat ini.'
-        },
-        {
-          title: 'Kantong Terpisah & Multi-Akun',
-          desc: 'Kelola dompet fisik, rekening bank, e-wallet, atau pos pengeluaran dalam tab Kantong Keuangan.',
-          icon: 'credit-card',
-          badge: 'Tab Kantong',
-          color: 'from-blue-600 to-indigo-600',
-          detail: 'Setiap kantong memiliki riwayat saldo mandiri sehingga arus kas Anda selalu tertib.'
-        },
-        {
-          title: 'Navigasi Fluid & Geser Halus',
-          desc: 'Sentuh atau tahan lalu geser kapsul navigasi di bagian bawah layar untuk beralih menu secepat kilat.',
-          icon: 'navigation',
-          badge: 'iOS Gestures',
-          color: 'from-indigo-500 to-purple-600',
-          detail: 'Efek visual masking interaktif akan mengikuti gerakan jari Anda secara real-time.'
-        },
-        {
-          title: 'Cadangan Terenkripsi Ultra-Aman',
-          desc: 'Unduh file cadangan brankas terenkripsi dengan perlindungan enkripsi berlapis dan kunci keamanan tingkat tinggi.',
-          icon: 'lock',
-          badge: 'Enkripsi Penuh',
-          color: 'from-emerald-500 to-teal-600',
-          detail: 'Data tidak dapat dibaca oleh pihak ketiga tanpa verifikasi aplikasi Voralet asli.'
-        }
-      ];
-
-      if (!isOpen) return null;
-
-      const current = tutorialSteps[step];
-      const isLast = step === tutorialSteps.length - 1;
-
-      const handleSkip = () => {
-        if (window.VoraletHaptics) window.VoraletHaptics.tap();
-        onDismiss();
-      };
-
-      const handleNext = () => {
-        if (window.VoraletHaptics) window.VoraletHaptics.tap();
-        if (isLast) {
-          onDismiss();
-        } else {
-          setStep(s => s + 1);
-        }
-      };
-
+    const TutorialHintBadge = ({ hintId, title, desc, onDismiss, className = '' }) => {
       return (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-ios-backdrop">
-          <div className="w-full max-w-sm bg-white dark:bg-slate-800 rounded-3xl shadow-[0_20px_50px_rgba(15,23,42,0.25)] border border-slate-200/80 dark:border-slate-700 p-5 space-y-4 animate-ios-sheet">
-            
-            {/* Header with Skip Pill Button */}
-            <div className="flex items-center justify-between">
-              <span className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full bg-sky-50 dark:bg-slate-700/80 text-[#0284C7] dark:text-[#38BDF8] border border-sky-100 dark:border-slate-600">
-                {current.badge}
-              </span>
-              <button
-                type="button"
-                onClick={handleSkip}
-                className="text-xs font-semibold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 px-2 py-1 rounded-lg ios-btn-tap"
-              >
-                Lewati (Skip)
-              </button>
-            </div>
-
-            {/* Icon Graphic */}
-            <div className="flex items-center gap-3.5 pt-1">
-              <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${current.color} text-white flex items-center justify-center shadow-md flex-shrink-0`}>
-                <Icon name={current.icon} className="w-6 h-6" strokeWidth={2.2} />
-              </div>
+        <div className={`relative z-30 p-2.5 rounded-xl bg-slate-900 text-white dark:bg-slate-800 border border-sky-400 dark:border-sky-500 shadow-md text-[11px] animate-ios-spring-pop select-none ${className}`}>
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-start gap-1.5 min-w-0">
+              <span className="w-4 h-4 rounded-full bg-[#0284C7] text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">!</span>
               <div>
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
-                  {current.title}
-                </h3>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                  Langkah {step + 1} dari {tutorialSteps.length}
-                </p>
+                <p className="font-bold text-sky-300 leading-tight">{title}</p>
+                <p className="text-slate-200 dark:text-slate-300 text-[10.5px] mt-0.5 leading-snug">{desc}</p>
               </div>
             </div>
-
-            {/* Description Text */}
-            <div className="p-3 bg-slate-50 dark:bg-slate-900/70 rounded-2xl border border-slate-100 dark:border-slate-700/80 text-xs text-slate-600 dark:text-slate-300 space-y-1">
-              <p className="font-medium leading-relaxed">{current.desc}</p>
-              <p className="text-[11px] text-slate-400 dark:text-slate-500 leading-normal">{current.detail}</p>
-            </div>
-
-            {/* Progress Indicators & Action Buttons */}
-            <div className="flex items-center justify-between pt-1">
-              {/* Dots */}
-              <div className="flex items-center gap-1.5">
-                {tutorialSteps.map((_, idx) => (
-                  <span
-                    key={idx}
-                    className={`h-1.5 rounded-full transition-all duration-300 ${
-                      idx === step ? 'w-5 bg-[#0284C7] dark:bg-[#38BDF8]' : 'w-1.5 bg-slate-300 dark:bg-slate-600'
-                    }`}
-                  />
-                ))}
-              </div>
-
-              {/* Next / Selesai Button */}
-              <button
-                type="button"
-                onClick={handleNext}
-                className="px-4 py-2 bg-[#0284C7] hover:bg-[#0369A1] dark:bg-[#38BDF8] dark:hover:bg-[#0284C7] text-white dark:text-[#0F172A] text-xs font-bold rounded-xl shadow-sm ios-btn-tap flex items-center gap-1.5"
-              >
-                <span>{isLast ? 'Mulai Pakai' : 'Lanjut'}</span>
-                <Icon name="chevron-right" className="w-3.5 h-3.5" strokeWidth={2.5} />
-              </button>
-            </div>
-
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onDismiss) onDismiss(hintId);
+              }}
+              className="p-1 rounded-md text-slate-400 hover:text-white hover:bg-slate-800 dark:hover:bg-slate-700 transition-colors shrink-0"
+              title="Tutup Petunjuk Ini"
+              aria-label="Tutup Petunjuk Ini"
+            >
+              <Icon name="x" className="w-3.5 h-3.5" strokeWidth={2.5} />
+            </button>
           </div>
         </div>
       );
     };
+
+    const TutorialNavHint = ({ onDismiss }) => (
+      <div className="fixed bottom-20 left-4 right-4 max-w-[360px] mx-auto z-40 p-2.5 rounded-xl bg-slate-900 text-white border border-sky-400 shadow-md text-[11px] animate-ios-spring-pop select-none">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <Icon name="navigation" className="w-4 h-4 text-sky-400 shrink-0" />
+            <div className="leading-tight">
+              <span className="font-bold text-sky-300 block">Menu Navigasi Bawah</span>
+              <span className="text-slate-200 text-[10.5px]">Geser atau ketuk tombol untuk beralih menu aplikasi</span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (onDismiss) onDismiss('nav');
+            }}
+            className="p-1 text-slate-400 hover:text-white rounded-md hover:bg-slate-800 transition-colors shrink-0"
+            title="Tutup Petunjuk"
+            aria-label="Tutup Petunjuk"
+          >
+            <Icon name="x" className="w-3.5 h-3.5" strokeWidth={2.5} />
+          </button>
+        </div>
+      </div>
+    );
 """

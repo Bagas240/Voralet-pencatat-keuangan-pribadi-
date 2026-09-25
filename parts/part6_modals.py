@@ -35,7 +35,7 @@ PART6_MODALS = """
           setShowAddCategory(false);
           setNewCatName('');
           onClose();
-        }, 220);
+        }, 380);
       };
 
       useEffect(() => {
@@ -361,135 +361,126 @@ PART6_MODALS = """
         label: 'BCA Blue',
         network: 'Mastercard',
         networkType: 'mastercard',
-        gradient: 'from-[#002b66] via-[#0047BA] to-[#001D47]',
-        cardPattern: 'radial-gradient(circle at 85% 15%, rgba(255,255,255,0.18) 0%, transparent 60%)',
+        flatBg: 'bg-[#0047BA]',
         textColor: 'text-white',
         subtextColor: 'text-blue-200/90',
         chipColor: 'bg-amber-300/90 border-amber-400 shadow-amber-500/30',
         accentBorder: 'border-blue-400/40',
         badgeBg: 'bg-blue-400/25 border-blue-300/40',
         badgeText: 'text-blue-100',
-        swatch: 'bg-blue-600'
+        swatch: 'bg-[#0047BA]'
       },
       gopay: {
         id: 'gopay',
         label: 'GoPay Cyan',
         network: 'GPN / E-Money',
         networkType: 'gpn',
-        gradient: 'from-[#00607A] via-[#008DA5] to-[#003B46]',
-        cardPattern: 'radial-gradient(circle at 80% 20%, rgba(255,255,255,0.2) 0%, transparent 55%)',
+        flatBg: 'bg-[#008DA5]',
         textColor: 'text-white',
         subtextColor: 'text-cyan-200/90',
         chipColor: 'bg-emerald-300/90 border-emerald-400 shadow-emerald-500/30',
         accentBorder: 'border-cyan-300/40',
         badgeBg: 'bg-cyan-400/25 border-cyan-300/40',
         badgeText: 'text-cyan-100',
-        swatch: 'bg-cyan-500'
+        swatch: 'bg-[#008DA5]'
       },
       dana: {
         id: 'dana',
         label: 'DANA Blue',
         network: 'Visa Debit',
         networkType: 'visa',
-        gradient: 'from-[#0A5A9C] via-[#118EEA] to-[#073D6B]',
-        cardPattern: 'radial-gradient(circle at 85% 15%, rgba(255,255,255,0.22) 0%, transparent 60%)',
+        flatBg: 'bg-[#118EEA]',
         textColor: 'text-white',
         subtextColor: 'text-sky-200/90',
         chipColor: 'bg-amber-300/90 border-amber-400 shadow-amber-500/30',
         accentBorder: 'border-sky-300/40',
         badgeBg: 'bg-white/20 border-white/35',
         badgeText: 'text-white',
-        swatch: 'bg-sky-500'
+        swatch: 'bg-[#118EEA]'
       },
       mandiri: {
         id: 'mandiri',
         label: 'Mandiri Gold',
         network: 'Visa Platinum',
         networkType: 'visa',
-        gradient: 'from-[#0A2540] via-[#003B73] to-[#001737]',
-        cardPattern: 'radial-gradient(circle at 90% 10%, rgba(245,158,11,0.25) 0%, transparent 55%)',
+        flatBg: 'bg-[#0A2540]',
         textColor: 'text-white',
         subtextColor: 'text-amber-200/90',
         chipColor: 'bg-amber-400 border-amber-500 shadow-amber-500/40',
         accentBorder: 'border-amber-400/40',
         badgeBg: 'bg-amber-400/25 border-amber-300/40',
         badgeText: 'text-amber-200',
-        swatch: 'bg-blue-900'
+        swatch: 'bg-[#0A2540]'
       },
       bri: {
         id: 'bri',
         label: 'BRI BritAma',
         network: 'Mastercard Debit',
         networkType: 'mastercard',
-        gradient: 'from-[#052957] via-[#08479A] to-[#031B3B]',
-        cardPattern: 'radial-gradient(circle at 80% 20%, rgba(255,255,255,0.18) 0%, transparent 60%)',
+        flatBg: 'bg-[#08479A]',
         textColor: 'text-white',
         subtextColor: 'text-blue-200/90',
         chipColor: 'bg-amber-300/90 border-amber-400 shadow-amber-500/30',
         accentBorder: 'border-blue-300/40',
         badgeBg: 'bg-blue-400/25 border-blue-300/40',
         badgeText: 'text-blue-100',
-        swatch: 'bg-blue-700'
+        swatch: 'bg-[#08479A]'
       },
       jago: {
         id: 'jago',
         label: 'Jago Violet',
         network: 'Visa Platinum',
         networkType: 'visa',
-        gradient: 'from-[#312E81] via-[#4F46E5] to-[#1E1B4B]',
-        cardPattern: 'radial-gradient(circle at 85% 15%, rgba(199,210,254,0.25) 0%, transparent 55%)',
+        flatBg: 'bg-[#4F46E5]',
         textColor: 'text-white',
         subtextColor: 'text-indigo-200/90',
         chipColor: 'bg-amber-300/90 border-amber-400 shadow-amber-500/30',
         accentBorder: 'border-indigo-300/40',
         badgeBg: 'bg-indigo-400/25 border-indigo-300/40',
         badgeText: 'text-indigo-100',
-        swatch: 'bg-indigo-600'
+        swatch: 'bg-[#4F46E5]'
       },
       shopee: {
         id: 'shopee',
         label: 'ShopeePay',
         network: 'GPN Debit',
         networkType: 'gpn',
-        gradient: 'from-[#B82B14] via-[#EE4D2D] to-[#8C1808]',
-        cardPattern: 'radial-gradient(circle at 80% 20%, rgba(255,255,255,0.22) 0%, transparent 60%)',
+        flatBg: 'bg-[#EE4D2D]',
         textColor: 'text-white',
         subtextColor: 'text-orange-200/90',
         chipColor: 'bg-amber-300/90 border-amber-400 shadow-amber-500/30',
         accentBorder: 'border-orange-300/40',
         badgeBg: 'bg-white/25 border-white/35',
         badgeText: 'text-white',
-        swatch: 'bg-orange-500'
+        swatch: 'bg-[#EE4D2D]'
       },
       ovo: {
         id: 'ovo',
         label: 'OVO Premier',
         network: 'Mastercard Debit',
         networkType: 'mastercard',
-        gradient: 'from-[#321C61] via-[#522785] to-[#1E0F3B]',
-        cardPattern: 'radial-gradient(circle at 85% 15%, rgba(216,180,254,0.22) 0%, transparent 60%)',
+        flatBg: 'bg-[#522785]',
         textColor: 'text-white',
         subtextColor: 'text-purple-200/90',
         chipColor: 'bg-amber-300/90 border-amber-400 shadow-amber-500/30',
         accentBorder: 'border-purple-300/40',
         badgeBg: 'bg-purple-400/25 border-purple-300/40',
         badgeText: 'text-purple-100',
-        swatch: 'bg-purple-600'
+        swatch: 'bg-[#522785]'
       },
       cash: {
         id: 'cash',
         label: 'Dompet Fisik (Cash)',
         network: 'Cash / Tunai',
         networkType: 'cash',
-        gradient: 'from-[#1E293B] via-[#0F172A] to-[#020617]',
-        cardPattern: 'radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 55%)',
+        flatBg: 'bg-[#1E293B]',
         textColor: 'text-slate-100',
         subtextColor: 'text-slate-400',
         chipColor: 'bg-amber-200/80 border-amber-300/80 shadow-amber-500/20',
         accentBorder: 'border-slate-600/50',
         badgeBg: 'bg-slate-700/50 border-slate-600/50',
         badgeText: 'text-slate-200',
-        swatch: 'bg-slate-800'
+        swatch: 'bg-[#1E293B]'
       },
     };
 
@@ -535,6 +526,7 @@ PART6_MODALS = """
       };
 
       const typeLabel = (acc.type === 'Bank' || acc.type === 'BANK') ? 'Rekening Bank' : (acc.type === 'E-Wallet' || acc.type === 'EWALLET') ? 'E-Wallet' : 'Kas Tunai';
+      const theme = getPocketTheme(acc);
 
       const maskedNumber = (acc.accountNumber && String(acc.accountNumber).trim())
         ? `•••• ${String(acc.accountNumber).replace(/\s/g, '').slice(-4)}`
@@ -549,17 +541,15 @@ PART6_MODALS = """
         >
           {/* Main Card Container - Apple Wallet Pass with Dynamic Elevation */}
           <div
-            className={`w-full rounded-[22px] bg-[#0284C7] dark:bg-[#0369A1] text-white border ${
+            className={`w-full rounded-[22px] ${theme.flatBg || 'bg-[#0284C7]'} text-white border ${
               isSelected ? 'border-sky-300 ring-2 ring-sky-400/50' : 'border-white/20'
             } transition-all duration-300 ease-out cursor-pointer p-4 ios-card-tap relative overflow-hidden`}
             style={{
               boxShadow: isSelected
-                ? '0 22px 42px -10px rgba(2, 132, 199, 0.45), 0 8px 18px -4px rgba(0, 0, 0, 0.25), inset 0 1px 2px rgba(255, 255, 255, 0.35)'
-                : '0 8px 22px -4px rgba(0, 0, 0, 0.22), 0 2px 6px -1px rgba(0, 0, 0, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.25)',
+                ? '0 16px 36px -10px rgba(2, 132, 199, 0.45), 0 4px 12px -4px rgba(0, 0, 0, 0.25)'
+                : '0 4px 14px -2px rgba(0, 0, 0, 0.16)',
             }}
           >
-            {/* Top Hairline Gloss Accent (iOS Wallet Glass Edge) */}
-            <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-white/35 to-transparent pointer-events-none" />
 
             {/* TOP BAR / ALWAYS VISIBLE HEADER */}
             <div className="relative z-10 flex items-center justify-between gap-3 mb-3">
@@ -718,7 +708,7 @@ PART6_MODALS = """
         setTimeout(() => {
           setIsClosing(false);
           onClose();
-        }, 220);
+        }, 380);
       };
 
       const handleCardSelect = (accId) => {
@@ -1175,7 +1165,7 @@ PART6_MODALS = """
         setTimeout(() => {
           setIsClosing(false);
           onClose();
-        }, 220);
+        }, 380);
       };
 
       const handleSubmit = (e) => {
@@ -1232,7 +1222,6 @@ PART6_MODALS = """
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Contoh: Beli Laptop Baru / Dana Darurat"
                   className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none focus:border-brand"
-                  autoFocus
                 />
               </div>
 
@@ -1331,7 +1320,7 @@ PART6_MODALS = """
         setTimeout(() => {
           setIsClosing(false);
           onClose();
-        }, 220);
+        }, 380);
       };
 
       const handleSaveProfile = (e) => {
