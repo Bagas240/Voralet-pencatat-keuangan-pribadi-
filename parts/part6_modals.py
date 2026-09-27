@@ -1286,7 +1286,7 @@ PART6_MODALS = """
       );
     };
 
-    const SettingsModal = ({ isOpen, onClose, userProfile, onUpdateProfile, onHardReset, onImportData, onExportData, onOpenCsvImport, onExportCsv, theme, onToggleTheme, customCategories = [], onSaveCustomCategory, onDeleteCustomCategory, onOpenDeveloperGate, onReplayTutorial, onOpenMonthlyPdfReport }) => {
+    const SettingsModal = ({ isOpen, onClose, userProfile, onUpdateProfile, onHardReset, onImportData, onExportData, onOpenCsvImport, onExportCsv, theme, onToggleTheme, customCategories = [], onSaveCustomCategory, onDeleteCustomCategory, onOpenDeveloperGate, onOpenMonthlyPdfReport }) => {
       const [name, setName] = useState(userProfile.name || '');
       const [username, setUsername] = useState(userProfile.username || '');
       const [avatar, setAvatar] = useState(userProfile.avatar || '');
@@ -1905,24 +1905,6 @@ PART6_MODALS = """
                 <p className="text-[10px] text-slate-400 dark:text-slate-500 max-w-xs leading-relaxed">
                   Keuangan Sehat • Impian Dekat. 100% Offline & Terenkripsi Lokal di Perangkat Anda.
                 </p>
-              </div>
-
-              {/* Panduan & Tutorial Penggunaan */}
-              <div className="pt-3 border-t border-slate-100 dark:border-slate-700">
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleClose();
-                    if (onReplayTutorial) onReplayTutorial();
-                  }}
-                  className="w-full py-2.5 px-3 bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl border border-slate-200/80 dark:border-slate-600 flex items-center justify-between transition-colors ios-btn-tap"
-                >
-                  <div className="flex items-center gap-2">
-                    <Icon name="help-circle" className="w-4 h-4 text-[#0284C7] dark:text-[#38BDF8]" />
-                    <span>Lihat Tutorial & Panduan Fitur</span>
-                  </div>
-                  <Icon name="chevron-right" className="w-3.5 h-3.5 text-slate-400" />
-                </button>
               </div>
 
               {/* Master Developer & Security Gate */}

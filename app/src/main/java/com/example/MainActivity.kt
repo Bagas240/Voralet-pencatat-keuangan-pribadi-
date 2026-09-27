@@ -39,7 +39,7 @@ import com.example.webview.VoraletWebViewConfig
 import java.io.File
 
 /**
- * Main Activity for Voralet Personal Finance App v2.8.0.
+ * Main Activity for Voralet Personal Finance App v2.9.0.
  * Architected with Clean Principles, Edge-to-Edge display, and Hardware Accelerated Web Engine.
  * Optimized for high-refresh-rate displays (90Hz / 120Hz) and zero-jank 120 FPS animations.
  */

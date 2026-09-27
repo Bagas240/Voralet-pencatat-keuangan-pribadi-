@@ -82,7 +82,7 @@ HTML_HEAD = """<!DOCTYPE html>
     }
   </script>
 
-  <!-- React 18 & ReactDOM 18 & Babel Standalone (Local assets with CDN fallback) -->
+  <!-- React 18 & ReactDOM 18 (Local assets with CDN fallback) -->
   <script src="./vendor/react.production.min.js"></script>
   <script>
     if (!window.React) {
@@ -94,26 +94,6 @@ HTML_HEAD = """<!DOCTYPE html>
     if (!window.ReactDOM) {
       document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"><\/script>');
     }
-  </script>
-  <script src="./vendor/babel.min.js"></script>
-  <script>
-    if (!window.Babel) {
-      document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.4/babel.min.js"><\/script>');
-    }
-  </script>
-  <script>
-    // Configure Babel to suppress deoptimisation warnings on large bundled inline scripts
-    try {
-      if (window.Babel && window.Babel.transform) {
-        // Suppress compact warning for scripts > 500KB
-        const originalTransform = window.Babel.transform;
-        window.Babel.transform = function(code, opts) {
-          opts = opts || {};
-          if (opts.compact === undefined) opts.compact = false;
-          return originalTransform.call(this, code, opts);
-        };
-      }
-    } catch (e) {}
   </script>
 
   <!-- html2pdf.js for Client-Side PDF Generation (Local asset with CDN fallback) -->
@@ -242,8 +222,6 @@ HTML_HEAD = """<!DOCTYPE html>
       box-shadow: 0 2px 8px -1px rgba(15, 23, 42, 0.04);
       transition: background 250ms ease, border-color 250ms ease, color 250ms ease;
       contain: layout style;
-      transform: translateZ(0);
-      will-change: transform;
     }
     .dark .ios-inset-group, html.dark .ios-inset-group,
     .dark .ios-liquid-glass, html.dark .ios-liquid-glass {
@@ -322,46 +300,34 @@ HTML_HEAD = """<!DOCTYPE html>
       scrollbar-width: none;
     }
 
-    /* Tactile Touch Animation (Authentic Apple iOS Bouncy Spring Physics 120 FPS) */
+    /* Authentic iOS Tactile Touch Spring Physics (120 FPS Composited) */
     .ios-btn-tap, .ios-touch-item {
-      transition: transform 0.44s cubic-bezier(0.34, 1.68, 0.64, 1), opacity 0.16s ease;
+      transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.42, 1), opacity 0.16s ease;
       user-select: none;
       -webkit-user-select: none;
-      will-change: transform;
-      transform: translate3d(0, 0, 0);
       touch-action: manipulation;
-      backface-visibility: hidden;
-      -webkit-backface-visibility: hidden;
     }
     .ios-btn-tap:active, .ios-touch-item:active {
-      transform: scale3d(0.92, 0.92, 1) translate3d(0, 0, 0) !important;
-      opacity: 0.78;
+      transform: scale(0.96) !important;
+      opacity: 0.82;
       transition: transform 0.08s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.08s ease;
     }
     .ios-card-tap {
-      transition: transform 0.46s cubic-bezier(0.34, 1.68, 0.64, 1), opacity 0.18s ease, box-shadow 0.35s ease;
+      transition: transform 0.32s cubic-bezier(0.2, 0.9, 0.42, 1), opacity 0.18s ease, box-shadow 0.25s ease;
       user-select: none;
       -webkit-user-select: none;
-      will-change: transform, box-shadow;
-      transform: translate3d(0, 0, 0);
       touch-action: manipulation;
-      backface-visibility: hidden;
-      -webkit-backface-visibility: hidden;
     }
     .ios-card-tap:active {
-      transform: scale3d(0.95, 0.95, 1) translate3d(0, 0, 0) !important;
-      opacity: 0.88;
-      box-shadow: 0 4px 12px -2px rgba(2, 132, 199, 0.15) !important;
+      transform: scale(0.98) !important;
+      opacity: 0.92;
+      box-shadow: 0 2px 8px -1px rgba(2, 132, 199, 0.12) !important;
       transition: transform 0.08s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.08s ease;
     }
 
     /* Navigation, view transitions, and bottom sheets */
     .ios-view-transition, .animate-ios-tab-view {
-      transition: transform 0.34s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.26s cubic-bezier(0.32, 0.72, 0, 1);
-      will-change: transform, opacity;
-      transform: translate3d(0, 0, 0);
-      backface-visibility: hidden;
-      -webkit-backface-visibility: hidden;
+      transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease;
     }
 
     /* Apple Wallet Dynamic Card Stack & Motion */
@@ -691,32 +657,21 @@ HTML_HEAD = """<!DOCTYPE html>
       -webkit-backface-visibility: hidden;
     }
 
-    /* iOS Modal & Sheet Keyframes (Luxurious Relaxed Bouncy Spring Physics) */
+    /* iOS Modal & Sheet Keyframes (Authentic Apple HIG Spring Physics) */
     @keyframes iosSheetEnter {
       0% {
         transform: translate3d(0, 100%, 0);
-        opacity: 0.2;
-      }
-      64% {
-        transform: translate3d(0, -10px, 0);
-        opacity: 1;
-      }
-      84% {
-        transform: translate3d(0, 2px, 0);
       }
       100% {
         transform: translate3d(0, 0, 0);
-        opacity: 1;
       }
     }
     @keyframes iosSheetExit {
       0% {
         transform: translate3d(0, 0, 0);
-        opacity: 1;
       }
       100% {
         transform: translate3d(0, 100%, 0);
-        opacity: 0;
       }
     }
     @keyframes iosBackdropFadeIn {
@@ -728,28 +683,18 @@ HTML_HEAD = """<!DOCTYPE html>
       100% { opacity: 0; }
     }
     .animate-ios-sheet {
-      animation: iosSheetEnter 0.58s cubic-bezier(0.28, 1.15, 0.42, 1) forwards;
+      animation: iosSheetEnter 0.36s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       will-change: transform;
-      transform: translateZ(0);
-      -webkit-backface-visibility: hidden;
-      backface-visibility: hidden;
     }
     .animate-ios-sheet-exit {
-      animation: iosSheetExit 0.38s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+      animation: iosSheetExit 0.26s cubic-bezier(0.32, 0.72, 0, 1) forwards;
       will-change: transform;
-      transform: translateZ(0);
-      -webkit-backface-visibility: hidden;
-      backface-visibility: hidden;
     }
     .animate-ios-backdrop {
-      animation: iosBackdropFadeIn 0.45s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-      will-change: opacity;
-      transform: translateZ(0);
+      animation: iosBackdropFadeIn 0.3s ease-out forwards;
     }
     .animate-ios-backdrop-exit {
-      animation: iosBackdropFadeOut 0.32s cubic-bezier(0.32, 0.72, 0, 1) forwards;
-      will-change: opacity;
-      transform: translateZ(0);
+      animation: iosBackdropFadeOut 0.22s ease-in forwards;
     }
 
     /* iOS Navigation & Tab Slide View Transitions (Silky Snappy 120 FPS) */
@@ -1005,16 +950,11 @@ HTML_HEAD = """<!DOCTYPE html>
       display: flex;
       align-items: flex-end;
       justify-content: center;
-      background-color: rgba(15, 23, 42, 0.55);
-      backdrop-filter: blur(16px) saturate(180%);
-      -webkit-backdrop-filter: blur(16px) saturate(180%);
+      background-color: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       overscroll-behavior: contain;
       padding: 0;
-      will-change: opacity;
-      transform: translateZ(0);
-      -webkit-backface-visibility: hidden;
-      backface-visibility: hidden;
-      contain: strict;
     }
     @media (min-width: 640px) {
       .ios-modal-backdrop {
@@ -1193,6 +1133,6 @@ HTML_HEAD = """<!DOCTYPE html>
   </script>
   <div id="root"></div>
 
-  <script type="text/babel" data-presets="env,react" data-compact="false">
+  <script>
     const { useState, useEffect, useMemo, useCallback, useRef } = React;
 """

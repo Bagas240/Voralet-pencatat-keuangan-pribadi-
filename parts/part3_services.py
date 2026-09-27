@@ -660,36 +660,12 @@ PART3_SERVICES = """
         if (avatar) SafeStorage.setItem(STORAGE_KEYS.AVATAR, avatar);
         else SafeStorage.removeItem(STORAGE_KEYS.AVATAR);
       },
-      getTutorialCompleted: () => {
-        return SafeStorage.getItem(STORAGE_KEYS.TUTORIAL_COMPLETED) === 'true';
-      },
-      setTutorialCompleted: (val) => {
-        SafeStorage.setItem(STORAGE_KEYS.TUTORIAL_COMPLETED, val ? 'true' : 'false');
-      },
-      getDismissedTooltips: () => {
-        try {
-          const raw = SafeStorage.getItem(STORAGE_KEYS.DISMISSED_TOOLTIPS);
-          return raw ? JSON.parse(raw) : [];
-        } catch (e) {
-          return [];
-        }
-      },
-      setDismissedTooltips: (list) => {
-        SafeStorage.setItem(STORAGE_KEYS.DISMISSED_TOOLTIPS, JSON.stringify(list || []));
-      },
-      dismissTooltip: (id) => {
-        const current = StorageService.getDismissedTooltips();
-        if (!current.includes(id)) {
-          const next = [...current, id];
-          StorageService.setDismissedTooltips(next);
-          return next;
-        }
-        return current;
-      },
-      resetTooltips: () => {
-        SafeStorage.removeItem(STORAGE_KEYS.DISMISSED_TOOLTIPS);
-        SafeStorage.setItem(STORAGE_KEYS.TUTORIAL_COMPLETED, 'false');
-      },
+      getTutorialCompleted: () => true,
+      setTutorialCompleted: (val) => {},
+      getDismissedTooltips: () => ['profile', 'balance', 'income', 'expense', 'nav'],
+      setDismissedTooltips: (list) => {},
+      dismissTooltip: (id) => ['profile', 'balance', 'income', 'expense', 'nav'],
+      resetTooltips: () => {},
       clearAll: () => {
         Object.values(STORAGE_KEYS).forEach(k => SafeStorage.removeItem(k));
       }
