@@ -83,6 +83,7 @@ def verify_file_integrity():
             "android.permission.WRITE_EXTERNAL_STORAGE",
             "android.permission.ACCESS_FINE_LOCATION",
             "android.permission.RECORD_AUDIO",
+            "android.permission.CAMERA",
         ]
         for perm in prohibited_perms:
             if perm in manifest_content:
@@ -94,7 +95,7 @@ def verify_file_integrity():
 
 
 def main():
-    log("Initializing Voralet v2.9.0 Security & Integrity Audit...")
+    log("Initializing Voralet v3.0.1 Security & Integrity Audit...")
     if not verify_master_code():
         sys.exit(1)
 

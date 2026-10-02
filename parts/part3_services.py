@@ -840,6 +840,22 @@ PART3_SERVICES = """
       }
     };
 
+    const formatFullDateID = (dateStr) => {
+      if (!dateStr) return '';
+      try {
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return String(dateStr);
+        return d.toLocaleDateString('id-ID', {
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric'
+        });
+      } catch (e) {
+        return String(dateStr);
+      }
+    };
+
     const DEFAULT_CATEGORIES = [
       { id: 'makan', label: 'Makan & Minum', icon: 'food', type: 'EXPENSE' },
       { id: 'transport', label: 'Transportasi', icon: 'transport', type: 'EXPENSE' },
@@ -1001,16 +1017,32 @@ PART3_SERVICES = """
     };
 
     // Contextual Long-Press Popover Sheet
-    const ContextualMenuModal = ({ isOpen, title, onClose, onEdit, onDelete, onDuplicate }) => {
-      if (!isOpen) return null;
+    const ContextualMenuModal = ({ isOpen, title, onClose, onEdit, onDuplicate }) => {
+      const [isClosing, setIsClosing] = useState(false);
+
+      if (!isOpen && !isClosing) return null;
+
+      const handleClose = () => {
+        setIsClosing(true);
+        setTimeout(() => {
+          setIsClosing(false);
+          onClose();
+        }, 200);
+      };
+
       return (
-        <div className="ios-modal-backdrop animate-ios-backdrop" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-          <div className="ios-modal-card bg-white dark:bg-slate-800 p-4 animate-popover max-w-xs mx-auto rounded-[24px] shadow-2xl border border-slate-100 dark:border-slate-700">
+        <div
+          className={`ios-modal-backdrop ${isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'}`}
+          onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
+        >
+          <div className={`ios-modal-card bg-white dark:bg-slate-800 p-4 max-w-xs mx-auto rounded-[24px] shadow-2xl border border-slate-100 dark:border-slate-700 ${
+            isClosing ? 'animate-ios-pop-out' : 'animate-ios-pop-in'
+          }`}>
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-700">
-              <span className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">{title || 'Tindakan'}</span>
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">{title || 'Pilihan Transaksi'}</span>
               <button
                 type="button"
-                onClick={onClose}
+                onClick={handleClose}
                 className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors ios-btn-tap"
                 aria-label="Tutup"
               >
@@ -1024,31 +1056,21 @@ PART3_SERVICES = """
               {onEdit && (
                 <button
                   type="button"
-                  onClick={() => { onClose(); onEdit(); }}
+                  onClick={() => { handleClose(); onEdit(); }}
                   className="w-full px-3 py-2.5 rounded-xl text-left text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-sky-50 dark:hover:bg-slate-700 flex items-center gap-2.5 ios-btn-tap"
                 >
                   <Icon name="edit" className="w-4 h-4 text-brand" />
-                  <span>Edit</span>
+                  <span>Edit Transaksi</span>
                 </button>
               )}
               {onDuplicate && (
                 <button
                   type="button"
-                  onClick={() => { onClose(); onDuplicate(); }}
+                  onClick={() => { handleClose(); onDuplicate(); }}
                   className="w-full px-3 py-2.5 rounded-xl text-left text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-sky-50 dark:hover:bg-slate-700 flex items-center gap-2.5 ios-btn-tap"
                 >
                   <Icon name="duplicate" className="w-4 h-4 text-sky-500" />
-                  <span>Duplikat</span>
-                </button>
-              )}
-              {onDelete && (
-                <button
-                  type="button"
-                  onClick={() => { onClose(); onDelete(); }}
-                  className="w-full px-3 py-2.5 rounded-xl text-left text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-2.5 ios-btn-tap"
-                >
-                  <Icon name="trash" className="w-4 h-4" />
-                  <span>Hapus</span>
+                  <span>Duplikat Transaksi</span>
                 </button>
               )}
             </div>

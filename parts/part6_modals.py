@@ -1137,11 +1137,12 @@ PART6_MODALS = """
       );
     };
 
-    const SavingsGoalModal = ({ isOpen, onClose, onSaveGoal, onDepositGoal, goalToEdit, accounts }) => {
+    const SavingsGoalModal = ({ isOpen, onClose, onSaveGoal, onDepositGoal, goalToEdit, accounts = [] }) => {
       const [title, setTitle] = useState('');
       const [targetAmount, setTargetAmount] = useState('');
       const [currentAmount, setCurrentAmount] = useState('0');
       const [targetDate, setTargetDate] = useState('');
+      const [accountId, setAccountId] = useState(() => accounts?.[0]?.id || '');
       const [isClosing, setIsClosing] = useState(false);
 
       useEffect(() => {
@@ -1156,7 +1157,10 @@ PART6_MODALS = """
           setCurrentAmount('0');
           setTargetDate('');
         }
-      }, [goalToEdit, isOpen]);
+        if (accounts && accounts.length > 0 && !accounts.some(a => a.id === accountId)) {
+          setAccountId(accounts[0].id);
+        }
+      }, [goalToEdit, isOpen, accounts]);
 
       if (!isOpen) return null;
 
@@ -1180,6 +1184,7 @@ PART6_MODALS = """
           targetAmount: rawTarget,
           currentAmount: rawCurrent,
           targetDate: targetDate || '',
+          initialAccountId: accountId || accounts?.[0]?.id || '',
           createdAt: goalToEdit ? goalToEdit.createdAt : new Date().toISOString()
         };
 
@@ -1260,6 +1265,30 @@ PART6_MODALS = """
                 />
               </div>
 
+              {parseRawNumber(currentAmount) > 0 && !goalToEdit && accounts && accounts.length > 0 && (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Sumber Dana Setoran Awal (Kantong)
+                  </label>
+                  <select
+                    value={accountId}
+                    onFocus={handleGlobalInputFocus}
+                    onBlur={handleGlobalInputBlur}
+                    onChange={(e) => setAccountId(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand"
+                  >
+                    {accounts.map(acc => (
+                      <option key={acc.id} value={acc.id}>
+                        {acc.name} ({acc.type})
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    Saldo akan dipotong otomatis dan dicatat sebagai Pengeluaran Tabungan di riwayat transaksi.
+                  </p>
+                </div>
+              )}
+
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Target Tercapai (Opsional)</label>
                 <input
@@ -1272,10 +1301,17 @@ PART6_MODALS = """
                 />
               </div>
 
-              <div className="pt-2">
+              <div className="pt-2 flex gap-2.5">
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-bold text-xs sm:text-sm rounded-xl transition-colors shadow-xs ios-btn-tap"
+                >
+                  Batal
+                </button>
                 <button
                   type="submit"
-                  className="w-full py-3 bg-[#0284C7] hover:bg-[#0369A1] text-white font-semibold text-sm rounded-xl transition-colors shadow-sm ios-btn-tap"
+                  className="flex-[1.6] py-3 bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs sm:text-sm rounded-xl transition-colors shadow-sm ios-btn-tap"
                 >
                   Simpan Target Impian
                 </button>
@@ -2552,6 +2588,15 @@ PART6_MODALS = """
       const [storageReport, setStorageReport] = useState([]);
       const [integrityReport, setIntegrityReport] = useState(null);
       const [isShaking, setIsShaking] = useState(false);
+      const [isClosing, setIsClosing] = useState(false);
+
+      const handleClose = () => {
+        setIsClosing(true);
+        setTimeout(() => {
+          setIsClosing(false);
+          onClose();
+        }, 250);
+      };
 
       useEffect(() => {
         if (isOpen) {
@@ -2584,8 +2629,13 @@ PART6_MODALS = """
       };
 
       return (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-sm animate-ios-sheet">
-          <div className="w-full max-w-md bg-white dark:bg-slate-800 rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-700 max-h-[92dvh] flex flex-col overflow-hidden">
+        <div
+          className={`ios-modal-backdrop ${isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'}`}
+          onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
+        >
+          <div className={`ios-modal-card bg-white dark:bg-slate-800 rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-700 max-h-[92dvh] flex flex-col overflow-hidden ${
+            isClosing ? 'animate-ios-sheet-exit' : 'animate-ios-sheet'
+          }`}>
             {/* Header */}
             <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
@@ -2594,12 +2644,12 @@ PART6_MODALS = """
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white">Master Security Gate</h3>
-                  <p className="text-[10px] text-slate-400">Akses Pengembang & Integritas Kode v2.6.0</p>
+                  <p className="text-[10px] text-slate-400">Akses Pengembang & Integritas Kode v3.0.1</p>
                 </div>
               </div>
               <button
                 type="button"
-                onClick={onClose}
+                onClick={handleClose}
                 className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 flex items-center justify-center text-slate-500 ios-btn-tap"
               >
                 <Icon name="x" className="w-4 h-4" />

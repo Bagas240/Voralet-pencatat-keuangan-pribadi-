@@ -27,7 +27,7 @@ def resolve_version():
     except (OSError, subprocess.CalledProcessError):
         pass
 
-    return '2.9.0'
+    return '3.0.1'
 
 
 from parts.part1_head import HTML_HEAD

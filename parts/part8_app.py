@@ -21,48 +21,40 @@ PART8_APP = """
       const [isDragging, setIsDragging] = useState(false);
       const startX = useRef(0);
       const startY = useRef(0);
-      const longPressTimer = useRef(null);
       const [isMenuOpen, setIsMenuOpen] = useState(false);
 
       const handleTouchStart = (e) => {
+        e.stopPropagation();
         startX.current = e.touches[0].clientX;
         startY.current = e.touches[0].clientY;
         setIsDragging(false);
-
-        // Long press detection (500ms)
-        longPressTimer.current = setTimeout(() => {
-          setIsMenuOpen(true);
-        }, 500);
+        // Pure swipe action: holding does nothing (no scale, no transparency)
       };
 
       const handleTouchMove = (e) => {
         const diffX = e.touches[0].clientX - startX.current;
         const diffY = e.touches[0].clientY - startY.current;
 
-        // If moved more than 8px, cancel long press
-        if (Math.abs(diffX) > 8 || Math.abs(diffY) > 8) {
-          clearTimeout(longPressTimer.current);
-        }
-
         // Only drag horizontally if diffX > diffY
         if (Math.abs(diffX) > Math.abs(diffY)) {
+          if (e.cancelable) e.preventDefault();
+          e.stopPropagation();
           setIsDragging(true);
-          // Limit drag between -80 (delete) and 80 (edit)
-          const clamped = Math.max(-80, Math.min(80, diffX));
+          // Only drag left to delete (negative) or slight bounce right
+          const clamped = Math.max(-130, Math.min(20, diffX));
           setOffsetX(clamped);
         }
       };
 
-      const handleTouchEnd = () => {
-        clearTimeout(longPressTimer.current);
-        if (offsetX < -45) {
-          // Revealed delete
-          setOffsetX(-70);
+      const handleTouchEnd = (e) => {
+        e.stopPropagation();
+        if (offsetX < -48) {
+          // Reached delete threshold! Pas dilepas langsung hilang
+          setOffsetX(-320); // quick smooth slide-out
           if (window.VoraletHaptics) window.VoraletHaptics.tap();
-        } else if (offsetX > 45) {
-          // Revealed edit
-          setOffsetX(70);
-          if (window.VoraletHaptics) window.VoraletHaptics.tap();
+          setTimeout(() => {
+            onDelete(tx.id);
+          }, 180);
         } else {
           setOffsetX(0);
         }
@@ -91,36 +83,19 @@ PART8_APP = """
             }
           }}
         >
-          {/* Background Swipe Actions */}
-          <div className="absolute inset-0 flex items-center justify-between pointer-events-auto">
-            {/* Swipe Right Action: Edit */}
-            <button
-              type="button"
-              onClick={() => {
-                setOffsetX(0);
-                onEdit(tx);
-              }}
-              className="w-16 h-full bg-brand text-white flex flex-col items-center justify-center text-[10px] font-bold rounded-l-xl ios-btn-tap"
-            >
-              <Icon name="edit" className="w-4 h-4 mb-0.5" />
-              <span>Edit</span>
-            </button>
-
+          {/* Background Swipe Actions: Only visible when actively dragged left */}
+          <div
+            className="absolute inset-0 flex items-center justify-end pointer-events-auto transition-opacity"
+            style={{ opacity: offsetX < -8 ? 1 : 0 }}
+          >
             {/* Swipe Left Action: Delete */}
-            <button
-              type="button"
-              onClick={() => {
-                setOffsetX(0);
-                onDelete(tx.id);
-              }}
-              className="w-16 h-full bg-rose-600 text-white flex flex-col items-center justify-center text-[10px] font-bold rounded-r-xl ios-btn-tap"
-            >
+            <div className="w-20 h-full bg-rose-600 text-white flex flex-col items-center justify-center text-[10px] font-bold rounded-r-xl">
               <Icon name="trash" className="w-4 h-4 mb-0.5" />
               <span>Hapus</span>
-            </button>
+            </div>
           </div>
 
-          {/* Foreground Row */}
+          {/* Foreground Row: Opaque, No Scale on Touch, No Opacity Drop */}
           <div
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
@@ -130,10 +105,10 @@ PART8_APP = """
             }}
             style={{
               transform: `translate3d(${offsetX}px, 0, 0)`,
-              transition: isDragging ? 'none' : 'transform 0.32s cubic-bezier(0.28, 0.84, 0.42, 1)'
+              transition: isDragging ? 'none' : 'transform 0.28s cubic-bezier(0.2, 0.9, 0.42, 1)'
             }}
-            className={`relative bg-white dark:bg-slate-800 flex items-center justify-between h-full px-1.5 ${!isLast ? 'ios-hairline' : ''} ios-touch-item ${
-              isNewlyAdded ? 'animate-tx-highlight rounded-xl' : ''
+            className={`relative z-10 bg-white dark:bg-slate-800 flex items-center justify-between h-full px-2 ${!isLast ? 'ios-hairline' : ''} ${
+              isNewlyAdded ? 'animate-swipe-hint-bouncy rounded-xl' : ''
             }`}
           >
             <div className="flex items-center gap-3 min-w-0 pointer-events-none">
@@ -188,14 +163,13 @@ PART8_APP = """
             </div>
           </div>
 
-          {/* Contextual Long-Press / More Menu */}
+          {/* Contextual Options Menu (Edit & Duplikat only; Hapus is swipe-only) */}
           <ContextualMenuModal
             isOpen={isMenuOpen && !isDeleting}
             title={`${cat.label} - ${formatIDR(tx.amount)}`}
             onClose={() => setIsMenuOpen(false)}
             onEdit={() => onEdit(tx)}
             onDuplicate={() => onDuplicate(tx)}
-            onDelete={() => onDelete(tx.id)}
           />
         </div>
       );
@@ -387,7 +361,8 @@ PART8_APP = """
       onOpenCsvImport,
       deletingTxIds = new Set(),
       newlyAddedTxIds = new Set(),
-      onClearNewlyAddedTx
+      onClearNewlyAddedTx,
+      balancePulse = false
     }) => {
       const [searchQuery, setSearchQuery] = useState('');
       const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -544,7 +519,7 @@ PART8_APP = """
             </div>
 
             <div className="text-2xl whitespace-nowrap truncate font-extrabold tracking-tight mb-4 text-white">
-              <span key={hideBalance ? 'hidden' : `bal-${totalBalance}`} className="animate-value-pulse">
+              <span key={hideBalance ? 'hidden' : `bal-${totalBalance}`} className={`inline-block ${balancePulse ? 'animate-balance-spring' : 'animate-value-pulse'}`}>
                 {hideBalance ? 'Rp ••••••••' : formatIDR(totalBalance)}
               </span>
             </div>
@@ -1020,6 +995,9 @@ PART8_APP = """
       // Layout animation state tracking
       const [deletingTxIds, setDeletingTxIds] = useState(() => new Set());
       const [newlyAddedTxIds, setNewlyAddedTxIds] = useState(() => new Set());
+      const [balancePulse, setBalancePulse] = useState(false);
+      const [newlyAddedDebtId, setNewlyAddedDebtId] = useState(null);
+      const [newlyAddedGoalId, setNewlyAddedGoalId] = useState(null);
 
       const handleClearNewlyAddedTx = useCallback((txId) => {
         setNewlyAddedTxIds(prev => {
@@ -1174,37 +1152,6 @@ PART8_APP = """
         };
       }, []);
 
-      // Horizontal Swipe Gesture Handling
-      const tabsOrder = ['dashboard', 'cards', 'debts', 'savings', 'analytics'];
-      const touchStartX = useRef(0);
-      const touchStartY = useRef(0);
-
-      const handleScreenTouchStart = (e) => {
-        if (e.touches && e.touches[0]) {
-          touchStartX.current = e.touches[0].clientX;
-          touchStartY.current = e.touches[0].clientY;
-        }
-      };
-
-      const handleScreenTouchEnd = (e) => {
-        if (e.changedTouches && e.changedTouches[0]) {
-          const deltaX = e.changedTouches[0].clientX - touchStartX.current;
-          const deltaY = e.changedTouches[0].clientY - touchStartY.current;
-
-          // Detect intentional horizontal swipe (distance > 70px and x > 1.8 * y)
-          if (Math.abs(deltaX) > 70 && Math.abs(deltaX) > Math.abs(deltaY) * 1.8) {
-            const curIdx = tabsOrder.indexOf(activeTab);
-            if (deltaX < 0 && curIdx < tabsOrder.length - 1) {
-              // Swipe left -> Next tab
-              setActiveTab(tabsOrder[curIdx + 1]);
-            } else if (deltaX > 0 && curIdx > 0) {
-              // Swipe right -> Previous tab
-              setActiveTab(tabsOrder[curIdx - 1]);
-            }
-          }
-        }
-      };
-
       // Handlers wrapped in useCallback for stable references across renders
       const handleToggleHideBalance = useCallback(() => {
         setHideBalance(prev => {
@@ -1231,6 +1178,10 @@ PART8_APP = """
           StorageService.setTransactions(next);
           return next;
         });
+
+        // Trigger balance pulse
+        setBalancePulse(true);
+        setTimeout(() => setBalancePulse(false), 900);
 
         // Trigger layout slide-in animation for newly added transaction
         if (isNew) {
@@ -1272,14 +1223,8 @@ PART8_APP = """
       const handleDeleteTransaction = useCallback((txId) => {
         if (deletingTxIds.has(txId)) return;
         const targetTx = (transactions || []).find(t => t.id === txId);
-        const txDesc = targetTx?.notes ? `"${targetTx.notes}"` : (targetTx?.category ? `kategori "${targetTx.category}"` : 'ini');
-        const formattedAmt = targetTx?.amount ? ` senilai ${Formatters.currency(targetTx.amount)}` : '';
 
-        // Browser-native window.confirm dialog to prevent accidental data loss
-        const confirmed = window.confirm(`Apakah Anda yakin ingin menghapus transaksi ${txDesc}${formattedAmt}?\n\nTindakan ini tidak dapat dibatalkan.`);
-        if (!confirmed) return;
-
-        // Trigger layout fade-out & collapse animation
+        // Trigger layout fade-out & collapse animation immediately
         setDeletingTxIds(prev => {
           const next = new Set(prev);
           next.add(txId);
@@ -1291,6 +1236,45 @@ PART8_APP = """
         }
 
         setTimeout(() => {
+          // Revert linked debt payments if applicable
+          if (targetTx?.id?.startsWith('tx_debt_')) {
+            setDebts(prevDebts => {
+              const updated = prevDebts.map(d => {
+                const payIndex = (d.payments || []).findIndex(p => p.amount === targetTx.amount || (targetTx.notes && targetTx.notes.includes(d.personName)));
+                if (payIndex !== -1) {
+                  const newPaid = Math.max(0, (Number(d.paidAmount) || 0) - Number(targetTx.amount));
+                  const newPayments = (d.payments || []).filter((_, idx) => idx !== payIndex);
+                  return {
+                    ...d,
+                    paidAmount: newPaid,
+                    isPaid: false,
+                    status: 'BELUM_LUNAS',
+                    payments: newPayments
+                  };
+                }
+                return d;
+              });
+              StorageService.setDebts(updated);
+              return updated;
+            });
+          } else if (targetTx?.id?.startsWith('tx_sav_')) {
+            // Revert linked savings goal if applicable
+            setSavingsGoals(prevGoals => {
+              const updated = prevGoals.map(g => {
+                if (targetTx.notes && targetTx.notes.includes(g.title)) {
+                  const cur = Number(g.currentAmount) || 0;
+                  const newCur = targetTx.type === 'EXPENSE'
+                    ? Math.max(0, cur - Number(targetTx.amount))
+                    : cur + Number(targetTx.amount);
+                  return { ...g, currentAmount: newCur };
+                }
+                return g;
+              });
+              StorageService.setSavingsGoals(updated);
+              return updated;
+            });
+          }
+
           setTransactions(prev => {
             const next = prev.filter(t => t.id !== txId);
             StorageService.setTransactions(next);
@@ -1301,7 +1285,16 @@ PART8_APP = """
             next.delete(txId);
             return next;
           });
-          showToast('Transaksi berhasil dihapus');
+
+          // Trigger balance pulse & spring animation
+          setBalancePulse(true);
+          setTimeout(() => setBalancePulse(false), 900);
+
+          if (targetTx?.type === 'EXPENSE') {
+            showToast(`Pengeluaran dihapus. Saldo ${formatIDR(targetTx.amount)} berhasil dikembalikan!`);
+          } else {
+            showToast(`Pemasukan dihapus. Saldo ${formatIDR(targetTx.amount)} telah disesuaikan.`);
+          }
         }, 360);
       }, [transactions, deletingTxIds, showToast]);
 
@@ -1387,16 +1380,39 @@ PART8_APP = """
 
       // Savings Goals
       const handleSaveGoal = useCallback((goalData) => {
+        let isNew = false;
         setSavingsGoals(prev => {
           const exists = prev.some(g => g.id === goalData.id);
+          isNew = !exists;
           const next = exists
             ? prev.map(g => g.id === goalData.id ? goalData : g)
             : [...prev, goalData];
           StorageService.setSavingsGoals(next);
           return next;
         });
+        if (isNew) {
+          setNewlyAddedGoalId(goalData.id);
+          setTimeout(() => setNewlyAddedGoalId(null), 1600);
+
+          // If initial currentAmount > 0, record the initial savings deposit into transactions
+          const initAmount = Number(goalData.currentAmount) || 0;
+          if (initAmount > 0 && accounts.length > 0) {
+            const chosenAccountId = goalData.initialAccountId || accounts[0]?.id;
+            const newTx = {
+              id: 'tx_sav_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
+              accountId: chosenAccountId,
+              type: 'EXPENSE',
+              amount: initAmount,
+              category: 'tabungan',
+              date: new Date().toISOString().split('T')[0],
+              notes: `Setoran Awal: ${goalData.title}`,
+              createdAt: new Date().toISOString()
+            };
+            handleAddTransaction(newTx);
+          }
+        }
         showToast('Target impian disimpan');
-      }, []);
+      }, [accounts, handleAddTransaction, showToast]);
 
       const handleDeleteGoal = useCallback((goalId) => {
         if (!confirm('Hapus target impian ini?')) return;
@@ -1406,7 +1422,7 @@ PART8_APP = """
           return next;
         });
         showToast('Target impian dihapus');
-      }, []);
+      }, [showToast]);
 
       const handleDepositGoal = useCallback((goalId, amount, mode, accountId, customNotes) => {
         let goalTitle = 'Kantong Impian';
@@ -1435,7 +1451,7 @@ PART8_APP = """
             id: 'tx_sav_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
             accountId: chosenAccountId,
             type: isDeposit ? 'EXPENSE' : 'INCOME',
-            amount: amount,
+            amount: Number(amount),
             category: 'tabungan',
             date: new Date().toISOString().split('T')[0],
             notes: finalNote,
@@ -1444,7 +1460,7 @@ PART8_APP = """
           handleAddTransaction(newTx);
         }
 
-        showToast(mode === 'DEPOSIT' ? 'Tabungan disetor & dicatat di mutasi' : 'Tabungan ditarik & dicatat di mutasi');
+        showToast(mode === 'DEPOSIT' ? 'Tabungan disetor & dicatat di riwayat mutasi' : 'Tabungan ditarik & dicatat di riwayat mutasi');
       }, [accounts, handleAddTransaction, showToast]);
 
       // Debts
@@ -1459,21 +1475,49 @@ PART8_APP = """
           note,
           notes: note
         };
+        let isNew = false;
         setDebts(prev => {
           const exists = prev.some(d => d.id === normalized.id);
+          isNew = !exists;
           const next = exists
             ? prev.map(d => d.id === normalized.id ? normalized : d)
             : [normalized, ...prev];
           StorageService.setDebts(next);
           return next;
         });
-        showToast('Catatan disimpan');
-      }, [showToast]);
+        if (isNew) {
+          setNewlyAddedDebtId(normalized.id);
+          setTimeout(() => setNewlyAddedDebtId(null), 1600);
+
+          // If recordToTransaction is active, log the loan/debt transaction immediately into history
+          if (debtData.recordToTransaction && debtData.amount > 0 && accounts.length > 0) {
+            const isHutang = debtData.type === 'HUTANG';
+            const chosenAccountId = debtData.accountId || accounts[0]?.id;
+            const newTx = {
+              id: 'tx_debt_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
+              accountId: chosenAccountId,
+              type: isHutang ? 'INCOME' : 'EXPENSE',
+              amount: Number(debtData.amount),
+              category: 'hutang',
+              date: new Date().toISOString().split('T')[0],
+              notes: isHutang ? `Pinjaman dana dari ${debtData.personName}` : `Meminjamkan dana ke ${debtData.personName}`,
+              createdAt: new Date().toISOString()
+            };
+            handleAddTransaction(newTx);
+          }
+        }
+        showToast('Catatan hutang/piutang disimpan');
+      }, [accounts, handleAddTransaction, showToast]);
 
       const handlePayDebt = useCallback((debtId, paymentData) => {
         if (!paymentData || !paymentData.amount) return;
         const { amount, accountId, date, notes } = paymentData;
-        let debtRecord = null;
+
+        // Retrieve debt record immediately
+        const currentDebt = (debts || []).find(d => d.id === debtId);
+        const isHutang = currentDebt ? currentDebt.type === 'HUTANG' : true;
+        const personName = currentDebt ? currentDebt.personName : 'Kontak';
+        const chosenAccountId = accountId || accounts[0]?.id;
 
         setDebts(prev => {
           const next = prev.map(d => {
@@ -1490,20 +1534,18 @@ PART8_APP = """
                 date: date || new Date().toISOString().split('T')[0],
                 accountId: accountId || '',
                 accountName: chosenAccount?.name || 'Kantong',
-                notes: notes || (d.type === 'HUTANG' ? `Bayar hutang ke ${d.personName}` : `Terima piutang dari ${d.personName}`)
+                notes: notes || (isHutang ? `Bayar hutang ke ${d.personName}` : `Terima piutang dari ${d.personName}`)
               };
 
               const existingPayments = Array.isArray(d.payments) ? d.payments : [];
 
-              const updatedDebt = {
+              return {
                 ...d,
                 paidAmount: newPaid,
                 isPaid: isFullyPaid,
                 status: isFullyPaid ? 'LUNAS' : 'BELUM_LUNAS',
                 payments: [payRecord, ...existingPayments]
               };
-              debtRecord = updatedDebt;
-              return updatedDebt;
             }
             return d;
           });
@@ -1511,44 +1553,42 @@ PART8_APP = """
           return next;
         });
 
-        // Record real transaction in transactions list
-        if (debtRecord && amount > 0) {
-          const isHutang = debtRecord.type === 'HUTANG';
-          const chosenAccountId = accountId || accounts[0]?.id;
-          if (chosenAccountId) {
-            const defaultNote = isHutang
-              ? `Bayar hutang: ${debtRecord.personName}`
-              : `Terima piutang: ${debtRecord.personName}`;
-            const finalNote = notes && notes.trim() ? notes.trim() : defaultNote;
+        // Always record real transaction in history list
+        if (chosenAccountId && amount > 0) {
+          const defaultNote = isHutang
+            ? `Bayar hutang: ${personName}`
+            : `Terima piutang: ${personName}`;
+          const finalNote = notes && notes.trim() ? notes.trim() : defaultNote;
 
-            const newTx = {
-              id: 'tx_debt_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
-              accountId: chosenAccountId,
-              type: isHutang ? 'EXPENSE' : 'INCOME',
-              amount: amount,
-              category: 'hutang',
-              date: date || new Date().toISOString().split('T')[0],
-              notes: finalNote,
-              createdAt: new Date().toISOString()
-            };
-            handleAddTransaction(newTx);
-          }
-
+          const newTx = {
+            id: 'tx_debt_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
+            accountId: chosenAccountId,
+            type: isHutang ? 'EXPENSE' : 'INCOME',
+            amount: Number(amount),
+            category: 'hutang',
+            date: date || new Date().toISOString().split('T')[0],
+            notes: finalNote,
+            createdAt: new Date().toISOString()
+          };
+          handleAddTransaction(newTx);
           showToast(isHutang ? 'Pembayaran hutang dicatat di mutasi' : 'Penerimaan piutang dicatat di mutasi');
         }
-      }, [accounts, handleAddTransaction, showToast]);
+      }, [debts, accounts, handleAddTransaction, showToast]);
 
       const handleToggleDebtStatus = useCallback((debtId) => {
+        const currentDebt = (debts || []).find(d => d.id === debtId);
+        if (!currentDebt) return;
+        const willBePaid = !(currentDebt.isPaid || currentDebt.status === 'LUNAS');
+        const remainingToPay = Math.max(0, (Number(currentDebt.amount) || 0) - (Number(currentDebt.paidAmount) || 0));
+
         setDebts(prev => {
           const next = prev.map(d => {
             if (d.id === debtId) {
-              const currentPaid = Boolean(d.isPaid || d.status === 'LUNAS');
-              const newPaid = !currentPaid;
               return {
                 ...d,
-                isPaid: newPaid,
-                status: newPaid ? 'LUNAS' : 'BELUM_LUNAS',
-                paidAmount: newPaid ? (Number(d.amount) || 0) : 0
+                isPaid: willBePaid,
+                status: willBePaid ? 'LUNAS' : 'BELUM_LUNAS',
+                paidAmount: willBePaid ? (Number(d.amount) || 0) : 0
               };
             }
             return d;
@@ -1556,8 +1596,26 @@ PART8_APP = """
           StorageService.setDebts(next);
           return next;
         });
-        showToast('Status diperbarui');
-      }, [showToast]);
+
+        if (willBePaid && remainingToPay > 0 && accounts.length > 0) {
+          const isHutang = currentDebt.type === 'HUTANG';
+          const chosenAccountId = currentDebt.accountId || accounts[0]?.id;
+          const newTx = {
+            id: 'tx_debt_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
+            accountId: chosenAccountId,
+            type: isHutang ? 'EXPENSE' : 'INCOME',
+            amount: remainingToPay,
+            category: 'hutang',
+            date: new Date().toISOString().split('T')[0],
+            notes: isHutang ? `Pelunasan hutang: ${currentDebt.personName}` : `Pelunasan piutang: ${currentDebt.personName}`,
+            createdAt: new Date().toISOString()
+          };
+          handleAddTransaction(newTx);
+          showToast(`Status diubah: ${currentDebt.personName} LUNAS & dicatat di mutasi`);
+        } else {
+          showToast(`Status diubah: ${willBePaid ? 'LUNAS' : 'BELUM LUNAS'}`);
+        }
+      }, [debts, accounts, handleAddTransaction, showToast]);
 
       const handleDeleteDebt = useCallback((debtId) => {
         if (!confirm('Hapus catatan ini?')) return;
@@ -1838,8 +1896,6 @@ PART8_APP = """
           {/* Main App Viewport */}
           <div className="flex-1 flex flex-col w-full h-full overflow-hidden relative z-10">
             <main
-              onTouchStart={handleScreenTouchStart}
-              onTouchEnd={handleScreenTouchEnd}
               className="flex-1 w-full max-w-md mx-auto px-4 pt-4 sm:pt-6 pb-28 overflow-y-auto no-scrollbar"
               style={{ paddingTop: 'max(env(safe-area-inset-top, 0px), 1.25rem)' }}
             >
@@ -1873,6 +1929,7 @@ PART8_APP = """
                   deletingTxIds={deletingTxIds}
                   newlyAddedTxIds={newlyAddedTxIds}
                   onClearNewlyAddedTx={handleClearNewlyAddedTx}
+                  balancePulse={balancePulse}
                 />
               )}
 
@@ -1901,6 +1958,7 @@ PART8_APP = """
                   onDeleteDebt={handleDeleteDebt}
                   hideBalance={hideBalance}
                   onModalChange={setIsDebtModalOpen}
+                  newlyAddedDebtId={newlyAddedDebtId}
                 />
               )}
 
@@ -1913,6 +1971,7 @@ PART8_APP = """
                   onDeleteGoal={handleDeleteGoal}
                   onDepositGoal={handleDepositGoal}
                   hideBalance={hideBalance}
+                  newlyAddedGoalId={newlyAddedGoalId}
                 />
               )}
 

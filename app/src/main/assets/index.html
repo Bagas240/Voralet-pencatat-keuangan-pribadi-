@@ -301,16 +301,20 @@
     }
 
     /* Authentic iOS Tactile Touch Spring Physics (120 FPS Composited) */
-    .ios-btn-tap, .ios-touch-item {
+    .ios-btn-tap {
       transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.42, 1), opacity 0.16s ease;
       user-select: none;
       -webkit-user-select: none;
       touch-action: manipulation;
     }
-    .ios-btn-tap:active, .ios-touch-item:active {
+    .ios-btn-tap:active {
       transform: scale(0.96) !important;
       opacity: 0.82;
       transition: transform 0.08s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.08s ease;
+    }
+    .ios-touch-item {
+      user-select: none;
+      -webkit-user-select: none;
     }
     .ios-card-tap {
       transition: transform 0.32s cubic-bezier(0.2, 0.9, 0.42, 1), opacity 0.18s ease, box-shadow 0.25s ease;
@@ -326,7 +330,7 @@
     }
 
     /* Navigation, view transitions, and bottom sheets */
-    .ios-view-transition, .animate-ios-tab-view {
+    .ios-view-transition {
       transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease;
     }
 
@@ -657,6 +661,82 @@
       -webkit-backface-visibility: hidden;
     }
 
+    /* iOS Dialog Pop-In and Pop-Out (Spring-Physics Alert Animations) */
+    @keyframes iosPopIn {
+      0% {
+        opacity: 0;
+        transform: scale3d(0.85, 0.85, 1) translate3d(0, 12px, 0);
+      }
+      70% {
+        opacity: 1;
+        transform: scale3d(1.025, 1.025, 1) translate3d(0, -2px, 0);
+      }
+      100% {
+        opacity: 1;
+        transform: scale3d(1, 1, 1) translate3d(0, 0, 0);
+      }
+    }
+    @keyframes iosPopOut {
+      0% {
+        opacity: 1;
+        transform: scale3d(1, 1, 1) translate3d(0, 0, 0);
+      }
+      100% {
+        opacity: 0;
+        transform: scale3d(0.86, 0.86, 1) translate3d(0, 10px, 0);
+      }
+    }
+    .animate-ios-pop-in {
+      animation: iosPopIn 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      will-change: transform, opacity;
+    }
+    .animate-ios-pop-out {
+      animation: iosPopOut 0.24s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+      will-change: transform, opacity;
+    }
+
+    /* Bouncy Swipe Hint Animation (Peeks left and bounces back smoothly) */
+    @keyframes iosSwipeHintBouncy {
+      0% {
+        transform: translate3d(0, 0, 0);
+      }
+      22% {
+        transform: translate3d(-52px, 0, 0);
+      }
+      44% {
+        transform: translate3d(-14px, 0, 0);
+      }
+      64% {
+        transform: translate3d(-32px, 0, 0);
+      }
+      82% {
+        transform: translate3d(-4px, 0, 0);
+      }
+      93% {
+        transform: translate3d(-10px, 0, 0);
+      }
+      100% {
+        transform: translate3d(0, 0, 0);
+      }
+    }
+    .animate-swipe-hint-bouncy {
+      animation: iosSwipeHintBouncy 1.25s cubic-bezier(0.28, 0.84, 0.42, 1) forwards;
+      will-change: transform;
+    }
+
+    /* Saldo Reversal & Balance Change Spring Highlight */
+    @keyframes balanceCountSpring {
+      0% { transform: scale(0.96); opacity: 0.85; }
+      40% { transform: scale(1.06); opacity: 1; filter: brightness(1.15); }
+      75% { transform: scale(0.99); }
+      100% { transform: scale(1); filter: brightness(1); }
+    }
+    .animate-balance-spring {
+      display: inline-block;
+      animation: balanceCountSpring 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+      will-change: transform;
+    }
+
     /* iOS Modal & Sheet Keyframes (Authentic Apple HIG Spring Physics) */
     @keyframes iosSheetEnter {
       0% {
@@ -733,14 +813,11 @@
     @keyframes iosTabFadeIn {
       0% {
         opacity: 0;
-        transform: scale3d(0.97, 0.97, 1) translate3d(0, 8px, 0);
-      }
-      75% {
-        transform: scale3d(1.005, 1.005, 1) translate3d(0, -2px, 0);
+        transform: translate3d(0, 6px, 0);
       }
       100% {
         opacity: 1;
-        transform: scale3d(1, 1, 1) translate3d(0, 0, 0);
+        transform: translate3d(0, 0, 0);
       }
     }
     .animate-ios-tab-slide-forward {
@@ -758,7 +835,7 @@
       -webkit-backface-visibility: hidden;
     }
     .animate-ios-tab-view {
-      animation: iosTabFadeIn 0.34s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      animation: iosTabFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       will-change: transform, opacity;
       transform: translateZ(0);
       backface-visibility: hidden;
@@ -946,7 +1023,7 @@
     .ios-modal-backdrop {
       position: fixed;
       inset: 0;
-      z-index: 50;
+      z-index: 80;
       display: flex;
       align-items: flex-end;
       justify-content: center;
@@ -3516,6 +3593,21 @@ const formatDateID = dateStr => {
     return String(dateStr);
   }
 };
+const formatFullDateID = dateStr => {
+  if (!dateStr) return '';
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return String(dateStr);
+    return d.toLocaleDateString('id-ID', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+  } catch (e) {
+    return String(dateStr);
+  }
+};
 const DEFAULT_CATEGORIES = [{
   id: 'makan',
   label: 'Makan & Minum',
@@ -3739,24 +3831,31 @@ const ContextualMenuModal = ({
   title,
   onClose,
   onEdit,
-  onDelete,
   onDuplicate
 }) => {
-  if (!isOpen) return null;
+  const [isClosing, setIsClosing] = useState(false);
+  if (!isOpen && !isClosing) return null;
+  const handleClose = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      setIsClosing(false);
+      onClose();
+    }, 200);
+  };
   return /*#__PURE__*/React.createElement("div", {
-    className: "ios-modal-backdrop animate-ios-backdrop",
+    className: `ios-modal-backdrop ${isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'}`,
     onClick: e => {
-      if (e.target === e.currentTarget) onClose();
+      if (e.target === e.currentTarget) handleClose();
     }
   }, /*#__PURE__*/React.createElement("div", {
-    className: "ios-modal-card bg-white dark:bg-slate-800 p-4 animate-popover max-w-xs mx-auto rounded-[24px] shadow-2xl border border-slate-100 dark:border-slate-700"
+    className: `ios-modal-card bg-white dark:bg-slate-800 p-4 max-w-xs mx-auto rounded-[24px] shadow-2xl border border-slate-100 dark:border-slate-700 ${isClosing ? 'animate-ios-pop-out' : 'animate-ios-pop-in'}`
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-700"
   }, /*#__PURE__*/React.createElement("span", {
     className: "text-xs font-bold text-slate-700 dark:text-slate-200 truncate"
-  }, title || 'Tindakan'), /*#__PURE__*/React.createElement("button", {
+  }, title || 'Pilihan Transaksi'), /*#__PURE__*/React.createElement("button", {
     type: "button",
-    onClick: onClose,
+    onClick: handleClose,
     className: "p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors ios-btn-tap",
     "aria-label": "Tutup"
   }, /*#__PURE__*/React.createElement("svg", {
@@ -3784,34 +3883,24 @@ const ContextualMenuModal = ({
   }, onEdit && /*#__PURE__*/React.createElement("button", {
     type: "button",
     onClick: () => {
-      onClose();
+      handleClose();
       onEdit();
     },
     className: "w-full px-3 py-2.5 rounded-xl text-left text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-sky-50 dark:hover:bg-slate-700 flex items-center gap-2.5 ios-btn-tap"
   }, /*#__PURE__*/React.createElement(Icon, {
     name: "edit",
     className: "w-4 h-4 text-brand"
-  }), /*#__PURE__*/React.createElement("span", null, "Edit")), onDuplicate && /*#__PURE__*/React.createElement("button", {
+  }), /*#__PURE__*/React.createElement("span", null, "Edit Transaksi")), onDuplicate && /*#__PURE__*/React.createElement("button", {
     type: "button",
     onClick: () => {
-      onClose();
+      handleClose();
       onDuplicate();
     },
     className: "w-full px-3 py-2.5 rounded-xl text-left text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-sky-50 dark:hover:bg-slate-700 flex items-center gap-2.5 ios-btn-tap"
   }, /*#__PURE__*/React.createElement(Icon, {
     name: "duplicate",
     className: "w-4 h-4 text-sky-500"
-  }), /*#__PURE__*/React.createElement("span", null, "Duplikat")), onDelete && /*#__PURE__*/React.createElement("button", {
-    type: "button",
-    onClick: () => {
-      onClose();
-      onDelete();
-    },
-    className: "w-full px-3 py-2.5 rounded-xl text-left text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-2.5 ios-btn-tap"
-  }, /*#__PURE__*/React.createElement(Icon, {
-    name: "trash",
-    className: "w-4 h-4"
-  }), /*#__PURE__*/React.createElement("span", null, "Hapus")))));
+  }), /*#__PURE__*/React.createElement("span", null, "Duplikat Transaksi")))));
 };
 
 // iOS Banner Toast Notification with Spring Rebound
@@ -5564,13 +5653,16 @@ const DebtModal = ({
   isOpen,
   onClose,
   debtToEdit,
-  onSaveDebt
+  onSaveDebt,
+  accounts = []
 }) => {
   const [type, setType] = useState('HUTANG'); // HUTANG (Saya berhutang) | PIUTANG (Orang lain berhutang)
   const [personName, setPersonName] = useState('');
   const [amountStr, setAmountStr] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [notes, setNotes] = useState('');
+  const [accountId, setAccountId] = useState(() => accounts[0]?.id || '');
+  const [recordToTransaction, setRecordToTransaction] = useState(true);
   const [isClosing, setIsClosing] = useState(false);
   useEffect(() => {
     if (debtToEdit) {
@@ -5579,6 +5671,7 @@ const DebtModal = ({
       setAmountStr(debtToEdit.amount ? String(debtToEdit.amount) : '');
       setDueDate(debtToEdit.dueDate || '');
       setNotes(debtToEdit.notes || '');
+      if (debtToEdit.accountId) setAccountId(debtToEdit.accountId);
     } else {
       setType('HUTANG');
       setPersonName('');
@@ -5586,7 +5679,10 @@ const DebtModal = ({
       setDueDate('');
       setNotes('');
     }
-  }, [debtToEdit, isOpen]);
+    if (accounts.length > 0 && !accounts.some(a => a.id === accountId)) {
+      setAccountId(accounts[0].id);
+    }
+  }, [debtToEdit, isOpen, accounts]);
   if (!isOpen) return null;
   const handleClose = () => {
     setIsClosing(true);
@@ -5606,6 +5702,8 @@ const DebtModal = ({
       amount: rawAmt,
       dueDate: dueDate || '',
       notes: notes.trim(),
+      accountId: accountId || accounts[0]?.id || '',
+      recordToTransaction: !debtToEdit ? recordToTransaction : false,
       status: debtToEdit ? debtToEdit.status : 'BELUM_LUNAS',
       createdAt: debtToEdit ? debtToEdit.createdAt : new Date().toISOString()
     };
@@ -5712,11 +5810,39 @@ const DebtModal = ({
     onChange: e => setNotes(e.target.value),
     placeholder: "Contoh: Talangan makan siang",
     className: "w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand"
-  }))), /*#__PURE__*/React.createElement("div", {
-    className: "pt-2"
+  }))), accounts.length > 0 && !debtToEdit && /*#__PURE__*/React.createElement("div", {
+    className: "p-3 bg-slate-50 dark:bg-slate-900/80 rounded-2xl border border-slate-200/80 dark:border-slate-700 space-y-2"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between"
+  }, /*#__PURE__*/React.createElement("label", {
+    className: "text-xs font-bold text-slate-800 dark:text-slate-200"
+  }, type === 'HUTANG' ? 'Masuk ke Kantong Dompet' : 'Diambil dari Kantong Dompet'), /*#__PURE__*/React.createElement("label", {
+    className: "flex items-center gap-1.5 cursor-pointer text-[11px] text-slate-500 font-medium"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: recordToTransaction,
+    onChange: e => setRecordToTransaction(e.target.checked),
+    className: "rounded text-brand focus:ring-brand"
+  }), /*#__PURE__*/React.createElement("span", null, "Catat Mutasi"))), recordToTransaction && /*#__PURE__*/React.createElement("select", {
+    value: accountId,
+    onFocus: handleGlobalInputFocus,
+    onBlur: handleGlobalInputBlur,
+    onChange: e => setAccountId(e.target.value),
+    className: "w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand"
+  }, accounts.map(acc => /*#__PURE__*/React.createElement("option", {
+    key: acc.id,
+    value: acc.id
+  }, acc.name, " (", acc.type, ")"))), /*#__PURE__*/React.createElement("p", {
+    className: "text-[10px] text-slate-400"
+  }, recordToTransaction ? type === 'HUTANG' ? 'Otomatis dicatat sebagai Pemasukan di history dan menambah saldo dompet.' : 'Otomatis dicatat sebagai Pengeluaran di history dan mengurangi saldo dompet.' : 'Hanya dicatat sebagai catatan tanpa mempengaruhi saldo dompet saat ini.')), /*#__PURE__*/React.createElement("div", {
+    className: "pt-2 flex gap-2.5"
   }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: handleClose,
+    className: "flex-1 py-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-bold text-xs sm:text-sm rounded-xl transition-colors shadow-xs ios-btn-tap"
+  }, "Batal"), /*#__PURE__*/React.createElement("button", {
     type: "submit",
-    className: "w-full py-3 bg-[#0284C7] hover:bg-[#0369A1] text-white font-semibold text-sm rounded-xl transition-colors shadow-sm ios-btn-tap"
+    className: "flex-[1.6] py-3 bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs sm:text-sm rounded-xl transition-colors shadow-sm ios-btn-tap"
   }, debtToEdit ? 'Simpan Perubahan' : 'Catat')))));
 };
 
@@ -5785,31 +5911,11 @@ const PayDebtModal = ({
     setError('');
     if (mode === 'LUNAS') {
       setPayAmountStr(String(remainingAmount));
-      setNotes(isHutang ? `Pelunasan hutang: ${debt.personName}` : `Pelunasan piutang: ${debt.personName}`);
+      setNotes(isHutang ? `Pelunasan hutang ke ${debt.personName}` : `Pelunasan piutang dari ${debt.personName}`);
     } else {
-      // Cicilan mode default to 50% or appropriate slice
-      const half = Math.round(remainingAmount / 2);
-      setPayAmountStr(half > 0 ? String(half) : String(remainingAmount));
+      setPayAmountStr('');
       setNotes(isHutang ? `Cicilan ke-${nextInstallmentNum}: ${debt.personName}` : `Terima cicilan ke-${nextInstallmentNum}: ${debt.personName}`);
     }
-  };
-  const handleQuickPercent = pct => {
-    const val = Math.round(remainingAmount * pct);
-    setPayAmountStr(val > 0 ? String(val) : '');
-    setError('');
-    if (pct === 1) {
-      setPayMode('LUNAS');
-      setNotes(isHutang ? `Pelunasan hutang: ${debt.personName}` : `Pelunasan piutang: ${debt.personName}`);
-    } else {
-      setPayMode('CICILAN');
-      setNotes(isHutang ? `Cicilan ke-${nextInstallmentNum} (${Math.round(pct * 100)}%): ${debt.personName}` : `Terima cicilan ke-${nextInstallmentNum} (${Math.round(pct * 100)}%): ${debt.personName}`);
-    }
-  };
-  const handleAddQuickAmount = delta => {
-    const current = parseRawNumber(payAmountStr) || 0;
-    const nextVal = Math.min(remainingAmount, current + delta);
-    setPayAmountStr(String(nextVal));
-    setError('');
   };
   const handleSubmit = e => {
     e.preventDefault();
@@ -5818,14 +5924,20 @@ const PayDebtModal = ({
       setError('Nominal pembayaran cicilan harus lebih dari 0');
       return;
     }
+    if (num > remainingAmount) {
+      setError(`Maksimal pembayaran adalah ${formatIDR(remainingAmount)}`);
+      return;
+    }
     if (!accountId) {
       setError('Pilih dompet / kantong terlebih dahulu');
       return;
     }
     HapticFeedback.save();
+    const chosenAccount = accounts.find(a => a.id === accountId);
     onConfirmPayment({
       amount: num,
       accountId,
+      accountName: chosenAccount?.name || 'Kantong',
       date,
       notes: notes.trim()
     });
@@ -5886,23 +5998,23 @@ const PayDebtModal = ({
     onSubmit: handleSubmit,
     className: "ios-modal-body flex-1 overflow-y-auto pb-28 p-4 sm:p-5 space-y-4 no-scrollbar"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "grid grid-cols-2 p-1 bg-slate-100 dark:bg-slate-900 rounded-xl text-xs font-semibold"
+    className: "grid grid-cols-2 p-1.5 bg-slate-100 dark:bg-slate-900 rounded-2xl gap-1"
   }, /*#__PURE__*/React.createElement("button", {
     type: "button",
+    onClick: () => handleSelectMode('LUNAS'),
+    className: `py-2.5 px-3 rounded-xl flex items-center justify-center gap-1.5 text-xs transition-all ios-btn-tap ${payMode === 'LUNAS' ? 'bg-emerald-600 text-white shadow-sm font-bold' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 font-medium'}`
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "check-circle",
+    className: "w-4 h-4"
+  }), /*#__PURE__*/React.createElement("span", null, "Lunas Semua")), /*#__PURE__*/React.createElement("button", {
+    type: "button",
     onClick: () => handleSelectMode('CICILAN'),
-    className: `py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-all ios-btn-tap ${payMode === 'CICILAN' ? 'bg-white dark:bg-slate-800 text-brand dark:text-sky-400 shadow-xs font-bold' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`
+    className: `py-2.5 px-3 rounded-xl flex items-center justify-center gap-1.5 text-xs transition-all ios-btn-tap ${payMode === 'CICILAN' ? 'bg-brand text-white shadow-sm font-bold' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 font-medium'}`
   }, /*#__PURE__*/React.createElement(Icon, {
     name: "calendar",
-    className: "w-3.5 h-3.5"
-  }), /*#__PURE__*/React.createElement("span", null, "Bayar Cicilan")), /*#__PURE__*/React.createElement("button", {
-    type: "button",
-    onClick: () => handleSelectMode('LUNAS'),
-    className: `py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-all ios-btn-tap ${payMode === 'LUNAS' ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs font-bold' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`
-  }, /*#__PURE__*/React.createElement(Icon, {
-    name: "check",
-    className: "w-3.5 h-3.5"
-  }), /*#__PURE__*/React.createElement("span", null, "Bayar Lunas"))), /*#__PURE__*/React.createElement("div", {
-    className: "p-3 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2"
+    className: "w-4 h-4"
+  }), /*#__PURE__*/React.createElement("span", null, "Cicil Nominal"))), /*#__PURE__*/React.createElement("div", {
+    className: "p-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex justify-between text-xs"
   }, /*#__PURE__*/React.createElement("span", {
@@ -5916,17 +6028,17 @@ const PayDebtModal = ({
   }, "Telah Dicicil (", debt.payments?.length || 1, "x):"), /*#__PURE__*/React.createElement("span", {
     className: "font-semibold text-emerald-600"
   }, formatIDR(paidAmount))), /*#__PURE__*/React.createElement("div", {
-    className: "flex justify-between text-xs pt-1 border-t border-slate-200 dark:border-slate-800 font-bold"
+    className: "flex justify-between text-xs pt-1.5 border-t border-slate-200 dark:border-slate-800 font-bold"
   }, /*#__PURE__*/React.createElement("span", {
     className: isHutang ? 'text-rose-600' : 'text-emerald-600'
   }, "Sisa Belum Terbayar:"), /*#__PURE__*/React.createElement("span", {
     className: isHutang ? 'text-rose-600' : 'text-emerald-600'
   }, formatIDR(remainingAmount)))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center justify-between mb-1"
+    className: "flex items-center justify-between mb-1.5"
   }, /*#__PURE__*/React.createElement("label", {
     className: "block text-xs font-semibold text-slate-700 dark:text-slate-300"
-  }, payMode === 'CICILAN' ? `Nominal Cicilan ke-${nextInstallmentNum} (Rp)` : 'Nominal Pelunasan Penuh (Rp)'), remainingAmount > 0 && /*#__PURE__*/React.createElement("span", {
-    className: "text-[10px] text-slate-400"
+  }, payMode === 'LUNAS' ? 'Nominal Pelunasan Penuh (Rp)' : `Nominal Cicilan ke-${nextInstallmentNum} (Rp)`), remainingAmount > 0 && /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] text-slate-400 font-medium"
   }, "Maks: ", formatIDR(remainingAmount))), /*#__PURE__*/React.createElement("input", {
     type: "text",
     inputMode: "numeric",
@@ -5936,42 +6048,18 @@ const PayDebtModal = ({
     onBlur: handleGlobalInputBlur,
     onChange: e => {
       const num = parseRawNumber(e.target.value);
-      setPayAmountStr(num ? num.toString() : '');
+      const clamped = Math.min(remainingAmount, num);
+      setPayAmountStr(clamped ? clamped.toString() : '');
       setError('');
     },
-    placeholder: "Rp 0",
-    className: "w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-base font-bold text-slate-900 dark:text-white focus:outline-none focus:border-brand",
+    placeholder: "Ketik nominal cicilan (cth: 13.000)",
+    className: "w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-lg font-bold text-slate-900 dark:text-white focus:outline-none focus:border-brand",
     autoFocus: true
-  }), error && /*#__PURE__*/React.createElement("p", {
+  }), /*#__PURE__*/React.createElement("p", {
+    className: "text-[11px] text-slate-400 dark:text-slate-500 mt-1"
+  }, payMode === 'LUNAS' ? `Pelunasan langsung semua sisa tagihan senilai ${formatIDR(remainingAmount)}.` : 'Ketik nominal berapa saja yang ingin dicicil saat ini.'), error && /*#__PURE__*/React.createElement("p", {
     className: "text-xs text-rose-500 mt-1"
-  }, error), remainingAmount > 0 && /*#__PURE__*/React.createElement("div", {
-    className: "space-y-1.5 mt-2"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "flex gap-1.5"
-  }, /*#__PURE__*/React.createElement("button", {
-    type: "button",
-    onClick: () => handleQuickPercent(0.25),
-    className: "flex-1 py-1.5 px-2 bg-slate-100 dark:bg-slate-700/80 hover:bg-slate-200 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-lg ios-btn-tap"
-  }, "25%"), /*#__PURE__*/React.createElement("button", {
-    type: "button",
-    onClick: () => handleQuickPercent(0.5),
-    className: "flex-1 py-1.5 px-2 bg-slate-100 dark:bg-slate-700/80 hover:bg-slate-200 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-lg ios-btn-tap"
-  }, "50% (\xBD)"), /*#__PURE__*/React.createElement("button", {
-    type: "button",
-    onClick: () => handleQuickPercent(0.75),
-    className: "flex-1 py-1.5 px-2 bg-slate-100 dark:bg-slate-700/80 hover:bg-slate-200 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-lg ios-btn-tap"
-  }, "75% (\xBE)"), /*#__PURE__*/React.createElement("button", {
-    type: "button",
-    onClick: () => handleQuickPercent(1),
-    className: "flex-1 py-1.5 px-2 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-xs font-bold rounded-lg border border-emerald-200 dark:border-emerald-800/80 ios-btn-tap"
-  }, "Lunas")), remainingAmount >= 50000 && /*#__PURE__*/React.createElement("div", {
-    className: "flex gap-1.5 overflow-x-auto no-scrollbar py-0.5"
-  }, [50000, 100000, 200000, 500000].filter(d => d < remainingAmount).map(delta => /*#__PURE__*/React.createElement("button", {
-    key: delta,
-    type: "button",
-    onClick: () => handleAddQuickAmount(delta),
-    className: "px-2.5 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-600 dark:text-slate-300 text-[11px] font-medium rounded-lg shrink-0 ios-btn-tap"
-  }, "+", formatIDR(delta)))))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+  }, error)), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
     className: "block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1"
   }, isHutang ? 'Bayar dari Kantong Sumber' : 'Terima ke Kantong Tujuan'), accounts.length === 0 ? /*#__PURE__*/React.createElement("p", {
     className: "text-xs text-amber-600 bg-amber-50 p-2.5 rounded-lg border border-amber-200"
@@ -6013,12 +6101,199 @@ const PayDebtModal = ({
   }, /*#__PURE__*/React.createElement("span", null, "Status setelah cicilan ini:"), /*#__PURE__*/React.createElement("strong", null, estRemainingAfter <= 0 ? '✓ LUNAS SEPENUHNYA' : `Sisa ${formatIDR(estRemainingAfter)}`)), /*#__PURE__*/React.createElement("p", {
     className: "text-[10px] text-emerald-700 dark:text-emerald-400 font-normal"
   }, "Transaksi ", isHutang ? 'pengeluaran' : 'pemasukan', " otomatis dicatat ke riwayat mutasi dompet.")), /*#__PURE__*/React.createElement("div", {
-    className: "pt-2"
+    className: "pt-2 flex gap-2.5"
   }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: handleClose,
+    className: "flex-1 py-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-bold text-xs sm:text-sm rounded-xl transition-colors shadow-xs ios-btn-tap"
+  }, "Kembali"), /*#__PURE__*/React.createElement("button", {
     type: "submit",
     disabled: accounts.length === 0,
-    className: `w-full py-3 text-white font-semibold text-sm rounded-xl transition-colors shadow-sm ios-btn-tap ${isHutang ? 'bg-rose-600 hover:bg-rose-700' : 'bg-emerald-600 hover:bg-emerald-700'}`
-  }, isHutang ? estRemainingAfter <= 0 ? 'Konfirmasi Pelunasan Penuh' : `Konfirmasi Bayar Cicilan (${formatIDR(currentInputAmt)})` : estRemainingAfter <= 0 ? 'Konfirmasi Pelunasan Penuh' : `Konfirmasi Terima Cicilan (${formatIDR(currentInputAmt)})`)))));
+    className: `flex-[1.6] py-3 text-white font-bold text-xs sm:text-sm rounded-xl transition-colors shadow-sm ios-btn-tap truncate px-2 ${isHutang ? 'bg-rose-600 hover:bg-rose-700' : 'bg-emerald-600 hover:bg-emerald-700'}`
+  }, isHutang ? estRemainingAfter <= 0 ? 'Pelunasan Penuh' : `Bayar Cicilan` : estRemainingAfter <= 0 ? 'Pelunasan Penuh' : `Terima Cicilan`)))));
+};
+
+// Swipeable Debt Card with Swipe-to-Delete and No-Hold Physics
+const SwipeableDebtCard = ({
+  item,
+  idx,
+  isLast,
+  hideBalance,
+  isSettled,
+  paidAmt,
+  remAmt,
+  totalAmt,
+  pct,
+  paymentsList,
+  hasPayments,
+  isHistoryOpen,
+  onToggleStatus,
+  onEditDebt,
+  onDeleteDebt,
+  onPayDebt,
+  onToggleHistory,
+  isNewlyAdded = false
+}) => {
+  const [offsetX, setOffsetX] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const startX = useRef(0);
+  const startY = useRef(0);
+  const handleTouchStart = e => {
+    startX.current = e.touches[0].clientX;
+    startY.current = e.touches[0].clientY;
+    setIsDragging(false);
+    // Pure swipe action: No long press timer, holding does nothing!
+  };
+  const handleTouchMove = e => {
+    const diffX = e.touches[0].clientX - startX.current;
+    const diffY = e.touches[0].clientY - startY.current;
+    if (Math.abs(diffX) > Math.abs(diffY)) {
+      setIsDragging(true);
+      const clamped = Math.max(-80, Math.min(0, diffX));
+      setOffsetX(clamped);
+    }
+  };
+  const handleTouchEnd = () => {
+    if (offsetX < -40) {
+      setOffsetX(-72);
+    } else {
+      setOffsetX(0);
+    }
+    setIsDragging(false);
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    className: "relative overflow-hidden rounded-2xl select-none mb-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "absolute inset-0 flex items-center justify-end pointer-events-auto"
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: () => {
+      setOffsetX(0);
+      onDeleteDebt(item.id);
+    },
+    className: "w-20 h-full bg-rose-600 text-white flex flex-col items-center justify-center text-[10px] font-bold rounded-r-2xl ios-btn-tap"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "trash",
+    className: "w-4 h-4 mb-0.5"
+  }), /*#__PURE__*/React.createElement("span", null, "Hapus"))), /*#__PURE__*/React.createElement("div", {
+    onTouchStart: handleTouchStart,
+    onTouchMove: handleTouchMove,
+    onTouchEnd: handleTouchEnd,
+    onClick: () => {
+      if (offsetX !== 0) setOffsetX(0);
+    },
+    style: {
+      transform: `translate3d(${offsetX}px, 0, 0)`,
+      transition: isDragging ? 'none' : 'transform 0.32s cubic-bezier(0.28, 0.84, 0.42, 1)'
+    },
+    className: `relative bg-white dark:bg-slate-800 p-3.5 rounded-2xl border border-slate-100 dark:border-slate-700/60 shadow-xs ${isNewlyAdded ? 'animate-swipe-hint-bouncy' : ''}`
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-start justify-between gap-2"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-start gap-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: `w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 mt-0.5 ${item.type === 'HUTANG' ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400' : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400'}`
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: item.type === 'HUTANG' ? 'arrow-up-right' : 'arrow-down-left',
+    className: "w-5 h-5"
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-xs font-bold text-slate-900 dark:text-white"
+  }, item.personName), /*#__PURE__*/React.createElement("span", {
+    className: `text-[9px] font-extrabold px-2 py-0.5 rounded-full ${isSettled ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300' : paidAmt > 0 ? 'bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300' : item.type === 'HUTANG' ? 'bg-rose-100 dark:bg-rose-900/50 text-rose-700 dark:text-rose-300' : 'bg-sky-100 dark:bg-sky-900/50 text-sky-700 dark:text-sky-300'}`
+  }, isSettled ? 'LUNAS' : paidAmt > 0 ? `DICICIL (${paymentsList.length}x) • ${pct}%` : item.type)), /*#__PURE__*/React.createElement("div", {
+    className: "text-[11px] text-slate-500 dark:text-slate-400 mt-0.5"
+  }, item.notes || item.note || 'Tanpa keterangan', item.dueDate && ` • Tempo: ${formatDateID(item.dueDate)}`))), /*#__PURE__*/React.createElement("div", {
+    className: "text-right shrink-0"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: `text-xs font-bold ${isSettled ? 'text-slate-400 dark:text-slate-500 line-through' : item.type === 'HUTANG' ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`
+  }, hideBalance ? 'Rp ••••••' : paidAmt > 0 && !isSettled ? formatIDR(remAmt) : formatIDR(totalAmt)), paidAmt > 0 && !isSettled && /*#__PURE__*/React.createElement("div", {
+    className: "text-[10px] text-slate-400"
+  }, "dari ", hideBalance ? '••••' : formatIDR(totalAmt)))), paidAmt > 0 && !isSettled && /*#__PURE__*/React.createElement("div", {
+    className: "mt-2.5"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex justify-between text-[10px] text-slate-500 dark:text-slate-400 mb-1"
+  }, /*#__PURE__*/React.createElement("span", null, "Terbayar: ", hideBalance ? '••••' : formatIDR(paidAmt)), /*#__PURE__*/React.createElement("span", null, "Sisa: ", hideBalance ? '••••' : formatIDR(remAmt))), /*#__PURE__*/React.createElement("div", {
+    className: "w-full h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "h-full bg-emerald-500 rounded-full transition-all duration-300",
+    style: {
+      width: `${pct}%`
+    }
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between gap-2 mt-3 pt-2 border-t border-slate-100 dark:border-slate-800"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-1.5"
+  }, !isSettled && /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: () => onPayDebt(item),
+    className: `px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 shadow-xs transition-colors ios-btn-tap ${item.type === 'HUTANG' ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-300 hover:bg-rose-100 border border-rose-200/60 dark:border-rose-800' : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-300 hover:bg-emerald-100 border border-emerald-200/60 dark:border-emerald-800'}`
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "check",
+    className: "w-3.5 h-3.5"
+  }), /*#__PURE__*/React.createElement("span", null, item.type === 'HUTANG' ? paidAmt > 0 ? 'Lanjut Cicil' : 'Bayar / Cicil' : paidAmt > 0 ? 'Terima Cicilan' : 'Terima / Cicil')), hasPayments && /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: () => onToggleHistory(item.id),
+    className: "px-2.5 py-1.5 rounded-xl text-[11px] font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 transition-colors ios-btn-tap flex items-center gap-1"
+  }, /*#__PURE__*/React.createElement("span", null, "Riwayat Cicilan (", paymentsList.length, ")"), /*#__PURE__*/React.createElement("svg", {
+    xmlns: "http://www.w3.org/2000/svg",
+    width: "12",
+    height: "12",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "2.5",
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+    className: `transform transition-transform ${isHistoryOpen ? 'rotate-180' : ''}`
+  }, /*#__PURE__*/React.createElement("polyline", {
+    points: "6 9 12 15 18 9"
+  })))), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-1.5"
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: () => onToggleStatus(item.id),
+    className: "text-[10px] font-semibold text-brand dark:text-sky-400 hover:underline px-1.5 py-1"
+  }, isSettled ? 'Tandai Belum' : 'Tandai Lunas'), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: () => onEditDebt(item),
+    className: "p-1.5 text-slate-400 hover:text-brand rounded-lg ios-btn-tap",
+    title: "Edit"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "edit",
+    className: "w-3.5 h-3.5"
+  })))), isHistoryOpen && hasPayments && /*#__PURE__*/React.createElement("div", {
+    className: "mt-2.5 p-3 bg-slate-50 dark:bg-slate-900/70 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-2 animate-ios-sheet"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between text-[11px] font-bold text-slate-700 dark:text-slate-300"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "flex items-center gap-1"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "clock",
+    className: "w-3.5 h-3.5 text-brand"
+  }), "Riwayat Pembayaran Cicilan:"), /*#__PURE__*/React.createElement("span", {
+    className: "text-emerald-600 font-extrabold"
+  }, formatIDR(paidAmt))), /*#__PURE__*/React.createElement("div", {
+    className: "space-y-1.5 max-h-48 overflow-y-auto no-scrollbar pt-1"
+  }, paymentsList.map((pay, pIdx) => /*#__PURE__*/React.createElement("div", {
+    key: pay.id || pIdx,
+    className: "p-2.5 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-xs"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "min-w-0 pr-2"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "font-bold text-slate-900 dark:text-white flex items-center gap-1.5 flex-wrap"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] px-1.5 py-0.2 rounded bg-sky-100 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 font-bold shrink-0"
+  }, "#", pIdx + 1), /*#__PURE__*/React.createElement("span", {
+    className: "truncate"
+  }, formatFullDateID(pay.date)), pay.accountName && /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] font-normal px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 rounded text-slate-600 dark:text-slate-300 shrink-0"
+  }, pay.accountName)), /*#__PURE__*/React.createElement("p", {
+    className: "text-[11px] text-slate-500 dark:text-slate-400 mt-1"
+  }, "Membayar ", /*#__PURE__*/React.createElement("strong", null, formatIDR(pay.amount)), pay.notes ? ` • ${pay.notes}` : '')), /*#__PURE__*/React.createElement("span", {
+    className: "font-extrabold text-emerald-600 dark:text-emerald-400 shrink-0"
+  }, "+", formatIDR(pay.amount))))))));
 };
 const DebtsView = ({
   debts,
@@ -6029,7 +6304,8 @@ const DebtsView = ({
   onDeleteDebt,
   hideBalance,
   onEditDebt,
-  onModalChange
+  onModalChange,
+  newlyAddedDebtId
 }) => {
   const [filterTab, setFilterTab] = useState('ALL'); // ALL | HUTANG | PIUTANG
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -6137,7 +6413,7 @@ const DebtsView = ({
     name: "plus",
     className: "w-4 h-4"
   }), /*#__PURE__*/React.createElement("span", null, "Mulai Buat Catatan"))) : /*#__PURE__*/React.createElement("div", {
-    className: "ios-inset-group space-y-3"
+    className: "space-y-1"
   }, filteredList.map((item, idx) => {
     const totalAmt = Number(item.amount) || 0;
     const paidAmt = Number(item.paidAmount) || 0;
@@ -6147,126 +6423,32 @@ const DebtsView = ({
     const paymentsList = Array.isArray(item.payments) ? item.payments : [];
     const hasPayments = paymentsList.length > 0;
     const isHistoryOpen = expandedPaymentsId === item.id;
-    return /*#__PURE__*/React.createElement("div", {
+    const isNewlyAdded = newlyAddedDebtId === item.id;
+    return /*#__PURE__*/React.createElement(SwipeableDebtCard, {
       key: item.id,
-      className: `pb-3 ${idx !== filteredList.length - 1 ? 'ios-hairline' : ''}`
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "flex items-start justify-between gap-2"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "flex items-start gap-3"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: `w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 mt-0.5 ${item.type === 'HUTANG' ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400' : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400'}`
-    }, /*#__PURE__*/React.createElement(Icon, {
-      name: item.type === 'HUTANG' ? 'arrow-up-right' : 'arrow-down-left',
-      className: "w-5 h-5"
-    })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-      className: "flex items-center gap-2"
-    }, /*#__PURE__*/React.createElement("span", {
-      className: "text-xs font-bold text-slate-900 dark:text-white"
-    }, item.personName), /*#__PURE__*/React.createElement("span", {
-      className: `text-[9px] font-extrabold px-2 py-0.5 rounded-full ${isSettled ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300' : paidAmt > 0 ? 'bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300' : item.type === 'HUTANG' ? 'bg-rose-100 dark:bg-rose-900/50 text-rose-700 dark:text-rose-300' : 'bg-sky-100 dark:bg-sky-900/50 text-sky-700 dark:text-sky-300'}`
-    }, isSettled ? 'LUNAS' : paidAmt > 0 ? `DICICIL (${paymentsList.length}x) • ${pct}%` : item.type)), /*#__PURE__*/React.createElement("div", {
-      className: "text-[11px] text-slate-500 dark:text-slate-400 mt-0.5"
-    }, item.notes || item.note || 'Tanpa keterangan', item.dueDate && ` • Tempo: ${formatDateID(item.dueDate)}`))), /*#__PURE__*/React.createElement("div", {
-      className: "text-right shrink-0"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: `text-xs font-bold ${isSettled ? 'text-slate-400 dark:text-slate-500 line-through' : item.type === 'HUTANG' ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`
-    }, hideBalance ? 'Rp ••••••' : paidAmt > 0 && !isSettled ? formatIDR(remAmt) : formatIDR(totalAmt)), paidAmt > 0 && !isSettled && /*#__PURE__*/React.createElement("div", {
-      className: "text-[10px] text-slate-400"
-    }, "dari ", hideBalance ? '••••' : formatIDR(totalAmt)))), paidAmt > 0 && !isSettled && /*#__PURE__*/React.createElement("div", {
-      className: "mt-2.5"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "flex justify-between text-[10px] text-slate-500 dark:text-slate-400 mb-1"
-    }, /*#__PURE__*/React.createElement("span", null, "Terbayar: ", hideBalance ? '••••' : formatIDR(paidAmt)), /*#__PURE__*/React.createElement("span", null, "Sisa: ", hideBalance ? '••••' : formatIDR(remAmt))), /*#__PURE__*/React.createElement("div", {
-      className: "w-full h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "h-full bg-emerald-500 rounded-full transition-all duration-300",
-      style: {
-        width: `${pct}%`
-      }
-    }))), /*#__PURE__*/React.createElement("div", {
-      className: "flex items-center justify-between gap-2 mt-3 pt-2 border-t border-slate-100 dark:border-slate-800"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "flex items-center gap-1.5"
-    }, !isSettled && /*#__PURE__*/React.createElement("button", {
-      type: "button",
-      onClick: () => setPayingDebt(item),
-      className: `px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 shadow-xs transition-colors ios-btn-tap ${item.type === 'HUTANG' ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-300 hover:bg-rose-100 border border-rose-200/60 dark:border-rose-800' : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-300 hover:bg-emerald-100 border border-emerald-200/60 dark:border-emerald-800'}`
-    }, /*#__PURE__*/React.createElement(Icon, {
-      name: "check",
-      className: "w-3.5 h-3.5"
-    }), /*#__PURE__*/React.createElement("span", null, item.type === 'HUTANG' ? paidAmt > 0 ? 'Lanjut Cicil' : 'Bayar / Cicil' : paidAmt > 0 ? 'Terima Cicilan' : 'Terima / Cicil')), hasPayments && /*#__PURE__*/React.createElement("button", {
-      type: "button",
-      onClick: () => setExpandedPaymentsId(isHistoryOpen ? null : item.id),
-      className: "px-2.5 py-1.5 rounded-xl text-[11px] font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 transition-colors ios-btn-tap flex items-center gap-1"
-    }, /*#__PURE__*/React.createElement("span", null, "Riwayat Cicilan (", paymentsList.length, ")"), /*#__PURE__*/React.createElement("svg", {
-      xmlns: "http://www.w3.org/2000/svg",
-      width: "12",
-      height: "12",
-      viewBox: "0 0 24 24",
-      fill: "none",
-      stroke: "currentColor",
-      strokeWidth: "2.5",
-      strokeLinecap: "round",
-      strokeLinejoin: "round",
-      className: `transform transition-transform ${isHistoryOpen ? 'rotate-180' : ''}`
-    }, /*#__PURE__*/React.createElement("polyline", {
-      points: "6 9 12 15 18 9"
-    })))), /*#__PURE__*/React.createElement("div", {
-      className: "flex items-center gap-1"
-    }, /*#__PURE__*/React.createElement("button", {
-      type: "button",
-      onClick: () => onToggleStatus(item.id),
-      className: "text-[10px] font-semibold text-brand dark:text-sky-400 hover:underline px-1.5 py-1"
-    }, isSettled ? 'Tandai Belum' : 'Tandai Lunas'), /*#__PURE__*/React.createElement("button", {
-      type: "button",
-      onClick: () => {
-        setSelectedDebt(item);
-        setIsModalOpen(true);
-      },
-      className: "p-1.5 text-slate-400 hover:text-brand rounded-lg ios-btn-tap",
-      title: "Edit"
-    }, /*#__PURE__*/React.createElement(Icon, {
-      name: "edit",
-      className: "w-3.5 h-3.5"
-    })), /*#__PURE__*/React.createElement("button", {
-      type: "button",
-      onClick: () => onDeleteDebt(item.id),
-      className: "p-1.5 text-slate-400 hover:text-rose-600 rounded-lg ios-btn-tap",
-      title: "Hapus"
-    }, /*#__PURE__*/React.createElement(Icon, {
-      name: "trash",
-      className: "w-3.5 h-3.5"
-    })))), isHistoryOpen && hasPayments && /*#__PURE__*/React.createElement("div", {
-      className: "mt-2.5 p-3 bg-slate-50 dark:bg-slate-900/70 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-2 animate-ios-sheet"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "flex items-center justify-between text-[11px] font-bold text-slate-700 dark:text-slate-300"
-    }, /*#__PURE__*/React.createElement("span", {
-      className: "flex items-center gap-1"
-    }, /*#__PURE__*/React.createElement(Icon, {
-      name: "clock",
-      className: "w-3.5 h-3.5 text-brand"
-    }), "Riwayat Pembayaran Cicilan:"), /*#__PURE__*/React.createElement("span", {
-      className: "text-emerald-600 font-extrabold"
-    }, formatIDR(paidAmt))), /*#__PURE__*/React.createElement("div", {
-      className: "space-y-1.5 max-h-40 overflow-y-auto no-scrollbar pt-1"
-    }, paymentsList.map((pay, pIdx) => /*#__PURE__*/React.createElement("div", {
-      key: pay.id || pIdx,
-      className: "p-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-xs"
-    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-      className: "font-bold text-slate-900 dark:text-white flex items-center gap-1.5"
-    }, /*#__PURE__*/React.createElement("span", {
-      className: "text-[10px] px-1.5 py-0.2 rounded bg-sky-100 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 font-bold"
-    }, "#", pIdx + 1), /*#__PURE__*/React.createElement("span", null, formatDateID(pay.date)), pay.accountName && /*#__PURE__*/React.createElement("span", {
-      className: "text-[10px] font-normal px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 rounded text-slate-600 dark:text-slate-300"
-    }, pay.accountName)), /*#__PURE__*/React.createElement("p", {
-      className: "text-[10px] text-slate-400 mt-0.5"
-    }, pay.notes || 'Cicilan pembayaran')), /*#__PURE__*/React.createElement("span", {
-      className: "font-bold text-emerald-600 dark:text-emerald-400"
-    }, "+", formatIDR(pay.amount)))))));
+      item: item,
+      idx: idx,
+      isLast: idx === filteredList.length - 1,
+      hideBalance: hideBalance,
+      isSettled: isSettled,
+      paidAmt: paidAmt,
+      remAmt: remAmt,
+      totalAmt: totalAmt,
+      pct: pct,
+      paymentsList: paymentsList,
+      hasPayments: hasPayments,
+      isHistoryOpen: isHistoryOpen,
+      onToggleStatus: onToggleStatus,
+      onEditDebt: onEditDebt,
+      onDeleteDebt: onDeleteDebt,
+      onPayDebt: setPayingDebt,
+      onToggleHistory: id => setExpandedPaymentsId(expandedPaymentsId === id ? null : id),
+      isNewlyAdded: isNewlyAdded
+    });
   })), isModalOpen && /*#__PURE__*/React.createElement(DebtModal, {
     isOpen: isModalOpen,
     debtToEdit: selectedDebt,
+    accounts: accounts,
     onClose: () => setIsModalOpen(false),
     onSaveDebt: data => {
       onAddDebt(data);
@@ -7275,12 +7457,13 @@ const SavingsGoalModal = ({
   onSaveGoal,
   onDepositGoal,
   goalToEdit,
-  accounts
+  accounts = []
 }) => {
   const [title, setTitle] = useState('');
   const [targetAmount, setTargetAmount] = useState('');
   const [currentAmount, setCurrentAmount] = useState('0');
   const [targetDate, setTargetDate] = useState('');
+  const [accountId, setAccountId] = useState(() => accounts?.[0]?.id || '');
   const [isClosing, setIsClosing] = useState(false);
   useEffect(() => {
     if (goalToEdit) {
@@ -7294,7 +7477,10 @@ const SavingsGoalModal = ({
       setCurrentAmount('0');
       setTargetDate('');
     }
-  }, [goalToEdit, isOpen]);
+    if (accounts && accounts.length > 0 && !accounts.some(a => a.id === accountId)) {
+      setAccountId(accounts[0].id);
+    }
+  }, [goalToEdit, isOpen, accounts]);
   if (!isOpen) return null;
   const handleClose = () => {
     setIsClosing(true);
@@ -7314,6 +7500,7 @@ const SavingsGoalModal = ({
       targetAmount: rawTarget,
       currentAmount: rawCurrent,
       targetDate: targetDate || '',
+      initialAccountId: accountId || accounts?.[0]?.id || '',
       createdAt: goalToEdit ? goalToEdit.createdAt : new Date().toISOString()
     };
     HapticFeedback.save();
@@ -7401,7 +7588,20 @@ const SavingsGoalModal = ({
     },
     placeholder: "Rp 0",
     className: "w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-brand"
-  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+  })), parseRawNumber(currentAmount) > 0 && !goalToEdit && accounts && accounts.length > 0 && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1"
+  }, "Sumber Dana Setoran Awal (Kantong)"), /*#__PURE__*/React.createElement("select", {
+    value: accountId,
+    onFocus: handleGlobalInputFocus,
+    onBlur: handleGlobalInputBlur,
+    onChange: e => setAccountId(e.target.value),
+    className: "w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand"
+  }, accounts.map(acc => /*#__PURE__*/React.createElement("option", {
+    key: acc.id,
+    value: acc.id
+  }, acc.name, " (", acc.type, ")"))), /*#__PURE__*/React.createElement("p", {
+    className: "text-[10px] text-slate-400 mt-1"
+  }, "Saldo akan dipotong otomatis dan dicatat sebagai Pengeluaran Tabungan di riwayat transaksi.")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
     className: "block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1"
   }, "Target Tercapai (Opsional)"), /*#__PURE__*/React.createElement("input", {
     type: "date",
@@ -7411,10 +7611,14 @@ const SavingsGoalModal = ({
     onChange: e => setTargetDate(e.target.value),
     className: "w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand"
   })), /*#__PURE__*/React.createElement("div", {
-    className: "pt-2"
+    className: "pt-2 flex gap-2.5"
   }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: handleClose,
+    className: "flex-1 py-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-bold text-xs sm:text-sm rounded-xl transition-colors shadow-xs ios-btn-tap"
+  }, "Batal"), /*#__PURE__*/React.createElement("button", {
     type: "submit",
-    className: "w-full py-3 bg-[#0284C7] hover:bg-[#0369A1] text-white font-semibold text-sm rounded-xl transition-colors shadow-sm ios-btn-tap"
+    className: "flex-[1.6] py-3 bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs sm:text-sm rounded-xl transition-colors shadow-sm ios-btn-tap"
   }, "Simpan Target Impian")))));
 };
 const SettingsModal = ({
@@ -8001,7 +8205,7 @@ const SettingsModal = ({
     className: "mb-1"
   }), /*#__PURE__*/React.createElement("p", {
     className: "text-[11px] font-bold text-slate-700 dark:text-slate-300"
-  }, "Voralet iOS Edition \u2022 Versi v2.9.0"), /*#__PURE__*/React.createElement("p", {
+  }, "Voralet iOS Edition \u2022 Versi v3.0.1"), /*#__PURE__*/React.createElement("p", {
     className: "text-[10px] text-slate-400 dark:text-slate-500 max-w-xs leading-relaxed"
   }, "Keuangan Sehat \u2022 Impian Dekat. 100% Offline & Terenkripsi Lokal di Perangkat Anda.")), /*#__PURE__*/React.createElement("div", {
     className: "pt-3 border-t border-slate-100 dark:border-slate-700"
@@ -8525,6 +8729,14 @@ const DeveloperSecurityModal = ({
   const [storageReport, setStorageReport] = useState([]);
   const [integrityReport, setIntegrityReport] = useState(null);
   const [isShaking, setIsShaking] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
+  const handleClose = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      setIsClosing(false);
+      onClose();
+    }, 250);
+  };
   useEffect(() => {
     if (isOpen) {
       setMasterCode('');
@@ -8553,9 +8765,12 @@ const DeveloperSecurityModal = ({
     setStorageReport(SafeStorage.getRawStorageReport());
   };
   return /*#__PURE__*/React.createElement("div", {
-    className: "fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-sm animate-ios-sheet"
+    className: `ios-modal-backdrop ${isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'}`,
+    onClick: e => {
+      if (e.target === e.currentTarget) handleClose();
+    }
   }, /*#__PURE__*/React.createElement("div", {
-    className: "w-full max-w-md bg-white dark:bg-slate-800 rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-700 max-h-[92dvh] flex flex-col overflow-hidden"
+    className: `ios-modal-card bg-white dark:bg-slate-800 rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-700 max-h-[92dvh] flex flex-col overflow-hidden ${isClosing ? 'animate-ios-sheet-exit' : 'animate-ios-sheet'}`
   }, /*#__PURE__*/React.createElement("div", {
     className: "p-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between"
   }, /*#__PURE__*/React.createElement("div", {
@@ -8569,9 +8784,9 @@ const DeveloperSecurityModal = ({
     className: "text-sm font-bold text-slate-900 dark:text-white"
   }, "Master Security Gate"), /*#__PURE__*/React.createElement("p", {
     className: "text-[10px] text-slate-400"
-  }, "Akses Pengembang & Integritas Kode v2.6.0"))), /*#__PURE__*/React.createElement("button", {
+  }, "Akses Pengembang & Integritas Kode v3.0.1"))), /*#__PURE__*/React.createElement("button", {
     type: "button",
-    onClick: onClose,
+    onClick: handleClose,
     className: "w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 flex items-center justify-center text-slate-500 ios-btn-tap"
   }, /*#__PURE__*/React.createElement(Icon, {
     name: "x",
@@ -9108,6 +9323,118 @@ const MonthlyPdfReportModal = ({
 // =========================================================================
 // 7. VIEWS: SAVINGS GOALS, ANALYTICS & FLOATING CAPSULE NAVIGATION
 // =========================================================================
+// Swipeable Goal Card with Swipe-to-Delete and Bouncy Swipe Hint
+const SwipeableGoalCard = ({
+  goal,
+  hideBalance,
+  target,
+  current,
+  pct,
+  onEditGoal,
+  onDeleteGoal,
+  onDepositClick,
+  onWithdrawClick,
+  isNewlyAdded = false
+}) => {
+  const [offsetX, setOffsetX] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const startX = useRef(0);
+  const startY = useRef(0);
+  const handleTouchStart = e => {
+    startX.current = e.touches[0].clientX;
+    startY.current = e.touches[0].clientY;
+    setIsDragging(false);
+    // Holding produces NO reaction. Pure swipe only!
+  };
+  const handleTouchMove = e => {
+    const diffX = e.touches[0].clientX - startX.current;
+    const diffY = e.touches[0].clientY - startY.current;
+    if (Math.abs(diffX) > Math.abs(diffY)) {
+      setIsDragging(true);
+      const clamped = Math.max(-80, Math.min(0, diffX));
+      setOffsetX(clamped);
+    }
+  };
+  const handleTouchEnd = () => {
+    if (offsetX < -40) {
+      setOffsetX(-72);
+    } else {
+      setOffsetX(0);
+    }
+    setIsDragging(false);
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    className: "relative overflow-hidden rounded-2xl select-none mb-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "absolute inset-0 flex items-center justify-end pointer-events-auto"
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: () => {
+      setOffsetX(0);
+      onDeleteGoal(goal.id);
+    },
+    className: "w-20 h-full bg-rose-600 text-white flex flex-col items-center justify-center text-[10px] font-bold rounded-r-2xl ios-btn-tap"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "trash",
+    className: "w-4 h-4 mb-0.5"
+  }), /*#__PURE__*/React.createElement("span", null, "Hapus"))), /*#__PURE__*/React.createElement("div", {
+    onTouchStart: handleTouchStart,
+    onTouchMove: handleTouchMove,
+    onTouchEnd: handleTouchEnd,
+    onClick: () => {
+      if (offsetX !== 0) setOffsetX(0);
+    },
+    style: {
+      transform: `translate3d(${offsetX}px, 0, 0)`,
+      transition: isDragging ? 'none' : 'transform 0.32s cubic-bezier(0.28, 0.84, 0.42, 1)'
+    },
+    className: `relative bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700/60 shadow-xs ${isNewlyAdded ? 'animate-swipe-hint-bouncy' : ''}`
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-start justify-between mb-2"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2.5"
+  }, /*#__PURE__*/React.createElement(IconBadge, {
+    icon: "target",
+    className: "p-2 rounded-xl bg-sky-50 dark:bg-slate-700 text-brand dark:text-sky-400"
+  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", {
+    className: "text-xs font-bold text-slate-900 dark:text-white"
+  }, goal.title), /*#__PURE__*/React.createElement("p", {
+    className: "text-[11px] text-slate-400"
+  }, goal.targetDate ? `Target: ${formatDateID(goal.targetDate)}` : 'Target fleksibel'))), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-1"
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: () => onEditGoal(goal),
+    className: "p-1.5 text-slate-400 hover:text-brand rounded-lg ios-btn-tap",
+    title: "Edit"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "edit",
+    className: "w-3.5 h-3.5"
+  })))), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-baseline justify-between mb-1.5"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-sm font-bold text-brand dark:text-sky-400"
+  }, hideBalance ? 'Rp ••••••' : formatIDR(current)), /*#__PURE__*/React.createElement("span", {
+    className: "text-xs text-slate-400"
+  }, "dari ", hideBalance ? 'Rp ••••••' : formatIDR(target), " (", pct, "%)")), /*#__PURE__*/React.createElement("div", {
+    className: "w-full h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden mb-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "h-full bg-brand rounded-full transition-all duration-300",
+    style: {
+      width: `${pct}%`
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "flex gap-2 pt-1 border-t border-slate-100 dark:border-slate-700"
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: onDepositClick,
+    className: "flex-1 py-1.5 rounded-xl bg-sky-50 dark:bg-slate-700 text-brand dark:text-sky-400 text-xs font-semibold hover:bg-sky-100 dark:hover:bg-slate-600 transition-colors ios-btn-tap"
+  }, "+ Setor Tabungan"), current > 0 && /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: onWithdrawClick,
+    className: "flex-1 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors ios-btn-tap"
+  }, "- Tarik Saldo"))));
+};
 const SavingsView = ({
   savingsGoals,
   accounts = [],
@@ -9115,7 +9442,8 @@ const SavingsView = ({
   onEditGoal,
   onDeleteGoal,
   onDepositGoal,
-  hideBalance
+  hideBalance,
+  newlyAddedGoalId
 }) => {
   const [depositGoal, setDepositGoal] = useState(null);
   const [depositAmount, setDepositAmount] = useState('');
@@ -9200,70 +9528,27 @@ const SavingsView = ({
     const target = Number(goal.targetAmount) || 1;
     const current = Number(goal.currentAmount) || 0;
     const pct = Math.min(100, Math.round(current / target * 100));
-    return /*#__PURE__*/React.createElement("div", {
+    return /*#__PURE__*/React.createElement(SwipeableGoalCard, {
       key: goal.id,
-      className: "ios-inset-group"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "flex items-start justify-between mb-2"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "flex items-center gap-2.5"
-    }, /*#__PURE__*/React.createElement(IconBadge, {
-      icon: "target",
-      className: "p-2 rounded-xl bg-sky-50 dark:bg-slate-700 text-brand dark:text-sky-400"
-    }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", {
-      className: "text-xs font-bold text-slate-900 dark:text-white"
-    }, goal.title), /*#__PURE__*/React.createElement("p", {
-      className: "text-[11px] text-slate-400"
-    }, goal.targetDate ? `Target: ${formatDateID(goal.targetDate)}` : 'Target fleksibel'))), /*#__PURE__*/React.createElement("div", {
-      className: "flex items-center gap-1"
-    }, /*#__PURE__*/React.createElement("button", {
-      type: "button",
-      onClick: () => onEditGoal(goal),
-      className: "p-1.5 text-slate-400 hover:text-brand rounded-lg ios-btn-tap",
-      title: "Edit"
-    }, /*#__PURE__*/React.createElement(Icon, {
-      name: "edit",
-      className: "w-3.5 h-3.5"
-    })), /*#__PURE__*/React.createElement("button", {
-      type: "button",
-      onClick: () => onDeleteGoal(goal.id),
-      className: "p-1.5 text-slate-400 hover:text-rose-600 rounded-lg ios-btn-tap",
-      title: "Hapus"
-    }, /*#__PURE__*/React.createElement(Icon, {
-      name: "trash",
-      className: "w-3.5 h-3.5"
-    })))), /*#__PURE__*/React.createElement("div", {
-      className: "flex items-baseline justify-between mb-1.5"
-    }, /*#__PURE__*/React.createElement("span", {
-      className: "text-sm font-bold text-brand dark:text-sky-400"
-    }, hideBalance ? 'Rp ••••••' : formatIDR(current)), /*#__PURE__*/React.createElement("span", {
-      className: "text-xs text-slate-400"
-    }, "dari ", hideBalance ? 'Rp ••••••' : formatIDR(target), " (", pct, "%)")), /*#__PURE__*/React.createElement("div", {
-      className: "w-full h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden mb-3"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "h-full bg-brand rounded-full transition-all duration-300",
-      style: {
-        width: `${pct}%`
-      }
-    })), /*#__PURE__*/React.createElement("div", {
-      className: "flex gap-2 pt-1 border-t border-slate-100 dark:border-slate-700"
-    }, /*#__PURE__*/React.createElement("button", {
-      type: "button",
-      onClick: () => {
+      goal: goal,
+      hideBalance: hideBalance,
+      target: target,
+      current: current,
+      pct: pct,
+      onEditGoal: onEditGoal,
+      onDeleteGoal: onDeleteGoal,
+      onDepositClick: () => {
         setDepositGoal(goal);
         setDepositMode('DEPOSIT');
         setDepositAmount('');
       },
-      className: "flex-1 py-1.5 rounded-xl bg-sky-50 dark:bg-slate-700 text-brand dark:text-sky-400 text-xs font-semibold hover:bg-sky-100 dark:hover:bg-slate-600 transition-colors ios-btn-tap"
-    }, "+ Setor Tabungan"), current > 0 && /*#__PURE__*/React.createElement("button", {
-      type: "button",
-      onClick: () => {
+      onWithdrawClick: () => {
         setDepositGoal(goal);
         setDepositMode('WITHDRAW');
         setDepositAmount('');
       },
-      className: "flex-1 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors ios-btn-tap"
-    }, "- Tarik Saldo")));
+      isNewlyAdded: newlyAddedGoalId === goal.id
+    });
   }), /*#__PURE__*/React.createElement("button", {
     type: "button",
     onClick: onOpenNewGoal,
@@ -9277,12 +9562,12 @@ const SavingsView = ({
     const targetAmt = Number(depositGoal.targetAmount) || 0;
     const remTarget = Math.max(0, targetAmt - currentAmt);
     return /*#__PURE__*/React.createElement("div", {
-      className: "ios-modal-backdrop animate-ios-backdrop",
+      className: "ios-modal-backdrop animate-ios-backdrop z-[90]",
       onClick: e => {
         if (e.target === e.currentTarget) setDepositGoal(null);
       }
     }, /*#__PURE__*/React.createElement("div", {
-      className: "ios-modal-card bg-white dark:bg-slate-800 p-5 animate-ios-sheet max-w-sm mx-auto rounded-[24px]"
+      className: "ios-modal-card bg-white dark:bg-slate-800 p-5 pb-8 sm:pb-6 animate-ios-sheet max-w-sm mx-auto rounded-[24px] shadow-2xl relative z-[95]"
     }, /*#__PURE__*/React.createElement("div", {
       className: "flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-700"
     }, /*#__PURE__*/React.createElement("div", {
@@ -9424,15 +9709,15 @@ const SavingsView = ({
     }, "Transaksi otomatis dicatat ke riwayat mutasi sebagai ", /*#__PURE__*/React.createElement("strong", null, depositMode === 'DEPOSIT' ? 'Pengeluaran (Tabungan)' : 'Pemasukan (Tarik Tabungan)'), "."), error && /*#__PURE__*/React.createElement("p", {
       className: "text-xs text-rose-500 font-semibold"
     }, error), /*#__PURE__*/React.createElement("div", {
-      className: "flex gap-2 pt-1"
+      className: "flex gap-2.5 pt-2"
     }, /*#__PURE__*/React.createElement("button", {
       type: "button",
       onClick: () => setDepositGoal(null),
-      className: "flex-1 py-2.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl ios-btn-tap"
+      className: "flex-1 py-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-bold rounded-xl transition-colors shadow-xs ios-btn-tap"
     }, "Batal"), /*#__PURE__*/React.createElement("button", {
       type: "submit",
       disabled: accounts.length === 0,
-      className: `flex-1 py-2.5 text-white text-xs font-bold rounded-xl transition-colors shadow-sm ios-btn-tap ${depositMode === 'DEPOSIT' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-brand hover:bg-brand-hover'}`
+      className: `flex-[1.5] py-3 text-white text-xs sm:text-sm font-bold rounded-xl transition-colors shadow-sm ios-btn-tap ${depositMode === 'DEPOSIT' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-brand hover:bg-brand-hover'}`
     }, depositMode === 'DEPOSIT' ? 'Simpan Setoran' : 'Tarik Saldo')))));
   })());
 };
@@ -10802,45 +11087,37 @@ const SwipeableTransactionRow = React.memo(({
   const [isDragging, setIsDragging] = useState(false);
   const startX = useRef(0);
   const startY = useRef(0);
-  const longPressTimer = useRef(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const handleTouchStart = e => {
+    e.stopPropagation();
     startX.current = e.touches[0].clientX;
     startY.current = e.touches[0].clientY;
     setIsDragging(false);
-
-    // Long press detection (500ms)
-    longPressTimer.current = setTimeout(() => {
-      setIsMenuOpen(true);
-    }, 500);
+    // Pure swipe action: holding does nothing (no scale, no transparency)
   };
   const handleTouchMove = e => {
     const diffX = e.touches[0].clientX - startX.current;
     const diffY = e.touches[0].clientY - startY.current;
 
-    // If moved more than 8px, cancel long press
-    if (Math.abs(diffX) > 8 || Math.abs(diffY) > 8) {
-      clearTimeout(longPressTimer.current);
-    }
-
     // Only drag horizontally if diffX > diffY
     if (Math.abs(diffX) > Math.abs(diffY)) {
+      if (e.cancelable) e.preventDefault();
+      e.stopPropagation();
       setIsDragging(true);
-      // Limit drag between -80 (delete) and 80 (edit)
-      const clamped = Math.max(-80, Math.min(80, diffX));
+      // Only drag left to delete (negative) or slight bounce right
+      const clamped = Math.max(-130, Math.min(20, diffX));
       setOffsetX(clamped);
     }
   };
-  const handleTouchEnd = () => {
-    clearTimeout(longPressTimer.current);
-    if (offsetX < -45) {
-      // Revealed delete
-      setOffsetX(-70);
+  const handleTouchEnd = e => {
+    e.stopPropagation();
+    if (offsetX < -48) {
+      // Reached delete threshold! Pas dilepas langsung hilang
+      setOffsetX(-320); // quick smooth slide-out
       if (window.VoraletHaptics) window.VoraletHaptics.tap();
-    } else if (offsetX > 45) {
-      // Revealed edit
-      setOffsetX(70);
-      if (window.VoraletHaptics) window.VoraletHaptics.tap();
+      setTimeout(() => {
+        onDelete(tx.id);
+      }, 180);
     } else {
       setOffsetX(0);
     }
@@ -10859,24 +11136,12 @@ const SwipeableTransactionRow = React.memo(({
       }
     }
   }, /*#__PURE__*/React.createElement("div", {
-    className: "absolute inset-0 flex items-center justify-between pointer-events-auto"
-  }, /*#__PURE__*/React.createElement("button", {
-    type: "button",
-    onClick: () => {
-      setOffsetX(0);
-      onEdit(tx);
-    },
-    className: "w-16 h-full bg-brand text-white flex flex-col items-center justify-center text-[10px] font-bold rounded-l-xl ios-btn-tap"
-  }, /*#__PURE__*/React.createElement(Icon, {
-    name: "edit",
-    className: "w-4 h-4 mb-0.5"
-  }), /*#__PURE__*/React.createElement("span", null, "Edit")), /*#__PURE__*/React.createElement("button", {
-    type: "button",
-    onClick: () => {
-      setOffsetX(0);
-      onDelete(tx.id);
-    },
-    className: "w-16 h-full bg-rose-600 text-white flex flex-col items-center justify-center text-[10px] font-bold rounded-r-xl ios-btn-tap"
+    className: "absolute inset-0 flex items-center justify-end pointer-events-auto transition-opacity",
+    style: {
+      opacity: offsetX < -8 ? 1 : 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "w-20 h-full bg-rose-600 text-white flex flex-col items-center justify-center text-[10px] font-bold rounded-r-xl"
   }, /*#__PURE__*/React.createElement(Icon, {
     name: "trash",
     className: "w-4 h-4 mb-0.5"
@@ -10889,9 +11154,9 @@ const SwipeableTransactionRow = React.memo(({
     },
     style: {
       transform: `translate3d(${offsetX}px, 0, 0)`,
-      transition: isDragging ? 'none' : 'transform 0.32s cubic-bezier(0.28, 0.84, 0.42, 1)'
+      transition: isDragging ? 'none' : 'transform 0.28s cubic-bezier(0.2, 0.9, 0.42, 1)'
     },
-    className: `relative bg-white dark:bg-slate-800 flex items-center justify-between h-full px-1.5 ${!isLast ? 'ios-hairline' : ''} ios-touch-item ${isNewlyAdded ? 'animate-tx-highlight rounded-xl' : ''}`
+    className: `relative z-10 bg-white dark:bg-slate-800 flex items-center justify-between h-full px-2 ${!isLast ? 'ios-hairline' : ''} ${isNewlyAdded ? 'animate-swipe-hint-bouncy rounded-xl' : ''}`
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-3 min-w-0 pointer-events-none"
   }, /*#__PURE__*/React.createElement("div", {
@@ -10935,8 +11200,7 @@ const SwipeableTransactionRow = React.memo(({
     title: `${cat.label} - ${formatIDR(tx.amount)}`,
     onClose: () => setIsMenuOpen(false),
     onEdit: () => onEdit(tx),
-    onDuplicate: () => onDuplicate(tx),
-    onDelete: () => onDelete(tx.id)
+    onDuplicate: () => onDuplicate(tx)
   }));
 });
 
@@ -11123,7 +11387,8 @@ const MainDashboard = React.memo(({
   onOpenCsvImport,
   deletingTxIds = new Set(),
   newlyAddedTxIds = new Set(),
-  onClearNewlyAddedTx
+  onClearNewlyAddedTx,
+  balancePulse = false
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -11253,7 +11518,7 @@ const MainDashboard = React.memo(({
     className: "text-[11px] font-mono text-brand dark:text-sky-400 font-semibold truncate"
   }, "@", userProfile.username || 'voralet_user'), /*#__PURE__*/React.createElement("span", {
     className: "text-[10px] font-bold px-1.5 py-0.2 rounded-md bg-sky-100 dark:bg-sky-950/60 text-[#0284C7] dark:text-sky-400 border border-sky-200/60 dark:border-sky-800/60"
-  }, "v2.9.0"))))), /*#__PURE__*/React.createElement("div", {
+  }, "v3.0.1"))))), /*#__PURE__*/React.createElement("div", {
     className: "animate-dashboard-card rounded-[22px] p-5 bg-[#0284C7] dark:bg-[#0369A1] text-white border border-[#0369A1] dark:border-sky-600/40 shadow-md transition-colors duration-300 ease-in-out",
     style: {
       animationDelay: '50ms'
@@ -11274,7 +11539,7 @@ const MainDashboard = React.memo(({
     className: "text-2xl whitespace-nowrap truncate font-extrabold tracking-tight mb-4 text-white"
   }, /*#__PURE__*/React.createElement("span", {
     key: hideBalance ? 'hidden' : `bal-${totalBalance}`,
-    className: "animate-value-pulse"
+    className: `inline-block ${balancePulse ? 'animate-balance-spring' : 'animate-value-pulse'}`
   }, hideBalance ? 'Rp ••••••••' : formatIDR(totalBalance))), /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-2 gap-2 pt-3 border-t border-sky-400/50 dark:border-sky-500/40"
   }, /*#__PURE__*/React.createElement("div", {
@@ -11664,6 +11929,9 @@ const App = () => {
   // Layout animation state tracking
   const [deletingTxIds, setDeletingTxIds] = useState(() => new Set());
   const [newlyAddedTxIds, setNewlyAddedTxIds] = useState(() => new Set());
+  const [balancePulse, setBalancePulse] = useState(false);
+  const [newlyAddedDebtId, setNewlyAddedDebtId] = useState(null);
+  const [newlyAddedGoalId, setNewlyAddedGoalId] = useState(null);
   const handleClearNewlyAddedTx = useCallback(txId => {
     setNewlyAddedTxIds(prev => {
       if (!prev.has(txId)) return prev;
@@ -11807,35 +12075,6 @@ const App = () => {
     };
   }, []);
 
-  // Horizontal Swipe Gesture Handling
-  const tabsOrder = ['dashboard', 'cards', 'debts', 'savings', 'analytics'];
-  const touchStartX = useRef(0);
-  const touchStartY = useRef(0);
-  const handleScreenTouchStart = e => {
-    if (e.touches && e.touches[0]) {
-      touchStartX.current = e.touches[0].clientX;
-      touchStartY.current = e.touches[0].clientY;
-    }
-  };
-  const handleScreenTouchEnd = e => {
-    if (e.changedTouches && e.changedTouches[0]) {
-      const deltaX = e.changedTouches[0].clientX - touchStartX.current;
-      const deltaY = e.changedTouches[0].clientY - touchStartY.current;
-
-      // Detect intentional horizontal swipe (distance > 70px and x > 1.8 * y)
-      if (Math.abs(deltaX) > 70 && Math.abs(deltaX) > Math.abs(deltaY) * 1.8) {
-        const curIdx = tabsOrder.indexOf(activeTab);
-        if (deltaX < 0 && curIdx < tabsOrder.length - 1) {
-          // Swipe left -> Next tab
-          setActiveTab(tabsOrder[curIdx + 1]);
-        } else if (deltaX > 0 && curIdx > 0) {
-          // Swipe right -> Previous tab
-          setActiveTab(tabsOrder[curIdx - 1]);
-        }
-      }
-    }
-  };
-
   // Handlers wrapped in useCallback for stable references across renders
   const handleToggleHideBalance = useCallback(() => {
     setHideBalance(prev => {
@@ -11858,6 +12097,10 @@ const App = () => {
       StorageService.setTransactions(next);
       return next;
     });
+
+    // Trigger balance pulse
+    setBalancePulse(true);
+    setTimeout(() => setBalancePulse(false), 900);
 
     // Trigger layout slide-in animation for newly added transaction
     if (isNew) {
@@ -11893,16 +12136,8 @@ const App = () => {
   const handleDeleteTransaction = useCallback(txId => {
     if (deletingTxIds.has(txId)) return;
     const targetTx = (transactions || []).find(t => t.id === txId);
-    const txDesc = targetTx?.notes ? `"${targetTx.notes}"` : targetTx?.category ? `kategori "${targetTx.category}"` : 'ini';
-    const formattedAmt = targetTx?.amount ? ` senilai ${Formatters.currency(targetTx.amount)}` : '';
 
-    // Browser-native window.confirm dialog to prevent accidental data loss
-    const confirmed = window.confirm(`Apakah Anda yakin ingin menghapus transaksi ${txDesc}${formattedAmt}?
-
-Tindakan ini tidak dapat dibatalkan.`);
-    if (!confirmed) return;
-
-    // Trigger layout fade-out & collapse animation
+    // Trigger layout fade-out & collapse animation immediately
     setDeletingTxIds(prev => {
       const next = new Set(prev);
       next.add(txId);
@@ -11912,6 +12147,45 @@ Tindakan ini tidak dapat dibatalkan.`);
       window.VoraletHaptics.delete();
     }
     setTimeout(() => {
+      // Revert linked debt payments if applicable
+      if (targetTx?.id?.startsWith('tx_debt_')) {
+        setDebts(prevDebts => {
+          const updated = prevDebts.map(d => {
+            const payIndex = (d.payments || []).findIndex(p => p.amount === targetTx.amount || targetTx.notes && targetTx.notes.includes(d.personName));
+            if (payIndex !== -1) {
+              const newPaid = Math.max(0, (Number(d.paidAmount) || 0) - Number(targetTx.amount));
+              const newPayments = (d.payments || []).filter((_, idx) => idx !== payIndex);
+              return {
+                ...d,
+                paidAmount: newPaid,
+                isPaid: false,
+                status: 'BELUM_LUNAS',
+                payments: newPayments
+              };
+            }
+            return d;
+          });
+          StorageService.setDebts(updated);
+          return updated;
+        });
+      } else if (targetTx?.id?.startsWith('tx_sav_')) {
+        // Revert linked savings goal if applicable
+        setSavingsGoals(prevGoals => {
+          const updated = prevGoals.map(g => {
+            if (targetTx.notes && targetTx.notes.includes(g.title)) {
+              const cur = Number(g.currentAmount) || 0;
+              const newCur = targetTx.type === 'EXPENSE' ? Math.max(0, cur - Number(targetTx.amount)) : cur + Number(targetTx.amount);
+              return {
+                ...g,
+                currentAmount: newCur
+              };
+            }
+            return g;
+          });
+          StorageService.setSavingsGoals(updated);
+          return updated;
+        });
+      }
       setTransactions(prev => {
         const next = prev.filter(t => t.id !== txId);
         StorageService.setTransactions(next);
@@ -11922,7 +12196,15 @@ Tindakan ini tidak dapat dibatalkan.`);
         next.delete(txId);
         return next;
       });
-      showToast('Transaksi berhasil dihapus');
+
+      // Trigger balance pulse & spring animation
+      setBalancePulse(true);
+      setTimeout(() => setBalancePulse(false), 900);
+      if (targetTx?.type === 'EXPENSE') {
+        showToast(`Pengeluaran dihapus. Saldo ${formatIDR(targetTx.amount)} berhasil dikembalikan!`);
+      } else {
+        showToast(`Pemasukan dihapus. Saldo ${formatIDR(targetTx.amount)} telah disesuaikan.`);
+      }
     }, 360);
   }, [transactions, deletingTxIds, showToast]);
   const handleEditTransaction = useCallback(tx => {
@@ -12005,14 +12287,37 @@ Tindakan ini tidak dapat dibatalkan.`);
 
   // Savings Goals
   const handleSaveGoal = useCallback(goalData => {
+    let isNew = false;
     setSavingsGoals(prev => {
       const exists = prev.some(g => g.id === goalData.id);
+      isNew = !exists;
       const next = exists ? prev.map(g => g.id === goalData.id ? goalData : g) : [...prev, goalData];
       StorageService.setSavingsGoals(next);
       return next;
     });
+    if (isNew) {
+      setNewlyAddedGoalId(goalData.id);
+      setTimeout(() => setNewlyAddedGoalId(null), 1600);
+
+      // If initial currentAmount > 0, record the initial savings deposit into transactions
+      const initAmount = Number(goalData.currentAmount) || 0;
+      if (initAmount > 0 && accounts.length > 0) {
+        const chosenAccountId = goalData.initialAccountId || accounts[0]?.id;
+        const newTx = {
+          id: 'tx_sav_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
+          accountId: chosenAccountId,
+          type: 'EXPENSE',
+          amount: initAmount,
+          category: 'tabungan',
+          date: new Date().toISOString().split('T')[0],
+          notes: `Setoran Awal: ${goalData.title}`,
+          createdAt: new Date().toISOString()
+        };
+        handleAddTransaction(newTx);
+      }
+    }
     showToast('Target impian disimpan');
-  }, []);
+  }, [accounts, handleAddTransaction, showToast]);
   const handleDeleteGoal = useCallback(goalId => {
     if (!confirm('Hapus target impian ini?')) return;
     setSavingsGoals(prev => {
@@ -12021,7 +12326,7 @@ Tindakan ini tidak dapat dibatalkan.`);
       return next;
     });
     showToast('Target impian dihapus');
-  }, []);
+  }, [showToast]);
   const handleDepositGoal = useCallback((goalId, amount, mode, accountId, customNotes) => {
     let goalTitle = 'Kantong Impian';
     setSavingsGoals(prev => {
@@ -12051,7 +12356,7 @@ Tindakan ini tidak dapat dibatalkan.`);
         id: 'tx_sav_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
         accountId: chosenAccountId,
         type: isDeposit ? 'EXPENSE' : 'INCOME',
-        amount: amount,
+        amount: Number(amount),
         category: 'tabungan',
         date: new Date().toISOString().split('T')[0],
         notes: finalNote,
@@ -12059,7 +12364,7 @@ Tindakan ini tidak dapat dibatalkan.`);
       };
       handleAddTransaction(newTx);
     }
-    showToast(mode === 'DEPOSIT' ? 'Tabungan disetor & dicatat di mutasi' : 'Tabungan ditarik & dicatat di mutasi');
+    showToast(mode === 'DEPOSIT' ? 'Tabungan disetor & dicatat di riwayat mutasi' : 'Tabungan ditarik & dicatat di riwayat mutasi');
   }, [accounts, handleAddTransaction, showToast]);
 
   // Debts
@@ -12074,14 +12379,37 @@ Tindakan ini tidak dapat dibatalkan.`);
       note,
       notes: note
     };
+    let isNew = false;
     setDebts(prev => {
       const exists = prev.some(d => d.id === normalized.id);
+      isNew = !exists;
       const next = exists ? prev.map(d => d.id === normalized.id ? normalized : d) : [normalized, ...prev];
       StorageService.setDebts(next);
       return next;
     });
-    showToast('Catatan disimpan');
-  }, [showToast]);
+    if (isNew) {
+      setNewlyAddedDebtId(normalized.id);
+      setTimeout(() => setNewlyAddedDebtId(null), 1600);
+
+      // If recordToTransaction is active, log the loan/debt transaction immediately into history
+      if (debtData.recordToTransaction && debtData.amount > 0 && accounts.length > 0) {
+        const isHutang = debtData.type === 'HUTANG';
+        const chosenAccountId = debtData.accountId || accounts[0]?.id;
+        const newTx = {
+          id: 'tx_debt_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
+          accountId: chosenAccountId,
+          type: isHutang ? 'INCOME' : 'EXPENSE',
+          amount: Number(debtData.amount),
+          category: 'hutang',
+          date: new Date().toISOString().split('T')[0],
+          notes: isHutang ? `Pinjaman dana dari ${debtData.personName}` : `Meminjamkan dana ke ${debtData.personName}`,
+          createdAt: new Date().toISOString()
+        };
+        handleAddTransaction(newTx);
+      }
+    }
+    showToast('Catatan hutang/piutang disimpan');
+  }, [accounts, handleAddTransaction, showToast]);
   const handlePayDebt = useCallback((debtId, paymentData) => {
     if (!paymentData || !paymentData.amount) return;
     const {
@@ -12090,7 +12418,12 @@ Tindakan ini tidak dapat dibatalkan.`);
       date,
       notes
     } = paymentData;
-    let debtRecord = null;
+
+    // Retrieve debt record immediately
+    const currentDebt = (debts || []).find(d => d.id === debtId);
+    const isHutang = currentDebt ? currentDebt.type === 'HUTANG' : true;
+    const personName = currentDebt ? currentDebt.personName : 'Kontak';
+    const chosenAccountId = accountId || accounts[0]?.id;
     setDebts(prev => {
       const next = prev.map(d => {
         if (d.id === debtId) {
@@ -12105,18 +12438,16 @@ Tindakan ini tidak dapat dibatalkan.`);
             date: date || new Date().toISOString().split('T')[0],
             accountId: accountId || '',
             accountName: chosenAccount?.name || 'Kantong',
-            notes: notes || (d.type === 'HUTANG' ? `Bayar hutang ke ${d.personName}` : `Terima piutang dari ${d.personName}`)
+            notes: notes || (isHutang ? `Bayar hutang ke ${d.personName}` : `Terima piutang dari ${d.personName}`)
           };
           const existingPayments = Array.isArray(d.payments) ? d.payments : [];
-          const updatedDebt = {
+          return {
             ...d,
             paidAmount: newPaid,
             isPaid: isFullyPaid,
             status: isFullyPaid ? 'LUNAS' : 'BELUM_LUNAS',
             payments: [payRecord, ...existingPayments]
           };
-          debtRecord = updatedDebt;
-          return updatedDebt;
         }
         return d;
       });
@@ -12124,39 +12455,37 @@ Tindakan ini tidak dapat dibatalkan.`);
       return next;
     });
 
-    // Record real transaction in transactions list
-    if (debtRecord && amount > 0) {
-      const isHutang = debtRecord.type === 'HUTANG';
-      const chosenAccountId = accountId || accounts[0]?.id;
-      if (chosenAccountId) {
-        const defaultNote = isHutang ? `Bayar hutang: ${debtRecord.personName}` : `Terima piutang: ${debtRecord.personName}`;
-        const finalNote = notes && notes.trim() ? notes.trim() : defaultNote;
-        const newTx = {
-          id: 'tx_debt_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
-          accountId: chosenAccountId,
-          type: isHutang ? 'EXPENSE' : 'INCOME',
-          amount: amount,
-          category: 'hutang',
-          date: date || new Date().toISOString().split('T')[0],
-          notes: finalNote,
-          createdAt: new Date().toISOString()
-        };
-        handleAddTransaction(newTx);
-      }
+    // Always record real transaction in history list
+    if (chosenAccountId && amount > 0) {
+      const defaultNote = isHutang ? `Bayar hutang: ${personName}` : `Terima piutang: ${personName}`;
+      const finalNote = notes && notes.trim() ? notes.trim() : defaultNote;
+      const newTx = {
+        id: 'tx_debt_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
+        accountId: chosenAccountId,
+        type: isHutang ? 'EXPENSE' : 'INCOME',
+        amount: Number(amount),
+        category: 'hutang',
+        date: date || new Date().toISOString().split('T')[0],
+        notes: finalNote,
+        createdAt: new Date().toISOString()
+      };
+      handleAddTransaction(newTx);
       showToast(isHutang ? 'Pembayaran hutang dicatat di mutasi' : 'Penerimaan piutang dicatat di mutasi');
     }
-  }, [accounts, handleAddTransaction, showToast]);
+  }, [debts, accounts, handleAddTransaction, showToast]);
   const handleToggleDebtStatus = useCallback(debtId => {
+    const currentDebt = (debts || []).find(d => d.id === debtId);
+    if (!currentDebt) return;
+    const willBePaid = !(currentDebt.isPaid || currentDebt.status === 'LUNAS');
+    const remainingToPay = Math.max(0, (Number(currentDebt.amount) || 0) - (Number(currentDebt.paidAmount) || 0));
     setDebts(prev => {
       const next = prev.map(d => {
         if (d.id === debtId) {
-          const currentPaid = Boolean(d.isPaid || d.status === 'LUNAS');
-          const newPaid = !currentPaid;
           return {
             ...d,
-            isPaid: newPaid,
-            status: newPaid ? 'LUNAS' : 'BELUM_LUNAS',
-            paidAmount: newPaid ? Number(d.amount) || 0 : 0
+            isPaid: willBePaid,
+            status: willBePaid ? 'LUNAS' : 'BELUM_LUNAS',
+            paidAmount: willBePaid ? Number(d.amount) || 0 : 0
           };
         }
         return d;
@@ -12164,8 +12493,25 @@ Tindakan ini tidak dapat dibatalkan.`);
       StorageService.setDebts(next);
       return next;
     });
-    showToast('Status diperbarui');
-  }, [showToast]);
+    if (willBePaid && remainingToPay > 0 && accounts.length > 0) {
+      const isHutang = currentDebt.type === 'HUTANG';
+      const chosenAccountId = currentDebt.accountId || accounts[0]?.id;
+      const newTx = {
+        id: 'tx_debt_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
+        accountId: chosenAccountId,
+        type: isHutang ? 'EXPENSE' : 'INCOME',
+        amount: remainingToPay,
+        category: 'hutang',
+        date: new Date().toISOString().split('T')[0],
+        notes: isHutang ? `Pelunasan hutang: ${currentDebt.personName}` : `Pelunasan piutang: ${currentDebt.personName}`,
+        createdAt: new Date().toISOString()
+      };
+      handleAddTransaction(newTx);
+      showToast(`Status diubah: ${currentDebt.personName} LUNAS & dicatat di mutasi`);
+    } else {
+      showToast(`Status diubah: ${willBePaid ? 'LUNAS' : 'BELUM LUNAS'}`);
+    }
+  }, [debts, accounts, handleAddTransaction, showToast]);
   const handleDeleteDebt = useCallback(debtId => {
     if (!confirm('Hapus catatan ini?')) return;
     setDebts(prev => {
@@ -12260,7 +12606,7 @@ Tindakan ini tidak dapat dibatalkan.`);
   }, []);
   const handleExportData = useCallback(() => {
     const rawPayload = {
-      voralet_version: '2.9.0',
+      voralet_version: '3.0.1',
       exported_at: new Date().toISOString(),
       name,
       username,
@@ -12452,8 +12798,6 @@ Tindakan ini tidak dapat dibatalkan.`);
   }), /*#__PURE__*/React.createElement("div", {
     className: "flex-1 flex flex-col w-full h-full overflow-hidden relative z-10"
   }, /*#__PURE__*/React.createElement("main", {
-    onTouchStart: handleScreenTouchStart,
-    onTouchEnd: handleScreenTouchEnd,
     className: "flex-1 w-full max-w-md mx-auto px-4 pt-4 sm:pt-6 pb-28 overflow-y-auto no-scrollbar",
     style: {
       paddingTop: 'max(env(safe-area-inset-top, 0px), 1.25rem)'
@@ -12485,7 +12829,8 @@ Tindakan ini tidak dapat dibatalkan.`);
     onOpenCsvImport: () => setIsCsvImportModalOpen(true),
     deletingTxIds: deletingTxIds,
     newlyAddedTxIds: newlyAddedTxIds,
-    onClearNewlyAddedTx: handleClearNewlyAddedTx
+    onClearNewlyAddedTx: handleClearNewlyAddedTx,
+    balancePulse: balancePulse
   }), activeTab === 'cards' && /*#__PURE__*/React.createElement(CardsView, {
     accounts: accounts,
     transactions: transactions,
@@ -12505,7 +12850,8 @@ Tindakan ini tidak dapat dibatalkan.`);
     onToggleStatus: handleToggleDebtStatus,
     onDeleteDebt: handleDeleteDebt,
     hideBalance: hideBalance,
-    onModalChange: setIsDebtModalOpen
+    onModalChange: setIsDebtModalOpen,
+    newlyAddedDebtId: newlyAddedDebtId
   }), activeTab === 'savings' && /*#__PURE__*/React.createElement(SavingsView, {
     savingsGoals: savingsGoals,
     accounts: accounts,
@@ -12513,7 +12859,8 @@ Tindakan ini tidak dapat dibatalkan.`);
     onEditGoal: handleEditSavingsGoal,
     onDeleteGoal: handleDeleteGoal,
     onDepositGoal: handleDepositGoal,
-    hideBalance: hideBalance
+    hideBalance: hideBalance,
+    newlyAddedGoalId: newlyAddedGoalId
   }), activeTab === 'analytics' && /*#__PURE__*/React.createElement(AnalyticsView, {
     transactions: transactions,
     accounts: accounts,

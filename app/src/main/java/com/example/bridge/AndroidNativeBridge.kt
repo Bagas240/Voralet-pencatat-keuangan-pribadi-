@@ -5,9 +5,6 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.os.Build
-import android.os.VibrationEffect
-import android.os.Vibrator
-import android.os.VibratorManager
 import android.util.Log
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
@@ -16,8 +13,9 @@ import androidx.core.view.WindowInsetsControllerCompat
 
 /**
  * High-performance, secure Native Android Bridge for Voralet.
- * Exposes hardware haptics, clipboard operations, system bar theming,
+ * Exposes clipboard operations, system bar theming,
  * and security integrity helpers to the Web engine.
+ * 100% offline, zero-device permissions required.
  */
 class AndroidNativeBridge(
     private val activity: Activity
@@ -25,29 +23,19 @@ class AndroidNativeBridge(
     companion object {
         const val BRIDGE_NAME = "AndroidBridge"
         private const val TAG = "AndroidNativeBridge"
-        private const val APP_VERSION = "2.9.0"
+        private const val APP_VERSION = "3.0.1"
     }
 
     private val clipboardManager: ClipboardManager? by lazy {
         activity.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
     }
 
-    private val vibrator: Vibrator? by lazy {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val vibratorManager = activity.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
-            vibratorManager?.defaultVibrator
-        } else {
-            @Suppress("DEPRECATION")
-            activity.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
-        }
-    }
-
     /**
-     * Tactile native haptic feedback - Disabled per user request for silent interaction.
+     * Tactile native haptic feedback - Disabled per zero-permission policy.
      */
     @JavascriptInterface
     fun hapticFeedback(type: String?) {
-        // Disabled per user preference
+        // Disabled per zero-permission policy
     }
 
     /**
@@ -94,32 +82,6 @@ class AndroidNativeBridge(
      */
     @JavascriptInterface
     fun isHardwareAccelerated(): Boolean = true
-
-    /**
-     * Check if camera permission is granted.
-     */
-    @JavascriptInterface
-    fun hasCameraPermission(): Boolean {
-        return androidx.core.content.ContextCompat.checkSelfPermission(
-            activity,
-            android.Manifest.permission.CAMERA
-        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-    }
-
-    /**
-     * Request camera permission from the system.
-     */
-    @JavascriptInterface
-    fun requestCameraPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            activity.runOnUiThread {
-                activity.requestPermissions(
-                    arrayOf(android.Manifest.permission.CAMERA),
-                    1001
-                )
-            }
-        }
-    }
 
     /**
      * Print or export HTML report to PDF via Android PrintManager.

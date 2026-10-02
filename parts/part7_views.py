@@ -2,7 +2,143 @@ PART7_VIEWS = """
     // =========================================================================
     // 7. VIEWS: SAVINGS GOALS, ANALYTICS & FLOATING CAPSULE NAVIGATION
     // =========================================================================
-    const SavingsView = ({ savingsGoals, accounts = [], onOpenNewGoal, onEditGoal, onDeleteGoal, onDepositGoal, hideBalance }) => {
+    // Swipeable Goal Card with Swipe-to-Delete and Bouncy Swipe Hint
+    const SwipeableGoalCard = ({
+      goal,
+      hideBalance,
+      target,
+      current,
+      pct,
+      onEditGoal,
+      onDeleteGoal,
+      onDepositClick,
+      onWithdrawClick,
+      isNewlyAdded = false
+    }) => {
+      const [offsetX, setOffsetX] = useState(0);
+      const [isDragging, setIsDragging] = useState(false);
+      const startX = useRef(0);
+      const startY = useRef(0);
+
+      const handleTouchStart = (e) => {
+        startX.current = e.touches[0].clientX;
+        startY.current = e.touches[0].clientY;
+        setIsDragging(false);
+        // Holding produces NO reaction. Pure swipe only!
+      };
+
+      const handleTouchMove = (e) => {
+        const diffX = e.touches[0].clientX - startX.current;
+        const diffY = e.touches[0].clientY - startY.current;
+        if (Math.abs(diffX) > Math.abs(diffY)) {
+          setIsDragging(true);
+          const clamped = Math.max(-80, Math.min(0, diffX));
+          setOffsetX(clamped);
+        }
+      };
+
+      const handleTouchEnd = () => {
+        if (offsetX < -40) {
+          setOffsetX(-72);
+        } else {
+          setOffsetX(0);
+        }
+        setIsDragging(false);
+      };
+
+      return (
+        <div className="relative overflow-hidden rounded-2xl select-none mb-3">
+          {/* Background Swipe Delete Action */}
+          <div className="absolute inset-0 flex items-center justify-end pointer-events-auto">
+            <button
+              type="button"
+              onClick={() => {
+                setOffsetX(0);
+                onDeleteGoal(goal.id);
+              }}
+              className="w-20 h-full bg-rose-600 text-white flex flex-col items-center justify-center text-[10px] font-bold rounded-r-2xl ios-btn-tap"
+            >
+              <Icon name="trash" className="w-4 h-4 mb-0.5" />
+              <span>Hapus</span>
+            </button>
+          </div>
+
+          {/* Foreground Swiping Card */}
+          <div
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            onClick={() => { if (offsetX !== 0) setOffsetX(0); }}
+            style={{
+              transform: `translate3d(${offsetX}px, 0, 0)`,
+              transition: isDragging ? 'none' : 'transform 0.32s cubic-bezier(0.28, 0.84, 0.42, 1)'
+            }}
+            className={`relative bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700/60 shadow-xs ${
+              isNewlyAdded ? 'animate-swipe-hint-bouncy' : ''
+            }`}
+          >
+            <div className="flex items-start justify-between mb-2">
+              <div className="flex items-center gap-2.5">
+                <IconBadge icon="target" className="p-2 rounded-xl bg-sky-50 dark:bg-slate-700 text-brand dark:text-sky-400" />
+                <div>
+                  <h3 className="text-xs font-bold text-slate-900 dark:text-white">{goal.title}</h3>
+                  <p className="text-[11px] text-slate-400">
+                    {goal.targetDate ? `Target: ${formatDateID(goal.targetDate)}` : 'Target fleksibel'}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => onEditGoal(goal)}
+                  className="p-1.5 text-slate-400 hover:text-brand rounded-lg ios-btn-tap"
+                  title="Edit"
+                >
+                  <Icon name="edit" className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-baseline justify-between mb-1.5">
+              <span className="text-sm font-bold text-brand dark:text-sky-400">
+                {hideBalance ? 'Rp ••••••' : formatIDR(current)}
+              </span>
+              <span className="text-xs text-slate-400">
+                dari {hideBalance ? 'Rp ••••••' : formatIDR(target)} ({pct}%)
+              </span>
+            </div>
+
+            <div className="w-full h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden mb-3">
+              <div
+                className="h-full bg-brand rounded-full transition-all duration-300"
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+
+            <div className="flex gap-2 pt-1 border-t border-slate-100 dark:border-slate-700">
+              <button
+                type="button"
+                onClick={onDepositClick}
+                className="flex-1 py-1.5 rounded-xl bg-sky-50 dark:bg-slate-700 text-brand dark:text-sky-400 text-xs font-semibold hover:bg-sky-100 dark:hover:bg-slate-600 transition-colors ios-btn-tap"
+              >
+                + Setor Tabungan
+              </button>
+              {current > 0 && (
+                <button
+                  type="button"
+                  onClick={onWithdrawClick}
+                  className="flex-1 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors ios-btn-tap"
+                >
+                  - Tarik Saldo
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    const SavingsView = ({ savingsGoals, accounts = [], onOpenNewGoal, onEditGoal, onDeleteGoal, onDepositGoal, hideBalance, newlyAddedGoalId }) => {
       const [depositGoal, setDepositGoal] = useState(null);
       const [depositAmount, setDepositAmount] = useState('');
       const [depositMode, setDepositMode] = useState('DEPOSIT'); // DEPOSIT | WITHDRAW
@@ -99,80 +235,27 @@ PART7_VIEWS = """
                 const pct = Math.min(100, Math.round((current / target) * 100));
 
                 return (
-                  <div key={goal.id} className="ios-inset-group">
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex items-center gap-2.5">
-                        <IconBadge icon="target" className="p-2 rounded-xl bg-sky-50 dark:bg-slate-700 text-brand dark:text-sky-400" />
-                        <div>
-                          <h3 className="text-xs font-bold text-slate-900 dark:text-white">{goal.title}</h3>
-                          <p className="text-[11px] text-slate-400">
-                            {goal.targetDate ? `Target: ${formatDateID(goal.targetDate)}` : 'Target fleksibel'}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={() => onEditGoal(goal)}
-                          className="p-1.5 text-slate-400 hover:text-brand rounded-lg ios-btn-tap"
-                          title="Edit"
-                        >
-                          <Icon name="edit" className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => onDeleteGoal(goal.id)}
-                          className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg ios-btn-tap"
-                          title="Hapus"
-                        >
-                          <Icon name="trash" className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="flex items-baseline justify-between mb-1.5">
-                      <span className="text-sm font-bold text-brand dark:text-sky-400">
-                        {hideBalance ? 'Rp ••••••' : formatIDR(current)}
-                      </span>
-                      <span className="text-xs text-slate-400">
-                        dari {hideBalance ? 'Rp ••••••' : formatIDR(target)} ({pct}%)
-                      </span>
-                    </div>
-
-                    <div className="w-full h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden mb-3">
-                      <div
-                        className="h-full bg-brand rounded-full transition-all duration-300"
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-
-                    <div className="flex gap-2 pt-1 border-t border-slate-100 dark:border-slate-700">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setDepositGoal(goal);
-                          setDepositMode('DEPOSIT');
-                          setDepositAmount('');
-                        }}
-                        className="flex-1 py-1.5 rounded-xl bg-sky-50 dark:bg-slate-700 text-brand dark:text-sky-400 text-xs font-semibold hover:bg-sky-100 dark:hover:bg-slate-600 transition-colors ios-btn-tap"
-                      >
-                        + Setor Tabungan
-                      </button>
-                      {current > 0 && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setDepositGoal(goal);
-                            setDepositMode('WITHDRAW');
-                            setDepositAmount('');
-                          }}
-                          className="flex-1 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors ios-btn-tap"
-                        >
-                          - Tarik Saldo
-                        </button>
-                      )}
-                    </div>
-                  </div>
+                  <SwipeableGoalCard
+                    key={goal.id}
+                    goal={goal}
+                    hideBalance={hideBalance}
+                    target={target}
+                    current={current}
+                    pct={pct}
+                    onEditGoal={onEditGoal}
+                    onDeleteGoal={onDeleteGoal}
+                    onDepositClick={() => {
+                      setDepositGoal(goal);
+                      setDepositMode('DEPOSIT');
+                      setDepositAmount('');
+                    }}
+                    onWithdrawClick={() => {
+                      setDepositGoal(goal);
+                      setDepositMode('WITHDRAW');
+                      setDepositAmount('');
+                    }}
+                    isNewlyAdded={newlyAddedGoalId === goal.id}
+                  />
                 );
               })}
 
@@ -195,8 +278,8 @@ PART7_VIEWS = """
             const remTarget = Math.max(0, targetAmt - currentAmt);
 
             return (
-              <div className="ios-modal-backdrop animate-ios-backdrop" onClick={(e) => { if (e.target === e.currentTarget) setDepositGoal(null); }}>
-                <div className="ios-modal-card bg-white dark:bg-slate-800 p-5 animate-ios-sheet max-w-sm mx-auto rounded-[24px]">
+              <div className="ios-modal-backdrop animate-ios-backdrop z-[90]" onClick={(e) => { if (e.target === e.currentTarget) setDepositGoal(null); }}>
+                <div className="ios-modal-card bg-white dark:bg-slate-800 p-5 pb-8 sm:pb-6 animate-ios-sheet max-w-sm mx-auto rounded-[24px] shadow-2xl relative z-[95]">
                   <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-700">
                     <div className="flex items-center gap-2">
                       <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${
@@ -385,18 +468,18 @@ PART7_VIEWS = """
 
                     {error && <p className="text-xs text-rose-500 font-semibold">{error}</p>}
 
-                    <div className="flex gap-2 pt-1">
+                    <div className="flex gap-2.5 pt-2">
                       <button
                         type="button"
                         onClick={() => setDepositGoal(null)}
-                        className="flex-1 py-2.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl ios-btn-tap"
+                        className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-bold rounded-xl transition-colors shadow-xs ios-btn-tap"
                       >
                         Batal
                       </button>
                       <button
                         type="submit"
                         disabled={accounts.length === 0}
-                        className={`flex-1 py-2.5 text-white text-xs font-bold rounded-xl transition-colors shadow-sm ios-btn-tap ${
+                        className={`flex-[1.5] py-3 text-white text-xs sm:text-sm font-bold rounded-xl transition-colors shadow-sm ios-btn-tap ${
                           depositMode === 'DEPOSIT'
                             ? 'bg-emerald-600 hover:bg-emerald-700'
                             : 'bg-brand hover:bg-brand-hover'

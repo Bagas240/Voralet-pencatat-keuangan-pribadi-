@@ -301,16 +301,20 @@ HTML_HEAD = """<!DOCTYPE html>
     }
 
     /* Authentic iOS Tactile Touch Spring Physics (120 FPS Composited) */
-    .ios-btn-tap, .ios-touch-item {
+    .ios-btn-tap {
       transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.42, 1), opacity 0.16s ease;
       user-select: none;
       -webkit-user-select: none;
       touch-action: manipulation;
     }
-    .ios-btn-tap:active, .ios-touch-item:active {
+    .ios-btn-tap:active {
       transform: scale(0.96) !important;
       opacity: 0.82;
       transition: transform 0.08s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.08s ease;
+    }
+    .ios-touch-item {
+      user-select: none;
+      -webkit-user-select: none;
     }
     .ios-card-tap {
       transition: transform 0.32s cubic-bezier(0.2, 0.9, 0.42, 1), opacity 0.18s ease, box-shadow 0.25s ease;
@@ -326,7 +330,7 @@ HTML_HEAD = """<!DOCTYPE html>
     }
 
     /* Navigation, view transitions, and bottom sheets */
-    .ios-view-transition, .animate-ios-tab-view {
+    .ios-view-transition {
       transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease;
     }
 
@@ -657,6 +661,82 @@ HTML_HEAD = """<!DOCTYPE html>
       -webkit-backface-visibility: hidden;
     }
 
+    /* iOS Dialog Pop-In and Pop-Out (Spring-Physics Alert Animations) */
+    @keyframes iosPopIn {
+      0% {
+        opacity: 0;
+        transform: scale3d(0.85, 0.85, 1) translate3d(0, 12px, 0);
+      }
+      70% {
+        opacity: 1;
+        transform: scale3d(1.025, 1.025, 1) translate3d(0, -2px, 0);
+      }
+      100% {
+        opacity: 1;
+        transform: scale3d(1, 1, 1) translate3d(0, 0, 0);
+      }
+    }
+    @keyframes iosPopOut {
+      0% {
+        opacity: 1;
+        transform: scale3d(1, 1, 1) translate3d(0, 0, 0);
+      }
+      100% {
+        opacity: 0;
+        transform: scale3d(0.86, 0.86, 1) translate3d(0, 10px, 0);
+      }
+    }
+    .animate-ios-pop-in {
+      animation: iosPopIn 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      will-change: transform, opacity;
+    }
+    .animate-ios-pop-out {
+      animation: iosPopOut 0.24s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+      will-change: transform, opacity;
+    }
+
+    /* Bouncy Swipe Hint Animation (Peeks left and bounces back smoothly) */
+    @keyframes iosSwipeHintBouncy {
+      0% {
+        transform: translate3d(0, 0, 0);
+      }
+      22% {
+        transform: translate3d(-52px, 0, 0);
+      }
+      44% {
+        transform: translate3d(-14px, 0, 0);
+      }
+      64% {
+        transform: translate3d(-32px, 0, 0);
+      }
+      82% {
+        transform: translate3d(-4px, 0, 0);
+      }
+      93% {
+        transform: translate3d(-10px, 0, 0);
+      }
+      100% {
+        transform: translate3d(0, 0, 0);
+      }
+    }
+    .animate-swipe-hint-bouncy {
+      animation: iosSwipeHintBouncy 1.25s cubic-bezier(0.28, 0.84, 0.42, 1) forwards;
+      will-change: transform;
+    }
+
+    /* Saldo Reversal & Balance Change Spring Highlight */
+    @keyframes balanceCountSpring {
+      0% { transform: scale(0.96); opacity: 0.85; }
+      40% { transform: scale(1.06); opacity: 1; filter: brightness(1.15); }
+      75% { transform: scale(0.99); }
+      100% { transform: scale(1); filter: brightness(1); }
+    }
+    .animate-balance-spring {
+      display: inline-block;
+      animation: balanceCountSpring 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+      will-change: transform;
+    }
+
     /* iOS Modal & Sheet Keyframes (Authentic Apple HIG Spring Physics) */
     @keyframes iosSheetEnter {
       0% {
@@ -733,14 +813,11 @@ HTML_HEAD = """<!DOCTYPE html>
     @keyframes iosTabFadeIn {
       0% {
         opacity: 0;
-        transform: scale3d(0.97, 0.97, 1) translate3d(0, 8px, 0);
-      }
-      75% {
-        transform: scale3d(1.005, 1.005, 1) translate3d(0, -2px, 0);
+        transform: translate3d(0, 6px, 0);
       }
       100% {
         opacity: 1;
-        transform: scale3d(1, 1, 1) translate3d(0, 0, 0);
+        transform: translate3d(0, 0, 0);
       }
     }
     .animate-ios-tab-slide-forward {
@@ -758,7 +835,7 @@ HTML_HEAD = """<!DOCTYPE html>
       -webkit-backface-visibility: hidden;
     }
     .animate-ios-tab-view {
-      animation: iosTabFadeIn 0.34s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      animation: iosTabFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       will-change: transform, opacity;
       transform: translateZ(0);
       backface-visibility: hidden;
@@ -946,7 +1023,7 @@ HTML_HEAD = """<!DOCTYPE html>
     .ios-modal-backdrop {
       position: fixed;
       inset: 0;
-      z-index: 50;
+      z-index: 80;
       display: flex;
       align-items: flex-end;
       justify-content: center;

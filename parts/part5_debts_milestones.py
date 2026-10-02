@@ -260,12 +260,14 @@ PART5_DEBTS_MILESTONES = """
     // =========================================================================
     // 5. DEBT & LOAN TRACKER (HUTANG & PIUTANG VIEW + MODAL)
     // =========================================================================
-    const DebtModal = ({ isOpen, onClose, debtToEdit, onSaveDebt }) => {
+    const DebtModal = ({ isOpen, onClose, debtToEdit, onSaveDebt, accounts = [] }) => {
       const [type, setType] = useState('HUTANG'); // HUTANG (Saya berhutang) | PIUTANG (Orang lain berhutang)
       const [personName, setPersonName] = useState('');
       const [amountStr, setAmountStr] = useState('');
       const [dueDate, setDueDate] = useState('');
       const [notes, setNotes] = useState('');
+      const [accountId, setAccountId] = useState(() => accounts[0]?.id || '');
+      const [recordToTransaction, setRecordToTransaction] = useState(true);
       const [isClosing, setIsClosing] = useState(false);
 
       useEffect(() => {
@@ -275,6 +277,7 @@ PART5_DEBTS_MILESTONES = """
           setAmountStr(debtToEdit.amount ? String(debtToEdit.amount) : '');
           setDueDate(debtToEdit.dueDate || '');
           setNotes(debtToEdit.notes || '');
+          if (debtToEdit.accountId) setAccountId(debtToEdit.accountId);
         } else {
           setType('HUTANG');
           setPersonName('');
@@ -282,7 +285,10 @@ PART5_DEBTS_MILESTONES = """
           setDueDate('');
           setNotes('');
         }
-      }, [debtToEdit, isOpen]);
+        if (accounts.length > 0 && !accounts.some(a => a.id === accountId)) {
+          setAccountId(accounts[0].id);
+        }
+      }, [debtToEdit, isOpen, accounts]);
 
       if (!isOpen) return null;
 
@@ -306,6 +312,8 @@ PART5_DEBTS_MILESTONES = """
           amount: rawAmt,
           dueDate: dueDate || '',
           notes: notes.trim(),
+          accountId: accountId || accounts[0]?.id || '',
+          recordToTransaction: !debtToEdit ? recordToTransaction : false,
           status: debtToEdit ? debtToEdit.status : 'BELUM_LUNAS',
           createdAt: debtToEdit ? debtToEdit.createdAt : new Date().toISOString()
         };
@@ -424,10 +432,59 @@ PART5_DEBTS_MILESTONES = """
                 </div>
               </div>
 
-              <div className="pt-2">
+              {/* Account Selector for Initial Debt Tracking */}
+              {accounts.length > 0 && !debtToEdit && (
+                <div className="p-3 bg-slate-50 dark:bg-slate-900/80 rounded-2xl border border-slate-200/80 dark:border-slate-700 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                      {type === 'HUTANG' ? 'Masuk ke Kantong Dompet' : 'Diambil dari Kantong Dompet'}
+                    </label>
+                    <label className="flex items-center gap-1.5 cursor-pointer text-[11px] text-slate-500 font-medium">
+                      <input
+                        type="checkbox"
+                        checked={recordToTransaction}
+                        onChange={(e) => setRecordToTransaction(e.target.checked)}
+                        className="rounded text-brand focus:ring-brand"
+                      />
+                      <span>Catat Mutasi</span>
+                    </label>
+                  </div>
+                  {recordToTransaction && (
+                    <select
+                      value={accountId}
+                      onFocus={handleGlobalInputFocus}
+                      onBlur={handleGlobalInputBlur}
+                      onChange={(e) => setAccountId(e.target.value)}
+                      className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand"
+                    >
+                      {accounts.map(acc => (
+                        <option key={acc.id} value={acc.id}>
+                          {acc.name} ({acc.type})
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  <p className="text-[10px] text-slate-400">
+                    {recordToTransaction
+                      ? (type === 'HUTANG'
+                          ? 'Otomatis dicatat sebagai Pemasukan di history dan menambah saldo dompet.'
+                          : 'Otomatis dicatat sebagai Pengeluaran di history dan mengurangi saldo dompet.')
+                      : 'Hanya dicatat sebagai catatan tanpa mempengaruhi saldo dompet saat ini.'}
+                  </p>
+                </div>
+              )}
+
+              <div className="pt-2 flex gap-2.5">
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-bold text-xs sm:text-sm rounded-xl transition-colors shadow-xs ios-btn-tap"
+                >
+                  Batal
+                </button>
                 <button
                   type="submit"
-                  className="w-full py-3 bg-[#0284C7] hover:bg-[#0369A1] text-white font-semibold text-sm rounded-xl transition-colors shadow-sm ios-btn-tap"
+                  className="flex-[1.6] py-3 bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs sm:text-sm rounded-xl transition-colors shadow-sm ios-btn-tap"
                 >
                   {debtToEdit ? 'Simpan Perubahan' : 'Catat'}
                 </button>
@@ -506,33 +563,11 @@ PART5_DEBTS_MILESTONES = """
         setError('');
         if (mode === 'LUNAS') {
           setPayAmountStr(String(remainingAmount));
-          setNotes(isHutang ? `Pelunasan hutang: ${debt.personName}` : `Pelunasan piutang: ${debt.personName}`);
+          setNotes(isHutang ? `Pelunasan hutang ke ${debt.personName}` : `Pelunasan piutang dari ${debt.personName}`);
         } else {
-          // Cicilan mode default to 50% or appropriate slice
-          const half = Math.round(remainingAmount / 2);
-          setPayAmountStr(half > 0 ? String(half) : String(remainingAmount));
+          setPayAmountStr('');
           setNotes(isHutang ? `Cicilan ke-${nextInstallmentNum}: ${debt.personName}` : `Terima cicilan ke-${nextInstallmentNum}: ${debt.personName}`);
         }
-      };
-
-      const handleQuickPercent = (pct) => {
-        const val = Math.round(remainingAmount * pct);
-        setPayAmountStr(val > 0 ? String(val) : '');
-        setError('');
-        if (pct === 1) {
-          setPayMode('LUNAS');
-          setNotes(isHutang ? `Pelunasan hutang: ${debt.personName}` : `Pelunasan piutang: ${debt.personName}`);
-        } else {
-          setPayMode('CICILAN');
-          setNotes(isHutang ? `Cicilan ke-${nextInstallmentNum} (${Math.round(pct * 100)}%): ${debt.personName}` : `Terima cicilan ke-${nextInstallmentNum} (${Math.round(pct * 100)}%): ${debt.personName}`);
-        }
-      };
-
-      const handleAddQuickAmount = (delta) => {
-        const current = parseRawNumber(payAmountStr) || 0;
-        const nextVal = Math.min(remainingAmount, current + delta);
-        setPayAmountStr(String(nextVal));
-        setError('');
       };
 
       const handleSubmit = (e) => {
@@ -542,14 +577,20 @@ PART5_DEBTS_MILESTONES = """
           setError('Nominal pembayaran cicilan harus lebih dari 0');
           return;
         }
+        if (num > remainingAmount) {
+          setError(`Maksimal pembayaran adalah ${formatIDR(remainingAmount)}`);
+          return;
+        }
         if (!accountId) {
           setError('Pilih dompet / kantong terlebih dahulu');
           return;
         }
         HapticFeedback.save();
+        const chosenAccount = accounts.find(a => a.id === accountId);
         onConfirmPayment({
           amount: num,
           accountId,
+          accountName: chosenAccount?.name || 'Kantong',
           date,
           notes: notes.trim()
         });
@@ -597,36 +638,36 @@ PART5_DEBTS_MILESTONES = """
             </div>
 
             <form onSubmit={handleSubmit} className="ios-modal-body flex-1 overflow-y-auto pb-28 p-4 sm:p-5 space-y-4 no-scrollbar">
-              {/* Payment Mode Selector: Cicil vs Lunas */}
-              <div className="grid grid-cols-2 p-1 bg-slate-100 dark:bg-slate-900 rounded-xl text-xs font-semibold">
-                <button
-                  type="button"
-                  onClick={() => handleSelectMode('CICILAN')}
-                  className={`py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-all ios-btn-tap ${
-                    payMode === 'CICILAN'
-                      ? 'bg-white dark:bg-slate-800 text-brand dark:text-sky-400 shadow-xs font-bold'
-                      : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
-                  }`}
-                >
-                  <Icon name="calendar" className="w-3.5 h-3.5" />
-                  <span>Bayar Cicilan</span>
-                </button>
+              {/* Two Direct Options: Lunas Semua vs Cicil */}
+              <div className="grid grid-cols-2 p-1.5 bg-slate-100 dark:bg-slate-900 rounded-2xl gap-1">
                 <button
                   type="button"
                   onClick={() => handleSelectMode('LUNAS')}
-                  className={`py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-all ios-btn-tap ${
+                  className={`py-2.5 px-3 rounded-xl flex items-center justify-center gap-1.5 text-xs transition-all ios-btn-tap ${
                     payMode === 'LUNAS'
-                      ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs font-bold'
-                      : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                      ? 'bg-emerald-600 text-white shadow-sm font-bold'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 font-medium'
                   }`}
                 >
-                  <Icon name="check" className="w-3.5 h-3.5" />
-                  <span>Bayar Lunas</span>
+                  <Icon name="check-circle" className="w-4 h-4" />
+                  <span>Lunas Semua</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSelectMode('CICILAN')}
+                  className={`py-2.5 px-3 rounded-xl flex items-center justify-center gap-1.5 text-xs transition-all ios-btn-tap ${
+                    payMode === 'CICILAN'
+                      ? 'bg-brand text-white shadow-sm font-bold'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 font-medium'
+                  }`}
+                >
+                  <Icon name="calendar" className="w-4 h-4" />
+                  <span>Cicil Nominal</span>
                 </button>
               </div>
 
               {/* Debt Overview Card */}
-              <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
+              <div className="p-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
                 <div className="flex justify-between text-xs">
                   <span className="text-slate-500 dark:text-slate-400">Total Tagihan Awal:</span>
                   <span className="font-semibold text-slate-800 dark:text-slate-200">{formatIDR(totalAmount)}</span>
@@ -639,7 +680,7 @@ PART5_DEBTS_MILESTONES = """
                     <span className="font-semibold text-emerald-600">{formatIDR(paidAmount)}</span>
                   </div>
                 )}
-                <div className="flex justify-between text-xs pt-1 border-t border-slate-200 dark:border-slate-800 font-bold">
+                <div className="flex justify-between text-xs pt-1.5 border-t border-slate-200 dark:border-slate-800 font-bold">
                   <span className={isHutang ? 'text-rose-600' : 'text-emerald-600'}>Sisa Belum Terbayar:</span>
                   <span className={isHutang ? 'text-rose-600' : 'text-emerald-600'}>{formatIDR(remainingAmount)}</span>
                 </div>
@@ -647,12 +688,12 @@ PART5_DEBTS_MILESTONES = """
 
               {/* Amount Input */}
               <div>
-                <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center justify-between mb-1.5">
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    {payMode === 'CICILAN' ? `Nominal Cicilan ke-${nextInstallmentNum} (Rp)` : 'Nominal Pelunasan Penuh (Rp)'}
+                    {payMode === 'LUNAS' ? 'Nominal Pelunasan Penuh (Rp)' : `Nominal Cicilan ke-${nextInstallmentNum} (Rp)`}
                   </label>
                   {remainingAmount > 0 && (
-                    <span className="text-[10px] text-slate-400">
+                    <span className="text-[10px] text-slate-400 font-medium">
                       Maks: {formatIDR(remainingAmount)}
                     </span>
                   )}
@@ -666,66 +707,20 @@ PART5_DEBTS_MILESTONES = """
                   onBlur={handleGlobalInputBlur}
                   onChange={(e) => {
                     const num = parseRawNumber(e.target.value);
-                    setPayAmountStr(num ? num.toString() : '');
+                    const clamped = Math.min(remainingAmount, num);
+                    setPayAmountStr(clamped ? clamped.toString() : '');
                     setError('');
                   }}
-                  placeholder="Rp 0"
-                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-base font-bold text-slate-900 dark:text-white focus:outline-none focus:border-brand"
+                  placeholder="Ketik nominal cicilan (cth: 13.000)"
+                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-lg font-bold text-slate-900 dark:text-white focus:outline-none focus:border-brand"
                   autoFocus
                 />
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
+                  {payMode === 'LUNAS'
+                    ? `Pelunasan langsung semua sisa tagihan senilai ${formatIDR(remainingAmount)}.`
+                    : 'Ketik nominal berapa saja yang ingin dicicil saat ini.'}
+                </p>
                 {error && <p className="text-xs text-rose-500 mt-1">{error}</p>}
-
-                {/* Quick percent / installment split buttons */}
-                {remainingAmount > 0 && (
-                  <div className="space-y-1.5 mt-2">
-                    <div className="flex gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => handleQuickPercent(0.25)}
-                        className="flex-1 py-1.5 px-2 bg-slate-100 dark:bg-slate-700/80 hover:bg-slate-200 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-lg ios-btn-tap"
-                      >
-                        25%
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleQuickPercent(0.5)}
-                        className="flex-1 py-1.5 px-2 bg-slate-100 dark:bg-slate-700/80 hover:bg-slate-200 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-lg ios-btn-tap"
-                      >
-                        50% (½)
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleQuickPercent(0.75)}
-                        className="flex-1 py-1.5 px-2 bg-slate-100 dark:bg-slate-700/80 hover:bg-slate-200 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-lg ios-btn-tap"
-                      >
-                        75% (¾)
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleQuickPercent(1)}
-                        className="flex-1 py-1.5 px-2 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-xs font-bold rounded-lg border border-emerald-200 dark:border-emerald-800/80 ios-btn-tap"
-                      >
-                        Lunas
-                      </button>
-                    </div>
-
-                    {/* Quick amount increment chips for fast installment entry */}
-                    {remainingAmount >= 50000 && (
-                      <div className="flex gap-1.5 overflow-x-auto no-scrollbar py-0.5">
-                        {[50000, 100000, 200000, 500000].filter(d => d < remainingAmount).map(delta => (
-                          <button
-                            key={delta}
-                            type="button"
-                            onClick={() => handleAddQuickAmount(delta)}
-                            className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-600 dark:text-slate-300 text-[11px] font-medium rounded-lg shrink-0 ios-btn-tap"
-                          >
-                            +{formatIDR(delta)}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
 
               {/* Account / Kantong Selector */}
@@ -795,20 +790,273 @@ PART5_DEBTS_MILESTONES = """
                 </div>
               )}
 
-              <div className="pt-2">
+              <div className="pt-2 flex gap-2.5">
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-bold text-xs sm:text-sm rounded-xl transition-colors shadow-xs ios-btn-tap"
+                >
+                  Kembali
+                </button>
                 <button
                   type="submit"
                   disabled={accounts.length === 0}
-                  className={`w-full py-3 text-white font-semibold text-sm rounded-xl transition-colors shadow-sm ios-btn-tap ${
+                  className={`flex-[1.6] py-3 text-white font-bold text-xs sm:text-sm rounded-xl transition-colors shadow-sm ios-btn-tap truncate px-2 ${
                     isHutang ? 'bg-rose-600 hover:bg-rose-700' : 'bg-emerald-600 hover:bg-emerald-700'
                   }`}
                 >
                   {isHutang
-                    ? (estRemainingAfter <= 0 ? 'Konfirmasi Pelunasan Penuh' : `Konfirmasi Bayar Cicilan (${formatIDR(currentInputAmt)})`)
-                    : (estRemainingAfter <= 0 ? 'Konfirmasi Pelunasan Penuh' : `Konfirmasi Terima Cicilan (${formatIDR(currentInputAmt)})`)}
+                    ? (estRemainingAfter <= 0 ? 'Pelunasan Penuh' : `Bayar Cicilan`)
+                    : (estRemainingAfter <= 0 ? 'Pelunasan Penuh' : `Terima Cicilan`)}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      );
+    };
+
+    // Swipeable Debt Card with Swipe-to-Delete and No-Hold Physics
+    const SwipeableDebtCard = ({
+      item,
+      idx,
+      isLast,
+      hideBalance,
+      isSettled,
+      paidAmt,
+      remAmt,
+      totalAmt,
+      pct,
+      paymentsList,
+      hasPayments,
+      isHistoryOpen,
+      onToggleStatus,
+      onEditDebt,
+      onDeleteDebt,
+      onPayDebt,
+      onToggleHistory,
+      isNewlyAdded = false
+    }) => {
+      const [offsetX, setOffsetX] = useState(0);
+      const [isDragging, setIsDragging] = useState(false);
+      const startX = useRef(0);
+      const startY = useRef(0);
+
+      const handleTouchStart = (e) => {
+        startX.current = e.touches[0].clientX;
+        startY.current = e.touches[0].clientY;
+        setIsDragging(false);
+        // Pure swipe action: No long press timer, holding does nothing!
+      };
+
+      const handleTouchMove = (e) => {
+        const diffX = e.touches[0].clientX - startX.current;
+        const diffY = e.touches[0].clientY - startY.current;
+        if (Math.abs(diffX) > Math.abs(diffY)) {
+          setIsDragging(true);
+          const clamped = Math.max(-80, Math.min(0, diffX));
+          setOffsetX(clamped);
+        }
+      };
+
+      const handleTouchEnd = () => {
+        if (offsetX < -40) {
+          setOffsetX(-72);
+        } else {
+          setOffsetX(0);
+        }
+        setIsDragging(false);
+      };
+
+      return (
+        <div className="relative overflow-hidden rounded-2xl select-none mb-3">
+          {/* Background Swipe Delete Action */}
+          <div className="absolute inset-0 flex items-center justify-end pointer-events-auto">
+            <button
+              type="button"
+              onClick={() => {
+                setOffsetX(0);
+                onDeleteDebt(item.id);
+              }}
+              className="w-20 h-full bg-rose-600 text-white flex flex-col items-center justify-center text-[10px] font-bold rounded-r-2xl ios-btn-tap"
+            >
+              <Icon name="trash" className="w-4 h-4 mb-0.5" />
+              <span>Hapus</span>
+            </button>
+          </div>
+
+          {/* Foreground Swiping Card */}
+          <div
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            onClick={() => { if (offsetX !== 0) setOffsetX(0); }}
+            style={{
+              transform: `translate3d(${offsetX}px, 0, 0)`,
+              transition: isDragging ? 'none' : 'transform 0.32s cubic-bezier(0.28, 0.84, 0.42, 1)'
+            }}
+            className={`relative bg-white dark:bg-slate-800 p-3.5 rounded-2xl border border-slate-100 dark:border-slate-700/60 shadow-xs ${
+              isNewlyAdded ? 'animate-swipe-hint-bouncy' : ''
+            }`}
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-start gap-3">
+                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 mt-0.5 ${
+                  item.type === 'HUTANG'
+                    ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400'
+                    : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400'
+                }`}>
+                  <Icon name={item.type === 'HUTANG' ? 'arrow-up-right' : 'arrow-down-left'} className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-slate-900 dark:text-white">{item.personName}</span>
+                    <span className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full ${
+                      isSettled
+                        ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300'
+                        : paidAmt > 0
+                          ? 'bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300'
+                          : item.type === 'HUTANG'
+                            ? 'bg-rose-100 dark:bg-rose-900/50 text-rose-700 dark:text-rose-300'
+                            : 'bg-sky-100 dark:bg-sky-900/50 text-sky-700 dark:text-sky-300'
+                    }`}>
+                      {isSettled ? 'LUNAS' : paidAmt > 0 ? `DICICIL (${paymentsList.length}x) • ${pct}%` : item.type}
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                    {item.notes || item.note || 'Tanpa keterangan'}
+                    {item.dueDate && ` • Tempo: ${formatDateID(item.dueDate)}`}
+                  </div>
+                </div>
+              </div>
+
+              <div className="text-right shrink-0">
+                <div className={`text-xs font-bold ${
+                  isSettled
+                    ? 'text-slate-400 dark:text-slate-500 line-through'
+                    : item.type === 'HUTANG' ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'
+                }`}>
+                  {hideBalance ? 'Rp ••••••' : (paidAmt > 0 && !isSettled ? formatIDR(remAmt) : formatIDR(totalAmt))}
+                </div>
+                {paidAmt > 0 && !isSettled && (
+                  <div className="text-[10px] text-slate-400">
+                    dari {hideBalance ? '••••' : formatIDR(totalAmt)}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Progress Bar for Partial Payments */}
+            {paidAmt > 0 && !isSettled && (
+              <div className="mt-2.5">
+                <div className="flex justify-between text-[10px] text-slate-500 dark:text-slate-400 mb-1">
+                  <span>Terbayar: {hideBalance ? '••••' : formatIDR(paidAmt)}</span>
+                  <span>Sisa: {hideBalance ? '••••' : formatIDR(remAmt)}</span>
+                </div>
+                <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-emerald-500 rounded-full transition-all duration-300"
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Actions Row (No direct delete button, delete is done via swipe) */}
+            <div className="flex items-center justify-between gap-2 mt-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-1.5">
+                {!isSettled && (
+                  <button
+                    type="button"
+                    onClick={() => onPayDebt(item)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 shadow-xs transition-colors ios-btn-tap ${
+                      item.type === 'HUTANG'
+                        ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-300 hover:bg-rose-100 border border-rose-200/60 dark:border-rose-800'
+                        : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-300 hover:bg-emerald-100 border border-emerald-200/60 dark:border-emerald-800'
+                    }`}
+                  >
+                    <Icon name="check" className="w-3.5 h-3.5" />
+                    <span>
+                      {item.type === 'HUTANG'
+                        ? (paidAmt > 0 ? 'Lanjut Cicil' : 'Bayar / Cicil')
+                        : (paidAmt > 0 ? 'Terima Cicilan' : 'Terima / Cicil')}
+                    </span>
+                  </button>
+                )}
+
+                {hasPayments && (
+                  <button
+                    type="button"
+                    onClick={() => onToggleHistory(item.id)}
+                    className="px-2.5 py-1.5 rounded-xl text-[11px] font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 transition-colors ios-btn-tap flex items-center gap-1"
+                  >
+                    <span>Riwayat Cicilan ({paymentsList.length})</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={`transform transition-transform ${isHistoryOpen ? 'rotate-180' : ''}`}>
+                      <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                  </button>
+                )}
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => onToggleStatus(item.id)}
+                  className="text-[10px] font-semibold text-brand dark:text-sky-400 hover:underline px-1.5 py-1"
+                >
+                  {isSettled ? 'Tandai Belum' : 'Tandai Lunas'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onEditDebt(item)}
+                  className="p-1.5 text-slate-400 hover:text-brand rounded-lg ios-btn-tap"
+                  title="Edit"
+                >
+                  <Icon name="edit" className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Expandable Payment History Details */}
+            {isHistoryOpen && hasPayments && (
+              <div className="mt-2.5 p-3 bg-slate-50 dark:bg-slate-900/70 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-2 animate-ios-sheet">
+                <div className="flex items-center justify-between text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                  <span className="flex items-center gap-1">
+                    <Icon name="clock" className="w-3.5 h-3.5 text-brand" />
+                    Riwayat Pembayaran Cicilan:
+                  </span>
+                  <span className="text-emerald-600 font-extrabold">{formatIDR(paidAmt)}</span>
+                </div>
+                <div className="space-y-1.5 max-h-48 overflow-y-auto no-scrollbar pt-1">
+                  {paymentsList.map((pay, pIdx) => (
+                    <div
+                      key={pay.id || pIdx}
+                      className="p-2.5 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-xs"
+                    >
+                      <div className="min-w-0 pr-2">
+                        <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5 flex-wrap">
+                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-sky-100 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 font-bold shrink-0">
+                            #{pIdx + 1}
+                          </span>
+                          <span className="truncate">{formatFullDateID(pay.date)}</span>
+                          {pay.accountName && (
+                            <span className="text-[10px] font-normal px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 rounded text-slate-600 dark:text-slate-300 shrink-0">
+                              {pay.accountName}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                          Membayar <strong>{formatIDR(pay.amount)}</strong>{pay.notes ? ` • ${pay.notes}` : ''}
+                        </p>
+                      </div>
+                      <span className="font-extrabold text-emerald-600 dark:text-emerald-400 shrink-0">
+                        +{formatIDR(pay.amount)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       );
@@ -823,7 +1071,8 @@ PART5_DEBTS_MILESTONES = """
       onDeleteDebt,
       hideBalance,
       onEditDebt,
-      onModalChange
+      onModalChange,
+      newlyAddedDebtId
     }) => {
       const [filterTab, setFilterTab] = useState('ALL'); // ALL | HUTANG | PIUTANG
       const [isModalOpen, setIsModalOpen] = useState(false);
@@ -954,7 +1203,7 @@ PART5_DEBTS_MILESTONES = """
               </button>
             </div>
           ) : (
-            <div className="ios-inset-group space-y-3">
+            <div className="space-y-1">
               {filteredList.map((item, idx) => {
                 const totalAmt = Number(item.amount) || 0;
                 const paidAmt = Number(item.paidAmount) || 0;
@@ -964,180 +1213,30 @@ PART5_DEBTS_MILESTONES = """
                 const paymentsList = Array.isArray(item.payments) ? item.payments : [];
                 const hasPayments = paymentsList.length > 0;
                 const isHistoryOpen = expandedPaymentsId === item.id;
+                const isNewlyAdded = newlyAddedDebtId === item.id;
 
                 return (
-                  <div
+                  <SwipeableDebtCard
                     key={item.id}
-                    className={`pb-3 ${idx !== filteredList.length - 1 ? 'ios-hairline' : ''}`}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-start gap-3">
-                        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 mt-0.5 ${
-                          item.type === 'HUTANG'
-                            ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400'
-                            : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400'
-                        }`}>
-                          <Icon name={item.type === 'HUTANG' ? 'arrow-up-right' : 'arrow-down-left'} className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-slate-900 dark:text-white">{item.personName}</span>
-                            <span className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full ${
-                              isSettled
-                                ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300'
-                                : paidAmt > 0
-                                  ? 'bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300'
-                                  : item.type === 'HUTANG'
-                                    ? 'bg-rose-100 dark:bg-rose-900/50 text-rose-700 dark:text-rose-300'
-                                    : 'bg-sky-100 dark:bg-sky-900/50 text-sky-700 dark:text-sky-300'
-                            }`}>
-                              {isSettled ? 'LUNAS' : paidAmt > 0 ? `DICICIL (${paymentsList.length}x) • ${pct}%` : item.type}
-                            </span>
-                          </div>
-                          <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                            {item.notes || item.note || 'Tanpa keterangan'}
-                            {item.dueDate && ` • Tempo: ${formatDateID(item.dueDate)}`}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="text-right shrink-0">
-                        <div className={`text-xs font-bold ${
-                          isSettled
-                            ? 'text-slate-400 dark:text-slate-500 line-through'
-                            : item.type === 'HUTANG' ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'
-                        }`}>
-                          {hideBalance ? 'Rp ••••••' : (paidAmt > 0 && !isSettled ? formatIDR(remAmt) : formatIDR(totalAmt))}
-                        </div>
-                        {paidAmt > 0 && !isSettled && (
-                          <div className="text-[10px] text-slate-400">
-                            dari {hideBalance ? '••••' : formatIDR(totalAmt)}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Progress Bar for Partial Payments */}
-                    {paidAmt > 0 && !isSettled && (
-                      <div className="mt-2.5">
-                        <div className="flex justify-between text-[10px] text-slate-500 dark:text-slate-400 mb-1">
-                          <span>Terbayar: {hideBalance ? '••••' : formatIDR(paidAmt)}</span>
-                          <span>Sisa: {hideBalance ? '••••' : formatIDR(remAmt)}</span>
-                        </div>
-                        <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-emerald-500 rounded-full transition-all duration-300"
-                            style={{ width: `${pct}%` }}
-                          />
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Actions Row */}
-                    <div className="flex items-center justify-between gap-2 mt-3 pt-2 border-t border-slate-100 dark:border-slate-800">
-                      <div className="flex items-center gap-1.5">
-                        {!isSettled && (
-                          <button
-                            type="button"
-                            onClick={() => setPayingDebt(item)}
-                            className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 shadow-xs transition-colors ios-btn-tap ${
-                              item.type === 'HUTANG'
-                                ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-300 hover:bg-rose-100 border border-rose-200/60 dark:border-rose-800'
-                                : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-300 hover:bg-emerald-100 border border-emerald-200/60 dark:border-emerald-800'
-                            }`}
-                          >
-                            <Icon name="check" className="w-3.5 h-3.5" />
-                            <span>
-                              {item.type === 'HUTANG'
-                                ? (paidAmt > 0 ? 'Lanjut Cicil' : 'Bayar / Cicil')
-                                : (paidAmt > 0 ? 'Terima Cicilan' : 'Terima / Cicil')}
-                            </span>
-                          </button>
-                        )}
-
-                        {hasPayments && (
-                          <button
-                            type="button"
-                            onClick={() => setExpandedPaymentsId(isHistoryOpen ? null : item.id)}
-                            className="px-2.5 py-1.5 rounded-xl text-[11px] font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 transition-colors ios-btn-tap flex items-center gap-1"
-                          >
-                            <span>Riwayat Cicilan ({paymentsList.length})</span>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={`transform transition-transform ${isHistoryOpen ? 'rotate-180' : ''}`}>
-                              <polyline points="6 9 12 15 18 9"></polyline>
-                            </svg>
-                          </button>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={() => onToggleStatus(item.id)}
-                          className="text-[10px] font-semibold text-brand dark:text-sky-400 hover:underline px-1.5 py-1"
-                        >
-                          {isSettled ? 'Tandai Belum' : 'Tandai Lunas'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedDebt(item);
-                            setIsModalOpen(true);
-                          }}
-                          className="p-1.5 text-slate-400 hover:text-brand rounded-lg ios-btn-tap"
-                          title="Edit"
-                        >
-                          <Icon name="edit" className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => onDeleteDebt(item.id)}
-                          className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg ios-btn-tap"
-                          title="Hapus"
-                        >
-                          <Icon name="trash" className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Expandable Payment History Details */}
-                    {isHistoryOpen && hasPayments && (
-                      <div className="mt-2.5 p-3 bg-slate-50 dark:bg-slate-900/70 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-2 animate-ios-sheet">
-                        <div className="flex items-center justify-between text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                          <span className="flex items-center gap-1">
-                            <Icon name="clock" className="w-3.5 h-3.5 text-brand" />
-                            Riwayat Pembayaran Cicilan:
-                          </span>
-                          <span className="text-emerald-600 font-extrabold">{formatIDR(paidAmt)}</span>
-                        </div>
-                        <div className="space-y-1.5 max-h-40 overflow-y-auto no-scrollbar pt-1">
-                          {paymentsList.map((pay, pIdx) => (
-                            <div
-                              key={pay.id || pIdx}
-                              className="p-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-xs"
-                            >
-                              <div>
-                                <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-sky-100 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 font-bold">
-                                    #{pIdx + 1}
-                                  </span>
-                                  <span>{formatDateID(pay.date)}</span>
-                                  {pay.accountName && (
-                                    <span className="text-[10px] font-normal px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 rounded text-slate-600 dark:text-slate-300">
-                                      {pay.accountName}
-                                    </span>
-                                  )}
-                                </div>
-                                <p className="text-[10px] text-slate-400 mt-0.5">{pay.notes || 'Cicilan pembayaran'}</p>
-                              </div>
-                              <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                                +{formatIDR(pay.amount)}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                    item={item}
+                    idx={idx}
+                    isLast={idx === filteredList.length - 1}
+                    hideBalance={hideBalance}
+                    isSettled={isSettled}
+                    paidAmt={paidAmt}
+                    remAmt={remAmt}
+                    totalAmt={totalAmt}
+                    pct={pct}
+                    paymentsList={paymentsList}
+                    hasPayments={hasPayments}
+                    isHistoryOpen={isHistoryOpen}
+                    onToggleStatus={onToggleStatus}
+                    onEditDebt={onEditDebt}
+                    onDeleteDebt={onDeleteDebt}
+                    onPayDebt={setPayingDebt}
+                    onToggleHistory={(id) => setExpandedPaymentsId(expandedPaymentsId === id ? null : id)}
+                    isNewlyAdded={isNewlyAdded}
+                  />
                 );
               })}
             </div>
@@ -1148,6 +1247,7 @@ PART5_DEBTS_MILESTONES = """
             <DebtModal
               isOpen={isModalOpen}
               debtToEdit={selectedDebt}
+              accounts={accounts}
               onClose={() => setIsModalOpen(false)}
               onSaveDebt={(data) => {
                 onAddDebt(data);

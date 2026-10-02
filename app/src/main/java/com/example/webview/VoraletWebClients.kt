@@ -98,10 +98,11 @@ class VoraletWebChromeClient(
     }
 
     override fun onPermissionRequest(request: android.webkit.PermissionRequest?) {
+        // Zero permissions policy: strictly deny all web resource permissions
         try {
-            request?.grant(request.resources)
+            request?.deny()
         } catch (e: Exception) {
-            Log.w(TAG, "Web onPermissionRequest grant failed", e)
+            Log.w(TAG, "Web onPermissionRequest deny notice", e)
         }
     }
 
