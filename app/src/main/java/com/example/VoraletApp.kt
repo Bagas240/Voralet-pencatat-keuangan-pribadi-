@@ -5,26 +5,32 @@ import android.os.Build
 
 class VoraletApp : Application() {
 
-  companion object {
-    init {
-      try {
-        android.system.Os.setenv("EGL_LOG_LEVEL", "fatal", true)
-        android.system.Os.setenv("MESA_DEBUG", "silent", true)
-        android.system.Os.setenv("MESA_LOG_LEVEL", "silent", true)
-        android.system.Os.setenv("LIBGL_DEBUG", "quiet", true)
-        android.system.Os.setenv("LIBGL_ALWAYS_SOFTWARE", "1", true)
-        android.system.Os.setenv("GALLIUM_DRIVER", "llvmpipe", true)
-        android.system.Os.setenv("MESA_LOADER_DRIVER_OVERRIDE", "swrast", true)
-      } catch (_: Throwable) {
-        // Safe fallback in restricted environments
-      }
-    }
+  init {
+    configureGraphicsEnvironment()
+  }
+
+  override fun attachBaseContext(base: android.content.Context?) {
+    configureGraphicsEnvironment()
+    super.attachBaseContext(base)
   }
 
   override fun onCreate() {
     super.onCreate()
+    configureGraphicsEnvironment()
     if (isMainProcess()) {
       MainActivity.prepareWebViewStorage(this)
+    }
+  }
+
+  private fun configureGraphicsEnvironment() {
+    try {
+      android.system.Os.setenv("LIBGL_DRI3_DISABLE", "1", true)
+      android.system.Os.setenv("EGL_LOG_LEVEL", "fatal", true)
+      android.system.Os.setenv("MESA_DEBUG", "0", true)
+      android.system.Os.setenv("MESA_LOG_LEVEL", "fatal", true)
+      android.system.Os.setenv("LIBGL_DEBUG", "quiet", true)
+    } catch (_: Throwable) {
+      // Safe fallback
     }
   }
 

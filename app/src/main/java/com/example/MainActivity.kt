@@ -80,11 +80,12 @@ class MainActivity : ComponentActivity() {
                         WebView.setDataDirectorySuffix(processName)
                     }
                 }
-                // Clean any corrupted partial cache left over from previous runs so Chromium starts with a clean slate
-                val webViewCache = File(context.cacheDir, "WebView")
-                if (webViewCache.exists()) {
-                    webViewCache.deleteRecursively()
-                }
+                // Ensure required cache subdirectories exist so Chromium's SimpleCache
+                // enumerators and index writers do not encounter missing directory errors.
+                val httpCacheDir = File(context.cacheDir, "WebView/Default/HTTP Cache")
+                File(httpCacheDir, "index-dir").mkdirs()
+                File(httpCacheDir, "Code Cache/wasm").mkdirs()
+                File(httpCacheDir, "Code Cache/js").mkdirs()
             } catch (t: Throwable) {
                 Log.w(TAG, "Storage directory preparation notice: ${t.message}")
             }
@@ -92,6 +93,15 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        try {
+            android.system.Os.setenv("LIBGL_DRI3_DISABLE", "1", true)
+            android.system.Os.setenv("EGL_LOG_LEVEL", "fatal", true)
+            android.system.Os.setenv("MESA_DEBUG", "0", true)
+            android.system.Os.setenv("MESA_LOG_LEVEL", "fatal", true)
+            android.system.Os.setenv("LIBGL_DEBUG", "quiet", true)
+        } catch (_: Throwable) {
+            // Safe fallback
+        }
         super.onCreate(savedInstanceState)
         prepareWebViewStorage(this)
         WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG)
@@ -99,36 +109,12 @@ class MainActivity : ComponentActivity() {
         // Enable edge-to-edge
         enableEdgeToEdge()
 
-        if (VoraletWebViewConfig.isEmulator || !File("/dev/dri/renderD128").exists()) {
-            window.clearFlags(WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED)
-        } else {
-            window.addFlags(WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED)
-        }
-
         try {
             val insetsController = WindowCompat.getInsetsController(window, window.decorView)
             insetsController.isAppearanceLightStatusBars = true
             insetsController.isAppearanceLightNavigationBars = true
         } catch (t: Throwable) {
             Log.d(TAG, "Status bar appearance notice: ${t.message}")
-        }
-
-        // On physical devices with hardware acceleration, request high refresh rate
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !VoraletWebViewConfig.isEmulator && File("/dev/dri/renderD128").exists()) {
-            window.decorView.post {
-                try {
-                    val currentDisplay = display
-                    val modes = currentDisplay?.supportedModes
-                    val highestMode = modes?.maxByOrNull { it.refreshRate }
-                    if (highestMode != null && highestMode.refreshRate > 60f) {
-                        val lp = window.attributes
-                        lp.preferredDisplayModeId = highestMode.modeId
-                        window.attributes = lp
-                    }
-                } catch (t: Throwable) {
-                    Log.d(TAG, "Display refresh rate optimization notice: ${t.message}")
-                }
-            }
         }
 
         // Back button navigation dispatcher
@@ -152,16 +138,12 @@ class MainActivity : ComponentActivity() {
         })
 
         // Root container with edge-to-edge window insets handling
-        val isHardwareGpuAvailable = !VoraletWebViewConfig.isEmulator && File("/dev/dri/renderD128").exists()
         val container = FrameLayout(this).apply {
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
             )
             setBackgroundColor(Color.parseColor("#F8FAFC"))
-            if (!isHardwareGpuAvailable) {
-                setLayerType(View.LAYER_TYPE_SOFTWARE, null)
-            }
         }
         rootContainer = container
         setContentView(container)
@@ -182,11 +164,7 @@ class MainActivity : ComponentActivity() {
             wv.destroy()
         }
 
-        val isHardwareGpuAvailable = !VoraletWebViewConfig.isEmulator && File("/dev/dri/renderD128").exists()
         val webView = WebView(this).apply {
-            if (!isHardwareGpuAvailable) {
-                setLayerType(View.LAYER_TYPE_SOFTWARE, null)
-            }
             VoraletWebViewConfig.applySettings(this, Color.parseColor("#F8FAFC"))
 
             val bridge = AndroidNativeBridge(this@MainActivity)
