@@ -145,8 +145,19 @@ PART7_VIEWS = """
       const [selectedAccountId, setSelectedAccountId] = useState('');
       const [customNotes, setCustomNotes] = useState('');
       const [error, setError] = useState('');
+      const [isClosingDeposit, setIsClosingDeposit] = useState(false);
 
       const safeGoals = Array.isArray(savingsGoals) ? savingsGoals : [];
+
+      const handleCloseDeposit = () => {
+        setIsClosingDeposit(true);
+        setTimeout(() => {
+          setIsClosingDeposit(false);
+          setDepositGoal(null);
+          setDepositAmount('');
+          setError('');
+        }, 380);
+      };
 
       useEffect(() => {
         if (depositGoal) {
@@ -184,9 +195,7 @@ PART7_VIEWS = """
 
         HapticFeedback.save();
         onDepositGoal(depositGoal.id, amt, depositMode, selectedAccountId, customNotes);
-        setDepositGoal(null);
-        setDepositAmount('');
-        setError('');
+        handleCloseDeposit();
       };
 
       const handleQuickAmount = (val) => {
@@ -278,8 +287,12 @@ PART7_VIEWS = """
             const remTarget = Math.max(0, targetAmt - currentAmt);
 
             return (
-              <div className="ios-modal-backdrop animate-ios-backdrop z-[90]" onClick={(e) => { if (e.target === e.currentTarget) setDepositGoal(null); }}>
-                <div className="ios-modal-card bg-white dark:bg-slate-800 p-5 pb-8 sm:pb-6 animate-ios-sheet max-w-sm mx-auto rounded-[24px] shadow-2xl relative z-[95]">
+              <div
+                className={`ios-modal-backdrop ${isClosingDeposit ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'} z-[90]`}
+                onClick={(e) => { if (e.target === e.currentTarget) handleCloseDeposit(); }}
+              >
+                <div className={`ios-modal-card bg-white dark:bg-slate-800 p-5 pb-8 sm:pb-6 ${isClosingDeposit ? 'animate-ios-sheet-exit' : 'animate-ios-sheet'} max-w-sm mx-auto rounded-[24px] shadow-2xl relative z-[95]`}>
+                  <ModalDragHandle onDismiss={handleCloseDeposit} />
                   <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-700">
                     <div className="flex items-center gap-2">
                       <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${
@@ -298,17 +311,7 @@ PART7_VIEWS = """
                         </p>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setDepositGoal(null)}
-                      className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors ios-btn-tap shrink-0"
-                      aria-label="Tutup"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 flex-shrink-0 aspect-square">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                      </svg>
-                    </button>
+                    <ModalCloseButton onClick={handleCloseDeposit} />
                   </div>
 
                   <form onSubmit={handleDepositSubmit} className="space-y-3.5 pt-3">
@@ -848,19 +851,19 @@ PART7_VIEWS = """
             <div>
               <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-500 block mb-1">Pemasukan</span>
               <div className="text-xs font-bold text-slate-900 dark:text-white">
-                {hideBalance ? 'Rp ••••••' : formatIDR(totals.income)}
+                <AnimatedCurrency value={totals.income} hideBalance={hideBalance} className="text-xs font-bold text-emerald-600 dark:text-emerald-400" />
               </div>
             </div>
             <div className="border-x border-slate-100 dark:border-slate-700">
               <span className="text-[10px] font-bold uppercase tracking-wider text-rose-500 block mb-1">Pengeluaran</span>
               <div className="text-xs font-bold text-slate-900 dark:text-white">
-                {hideBalance ? 'Rp ••••••' : formatIDR(totals.expense)}
+                <AnimatedCurrency value={totals.expense} hideBalance={hideBalance} className="text-xs font-bold text-rose-600 dark:text-rose-400" />
               </div>
             </div>
             <div>
               <span className="text-[10px] font-bold uppercase tracking-wider text-[#0284C7] dark:text-[#38BDF8] block mb-1">Arus Bersih</span>
-              <div className={`text-xs font-bold ${totals.net >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                {hideBalance ? 'Rp ••••••' : formatIDR(totals.net)}
+              <div className="text-xs font-bold">
+                <AnimatedCurrency value={totals.net} hideBalance={hideBalance} className={`text-xs font-bold ${totals.net >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`} />
               </div>
             </div>
           </div>
@@ -994,7 +997,7 @@ PART7_VIEWS = """
                   Total Hutang
                 </span>
                 <div className="text-xs font-extrabold text-rose-700 dark:text-rose-300">
-                  {hideBalance ? 'Rp ••••••' : formatIDR(debtStats.totalHutang)}
+                  <AnimatedCurrency value={debtStats.totalHutang} hideBalance={hideBalance} className="text-xs font-extrabold text-rose-700 dark:text-rose-300" />
                 </div>
               </div>
               <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50">
@@ -1002,7 +1005,7 @@ PART7_VIEWS = """
                   Total Piutang
                 </span>
                 <div className="text-xs font-extrabold text-emerald-700 dark:text-emerald-300">
-                  {hideBalance ? 'Rp ••••••' : formatIDR(debtStats.totalPiutang)}
+                  <AnimatedCurrency value={debtStats.totalPiutang} hideBalance={hideBalance} className="text-xs font-extrabold text-emerald-700 dark:text-emerald-300" />
                 </div>
               </div>
             </div>
@@ -1043,7 +1046,7 @@ PART7_VIEWS = """
                   Terkumpul
                 </span>
                 <div className="text-xs font-extrabold text-slate-900 dark:text-white">
-                  {hideBalance ? 'Rp ••••••' : formatIDR(savingsStats.totalSaved)}
+                  <AnimatedCurrency value={savingsStats.totalSaved} hideBalance={hideBalance} className="text-xs font-extrabold text-slate-900 dark:text-white" />
                 </div>
               </div>
               <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-700/60 border border-slate-200/80 dark:border-slate-600">
@@ -1051,7 +1054,7 @@ PART7_VIEWS = """
                   Target Total
                 </span>
                 <div className="text-xs font-extrabold text-slate-900 dark:text-white">
-                  {hideBalance ? 'Rp ••••••' : formatIDR(savingsStats.totalTarget)}
+                  <AnimatedCurrency value={savingsStats.totalTarget} hideBalance={hideBalance} className="text-xs font-extrabold text-slate-900 dark:text-white" />
                 </div>
               </div>
             </div>
@@ -1505,7 +1508,7 @@ PART7_VIEWS = """
               )}
             </div>
             <div className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
-              {hideBalance ? 'Rp ••••••••' : formatIDR(totalBalance)}
+              <AnimatedCurrency value={totalBalance} hideBalance={hideBalance} duration={750} showPulse={true} className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white" />
             </div>
             <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
               Terdistribusi di {safeAccounts.length} kantong aktif
@@ -1737,7 +1740,7 @@ PART7_VIEWS = """
                             Saldo Tersedia
                           </span>
                           <div className="text-lg sm:text-xl font-black tracking-tight text-white apple-card-emboss">
-                            {hideBalance ? 'Rp ••••••••' : formatIDR(bal)}
+                            <AnimatedCurrency value={bal} hideBalance={hideBalance} duration={600} className="text-lg sm:text-xl font-black tracking-tight text-white apple-card-emboss" />
                           </div>
                         </div>
 
@@ -1945,7 +1948,7 @@ PART7_VIEWS = """
           onMouseMove={(e) => handlePointerMove(e.clientX)}
           onMouseUp={handlePointerUp}
           onMouseLeave={() => { if (isDraggingRef.current) handlePointerUp(); }}
-          className="fixed bottom-5 left-0 right-0 z-50 w-[92%] max-w-[360px] h-14 mx-auto rounded-full bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-700 shadow-md select-none touch-none overflow-hidden p-1.5 transition-transform duration-300"
+          className="fixed bottom-[max(1.25rem,env(safe-area-inset-bottom,1.25rem))] left-0 right-0 z-50 w-[92%] max-w-[360px] h-14 mx-auto rounded-full bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-700 shadow-md select-none touch-none overflow-hidden p-1.5 transition-transform duration-300"
           style={{ willChange: 'transform', transform: 'translateZ(0)' }}
         >
           {/* Inner relative container for precise pixel positioning */}
@@ -1994,7 +1997,7 @@ PART7_VIEWS = """
                 {tabs.map((t) => (
                   <div
                     key={t.id}
-                    className="flex-1 h-full flex items-center justify-center text-white dark:text-[#0F172A]"
+                    className="flex-1 h-full flex items-center justify-center text-white"
                   >
                     <Icon
                       name={t.icon}

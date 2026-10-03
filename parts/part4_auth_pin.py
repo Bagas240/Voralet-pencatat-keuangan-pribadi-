@@ -112,7 +112,7 @@ PART4_AUTH_PIN = """
         setTimeout(() => {
           setIsClosing(false);
           onClose();
-        }, 220);
+        }, 380);
       };
 
       const handleVerifyUsername = (e) => {
@@ -154,6 +154,7 @@ PART4_AUTH_PIN = """
         <div className={`ios-modal-backdrop ${isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'}`}
              onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}>
           <div className={`ios-modal-card bg-white dark:bg-[#121212] border border-slate-200 dark:border-[#27272A] p-5 ${isClosing ? 'animate-ios-sheet-exit' : 'animate-ios-sheet'}`}>
+            <ModalDragHandle onDismiss={handleClose} />
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-[#27272A]">
               <div className="flex items-center gap-2">
                 <IconBadge icon="lock" className="p-2 rounded-xl bg-sky-100 dark:bg-[#1C1C1E] text-brand dark:text-sky-400" />
@@ -161,17 +162,7 @@ PART4_AUTH_PIN = """
                   {step === 1 ? 'Verifikasi Lupa PIN' : 'Buat PIN Baru'}
                 </h3>
               </div>
-              <button
-                type="button"
-                onClick={handleClose}
-                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 rounded-full hover:bg-slate-100 dark:hover:bg-[#1E1E1E] transition-colors ios-btn-tap"
-                aria-label="Tutup"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-              </button>
+              <ModalCloseButton onClick={handleClose} />
             </div>
 
             {step === 1 ? (

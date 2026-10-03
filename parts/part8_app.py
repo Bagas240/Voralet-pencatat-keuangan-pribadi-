@@ -493,7 +493,7 @@ PART8_APP = """
                   <p className="text-[11px] font-mono text-brand dark:text-sky-400 font-semibold truncate">
                     @{userProfile.username || 'voralet_user'}
                   </p>
-                  <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-md bg-sky-100 dark:bg-sky-950/60 text-[#0284C7] dark:text-sky-400 border border-sky-200/60 dark:border-sky-800/60">
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-sky-100 dark:bg-sky-950/60 text-[#0284C7] dark:text-sky-400 border border-sky-200/60 dark:border-sky-800/60">
                     v__VORALET_VERSION__
                   </span>
                 </div>
@@ -519,9 +519,13 @@ PART8_APP = """
             </div>
 
             <div className="text-2xl whitespace-nowrap truncate font-extrabold tracking-tight mb-4 text-white">
-              <span key={hideBalance ? 'hidden' : `bal-${totalBalance}`} className={`inline-block ${balancePulse ? 'animate-balance-spring' : 'animate-value-pulse'}`}>
-                {hideBalance ? 'Rp ••••••••' : formatIDR(totalBalance)}
-              </span>
+              <AnimatedCurrency
+                value={totalBalance}
+                hideBalance={hideBalance}
+                duration={750}
+                showPulse={true}
+                className="font-extrabold tracking-tight text-white text-2xl"
+              />
             </div>
 
             {/* Monthly income and expense summary */}
@@ -532,9 +536,14 @@ PART8_APP = """
                 </div>
                 <div className="min-w-0">
                   <span className="text-[10px] text-sky-100 block leading-tight font-medium">Masuk (Bln Ini)</span>
-                  <span key={hideBalance ? 'hidden-inc' : `inc-${monthSummary.income}`} className="text-xs whitespace-nowrap truncate font-bold text-white block animate-value-pulse">
-                    {hideBalance ? 'Rp ••••••' : formatIDR(monthSummary.income)}
-                  </span>
+                  <div className="text-xs whitespace-nowrap truncate font-bold text-white block">
+                    <AnimatedCurrency
+                      value={monthSummary.income}
+                      hideBalance={hideBalance}
+                      duration={650}
+                      className="text-xs font-bold text-white"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -544,9 +553,14 @@ PART8_APP = """
                 </div>
                 <div className="min-w-0">
                   <span className="text-[10px] text-sky-100 block leading-tight font-medium">Keluar (Bln Ini)</span>
-                  <span key={hideBalance ? 'hidden-exp' : `exp-${monthSummary.expense}`} className="text-xs whitespace-nowrap truncate font-bold text-white block animate-value-pulse">
-                    {hideBalance ? 'Rp ••••••' : formatIDR(monthSummary.expense)}
-                  </span>
+                  <div className="text-xs whitespace-nowrap truncate font-bold text-white block">
+                    <AnimatedCurrency
+                      value={monthSummary.expense}
+                      hideBalance={hideBalance}
+                      duration={650}
+                      className="text-xs font-bold text-white"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -1019,6 +1033,32 @@ PART8_APP = """
       const [isDevModalOpen, setIsDevModalOpen] = useState(false);
       const [isCsvImportModalOpen, setIsCsvImportModalOpen] = useState(false);
       const [isMonthlyPdfModalOpen, setIsMonthlyPdfModalOpen] = useState(false);
+
+      // Android Back Button Integration: Smoothly close open modals or navigate back to Dashboard
+      useEffect(() => {
+        window.handleAndroidBack = () => {
+          if (isTxModalOpen) { setIsTxModalOpen(false); return true; }
+          if (isAccModalOpen) { setIsAccModalOpen(false); return true; }
+          if (isSavingsModalOpen) { setIsSavingsModalOpen(false); return true; }
+          if (isSettingsModalOpen) { setIsSettingsModalOpen(false); return true; }
+          if (isDebtModalOpen) { setIsDebtModalOpen(false); return true; }
+          if (isDevModalOpen) { setIsDevModalOpen(false); return true; }
+          if (isCsvImportModalOpen) { setIsCsvImportModalOpen(false); return true; }
+          if (isMonthlyPdfModalOpen) { setIsMonthlyPdfModalOpen(false); return true; }
+          if (activeTab !== 'dashboard') {
+            setActiveTab('dashboard');
+            return true;
+          }
+          return false;
+        };
+        return () => {
+          delete window.handleAndroidBack;
+        };
+      }, [
+        isTxModalOpen, isAccModalOpen, isSavingsModalOpen, isSettingsModalOpen,
+        isDebtModalOpen, isDevModalOpen, isCsvImportModalOpen, isMonthlyPdfModalOpen,
+        activeTab
+      ]);
 
       const showToast = useCallback((msg) => {
         setToastMsg(msg);
@@ -1897,95 +1937,100 @@ PART8_APP = """
           <div className="flex-1 flex flex-col w-full h-full overflow-hidden relative z-10">
             <main
               className="flex-1 w-full max-w-md mx-auto px-4 pt-4 sm:pt-6 pb-28 overflow-y-auto no-scrollbar"
-              style={{ paddingTop: 'max(env(safe-area-inset-top, 0px), 1.25rem)' }}
+              style={{
+                paddingTop: 'max(env(safe-area-inset-top, 0px), 1.25rem)',
+                paddingBottom: 'calc(7.5rem + env(safe-area-inset-bottom, 0px))'
+              }}
             >
             <ErrorBoundary>
-              {activeTab === 'dashboard' && (
-                <MainDashboard
-                  accounts={accounts}
-                  transactions={transactions}
-                  userProfile={memoizedUserProfile}
-                  hideBalance={hideBalance}
-                  onToggleHideBalance={handleToggleHideBalance}
-                  onOpenAddTx={handleOpenAddTx}
-                  onOpenAddIncome={handleOpenAddIncome}
-                  onOpenAddExpense={handleOpenAddExpense}
-                  onOpenAccounts={handleOpenAccounts}
-                  onOpenSettings={handleOpenSettings}
-                  onOpenDebts={handleOpenDebtsTab}
-                  onOpenSavings={handleOpenSavingsTab}
-                  onOpenNewSavingsGoal={handleOpenNewSavingsGoal}
-                  onDeleteTx={handleDeleteTransaction}
-                  onEditTx={handleEditTransaction}
-                  onDuplicateTx={handleDuplicateTransaction}
-                  safeBudget={safeBudget}
-                  onSetBudget={handleSetBudget}
-                  savingsGoals={savingsGoals}
-                  debts={debts}
-                  onSelectQuickExpense={handleQuickExpenseSelect}
-                  customCategories={customCategories}
-                  onSelectTab={setActiveTab}
-                  onOpenCsvImport={() => setIsCsvImportModalOpen(true)}
-                  deletingTxIds={deletingTxIds}
-                  newlyAddedTxIds={newlyAddedTxIds}
-                  onClearNewlyAddedTx={handleClearNewlyAddedTx}
-                  balancePulse={balancePulse}
-                />
-              )}
+              <div key={activeTab} className="animate-ios-tab-view w-full">
+                {activeTab === 'dashboard' && (
+                  <MainDashboard
+                    accounts={accounts}
+                    transactions={transactions}
+                    userProfile={memoizedUserProfile}
+                    hideBalance={hideBalance}
+                    onToggleHideBalance={handleToggleHideBalance}
+                    onOpenAddTx={handleOpenAddTx}
+                    onOpenAddIncome={handleOpenAddIncome}
+                    onOpenAddExpense={handleOpenAddExpense}
+                    onOpenAccounts={handleOpenAccounts}
+                    onOpenSettings={handleOpenSettings}
+                    onOpenDebts={handleOpenDebtsTab}
+                    onOpenSavings={handleOpenSavingsTab}
+                    onOpenNewSavingsGoal={handleOpenNewSavingsGoal}
+                    onDeleteTx={handleDeleteTransaction}
+                    onEditTx={handleEditTransaction}
+                    onDuplicateTx={handleDuplicateTransaction}
+                    safeBudget={safeBudget}
+                    onSetBudget={handleSetBudget}
+                    savingsGoals={savingsGoals}
+                    debts={debts}
+                    onSelectQuickExpense={handleQuickExpenseSelect}
+                    customCategories={customCategories}
+                    onSelectTab={setActiveTab}
+                    onOpenCsvImport={() => setIsCsvImportModalOpen(true)}
+                    deletingTxIds={deletingTxIds}
+                    newlyAddedTxIds={newlyAddedTxIds}
+                    onClearNewlyAddedTx={handleClearNewlyAddedTx}
+                    balancePulse={balancePulse}
+                  />
+                )}
 
-              {activeTab === 'cards' && (
-                <CardsView
-                  accounts={accounts}
-                  transactions={transactions}
-                  hideBalance={hideBalance}
-                  onToggleHideBalance={handleToggleHideBalance}
-                  onAddAccount={handleAddAccount}
-                  onUpdateAccount={handleEditAccount}
-                  onDeleteAccount={handleDeleteAccount}
-                  onReorderAccounts={handleReorderAccounts}
-                  onOpenAddTx={handleOpenAddTxFromAccount}
-                  onToast={showToast}
-                />
-              )}
+                {activeTab === 'cards' && (
+                  <CardsView
+                    accounts={accounts}
+                    transactions={transactions}
+                    hideBalance={hideBalance}
+                    onToggleHideBalance={handleToggleHideBalance}
+                    onAddAccount={handleAddAccount}
+                    onUpdateAccount={handleEditAccount}
+                    onDeleteAccount={handleDeleteAccount}
+                    onReorderAccounts={handleReorderAccounts}
+                    onOpenAddTx={handleOpenAddTxFromAccount}
+                    onToast={showToast}
+                  />
+                )}
 
-              {activeTab === 'debts' && (
-                <DebtsView
-                  debts={debts}
-                  accounts={accounts}
-                  onAddDebt={handleAddDebt}
-                  onPayDebt={handlePayDebt}
-                  onToggleStatus={handleToggleDebtStatus}
-                  onDeleteDebt={handleDeleteDebt}
-                  hideBalance={hideBalance}
-                  onModalChange={setIsDebtModalOpen}
-                  newlyAddedDebtId={newlyAddedDebtId}
-                />
-              )}
+                {activeTab === 'debts' && (
+                  <DebtsView
+                    debts={debts}
+                    accounts={accounts}
+                    onAddDebt={handleAddDebt}
+                    onPayDebt={handlePayDebt}
+                    onToggleStatus={handleToggleDebtStatus}
+                    onDeleteDebt={handleDeleteDebt}
+                    hideBalance={hideBalance}
+                    onModalChange={setIsDebtModalOpen}
+                    newlyAddedDebtId={newlyAddedDebtId}
+                  />
+                )}
 
-              {activeTab === 'savings' && (
-                <SavingsView
-                  savingsGoals={savingsGoals}
-                  accounts={accounts}
-                  onOpenNewGoal={handleOpenNewSavingsGoal}
-                  onEditGoal={handleEditSavingsGoal}
-                  onDeleteGoal={handleDeleteGoal}
-                  onDepositGoal={handleDepositGoal}
-                  hideBalance={hideBalance}
-                  newlyAddedGoalId={newlyAddedGoalId}
-                />
-              )}
+                {activeTab === 'savings' && (
+                  <SavingsView
+                    savingsGoals={savingsGoals}
+                    accounts={accounts}
+                    onOpenNewGoal={handleOpenNewSavingsGoal}
+                    onEditGoal={handleEditSavingsGoal}
+                    onDeleteGoal={handleDeleteGoal}
+                    onDepositGoal={handleDepositGoal}
+                    hideBalance={hideBalance}
+                    newlyAddedGoalId={newlyAddedGoalId}
+                  />
+                )}
 
-              {activeTab === 'analytics' && (
-                <AnalyticsView
-                  transactions={transactions}
-                  accounts={accounts}
-                  debts={debts}
-                  savingsGoals={savingsGoals}
-                  hideBalance={hideBalance}
-                  customCategories={customCategories}
-                  onOpenMonthlyPdfReport={() => setIsMonthlyPdfModalOpen(true)}
-                />
-              )}
+                {activeTab === 'analytics' && (
+                  <AnalyticsView
+                    transactions={transactions}
+                    accounts={accounts}
+                    debts={debts}
+                    savingsGoals={savingsGoals}
+                    hideBalance={hideBalance}
+                    customCategories={customCategories}
+                    onOpenMonthlyPdfReport={() => setIsMonthlyPdfModalOpen(true)}
+                  />
+                )}
+              </div>
             </ErrorBoundary>
           </main>
 

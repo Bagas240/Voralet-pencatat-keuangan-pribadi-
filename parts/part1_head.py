@@ -665,11 +665,11 @@ HTML_HEAD = """<!DOCTYPE html>
     @keyframes iosPopIn {
       0% {
         opacity: 0;
-        transform: scale3d(0.85, 0.85, 1) translate3d(0, 12px, 0);
+        transform: scale3d(0.88, 0.88, 1) translate3d(0, 14px, 0);
       }
       70% {
         opacity: 1;
-        transform: scale3d(1.025, 1.025, 1) translate3d(0, -2px, 0);
+        transform: scale3d(1.02, 1.02, 1) translate3d(0, -2px, 0);
       }
       100% {
         opacity: 1;
@@ -683,16 +683,22 @@ HTML_HEAD = """<!DOCTYPE html>
       }
       100% {
         opacity: 0;
-        transform: scale3d(0.86, 0.86, 1) translate3d(0, 10px, 0);
+        transform: scale3d(0.88, 0.88, 1) translate3d(0, 14px, 0);
       }
     }
     .animate-ios-pop-in {
-      animation: iosPopIn 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      animation: iosPopIn 0.36s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
       will-change: transform, opacity;
+      transform: translateZ(0);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
     }
     .animate-ios-pop-out {
-      animation: iosPopOut 0.24s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+      animation: iosPopOut 0.32s cubic-bezier(0.32, 0.94, 0.4, 1) forwards;
       will-change: transform, opacity;
+      transform: translateZ(0);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
     }
 
     /* Bouncy Swipe Hint Animation (Peeks left and bounces back smoothly) */
@@ -741,17 +747,21 @@ HTML_HEAD = """<!DOCTYPE html>
     @keyframes iosSheetEnter {
       0% {
         transform: translate3d(0, 100%, 0);
+        opacity: 0.92;
       }
       100% {
         transform: translate3d(0, 0, 0);
+        opacity: 1;
       }
     }
     @keyframes iosSheetExit {
       0% {
         transform: translate3d(0, 0, 0);
+        opacity: 1;
       }
       100% {
         transform: translate3d(0, 100%, 0);
+        opacity: 0.92;
       }
     }
     @keyframes iosBackdropFadeIn {
@@ -763,51 +773,47 @@ HTML_HEAD = """<!DOCTYPE html>
       100% { opacity: 0; }
     }
     .animate-ios-sheet {
-      animation: iosSheetEnter 0.36s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-      will-change: transform;
+      animation: iosSheetEnter 0.42s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      will-change: transform, opacity;
+      transform: translateZ(0);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
     }
     .animate-ios-sheet-exit {
-      animation: iosSheetExit 0.26s cubic-bezier(0.32, 0.72, 0, 1) forwards;
-      will-change: transform;
+      animation: iosSheetExit 0.38s cubic-bezier(0.32, 0.94, 0.4, 1) forwards;
+      will-change: transform, opacity;
+      transform: translateZ(0);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
     }
     .animate-ios-backdrop {
-      animation: iosBackdropFadeIn 0.3s ease-out forwards;
+      animation: iosBackdropFadeIn 0.38s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      will-change: opacity;
     }
     .animate-ios-backdrop-exit {
-      animation: iosBackdropFadeOut 0.22s ease-in forwards;
+      animation: iosBackdropFadeOut 0.38s cubic-bezier(0.32, 0.94, 0.4, 1) forwards;
+      will-change: opacity;
     }
 
     /* iOS Navigation & Tab Slide View Transitions (Silky Snappy 120 FPS) */
     @keyframes iosTabSlideForward {
       0% {
         opacity: 0;
-        transform: translate3d(36px, 0, 0) scale3d(0.96, 0.96, 1);
-      }
-      70% {
-        transform: translate3d(-4px, 0, 0) scale3d(1.008, 1.008, 1);
-      }
-      88% {
-        transform: translate3d(1.5px, 0, 0) scale3d(0.998, 0.998, 1);
+        transform: translate3d(24px, 0, 0);
       }
       100% {
         opacity: 1;
-        transform: translate3d(0, 0, 0) scale3d(1, 1, 1);
+        transform: translate3d(0, 0, 0);
       }
     }
     @keyframes iosTabSlideBackward {
       0% {
         opacity: 0;
-        transform: translate3d(-36px, 0, 0) scale3d(0.96, 0.96, 1);
-      }
-      70% {
-        transform: translate3d(4px, 0, 0) scale3d(1.008, 1.008, 1);
-      }
-      88% {
-        transform: translate3d(-1.5px, 0, 0) scale3d(0.998, 0.998, 1);
+        transform: translate3d(-24px, 0, 0);
       }
       100% {
         opacity: 1;
-        transform: translate3d(0, 0, 0) scale3d(1, 1, 1);
+        transform: translate3d(0, 0, 0);
       }
     }
     @keyframes iosTabFadeIn {
@@ -821,14 +827,14 @@ HTML_HEAD = """<!DOCTYPE html>
       }
     }
     .animate-ios-tab-slide-forward {
-      animation: iosTabSlideForward 0.36s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      animation: iosTabSlideForward 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
       will-change: transform, opacity;
       transform: translateZ(0);
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
     }
     .animate-ios-tab-slide-backward {
-      animation: iosTabSlideBackward 0.36s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      animation: iosTabSlideBackward 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
       will-change: transform, opacity;
       transform: translateZ(0);
       backface-visibility: hidden;
@@ -836,6 +842,23 @@ HTML_HEAD = """<!DOCTYPE html>
     }
     .animate-ios-tab-view {
       animation: iosTabFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      will-change: transform, opacity;
+      transform: translateZ(0);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+    @keyframes iosTabFadeOut {
+      0% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+      }
+      100% {
+        opacity: 0;
+        transform: translate3d(0, -8px, 0);
+      }
+    }
+    .animate-ios-tab-view-exit {
+      animation: iosTabFadeOut 0.16s cubic-bezier(0.32, 0.94, 0.4, 1) forwards;
       will-change: transform, opacity;
       transform: translateZ(0);
       backface-visibility: hidden;
@@ -1041,7 +1064,7 @@ HTML_HEAD = """<!DOCTYPE html>
     }
     .ios-modal-card {
       width: 100%;
-      max-width: 28rem;
+      max-width: 32rem;
       max-height: 90dvh;
       display: flex;
       flex-direction: column;
@@ -1053,6 +1076,7 @@ HTML_HEAD = """<!DOCTYPE html>
       border-bottom: none;
       box-shadow: 0 -10px 32px -6px rgba(15, 23, 42, 0.14);
       color: #0F172A;
+      padding-bottom: max(env(safe-area-inset-bottom, 0px), 0.5rem);
       will-change: transform;
       transform: translateZ(0);
       -webkit-backface-visibility: hidden;

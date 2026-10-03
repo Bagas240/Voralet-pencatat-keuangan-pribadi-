@@ -81,7 +81,7 @@ class AndroidNativeBridge(
      * Hardware acceleration check.
      */
     @JavascriptInterface
-    fun isHardwareAccelerated(): Boolean = true
+    fun isHardwareAccelerated(): Boolean = !com.example.webview.VoraletWebViewConfig.isEmulator
 
     /**
      * Print or export HTML report to PDF via Android PrintManager.

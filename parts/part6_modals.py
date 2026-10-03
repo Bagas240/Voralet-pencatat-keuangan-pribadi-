@@ -10,7 +10,7 @@ PART6_MODALS = """
       const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
       const [notes, setNotes] = useState('');
       const [error, setError] = useState('');
-      const [isClosing, setIsClosing] = useState(false);
+      const { shouldRender, isClosing, handleClose: baseClose } = useModalLifecycle(isOpen, onClose, 350);
 
       // Inline Custom Category Creation State
       const [showAddCategory, setShowAddCategory] = useState(false);
@@ -29,13 +29,9 @@ PART6_MODALS = """
       }, [allCategories, type]);
 
       const handleClose = () => {
-        setIsClosing(true);
-        setTimeout(() => {
-          setIsClosing(false);
-          setShowAddCategory(false);
-          setNewCatName('');
-          onClose();
-        }, 380);
+        setShowAddCategory(false);
+        setNewCatName('');
+        baseClose();
       };
 
       useEffect(() => {
@@ -56,7 +52,7 @@ PART6_MODALS = """
         }
       }, [initialData, accounts, isOpen]);
 
-      if (!isOpen) return null;
+      if (!shouldRender) return null;
 
       const handleQuickAdd = (value) => {
         const current = parseRawNumber(amountStr);
@@ -122,17 +118,7 @@ PART6_MODALS = """
             <ModalDragHandle onDismiss={handleClose} />
             <div className="ios-modal-header px-5 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800">
               <h2 className="text-base font-bold text-slate-900 dark:text-white">Catat Transaksi</h2>
-              <button
-                type="button"
-                onClick={handleClose}
-                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors ios-btn-tap"
-                aria-label="Tutup"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-              </button>
+              <ModalCloseButton onClick={handleClose} />
             </div>
 
             <form onSubmit={handleSubmit} className="ios-modal-body flex-1 overflow-y-auto pb-28 p-4 sm:p-5 space-y-4 no-scrollbar">
@@ -674,7 +660,7 @@ PART6_MODALS = """
       const [selectedTheme, setSelectedTheme] = useState('bca');
       const [initialBalance, setInitialBalance] = useState('');
       const [editingAcc, setEditingAcc] = useState(null);
-      const [isClosing, setIsClosing] = useState(false);
+      const { shouldRender, isClosing, handleClose } = useModalLifecycle(isOpen, onClose, 350);
       const [localHideBalance, setLocalHideBalance] = useState(hideBalance);
 
       const safeAccounts = Array.isArray(accounts) ? accounts.filter(Boolean) : [];
@@ -701,15 +687,7 @@ PART6_MODALS = """
         return Ledger.getTotalBalance(safeAccounts, safeTransactions);
       }, [safeAccounts, safeTransactions]);
 
-      if (!isOpen) return null;
-
-      const handleClose = () => {
-        setIsClosing(true);
-        setTimeout(() => {
-          setIsClosing(false);
-          onClose();
-        }, 380);
-      };
+      if (!shouldRender) return null;
 
       const handleCardSelect = (accId) => {
         try {
@@ -818,14 +796,7 @@ PART6_MODALS = """
                     Lipat Kartu
                   </button>
                 )}
-                <button
-                  type="button"
-                  onClick={handleClose}
-                  className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ios-btn-tap"
-                  aria-label="Tutup"
-                >
-                  <Icon name="x" className="w-5 h-5" />
-                </button>
+                <ModalCloseButton onClick={handleClose} />
               </div>
             </div>
 
@@ -840,7 +811,7 @@ PART6_MODALS = """
                         <Icon name="sparkles" className="w-3.5 h-3.5 text-amber-400" />
                       </span>
                       <div className="text-xl sm:text-2xl font-extrabold tracking-tight text-white mt-1">
-                        {localHideBalance ? 'Rp ••••••••' : formatIDR(totalBalance)}
+                        <AnimatedCurrency value={totalBalance} hideBalance={localHideBalance} duration={650} className="text-xl sm:text-2xl font-extrabold tracking-tight text-white mt-1" />
                       </div>
                     </div>
 
@@ -1143,7 +1114,7 @@ PART6_MODALS = """
       const [currentAmount, setCurrentAmount] = useState('0');
       const [targetDate, setTargetDate] = useState('');
       const [accountId, setAccountId] = useState(() => accounts?.[0]?.id || '');
-      const [isClosing, setIsClosing] = useState(false);
+      const { shouldRender, isClosing, handleClose } = useModalLifecycle(isOpen, onClose, 350);
 
       useEffect(() => {
         if (goalToEdit) {
@@ -1162,15 +1133,7 @@ PART6_MODALS = """
         }
       }, [goalToEdit, isOpen, accounts]);
 
-      if (!isOpen) return null;
-
-      const handleClose = () => {
-        setIsClosing(true);
-        setTimeout(() => {
-          setIsClosing(false);
-          onClose();
-        }, 380);
-      };
+      if (!shouldRender) return null;
 
       const handleSubmit = (e) => {
         e.preventDefault();
@@ -1202,17 +1165,7 @@ PART6_MODALS = """
               <h2 className="text-base font-bold text-slate-900 dark:text-white">
                 {goalToEdit ? 'Edit Kantong Impian' : 'Target Impian Baru'}
               </h2>
-              <button
-                type="button"
-                onClick={handleClose}
-                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors ios-btn-tap"
-                aria-label="Tutup"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-              </button>
+              <ModalCloseButton onClick={handleClose} />
             </div>
 
             <form onSubmit={handleSubmit} className="ios-modal-body flex-1 overflow-y-auto pb-28 p-4 sm:p-5 space-y-4 no-scrollbar">
@@ -1331,7 +1284,7 @@ PART6_MODALS = """
       const [newPin, setNewPin] = useState('');
       const [confirmPin, setConfirmPin] = useState('');
       const [pinMsg, setPinMsg] = useState({ text: '', isError: false });
-      const [isClosing, setIsClosing] = useState(false);
+      const { shouldRender, isClosing, handleClose } = useModalLifecycle(isOpen, onClose, 350);
 
       // Custom Category Management in Settings
       const [isManagingCategories, setIsManagingCategories] = useState(false);
@@ -1349,15 +1302,7 @@ PART6_MODALS = """
         setAvatar(userProfile.avatar || '');
       }, [userProfile, isOpen]);
 
-      if (!isOpen) return null;
-
-      const handleClose = () => {
-        setIsClosing(true);
-        setTimeout(() => {
-          setIsClosing(false);
-          onClose();
-        }, 380);
-      };
+      if (!shouldRender) return null;
 
       const handleSaveProfile = (e) => {
         e.preventDefault();
@@ -1436,17 +1381,7 @@ PART6_MODALS = """
             <ModalDragHandle onDismiss={handleClose} />
             <div className="ios-modal-header px-5 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800">
               <h2 className="text-base font-bold text-slate-900 dark:text-white">Pengaturan & Profil</h2>
-              <button
-                type="button"
-                onClick={handleClose}
-                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors ios-btn-tap"
-                aria-label="Tutup"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-              </button>
+              <ModalCloseButton onClick={handleClose} />
             </div>
 
             <div className="ios-modal-body flex-1 overflow-y-auto pb-28 p-4 sm:p-5 space-y-5 no-scrollbar">
@@ -2000,7 +1935,7 @@ PART6_MODALS = """
       const [targetAccountId, setTargetAccountId] = useState(accounts[0]?.id || '');
       const [hasHeaderRow, setHasHeaderRow] = useState(true);
       const [errorMessage, setErrorMessage] = useState('');
-      const [isClosing, setIsClosing] = useState(false);
+      const { shouldRender, isClosing, handleClose } = useModalLifecycle(isOpen, onClose, 350);
       const [importStats, setImportStats] = useState({ total: 0, expenses: 0, incomes: 0, sumAmount: 0 });
 
       // Column mapping states
@@ -2031,15 +1966,7 @@ PART6_MODALS = """
         }
       }, [isOpen]);
 
-      if (!isOpen) return null;
-
-      const handleClose = () => {
-        setIsClosing(true);
-        setTimeout(() => {
-          setIsClosing(false);
-          onClose();
-        }, 220);
-      };
+      if (!shouldRender) return null;
 
       const handleFileSelected = (e) => {
         const file = e.target.files?.[0];
@@ -2212,14 +2139,7 @@ PART6_MODALS = """
                   </p>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={handleClose}
-                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors ios-btn-tap"
-                aria-label="Tutup"
-              >
-                <Icon name="x" className="w-4 h-4" />
-              </button>
+              <ModalCloseButton onClick={handleClose} />
             </div>
 
             <div className="ios-modal-body flex-1 overflow-y-auto pb-28 p-4 sm:p-5 space-y-4 no-scrollbar">
@@ -2580,7 +2500,7 @@ PART6_MODALS = """
     // MASTER DEVELOPER SECURITY MODAL (VERIFICATION KEY: 2026)
     // =========================================================================
     const DeveloperSecurityModal = ({ isOpen, onClose, onHardReset, accounts, transactions, debts, savingsGoals }) => {
-      if (!isOpen) return null;
+      const { shouldRender, isClosing, handleClose } = useModalLifecycle(isOpen, onClose, 350);
 
       const [masterCode, setMasterCode] = useState('');
       const [isAuthorized, setIsAuthorized] = useState(false);
@@ -2588,15 +2508,8 @@ PART6_MODALS = """
       const [storageReport, setStorageReport] = useState([]);
       const [integrityReport, setIntegrityReport] = useState(null);
       const [isShaking, setIsShaking] = useState(false);
-      const [isClosing, setIsClosing] = useState(false);
 
-      const handleClose = () => {
-        setIsClosing(true);
-        setTimeout(() => {
-          setIsClosing(false);
-          onClose();
-        }, 250);
-      };
+      if (!shouldRender) return null;
 
       useEffect(() => {
         if (isOpen) {
@@ -2633,9 +2546,10 @@ PART6_MODALS = """
           className={`ios-modal-backdrop ${isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'}`}
           onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
         >
-          <div className={`ios-modal-card bg-white dark:bg-slate-800 rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-700 max-h-[92dvh] flex flex-col overflow-hidden ${
+          <div className={`ios-modal-card bg-white dark:bg-slate-800 rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-700 max-h-[92dvh] max-w-lg mx-auto flex flex-col overflow-hidden ${
             isClosing ? 'animate-ios-sheet-exit' : 'animate-ios-sheet'
           }`}>
+            <ModalDragHandle onDismiss={handleClose} />
             {/* Header */}
             <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
@@ -2647,13 +2561,7 @@ PART6_MODALS = """
                   <p className="text-[10px] text-slate-400">Akses Pengembang & Integritas Kode v3.0.1</p>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={handleClose}
-                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 flex items-center justify-center text-slate-500 ios-btn-tap"
-              >
-                <Icon name="x" className="w-4 h-4" />
-              </button>
+              <ModalCloseButton onClick={handleClose} />
             </div>
 
             {/* Content */}
@@ -2836,9 +2744,8 @@ PART6_MODALS = """
       userProfile = {},
       hideBalance
     }) => {
-      if (!isOpen) return null;
+      const { shouldRender, isClosing, handleClose } = useModalLifecycle(isOpen, onClose, 350);
 
-      const [isClosing, setIsClosing] = useState(false);
       const availableMonths = useMemo(() => {
         return PdfReportService.getAvailableMonths(transactions);
       }, [transactions]);
@@ -2851,13 +2758,7 @@ PART6_MODALS = """
       const [statusMessage, setStatusMessage] = useState({ text: '', isError: false });
       const [activeTab, setActiveTab] = useState('PREVIEW'); // 'PREVIEW' | 'CATEGORIES' | 'TRANSACTIONS'
 
-      const handleClose = () => {
-        setIsClosing(true);
-        setTimeout(() => {
-          setIsClosing(false);
-          onClose();
-        }, 220);
-      };
+      if (!shouldRender) return null;
 
       // Reset state when opening
       useEffect(() => {
@@ -2928,16 +2829,16 @@ PART6_MODALS = """
       const lastMonthKey = `${lastMonthDate.getFullYear()}-${String(lastMonthDate.getMonth() + 1).padStart(2, '0')}`;
 
       return (
-        <div className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 ${isClosing ? 'animate-ios-fade-out' : 'animate-ios-fade-in'}`}>
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity" onClick={handleClose} />
-
+        <div
+          className={`ios-modal-backdrop ${isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'}`}
+          onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
+        >
           <div
-            className={`relative w-full max-w-lg bg-white dark:bg-slate-800 rounded-t-[32px] sm:rounded-3xl shadow-2xl border-t sm:border border-slate-100 dark:border-slate-700 flex flex-col max-h-[92dvh] sm:max-h-[85vh] overflow-hidden ${
-              isClosing ? 'animate-ios-sheet-down' : 'animate-ios-sheet-up'
+            className={`ios-modal-card bg-white dark:bg-slate-800 rounded-t-[32px] sm:rounded-3xl shadow-2xl border-t sm:border border-slate-100 dark:border-slate-700 flex flex-col max-h-[92dvh] sm:max-h-[85vh] max-w-lg mx-auto ${
+              isClosing ? 'animate-ios-sheet-exit' : 'animate-ios-sheet'
             }`}
           >
-            {/* Sheet Handle */}
-            <div className="w-12 h-1 bg-slate-300 dark:bg-slate-600 rounded-full mx-auto mt-3 mb-1 shrink-0 sm:hidden" />
+            <ModalDragHandle onDismiss={handleClose} />
 
             {/* Modal Header */}
             <div className="px-5 py-3.5 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between shrink-0">
@@ -2954,13 +2855,7 @@ PART6_MODALS = """
                   </p>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={handleClose}
-                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 flex items-center justify-center transition-colors ios-btn-tap shrink-0"
-              >
-                <Icon name="x" className="w-4 h-4" />
-              </button>
+              <ModalCloseButton onClick={handleClose} />
             </div>
 
             {/* Modal Scrollable Body */}

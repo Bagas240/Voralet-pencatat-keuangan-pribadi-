@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.webkit.WebSettings
 import android.webkit.WebView
+import java.io.File
 
 /**
  * Standardized, security-hardened and hardware-accelerated WebView configurator.
@@ -31,23 +32,27 @@ object VoraletWebViewConfig {
                 || model.contains("android sdk")
                 || model.contains("cuttlefish")
                 || manufacturer.contains("genymotion")
-                || (manufacturer.contains("google") && (product.contains("cf") || product.contains("sdk")))
+                || (manufacturer.contains("google") && (product.contains("cf") || product.contains("sdk") || product.contains("gphone")))
                 || hardware.contains("goldfish")
                 || hardware.contains("ranchu")
                 || hardware.contains("cutf")
                 || hardware.contains("vsoc")
                 || hardware.contains("cheeps")
+                || hardware.contains("qemu")
                 || product.contains("sdk")
                 || product.contains("vbox")
                 || product.contains("emulator")
                 || product.contains("simulator")
                 || product.contains("cf_")
                 || product.contains("cuttlefish")
+                || product.contains("gphone")
                 || board.contains("cutf")
                 || board.contains("vsoc")
                 || device.contains("cutf")
                 || device.contains("vsoc")
+                || device.contains("generic")
                 || brand.startsWith("generic")
+                || !File("/dev/dri/renderD128").exists()
     }
 
     @Suppress("DEPRECATION")
@@ -67,9 +72,13 @@ object VoraletWebViewConfig {
             isHorizontalScrollBarEnabled = false
             isNestedScrollingEnabled = true
 
-            // Avoid forcing software layer which degrades Chromium disk cache and raster performance.
-            // LAYER_TYPE_NONE lets Android HWUI and WebView manage rendering natively.
-            setLayerType(View.LAYER_TYPE_NONE, null)
+            // In emulators or cloud streaming environments lacking hardware rendernodes,
+            // using software layer prevents Mesa "Failed to open rendernode" driver crashes and GPU stalls.
+            if (isEmulator || !File("/dev/dri/renderD128").exists()) {
+                setLayerType(View.LAYER_TYPE_SOFTWARE, null)
+            } else {
+                setLayerType(View.LAYER_TYPE_NONE, null)
+            }
 
             settings.apply {
                 javaScriptEnabled = true
@@ -93,10 +102,10 @@ object VoraletWebViewConfig {
                 // Smooth display and viewport metrics
                 useWideViewPort = true
                 loadWithOverviewMode = true
-                cacheMode = WebSettings.LOAD_DEFAULT
+                cacheMode = WebSettings.LOAD_NO_CACHE
                 setSupportMultipleWindows(false)
                 textZoom = 100 // Maintain precise layout geometry
-                setOffscreenPreRaster(!isEmulator)
+                setOffscreenPreRaster(!isEmulator && File("/dev/dri/renderD128").exists())
             }
         }
     }

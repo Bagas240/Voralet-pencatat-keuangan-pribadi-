@@ -268,7 +268,7 @@ PART5_DEBTS_MILESTONES = """
       const [notes, setNotes] = useState('');
       const [accountId, setAccountId] = useState(() => accounts[0]?.id || '');
       const [recordToTransaction, setRecordToTransaction] = useState(true);
-      const [isClosing, setIsClosing] = useState(false);
+      const { shouldRender, isClosing, handleClose } = useModalLifecycle(isOpen, onClose, 350);
 
       useEffect(() => {
         if (debtToEdit) {
@@ -290,15 +290,7 @@ PART5_DEBTS_MILESTONES = """
         }
       }, [debtToEdit, isOpen, accounts]);
 
-      if (!isOpen) return null;
-
-      const handleClose = () => {
-        setIsClosing(true);
-        setTimeout(() => {
-          setIsClosing(false);
-          onClose();
-        }, 220);
-      };
+      if (!shouldRender) return null;
 
       const handleSubmit = (e) => {
         e.preventDefault();
@@ -332,17 +324,7 @@ PART5_DEBTS_MILESTONES = """
               <h2 className="text-base font-bold text-slate-900 dark:text-white">
                 {debtToEdit ? 'Edit Catatan' : 'Catat Hutang / Piutang'}
               </h2>
-              <button
-                type="button"
-                onClick={handleClose}
-                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors ios-btn-tap"
-                aria-label="Tutup"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-              </button>
+              <ModalCloseButton onClick={handleClose} />
             </div>
 
             <form onSubmit={handleSubmit} className="ios-modal-body flex-1 overflow-y-auto pb-28 p-4 sm:p-5 space-y-4 no-scrollbar">
@@ -526,7 +508,7 @@ PART5_DEBTS_MILESTONES = """
           : `Terima cicilan ke-${nextInstallmentNum}: ${debt.personName}`
       ));
       const [error, setError] = useState('');
-      const [isClosing, setIsClosing] = useState(false);
+      const { shouldRender, isClosing, handleClose } = useModalLifecycle(isOpen, onClose, 350);
 
       useEffect(() => {
         if (debt) {
@@ -550,13 +532,7 @@ PART5_DEBTS_MILESTONES = """
         }
       }, [debt, accounts]);
 
-      const handleClose = () => {
-        setIsClosing(true);
-        setTimeout(() => {
-          setIsClosing(false);
-          onClose();
-        }, 220);
-      };
+      if (!shouldRender) return null;
 
       const handleSelectMode = (mode) => {
         setPayMode(mode);
@@ -624,17 +600,7 @@ PART5_DEBTS_MILESTONES = """
                   </p>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={handleClose}
-                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors ios-btn-tap"
-                aria-label="Tutup"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-              </button>
+              <ModalCloseButton onClick={handleClose} />
             </div>
 
             <form onSubmit={handleSubmit} className="ios-modal-body flex-1 overflow-y-auto pb-28 p-4 sm:p-5 space-y-4 no-scrollbar">

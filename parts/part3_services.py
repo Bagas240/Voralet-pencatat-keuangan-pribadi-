@@ -1018,17 +1018,9 @@ PART3_SERVICES = """
 
     // Contextual Long-Press Popover Sheet
     const ContextualMenuModal = ({ isOpen, title, onClose, onEdit, onDuplicate }) => {
-      const [isClosing, setIsClosing] = useState(false);
+      const { shouldRender, isClosing, handleClose } = useModalLifecycle(isOpen, onClose, 300);
 
-      if (!isOpen && !isClosing) return null;
-
-      const handleClose = () => {
-        setIsClosing(true);
-        setTimeout(() => {
-          setIsClosing(false);
-          onClose();
-        }, 200);
-      };
+      if (!shouldRender) return null;
 
       return (
         <div

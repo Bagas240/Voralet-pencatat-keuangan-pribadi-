@@ -667,16 +667,18 @@ PART2_ICONS = """
 
         if (card) {
           if (delta > 80) {
-            card.style.transition = 'transform 0.28s cubic-bezier(0.32, 0.72, 0, 1)';
+            card.style.transition = 'transform 0.38s cubic-bezier(0.32, 0.94, 0.4, 1), opacity 0.38s ease';
             card.style.transform = 'translate3d(0, 100%, 0)';
+            card.style.opacity = '0.92';
             if (window.VoraletHaptics) window.VoraletHaptics.tap();
             setTimeout(() => {
               if (typeof onDismiss === 'function') onDismiss();
-            }, 240);
+            }, 370);
           } else {
             // Authentic iOS spring snap-back
             card.style.transition = 'transform 0.38s cubic-bezier(0.175, 0.885, 0.32, 1.25)';
             card.style.transform = 'translate3d(0, 0, 0)';
+            card.style.opacity = '1';
           }
         } else if (delta > 80) {
           if (typeof onDismiss === 'function') onDismiss();
@@ -711,6 +713,101 @@ PART2_ICONS = """
             <line x1="6" y1="6" x2="18" y2="18"></line>
           </svg>
         </button>
+      );
+    };
+
+    // Universal Modal Lifecycle Hook (Ensures In AND Out Exit Animation on ALL closes)
+    const useModalLifecycle = (isOpen, onClose, duration = 350) => {
+      const [shouldRender, setShouldRender] = useState(isOpen);
+      const [isClosing, setIsClosing] = useState(false);
+
+      useEffect(() => {
+        if (isOpen) {
+          setShouldRender(true);
+          setIsClosing(false);
+        } else if (shouldRender && !isClosing) {
+          setIsClosing(true);
+          const t = setTimeout(() => {
+            setShouldRender(false);
+            setIsClosing(false);
+          }, duration);
+          return () => clearTimeout(t);
+        }
+      }, [isOpen, shouldRender, isClosing, duration]);
+
+      const handleClose = () => {
+        setIsClosing(true);
+        setTimeout(() => {
+          setIsClosing(false);
+          setShouldRender(false);
+          if (onClose) onClose();
+        }, duration);
+      };
+
+      return { shouldRender, isClosing, handleClose };
+    };
+
+    // =========================================================================
+    // ANIMATED MONEY / CURRENCY COUNTER (iOS Dynamic Fluid Counter)
+    // =========================================================================
+    const AnimatedCurrency = ({
+      value = 0,
+      hideBalance = false,
+      duration = 650,
+      className = '',
+      showPulse = false
+    }) => {
+      const numericVal = typeof value === 'number' ? value : (parseRawNumber(value) || 0);
+      const [displayVal, setDisplayVal] = useState(numericVal);
+      const prevValRef = useRef(numericVal);
+      const animRef = useRef(null);
+      const [isCounting, setIsCounting] = useState(false);
+
+      useEffect(() => {
+        if (hideBalance) return;
+        const targetVal = typeof value === 'number' ? value : (parseRawNumber(value) || 0);
+        const startVal = prevValRef.current;
+        prevValRef.current = targetVal;
+
+        if (startVal === targetVal) {
+          setDisplayVal(targetVal);
+          return;
+        }
+
+        setIsCounting(true);
+        const startTime = performance.now();
+        const animDuration = Math.min(Math.max(duration, 350), 850);
+
+        const tick = (now) => {
+          const elapsed = now - startTime;
+          const progress = Math.min(elapsed / animDuration, 1);
+          // Authentic Apple fluid ease-out cubic
+          const ease = 1 - Math.pow(1 - progress, 3);
+          const current = Math.round(startVal + (targetVal - startVal) * ease);
+          setDisplayVal(current);
+
+          if (progress < 1) {
+            animRef.current = requestAnimationFrame(tick);
+          } else {
+            setDisplayVal(targetVal);
+            setIsCounting(false);
+          }
+        };
+
+        animRef.current = requestAnimationFrame(tick);
+        return () => {
+          if (animRef.current) cancelAnimationFrame(animRef.current);
+        };
+      }, [value, hideBalance, duration]);
+
+      if (hideBalance) {
+        return <span className={className}>Rp ••••••••</span>;
+      }
+
+      return (
+        <span className={`inline-block tabular-nums transition-transform duration-200 ${isCounting && showPulse ? 'scale-[1.02] filter brightness-110' : ''} ${className}`}>
+          {formatIDR(displayVal)}
+        </span>
       );
     };
 

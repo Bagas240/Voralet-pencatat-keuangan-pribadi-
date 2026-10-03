@@ -2,24 +2,24 @@ package com.example
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.webkit.ValueCallback
 import android.webkit.WebView
+import android.widget.FrameLayout
 import androidx.activity.ComponentActivity
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -29,10 +29,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import com.example.bridge.AndroidNativeBridge
-import com.example.ui.theme.MyApplicationTheme
 import com.example.webview.VoraletWebChromeClient
 import com.example.webview.VoraletWebViewClient
 import com.example.webview.VoraletWebViewConfig
@@ -40,12 +41,32 @@ import java.io.File
 
 /**
  * Main Activity for Voralet Personal Finance App v3.0.1.
- * Architected with Clean Principles, Edge-to-Edge display, and Hardware Accelerated Web Engine.
- * Optimized for high-refresh-rate displays (90Hz / 120Hz) and zero-jank 120 FPS animations.
+ * Architected with Clean Principles, Edge-to-Edge display, and robust fallback handling.
+ * Eliminates GPU rendernode crashes in emulator containers by using native software rendering.
  */
 class MainActivity : ComponentActivity() {
 
     private var currentWebView: WebView? = null
+    private var rootContainer: FrameLayout? = null
+    private var fileCallback: ValueCallback<Array<Uri>>? = null
+
+    private val fileChooserLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val uri = result.data?.data
+        if (uri != null) {
+            fileCallback?.onReceiveValue(arrayOf(uri))
+        } else {
+            val clipData = result.data?.clipData
+            if (clipData != null && clipData.itemCount > 0) {
+                val uris = Array(clipData.itemCount) { i -> clipData.getItemAt(i).uri }
+                fileCallback?.onReceiveValue(uris)
+            } else {
+                fileCallback?.onReceiveValue(null)
+            }
+        }
+        fileCallback = null
+    }
 
     companion object {
         private const val TAG = "MainActivity"
@@ -59,15 +80,10 @@ class MainActivity : ComponentActivity() {
                         WebView.setDataDirectorySuffix(processName)
                     }
                 }
-                // If a previous version prematurely created empty HTTP Cache directories without the index,
-                // purge them so Chromium Simple Cache can initialize cleanly without reconstruction errors.
-                val defaultDir = File(context.cacheDir, "WebView/Default")
-                val httpCache = File(defaultDir, "HTTP Cache")
-                if (httpCache.exists()) {
-                    val indexFile = File(httpCache, "index-dir/the-real-index")
-                    if (!indexFile.exists()) {
-                        httpCache.deleteRecursively()
-                    }
+                // Clean any corrupted partial cache left over from previous runs so Chromium starts with a clean slate
+                val webViewCache = File(context.cacheDir, "WebView")
+                if (webViewCache.exists()) {
+                    webViewCache.deleteRecursively()
                 }
             } catch (t: Throwable) {
                 Log.w(TAG, "Storage directory preparation notice: ${t.message}")
@@ -78,20 +94,27 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         prepareWebViewStorage(this)
-        // Enable WebView remote debugging only for debug builds
         WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG)
+
+        // Enable edge-to-edge
         enableEdgeToEdge()
-        // Ensure status bar icons are dark/high-contrast by default on light background
+
+        if (VoraletWebViewConfig.isEmulator || !File("/dev/dri/renderD128").exists()) {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED)
+        } else {
+            window.addFlags(WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED)
+        }
+
         try {
-            val insetsController = androidx.core.view.WindowCompat.getInsetsController(window, window.decorView)
+            val insetsController = WindowCompat.getInsetsController(window, window.decorView)
             insetsController.isAppearanceLightStatusBars = true
             insetsController.isAppearanceLightNavigationBars = true
         } catch (t: Throwable) {
             Log.d(TAG, "Status bar appearance notice: ${t.message}")
         }
 
-        // Lock / prioritize High Refresh Rate (90Hz / 120Hz) on physical devices (e.g. Infinix, Samsung, Xiaomi)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !VoraletWebViewConfig.isEmulator) {
+        // On physical devices with hardware acceleration, request high refresh rate
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !VoraletWebViewConfig.isEmulator && File("/dev/dri/renderD128").exists()) {
             window.decorView.post {
                 try {
                     val currentDisplay = display
@@ -108,25 +131,83 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        setContent {
-            MyApplicationTheme {
-                val bgColor = MaterialTheme.colorScheme.background
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(bgColor)
-                        .systemBarsPadding()
-                ) {
-                    VoraletWebViewContainer(
-                        activity = this@MainActivity,
-                        backgroundColor = bgColor.toArgb(),
-                        onWebViewReady = { webView ->
-                            currentWebView = webView
+        // Back button navigation dispatcher
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                val wv = currentWebView
+                if (wv != null) {
+                    wv.evaluateJavascript("(function(){ return window.handleAndroidBack ? window.handleAndroidBack() : false; })()") { result ->
+                        if (result != "true") {
+                            if (wv.canGoBack()) {
+                                wv.goBack()
+                            } else {
+                                finish()
+                            }
                         }
-                    )
+                    }
+                } else {
+                    finish()
                 }
             }
+        })
+
+        // Root container with edge-to-edge window insets handling
+        val isHardwareGpuAvailable = !VoraletWebViewConfig.isEmulator && File("/dev/dri/renderD128").exists()
+        val container = FrameLayout(this).apply {
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+            setBackgroundColor(Color.parseColor("#F8FAFC"))
+            if (!isHardwareGpuAvailable) {
+                setLayerType(View.LAYER_TYPE_SOFTWARE, null)
+            }
         }
+        rootContainer = container
+        setContentView(container)
+
+        ViewCompat.setOnApplyWindowInsetsListener(container) { view, windowInsets ->
+            val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
+            view.setPadding(insets.left, insets.top, insets.right, insets.bottom)
+            windowInsets
+        }
+
+        setupWebView()
+    }
+
+    private fun setupWebView() {
+        val container = rootContainer ?: return
+        currentWebView?.let { wv ->
+            container.removeView(wv)
+            wv.destroy()
+        }
+
+        val isHardwareGpuAvailable = !VoraletWebViewConfig.isEmulator && File("/dev/dri/renderD128").exists()
+        val webView = WebView(this).apply {
+            if (!isHardwareGpuAvailable) {
+                setLayerType(View.LAYER_TYPE_SOFTWARE, null)
+            }
+            VoraletWebViewConfig.applySettings(this, Color.parseColor("#F8FAFC"))
+
+            val bridge = AndroidNativeBridge(this@MainActivity)
+            addJavascriptInterface(bridge, AndroidNativeBridge.BRIDGE_NAME)
+
+            webViewClient = VoraletWebViewClient(
+                onCrashRecover = {
+                    setupWebView()
+                }
+            )
+
+            webChromeClient = VoraletWebChromeClient(
+                fileChooserLauncher = fileChooserLauncher,
+                onFileCallbackReady = { cb -> fileCallback = cb }
+            )
+
+            loadUrl("file:///android_asset/index.html")
+        }
+
+        currentWebView = webView
+        container.addView(webView)
     }
 
     override fun onResume() {
@@ -145,6 +226,7 @@ class MainActivity : ComponentActivity() {
             wv.destroy()
         }
         currentWebView = null
+        rootContainer = null
         super.onDestroy()
     }
 }
@@ -197,10 +279,8 @@ fun VoraletWebViewContainer(
             modifier = modifier.fillMaxSize(),
             factory = { context ->
                 WebView(context).apply {
-                    // Apply standardized hardware acceleration and security configurations
                     VoraletWebViewConfig.applySettings(this, backgroundColor)
 
-                    // Inject secure native bridge
                     val bridge = AndroidNativeBridge(activity)
                     addJavascriptInterface(bridge, AndroidNativeBridge.BRIDGE_NAME)
 
