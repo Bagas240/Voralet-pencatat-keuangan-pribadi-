@@ -99,12 +99,14 @@ class MainActivity : ComponentActivity() {
             android.system.Os.setenv("MESA_DEBUG", "0", true)
             android.system.Os.setenv("MESA_LOG_LEVEL", "fatal", true)
             android.system.Os.setenv("LIBGL_DEBUG", "quiet", true)
+            android.system.Os.setenv("MESA_LOG_FILE", "/dev/null", true)
+            System.setProperty("log.tag.MESA", "SUPPRESS")
+            File("/data/local/tmp/webview-command-line").writeText("_ --disable-gpu --disable-gpu-rasterization --disable-gpu-compositing")
         } catch (_: Throwable) {
             // Safe fallback
         }
         super.onCreate(savedInstanceState)
         prepareWebViewStorage(this)
-        WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG)
 
         // Enable edge-to-edge
         enableEdgeToEdge()

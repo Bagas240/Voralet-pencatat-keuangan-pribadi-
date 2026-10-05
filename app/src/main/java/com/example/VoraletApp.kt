@@ -29,6 +29,29 @@ class VoraletApp : Application() {
       android.system.Os.setenv("MESA_DEBUG", "0", true)
       android.system.Os.setenv("MESA_LOG_LEVEL", "fatal", true)
       android.system.Os.setenv("LIBGL_DEBUG", "quiet", true)
+      android.system.Os.setenv("MESA_LOG_FILE", "/dev/null", true)
+      android.system.Os.setenv("vendor.mesa.log", "silent", true)
+      android.system.Os.setenv("vendor.mesa.log.file", "/dev/null", true)
+    } catch (_: Throwable) {
+      // Safe fallback
+    }
+
+    try {
+      System.setProperty("log.tag.MESA", "SUPPRESS")
+      val spClass = Class.forName("android.os.SystemProperties")
+      val setMethod = spClass.getMethod("set", String::class.java, String::class.java)
+      setMethod.invoke(null, "log.tag.MESA", "SUPPRESS")
+      setMethod.invoke(null, "log.tag.MESA", "SILENT")
+      setMethod.invoke(null, "vendor.mesa.log", "silent")
+      setMethod.invoke(null, "vendor.mesa.log.file", "/dev/null")
+    } catch (_: Throwable) {
+      // Safe fallback
+    }
+
+    try {
+      val cmdLineFile = java.io.File("/data/local/tmp/webview-command-line")
+      cmdLineFile.writeText("_ --disable-gpu --disable-gpu-rasterization --disable-gpu-compositing")
+      cmdLineFile.setReadable(true, false)
     } catch (_: Throwable) {
       // Safe fallback
     }
