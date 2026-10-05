@@ -40,7 +40,7 @@ import com.example.webview.VoraletWebViewConfig
 import java.io.File
 
 /**
- * Main Activity for Voralet Personal Finance App v3.0.1.
+ * Main Activity for Voralet Personal Finance App v3.1.0.
  * Architected with Clean Principles, Edge-to-Edge display, and robust fallback handling.
  * Eliminates GPU rendernode crashes in emulator containers by using native software rendering.
  */

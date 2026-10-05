@@ -1,7 +1,7 @@
 {
   "name": "voralet",
-  "version": "2.9.0",
-  "description": "Aplikasi pelacak keuangan dan kantong digital v2.9.0 dengan sistem 6-digit PIN lokal, perlindungan integritas master security, prioritas kantong, dan antarmuka responsif.",
+  "version": "3.1.0",
+  "description": "Aplikasi pelacak keuangan dan kantong digital v3.1.0 dengan sistem 6-digit PIN lokal, perlindungan integritas master security, prioritas kantong, dan antarmuka responsif.",
   "type": "module",
   "main": "server.ts",
   "scripts": {
