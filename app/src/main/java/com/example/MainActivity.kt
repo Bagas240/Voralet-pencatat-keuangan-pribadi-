@@ -112,6 +112,16 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         try {
+            // Anti-screenshot & anti-screen recording security protection for personal finance
+            window.setFlags(
+                WindowManager.LayoutParams.FLAG_SECURE,
+                WindowManager.LayoutParams.FLAG_SECURE
+            )
+        } catch (_: Throwable) {
+            // Safe fallback
+        }
+
+        try {
             val insetsController = WindowCompat.getInsetsController(window, window.decorView)
             insetsController.isAppearanceLightStatusBars = true
             insetsController.isAppearanceLightNavigationBars = true

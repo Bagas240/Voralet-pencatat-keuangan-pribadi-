@@ -1275,7 +1275,7 @@ PART6_MODALS = """
       );
     };
 
-    const SettingsModal = ({ isOpen, onClose, userProfile, onUpdateProfile, onHardReset, onImportData, onExportData, onOpenCsvImport, onExportCsv, theme, onToggleTheme, customCategories = [], onSaveCustomCategory, onDeleteCustomCategory, onOpenDeveloperGate, onOpenMonthlyPdfReport }) => {
+    const SettingsModal = ({ isOpen, onClose, userProfile, onUpdateProfile, onHardReset, onImportData, onExportData, onOpenCsvImport, onExportCsv, onExportExcel, theme, onToggleTheme, customCategories = [], onSaveCustomCategory, onDeleteCustomCategory, onOpenDeveloperGate, onOpenMonthlyPdfReport }) => {
       const [name, setName] = useState(userProfile.name || '');
       const [username, setUsername] = useState(userProfile.username || '');
       const [avatar, setAvatar] = useState(userProfile.avatar || '');
@@ -1852,6 +1852,19 @@ PART6_MODALS = """
                     <input type="file" accept=".json" className="hidden" onChange={handleFileImport} />
                   </label>
                 </div>
+
+                {/* Ekspor Seluruh Pembukuan ke Excel (.xls) */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleClose();
+                    if (onExportExcel) onExportExcel();
+                  }}
+                  className="w-full py-2.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 text-xs font-bold rounded-xl border border-emerald-200/80 dark:border-emerald-800/60 flex items-center justify-center gap-2 ios-btn-tap shadow-xs"
+                >
+                  <Icon name="file-text" className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  <span>Ekspor Seluruh Pembukuan ke Excel (.xls)</span>
+                </button>
 
                 {/* Ekspor Laporan Bulanan PDF */}
                 <button
@@ -2742,7 +2755,8 @@ PART6_MODALS = """
       savingsGoals = [],
       customCategories = [],
       userProfile = {},
-      hideBalance
+      hideBalance,
+      onExportExcel
     }) => {
       const { shouldRender, isClosing, handleClose } = useModalLifecycle(isOpen, onClose, 350);
 
@@ -3189,6 +3203,21 @@ PART6_MODALS = """
                     <span>Unduh Dokumen PDF (.pdf)</span>
                   </>
                 )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (onExportExcel) onExportExcel();
+                  else if (typeof ExcelExportService !== 'undefined') {
+                    ExcelExportService.exportToExcel({ accounts, transactions, savingsGoals, debts, customCategories, userProfile });
+                  }
+                }}
+                disabled={isExporting}
+                className="py-3 px-3.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-xs ios-btn-tap flex items-center justify-center gap-1.5"
+              >
+                <Icon name="file-text" className="w-4 h-4" />
+                <span>Ekspor Excel (.xls)</span>
               </button>
 
               <button

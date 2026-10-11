@@ -122,4 +122,36 @@ class AndroidNativeBridge(
             }
         }
     }
+
+    /**
+     * Share or open an exported document (Excel, PDF, or Backup JSON) in external apps.
+     * Uses Android FileProvider with zero runtime permissions.
+     */
+    @JavascriptInterface
+    fun shareOrSaveFile(fileName: String?, contentBase64: String?, mimeType: String?): Boolean {
+        if (fileName.isNullOrBlank() || contentBase64.isNullOrBlank()) return false
+        return try {
+            val bytes = android.util.Base64.decode(contentBase64, android.util.Base64.DEFAULT)
+            val file = java.io.File(activity.cacheDir, fileName)
+            file.writeBytes(bytes)
+
+            val uri = androidx.core.content.FileProvider.getUriForFile(
+                activity,
+                "${activity.packageName}.fileprovider",
+                file
+            )
+            val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                type = mimeType ?: "application/vnd.ms-excel"
+                putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                putExtra(android.content.Intent.EXTRA_SUBJECT, fileName)
+                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            activity.startActivity(android.content.Intent.createChooser(intent, "Buka / Simpan $fileName"))
+            true
+        } catch (t: Throwable) {
+            Log.e(TAG, "Failed to share or save file", t)
+            false
+        }
+    }
 }

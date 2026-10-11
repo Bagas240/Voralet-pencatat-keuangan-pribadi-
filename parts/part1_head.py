@@ -12,6 +12,9 @@ HTML_HEAD = """<!DOCTYPE html>
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="theme-color" content="#FFFFFF" />
+
+  <!-- Security & Anti-Tampering Content Policy -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: file:; img-src 'self' data: blob: file:; font-src 'self' data: https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; connect-src 'self' data: blob:; object-src 'none';" />
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1227,6 +1230,35 @@ HTML_HEAD = """<!DOCTYPE html>
 </head>
 <body>
   <script>
+    // Strict Code & Asset Security Controls (Zero-Export & Anti-Tamper Protection)
+    (function() {
+      // Disable right-click context menu (prevents inspecting elements or extracting assets)
+      document.addEventListener('contextmenu', function(e) {
+        if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+        e.preventDefault();
+      }, { capture: true });
+
+      // Disable drag and drop of local assets
+      window.addEventListener('dragover', function(e) { e.preventDefault(); }, false);
+      window.addEventListener('drop', function(e) { e.preventDefault(); }, false);
+
+      // Disable developer inspect shortcuts (F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U)
+      window.addEventListener('keydown', function(e) {
+        if (e.keyCode === 123 || (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67)) || (e.ctrlKey && e.keyCode === 85)) {
+          e.preventDefault();
+          return false;
+        }
+      }, { capture: true });
+
+      // Secure prototype pollution guard
+      try {
+        if (typeof Object.freeze === 'function') {
+          Object.freeze(Object.prototype);
+          Object.freeze(Array.prototype);
+        }
+      } catch (err) {}
+    })();
+
     window.onerror = function(msg, url, line) {
       var r = document.getElementById('root');
       if (r) r.innerHTML = '<div style="padding:20px;color:#e11d48;background:#fff1f2;font-family:sans-serif;border-radius:12px;margin:16px;"><b>Runtime Error:</b><br>'+msg+'<br>Line: '+line+'</div>';

@@ -17,3 +17,11 @@
 # Obfuscate class and method names in release builds
 -repackageclasses ''
 -allowaccessmodification
+
+# Strip verbose debug logs in production
+-assumenosideeffects class android.util.Log {
+    public static *** v(...);
+    public static *** d(...);
+    public static *** i(...);
+}
+

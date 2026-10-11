@@ -1780,6 +1780,27 @@ PART8_APP = """
         showToast('Cadangan brankas terenkripsi berhasil diunduh 🔒');
       }, [name, username, accounts, transactions, savingsGoals, debts, customCategories, safeBudget]);
 
+      const handleExportExcel = useCallback(() => {
+        try {
+          if (typeof ExcelExportService !== 'undefined') {
+            const success = ExcelExportService.exportToExcel({
+              accounts: safeAccounts,
+              transactions: safeTransactions,
+              savingsGoals: savingsGoals,
+              debts: debts,
+              customCategories: customCategories,
+              userProfile: { name, username }
+            });
+            if (success) {
+              showToast('Laporan Excel (.xls) berhasil diekspor & siap dibuka! 📊');
+            }
+          }
+        } catch (e) {
+          console.error('[ExcelExport] Failed:', e);
+          showToast('Gagal mengekspor data ke Excel');
+        }
+      }, [safeAccounts, safeTransactions, savingsGoals, debts, customCategories, name, username, showToast]);
+
       const handleImportData = useCallback((data) => {
         // Auto-decrypt if encrypted vault format
         let targetData = data;
@@ -2080,6 +2101,7 @@ PART8_APP = """
             onImportData={handleImportData}
             onExportData={handleExportData}
             onOpenCsvImport={() => setIsCsvImportModalOpen(true)}
+            onExportExcel={handleExportExcel}
             theme={theme}
             onToggleTheme={toggleTheme}
             customCategories={customCategories}
@@ -2117,6 +2139,7 @@ PART8_APP = """
             customCategories={customCategories}
             userProfile={memoizedUserProfile}
             hideBalance={hideBalance}
+            onExportExcel={handleExportExcel}
           />
         </div>
       );

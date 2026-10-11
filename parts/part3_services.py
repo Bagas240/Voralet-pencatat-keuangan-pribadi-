@@ -1943,4 +1943,674 @@ PART3_SERVICES = """
         }
       }
     };
+
+    // =========================================================================
+    // EXCEL EXPORT ENGINE (Multi-Worksheet XML Spreadsheet 2003 Engine)
+    // 100% Client-Side, Zero External Dependencies, Zero Telemetry
+    // =========================================================================
+    const ExcelExportService = {
+      escapeXml: (val) => {
+        if (val === null || val === undefined) return '';
+        return String(val)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&apos;');
+      },
+
+      generateExcelXml: ({
+        accounts = [],
+        transactions = [],
+        savingsGoals = [],
+        debts = [],
+        customCategories = [],
+        userProfile = {}
+      }) => {
+        const esc = ExcelExportService.escapeXml;
+        const safeAccs = Array.isArray(accounts) ? accounts : [];
+        const safeTxs = Array.isArray(transactions) ? transactions : [];
+        const safeGoals = Array.isArray(savingsGoals) ? savingsGoals : [];
+        const safeDebts = Array.isArray(debts) ? debts : [];
+
+        const now = new Date();
+        const exportDateStr = now.toLocaleDateString('id-ID', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+        const exportTimeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+        const userName = userProfile?.name || 'Sahabat Voralet';
+        const userTag = userProfile?.username ? `@${userProfile.username}` : '@voralet_user';
+
+        // 1. Calculations for Financial Summary
+        let totalIncome = 0;
+        let totalExpense = 0;
+        safeTxs.forEach(t => {
+          const amt = Number(t.amount) || 0;
+          if (t.type === 'INCOME') totalIncome += amt;
+          else if (t.type === 'EXPENSE') totalExpense += amt;
+        });
+        const netCashflow = totalIncome - totalExpense;
+        const totalWalletBalance = Ledger.getTotalBalance(safeAccs, safeTxs);
+
+        let totalSavingsTarget = 0;
+        let totalSavingsCurrent = 0;
+        safeGoals.forEach(g => {
+          totalSavingsTarget += Number(g.targetAmount) || 0;
+          totalSavingsCurrent += Number(g.currentAmount) || 0;
+        });
+
+        let totalHutangUnpaid = 0;
+        let totalPiutangUnpaid = 0;
+        safeDebts.forEach(d => {
+          const tot = Number(d.amount) || 0;
+          const paid = Number(d.paidAmount) || 0;
+          const rem = Math.max(0, tot - paid);
+          if (d.type === 'HUTANG') {
+            if (!d.isPaid && d.status !== 'LUNAS') totalHutangUnpaid += rem;
+          } else {
+            if (!d.isPaid && d.status !== 'LUNAS') totalPiutangUnpaid += rem;
+          }
+        });
+
+        const savingsRate = totalIncome > 0 ? Math.max(0, Math.round((netCashflow / totalIncome) * 100)) : 0;
+
+        // Categories breakdown
+        const categoryMap = {};
+        safeTxs.filter(t => t.type === 'EXPENSE').forEach(t => {
+          const catId = t.category || 'lainnya';
+          const amt = Number(t.amount) || 0;
+          if (!categoryMap[catId]) {
+            const catObj = getCategoryById(catId, customCategories);
+            categoryMap[catId] = { id: catId, label: catObj.label || catId, icon: catObj.icon || 'tag', count: 0, amount: 0 };
+          }
+          categoryMap[catId].count++;
+          categoryMap[catId].amount += amt;
+        });
+        const sortedCats = Object.values(categoryMap).sort((a, b) => b.amount - a.amount);
+
+        // Account map for fast lookup
+        const accMap = {};
+        safeAccs.forEach(a => { accMap[a.id] = a; });
+
+        return `<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:html="http://www.w3.org/TR/REC-html40">
+ <DocumentProperties xmlns="urn:schemas-microsoft-com:office:office">
+  <Title>Laporan Keuangan Voralet</Title>
+  <Subject>Pembukuan Finansial Pribadi Multi-Sheet</Subject>
+  <Author>${esc(userName)}</Author>
+  <Created>${now.toISOString()}</Created>
+  <Company>Voralet Personal Finance</Company>
+  <Version>3.1.0</Version>
+ </DocumentProperties>
+ <Styles>
+  <Style ss:ID="Default" ss:Name="Normal">
+   <Alignment ss:Vertical="Center"/>
+   <Borders/>
+   <Font ss:FontName="Calibri" ss:Size="11" ss:Color="#0F172A"/>
+   <Interior/>
+   <NumberFormat/>
+   <Protection/>
+  </Style>
+  <Style ss:ID="MainTitle">
+   <Font ss:FontName="Calibri" ss:Size="16" ss:Bold="1" ss:Color="#0284C7"/>
+   <Alignment ss:Horizontal="Left" ss:Vertical="Center"/>
+  </Style>
+  <Style ss:ID="SubTitle">
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Italic="1" ss:Color="#64748B"/>
+   <Alignment ss:Horizontal="Left" ss:Vertical="Center"/>
+  </Style>
+  <Style ss:ID="SectionHeader">
+   <Font ss:FontName="Calibri" ss:Size="12" ss:Bold="1" ss:Color="#0F172A"/>
+   <Interior ss:Color="#E0F2FE" ss:Pattern="Solid"/>
+   <Alignment ss:Horizontal="Left" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#BAE6FD"/>
+   </Borders>
+  </Style>
+  <Style ss:ID="ThBlue">
+   <Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1" ss:Color="#FFFFFF"/>
+   <Interior ss:Color="#0284C7" ss:Pattern="Solid"/>
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#0369A1"/>
+   </Borders>
+  </Style>
+  <Style ss:ID="ThGreen">
+   <Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1" ss:Color="#FFFFFF"/>
+   <Interior ss:Color="#059669" ss:Pattern="Solid"/>
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>
+  </Style>
+  <Style ss:ID="ThRose">
+   <Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1" ss:Color="#FFFFFF"/>
+   <Interior ss:Color="#E11D48" ss:Pattern="Solid"/>
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>
+  </Style>
+  <Style ss:ID="ThAmber">
+   <Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1" ss:Color="#FFFFFF"/>
+   <Interior ss:Color="#D97706" ss:Pattern="Solid"/>
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>
+  </Style>
+  <Style ss:ID="ThPurple">
+   <Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1" ss:Color="#FFFFFF"/>
+   <Interior ss:Color="#6366F1" ss:Pattern="Solid"/>
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>
+  </Style>
+  <Style ss:ID="CellCenter">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+  </Style>
+  <Style ss:ID="CellLeft">
+   <Alignment ss:Horizontal="Left" ss:Vertical="Center"/>
+  </Style>
+  <Style ss:ID="CellBold">
+   <Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1" ss:Color="#0F172A"/>
+   <Alignment ss:Horizontal="Left" ss:Vertical="Center"/>
+  </Style>
+  <Style ss:ID="Currency">
+   <NumberFormat ss:Format="&quot;Rp&quot;\ #,##0;[Red]-&quot;Rp&quot;\ #,##0;&quot;Rp&quot;\ 0"/>
+   <Alignment ss:Horizontal="Right" ss:Vertical="Center"/>
+  </Style>
+  <Style ss:ID="CurrencyBold">
+   <Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1" ss:Color="#0F172A"/>
+   <NumberFormat ss:Format="&quot;Rp&quot;\ #,##0;[Red]-&quot;Rp&quot;\ #,##0;&quot;Rp&quot;\ 0"/>
+   <Alignment ss:Horizontal="Right" ss:Vertical="Center"/>
+  </Style>
+  <Style ss:ID="CurrencyIncome">
+   <Font ss:FontName="Calibri" ss:Size="11" ss:Color="#059669" ss:Bold="1"/>
+   <NumberFormat ss:Format="&quot;+Rp&quot;\ #,##0;&quot;Rp&quot;\ 0"/>
+   <Alignment ss:Horizontal="Right" ss:Vertical="Center"/>
+  </Style>
+  <Style ss:ID="CurrencyExpense">
+   <Font ss:FontName="Calibri" ss:Size="11" ss:Color="#E11D48" ss:Bold="1"/>
+   <NumberFormat ss:Format="&quot;-Rp&quot;\ #,##0;&quot;Rp&quot;\ 0"/>
+   <Alignment ss:Horizontal="Right" ss:Vertical="Center"/>
+  </Style>
+  <Style ss:ID="TotalRow">
+   <Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1" ss:Color="#0F172A"/>
+   <Interior ss:Color="#F1F5F9" ss:Pattern="Solid"/>
+   <Borders>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#94A3B8"/>
+    <Border ss:Position="Bottom" ss:LineStyle="Double" ss:Weight="3" ss:Color="#94A3B8"/>
+   </Borders>
+   <Alignment ss:Horizontal="Left" ss:Vertical="Center"/>
+  </Style>
+  <Style ss:ID="TotalCurrency">
+   <Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1" ss:Color="#0F172A"/>
+   <Interior ss:Color="#F1F5F9" ss:Pattern="Solid"/>
+   <NumberFormat ss:Format="&quot;Rp&quot;\ #,##0;[Red]-&quot;Rp&quot;\ #,##0;&quot;Rp&quot;\ 0"/>
+   <Borders>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#94A3B8"/>
+    <Border ss:Position="Bottom" ss:LineStyle="Double" ss:Weight="3" ss:Color="#94A3B8"/>
+   </Borders>
+   <Alignment ss:Horizontal="Right" ss:Vertical="Center"/>
+  </Style>
+  <Style ss:ID="Percent">
+   <NumberFormat ss:Format="0.0%"/>
+   <Alignment ss:Horizontal="Right" ss:Vertical="Center"/>
+  </Style>
+  <Style ss:ID="BadgeGreen">
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Bold="1" ss:Color="#065F46"/>
+   <Interior ss:Color="#D1FAE5" ss:Pattern="Solid"/>
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+  </Style>
+  <Style ss:ID="BadgeRed">
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Bold="1" ss:Color="#991B1B"/>
+   <Interior ss:Color="#FEE2E2" ss:Pattern="Solid"/>
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+  </Style>
+ </Styles>
+
+ <!-- 1. WORKSHEET: RINGKASAN FINANSIAL -->
+ <Worksheet ss:Name="Ringkasan Keuangan">
+  <Table ss:DefaultRowHeight="20">
+   <Column ss:Width="40"/>
+   <Column ss:Width="230"/>
+   <Column ss:Width="180"/>
+   <Column ss:Width="240"/>
+
+   <Row ss:Height="28">
+    <Cell ss:MergeAcross="3" ss:StyleID="MainTitle">
+     <Data ss:Type="String">VORALET - RINGKASAN EKSEKUTIF KEUANGAN PRIBADI</Data>
+    </Cell>
+   </Row>
+   <Row ss:Height="18">
+    <Cell ss:MergeAcross="3" ss:StyleID="SubTitle">
+     <Data ss:Type="String">Pemilik: ${esc(userName)} (${esc(userTag)}) • Tanggal Cetak: ${esc(exportDateStr)} ${esc(exportTimeStr)} • 100% Offline</Data>
+    </Cell>
+   </Row>
+   <Row ss:Height="12"><Cell/></Row>
+
+   <Row ss:Height="24">
+    <Cell ss:MergeAcross="3" ss:StyleID="SectionHeader">
+     <Data ss:Type="String">1. INDIKATOR KUNCI KEUANGAN (KEY PERFORMANCE INDICATORS)</Data>
+    </Cell>
+   </Row>
+   <Row ss:Height="22">
+    <Cell ss:StyleID="ThBlue"><Data ss:Type="String">No</Data></Cell>
+    <Cell ss:StyleID="ThBlue"><Data ss:Type="String">Parameter Keuangan</Data></Cell>
+    <Cell ss:StyleID="ThBlue"><Data ss:Type="String">Total Nominal (Rp)</Data></Cell>
+    <Cell ss:StyleID="ThBlue"><Data ss:Type="String">Status / Keterangan</Data></Cell>
+   </Row>
+   <Row>
+    <Cell ss:StyleID="CellCenter"><Data ss:Type="Number">1</Data></Cell>
+    <Cell ss:StyleID="CellBold"><Data ss:Type="String">Total Saldo Kas &amp; Bank</Data></Cell>
+    <Cell ss:StyleID="CurrencyBold"><Data ss:Type="Number">${totalWalletBalance}</Data></Cell>
+    <Cell ss:StyleID="CellLeft"><Data ss:Type="String">${safeAccs.length} Kantong / Rekening aktif</Data></Cell>
+   </Row>
+   <Row>
+    <Cell ss:StyleID="CellCenter"><Data ss:Type="Number">2</Data></Cell>
+    <Cell ss:StyleID="CellLeft"><Data ss:Type="String">Total Pemasukan Tercatat</Data></Cell>
+    <Cell ss:StyleID="CurrencyIncome"><Data ss:Type="Number">${totalIncome}</Data></Cell>
+    <Cell ss:StyleID="CellLeft"><Data ss:Type="String">Akumulasi seluruh arus masuk</Data></Cell>
+   </Row>
+   <Row>
+    <Cell ss:StyleID="CellCenter"><Data ss:Type="Number">3</Data></Cell>
+    <Cell ss:StyleID="CellLeft"><Data ss:Type="String">Total Pengeluaran Tercatat</Data></Cell>
+    <Cell ss:StyleID="CurrencyExpense"><Data ss:Type="Number">${totalExpense}</Data></Cell>
+    <Cell ss:StyleID="CellLeft"><Data ss:Type="String">Akumulasi seluruh belanja &amp; tagihan</Data></Cell>
+   </Row>
+   <Row>
+    <Cell ss:StyleID="CellCenter"><Data ss:Type="Number">4</Data></Cell>
+    <Cell ss:StyleID="CellBold"><Data ss:Type="String">Arus Kas Bersih (Net Cashflow)</Data></Cell>
+    <Cell ss:StyleID="${netCashflow >= 0 ? 'CurrencyIncome' : 'CurrencyExpense'}"><Data ss:Type="Number">${netCashflow}</Data></Cell>
+    <Cell ss:StyleID="${netCashflow >= 0 ? 'BadgeGreen' : 'BadgeRed'}"><Data ss:Type="String">${netCashflow >= 0 ? 'SURPLUS / HEMAT' : 'DEFISIT ARUS KAS'}</Data></Cell>
+   </Row>
+   <Row>
+    <Cell ss:StyleID="CellCenter"><Data ss:Type="Number">5</Data></Cell>
+    <Cell ss:StyleID="CellLeft"><Data ss:Type="String">Dana Terkumpul di Tabungan Impian</Data></Cell>
+    <Cell ss:StyleID="Currency"><Data ss:Type="Number">${totalSavingsCurrent}</Data></Cell>
+    <Cell ss:StyleID="CellLeft"><Data ss:Type="String">Dari target Rp ${totalSavingsTarget.toLocaleString('id-ID')} (${safeGoals.length} Impian)</Data></Cell>
+   </Row>
+   <Row>
+    <Cell ss:StyleID="CellCenter"><Data ss:Type="Number">6</Data></Cell>
+    <Cell ss:StyleID="CellLeft"><Data ss:Type="String">Sisa Hutang Belum Lunas (Kewajiban)</Data></Cell>
+    <Cell ss:StyleID="CurrencyExpense"><Data ss:Type="Number">${totalHutangUnpaid}</Data></Cell>
+    <Cell ss:StyleID="CellLeft"><Data ss:Type="String">Kewajiban bayar yang belum lunas</Data></Cell>
+   </Row>
+   <Row>
+    <Cell ss:StyleID="CellCenter"><Data ss:Type="Number">7</Data></Cell>
+    <Cell ss:StyleID="CellLeft"><Data ss:Type="String">Sisa Piutang Belum Diterima (Hak Tagih)</Data></Cell>
+    <Cell ss:StyleID="CurrencyIncome"><Data ss:Type="Number">${totalPiutangUnpaid}</Data></Cell>
+    <Cell ss:StyleID="CellLeft"><Data ss:Type="String">Uang yang masih dipinjam pihak lain</Data></Cell>
+   </Row>
+   <Row>
+    <Cell ss:StyleID="CellCenter"><Data ss:Type="Number">8</Data></Cell>
+    <Cell ss:StyleID="CellLeft"><Data ss:Type="String">Tingkat Penghematan (Savings Rate)</Data></Cell>
+    <Cell ss:StyleID="CellBold"><Data ss:Type="String">${savingsRate}%</Data></Cell>
+    <Cell ss:StyleID="CellLeft"><Data ss:Type="String">${savingsRate >= 20 ? 'Sangat Sehat (Ideal &gt; 20%)' : 'Perlu Penghematan'}</Data></Cell>
+   </Row>
+
+   <Row ss:Height="14"><Cell/></Row>
+
+   <!-- Category Breakdown Table -->
+   <Row ss:Height="24">
+    <Cell ss:MergeAcross="3" ss:StyleID="SectionHeader">
+     <Data ss:Type="String">2. RINCIAN PENGELUARAN PER KATEGORI</Data>
+    </Cell>
+   </Row>
+   <Row ss:Height="22">
+    <Cell ss:StyleID="ThRose"><Data ss:Type="String">No</Data></Cell>
+    <Cell ss:StyleID="ThRose"><Data ss:Type="String">Kategori Pengeluaran</Data></Cell>
+    <Cell ss:StyleID="ThRose"><Data ss:Type="String">Frekuensi</Data></Cell>
+    <Cell ss:StyleID="ThRose"><Data ss:Type="String">Total Nominal (Rp)</Data></Cell>
+   </Row>
+   ${sortedCats.length === 0 ? `
+   <Row>
+    <Cell ss:MergeAcross="3" ss:StyleID="CellCenter"><Data ss:Type="String">Belum ada catatan pengeluaran.</Data></Cell>
+   </Row>` : sortedCats.map((cat, idx) => `
+   <Row>
+    <Cell ss:StyleID="CellCenter"><Data ss:Type="Number">${idx + 1}</Data></Cell>
+    <Cell ss:StyleID="CellLeft"><Data ss:Type="String">${esc(cat.label)}</Data></Cell>
+    <Cell ss:StyleID="CellCenter"><Data ss:Type="Number">${cat.count}</Data></Cell>
+    <Cell ss:StyleID="CurrencyExpense"><Data ss:Type="Number">${cat.amount}</Data></Cell>
+   </Row>`).join('')}
+   <Row ss:Height="22">
+    <Cell ss:MergeAcross="2" ss:StyleID="TotalRow"><Data ss:Type="String">TOTAL SELURUH PENGELUARAN</Data></Cell>
+    <Cell ss:StyleID="TotalCurrency"><Data ss:Type="Number">${totalExpense}</Data></Cell>
+   </Row>
+  </Table>
+ </Worksheet>
+
+ <!-- 2. WORKSHEET: MUTASI TRANSAKSI -->
+ <Worksheet ss:Name="Mutasi Transaksi">
+  <Table ss:DefaultRowHeight="20">
+   <Column ss:Width="40"/>
+   <Column ss:Width="100"/>
+   <Column ss:Width="120"/>
+   <Column ss:Width="140"/>
+   <Column ss:Width="140"/>
+   <Column ss:Width="150"/>
+   <Column ss:Width="240"/>
+   <Column ss:Width="140"/>
+
+   <Row ss:Height="26">
+    <Cell ss:MergeAcross="7" ss:StyleID="MainTitle">
+     <Data ss:Type="String">MUTASI TRANSAKSI (PEMASUKAN &amp; PENGELUARAN)</Data>
+    </Cell>
+   </Row>
+   <Row ss:Height="18">
+    <Cell ss:MergeAcross="7" ss:StyleID="SubTitle">
+     <Data ss:Type="String">Total ${safeTxs.length} Transaksi Tercatat • Lengkap &amp; Rapi</Data>
+    </Cell>
+   </Row>
+   <Row ss:Height="10"><Cell/></Row>
+
+   <Row ss:Height="22">
+    <Cell ss:StyleID="ThBlue"><Data ss:Type="String">No</Data></Cell>
+    <Cell ss:StyleID="ThBlue"><Data ss:Type="String">Tanggal</Data></Cell>
+    <Cell ss:StyleID="ThBlue"><Data ss:Type="String">Jenis Mutasi</Data></Cell>
+    <Cell ss:StyleID="ThBlue"><Data ss:Type="String">Kategori</Data></Cell>
+    <Cell ss:StyleID="ThBlue"><Data ss:Type="String">Dompet / Rekening</Data></Cell>
+    <Cell ss:StyleID="ThBlue"><Data ss:Type="String">Nominal (Rp)</Data></Cell>
+    <Cell ss:StyleID="ThBlue"><Data ss:Type="String">Catatan / Keterangan</Data></Cell>
+    <Cell ss:StyleID="ThBlue"><Data ss:Type="String">ID Mutasi</Data></Cell>
+   </Row>
+
+   ${safeTxs.length === 0 ? `
+   <Row>
+    <Cell ss:MergeAcross="7" ss:StyleID="CellCenter"><Data ss:Type="String">Belum ada data transaksi yang tercatat.</Data></Cell>
+   </Row>` : safeTxs.map((t, idx) => {
+     const isInc = t.type === 'INCOME';
+     const catObj = getCategoryById(t.category, customCategories);
+     const accObj = accMap[t.accountId];
+     const accName = accObj ? accObj.name : 'Utama';
+     const amt = Number(t.amount) || 0;
+     return `
+   <Row>
+    <Cell ss:StyleID="CellCenter"><Data ss:Type="Number">${idx + 1}</Data></Cell>
+    <Cell ss:StyleID="CellCenter"><Data ss:Type="String">${esc(t.date || '')}</Data></Cell>
+    <Cell ss:StyleID="${isInc ? 'BadgeGreen' : 'BadgeRed'}"><Data ss:Type="String">${isInc ? 'Pemasukan (+)' : 'Pengeluaran (-)'}</Data></Cell>
+    <Cell ss:StyleID="CellLeft"><Data ss:Type="String">${esc(catObj.label || t.category || '')}</Data></Cell>
+    <Cell ss:StyleID="CellLeft"><Data ss:Type="String">${esc(accName)}</Data></Cell>
+    <Cell ss:StyleID="${isInc ? 'CurrencyIncome' : 'CurrencyExpense'}"><Data ss:Type="Number">${amt}</Data></Cell>
+    <Cell ss:StyleID="CellLeft"><Data ss:Type="String">${esc(t.notes || t.note || '')}</Data></Cell>
+    <Cell ss:StyleID="CellCenter"><Data ss:Type="String">${esc(t.id || '')}</Data></Cell>
+   </Row>`;
+   }).join('')}
+
+   <Row ss:Height="22">
+    <Cell ss:MergeAcross="4" ss:StyleID="TotalRow"><Data ss:Type="String">TOTAL PEMASUKAN</Data></Cell>
+    <Cell ss:StyleID="TotalCurrency"><Data ss:Type="Number">${totalIncome}</Data></Cell>
+    <Cell ss:MergeAcross="1" ss:StyleID="TotalRow"/>
+   </Row>
+   <Row ss:Height="22">
+    <Cell ss:MergeAcross="4" ss:StyleID="TotalRow"><Data ss:Type="String">TOTAL PENGELUARAN</Data></Cell>
+    <Cell ss:StyleID="TotalCurrency"><Data ss:Type="Number">${totalExpense}</Data></Cell>
+    <Cell ss:MergeAcross="1" ss:StyleID="TotalRow"/>
+   </Row>
+   <Row ss:Height="22">
+    <Cell ss:MergeAcross="4" ss:StyleID="TotalRow"><Data ss:Type="String">SELISIH BERSIH (NET CASHFLOW)</Data></Cell>
+    <Cell ss:StyleID="TotalCurrency"><Data ss:Type="Number">${netCashflow}</Data></Cell>
+    <Cell ss:MergeAcross="1" ss:StyleID="TotalRow"/>
+   </Row>
+  </Table>
+ </Worksheet>
+
+ <!-- 3. WORKSHEET: HUTANG & PIUTANG -->
+ <Worksheet ss:Name="Hutang &amp; Piutang">
+  <Table ss:DefaultRowHeight="20">
+   <Column ss:Width="40"/>
+   <Column ss:Width="160"/>
+   <Column ss:Width="130"/>
+   <Column ss:Width="140"/>
+   <Column ss:Width="140"/>
+   <Column ss:Width="140"/>
+   <Column ss:Width="110"/>
+   <Column ss:Width="110"/>
+   <Column ss:Width="220"/>
+   <Column ss:Width="220"/>
+
+   <Row ss:Height="26">
+    <Cell ss:MergeAcross="9" ss:StyleID="MainTitle">
+     <Data ss:Type="String">CATATAN HUTANG &amp; PIUTANG</Data>
+    </Cell>
+   </Row>
+   <Row ss:Height="18">
+    <Cell ss:MergeAcross="9" ss:StyleID="SubTitle">
+     <Data ss:Type="String">Kewajiban hutang &amp; hak tagih piutang per kontak dengan status pelunasan</Data>
+    </Cell>
+   </Row>
+   <Row ss:Height="10"><Cell/></Row>
+
+   <Row ss:Height="22">
+    <Cell ss:StyleID="ThAmber"><Data ss:Type="String">No</Data></Cell>
+    <Cell ss:StyleID="ThAmber"><Data ss:Type="String">Nama Pihak / Kontak</Data></Cell>
+    <Cell ss:StyleID="ThAmber"><Data ss:Type="String">Jenis Catatan</Data></Cell>
+    <Cell ss:StyleID="ThAmber"><Data ss:Type="String">Total Pinjaman (Rp)</Data></Cell>
+    <Cell ss:StyleID="ThAmber"><Data ss:Type="String">Sudah Dibayar (Rp)</Data></Cell>
+    <Cell ss:StyleID="ThAmber"><Data ss:Type="String">Sisa Tagihan (Rp)</Data></Cell>
+    <Cell ss:StyleID="ThAmber"><Data ss:Type="String">Status</Data></Cell>
+    <Cell ss:StyleID="ThAmber"><Data ss:Type="String">Jatuh Tempo</Data></Cell>
+    <Cell ss:StyleID="ThAmber"><Data ss:Type="String">Catatan</Data></Cell>
+    <Cell ss:StyleID="ThAmber"><Data ss:Type="String">Riwayat Cicilan</Data></Cell>
+   </Row>
+
+   ${safeDebts.length === 0 ? `
+   <Row>
+    <Cell ss:MergeAcross="9" ss:StyleID="CellCenter"><Data ss:Type="String">Tidak ada catatan hutang atau piutang aktif.</Data></Cell>
+   </Row>` : safeDebts.map((d, idx) => {
+     const isHutang = d.type === 'HUTANG';
+     const tot = Number(d.amount) || 0;
+     const paid = Number(d.paidAmount) || 0;
+     const sisa = Math.max(0, tot - paid);
+     const isPaid = Boolean(d.isPaid || d.status === 'LUNAS' || sisa <= 0);
+     const payments = Array.isArray(d.payments) ? d.payments : [];
+     const paymentDesc = payments.length > 0
+       ? `${payments.length}x bayar (Terakhir: ${payments[0]?.date || '-'})`
+       : 'Belum ada pembayaran';
+
+     return `
+   <Row>
+    <Cell ss:StyleID="CellCenter"><Data ss:Type="Number">${idx + 1}</Data></Cell>
+    <Cell ss:StyleID="CellBold"><Data ss:Type="String">${esc(d.personName || 'Kontak')}</Data></Cell>
+    <Cell ss:StyleID="${isHutang ? 'BadgeRed' : 'BadgeGreen'}"><Data ss:Type="String">${isHutang ? 'HUTANG (Kewajiban)' : 'PIUTANG (Hak Tagih)'}</Data></Cell>
+    <Cell ss:StyleID="Currency"><Data ss:Type="Number">${tot}</Data></Cell>
+    <Cell ss:StyleID="Currency"><Data ss:Type="Number">${paid}</Data></Cell>
+    <Cell ss:StyleID="${sisa > 0 ? (isHutang ? 'CurrencyExpense' : 'CurrencyIncome') : 'Currency'}"><Data ss:Type="Number">${sisa}</Data></Cell>
+    <Cell ss:StyleID="${isPaid ? 'BadgeGreen' : 'BadgeRed'}"><Data ss:Type="String">${isPaid ? 'LUNAS' : 'BELUM LUNAS'}</Data></Cell>
+    <Cell ss:StyleID="CellCenter"><Data ss:Type="String">${esc(d.dueDate || '-')}</Data></Cell>
+    <Cell ss:StyleID="CellLeft"><Data ss:Type="String">${esc(d.note || d.notes || '-')}</Data></Cell>
+    <Cell ss:StyleID="CellLeft"><Data ss:Type="String">${esc(paymentDesc)}</Data></Cell>
+   </Row>`;
+   }).join('')}
+
+   <Row ss:Height="22">
+    <Cell ss:MergeAcross="2" ss:StyleID="TotalRow"><Data ss:Type="String">TOTAL SELURUH PINJAMAN</Data></Cell>
+    <Cell ss:StyleID="TotalCurrency"><Data ss:Type="Number">${safeDebts.reduce((s, d) => s + (Number(d.amount) || 0), 0)}</Data></Cell>
+    <Cell ss:StyleID="TotalCurrency"><Data ss:Type="Number">${safeDebts.reduce((s, d) => s + (Number(d.paidAmount) || 0), 0)}</Data></Cell>
+    <Cell ss:StyleID="TotalCurrency"><Data ss:Type="Number">${safeDebts.reduce((s, d) => s + Math.max(0, (Number(d.amount) || 0) - (Number(d.paidAmount) || 0)), 0)}</Data></Cell>
+    <Cell ss:MergeAcross="3" ss:StyleID="TotalRow"/>
+   </Row>
+  </Table>
+ </Worksheet>
+
+ <!-- 4. WORKSHEET: TABUNGAN IMPIAN (KARTU IMPIAN) -->
+ <Worksheet ss:Name="Tabungan Impian">
+  <Table ss:DefaultRowHeight="20">
+   <Column ss:Width="40"/>
+   <Column ss:Width="190"/>
+   <Column ss:Width="130"/>
+   <Column ss:Width="150"/>
+   <Column ss:Width="150"/>
+   <Column ss:Width="150"/>
+   <Column ss:Width="100"/>
+   <Column ss:Width="120"/>
+   <Column ss:Width="130"/>
+
+   <Row ss:Height="26">
+    <Cell ss:MergeAcross="8" ss:StyleID="MainTitle">
+     <Data ss:Type="String">KARTU IMPIAN &amp; TABUNGAN MASA DEPAN</Data>
+    </Cell>
+   </Row>
+   <Row ss:Height="18">
+    <Cell ss:MergeAcross="8" ss:StyleID="SubTitle">
+     <Data ss:Type="String">Tracking target impian, akumulasi simpanan, dan pencapaian target</Data>
+    </Cell>
+   </Row>
+   <Row ss:Height="10"><Cell/></Row>
+
+   <Row ss:Height="22">
+    <Cell ss:StyleID="ThGreen"><Data ss:Type="String">No</Data></Cell>
+    <Cell ss:StyleID="ThGreen"><Data ss:Type="String">Nama Impian / Target</Data></Cell>
+    <Cell ss:StyleID="ThGreen"><Data ss:Type="String">Kategori</Data></Cell>
+    <Cell ss:StyleID="ThGreen"><Data ss:Type="String">Target Dana (Rp)</Data></Cell>
+    <Cell ss:StyleID="ThGreen"><Data ss:Type="String">Dana Terkumpul (Rp)</Data></Cell>
+    <Cell ss:StyleID="ThGreen"><Data ss:Type="String">Sisa Kekurangan (Rp)</Data></Cell>
+    <Cell ss:StyleID="ThGreen"><Data ss:Type="String">Progres (%)</Data></Cell>
+    <Cell ss:StyleID="ThGreen"><Data ss:Type="String">Target Tanggal</Data></Cell>
+    <Cell ss:StyleID="ThGreen"><Data ss:Type="String">Status</Data></Cell>
+   </Row>
+
+   ${safeGoals.length === 0 ? `
+   <Row>
+    <Cell ss:MergeAcross="8" ss:StyleID="CellCenter"><Data ss:Type="String">Belum ada Kantong Impian yang dibuat.</Data></Cell>
+   </Row>` : safeGoals.map((g, idx) => {
+     const target = Number(g.targetAmount) || 0;
+     const current = Number(g.currentAmount) || 0;
+     const sisa = Math.max(0, target - current);
+     const pct = target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 0;
+     const isAchieved = current >= target && target > 0;
+
+     return `
+   <Row>
+    <Cell ss:StyleID="CellCenter"><Data ss:Type="Number">${idx + 1}</Data></Cell>
+    <Cell ss:StyleID="CellBold"><Data ss:Type="String">${esc(g.title || g.name || 'Impian')}</Data></Cell>
+    <Cell ss:StyleID="CellLeft"><Data ss:Type="String">${esc(g.category || 'Tabungan')}</Data></Cell>
+    <Cell ss:StyleID="Currency"><Data ss:Type="Number">${target}</Data></Cell>
+    <Cell ss:StyleID="CurrencyIncome"><Data ss:Type="Number">${current}</Data></Cell>
+    <Cell ss:StyleID="Currency"><Data ss:Type="Number">${sisa}</Data></Cell>
+    <Cell ss:StyleID="CellCenter"><Data ss:Type="String">${pct}%</Data></Cell>
+    <Cell ss:StyleID="CellCenter"><Data ss:Type="String">${esc(g.targetDate || '-')}</Data></Cell>
+    <Cell ss:StyleID="${isAchieved ? 'BadgeGreen' : 'CellCenter'}"><Data ss:Type="String">${isAchieved ? 'TERCAPAI (100%)' : 'DALAM PROSES'}</Data></Cell>
+   </Row>`;
+   }).join('')}
+
+   <Row ss:Height="22">
+    <Cell ss:MergeAcross="2" ss:StyleID="TotalRow"><Data ss:Type="String">TOTAL TABUNGAN IMPIAN</Data></Cell>
+    <Cell ss:StyleID="TotalCurrency"><Data ss:Type="Number">${totalSavingsTarget}</Data></Cell>
+    <Cell ss:StyleID="TotalCurrency"><Data ss:Type="Number">${totalSavingsCurrent}</Data></Cell>
+    <Cell ss:StyleID="TotalCurrency"><Data ss:Type="Number">${Math.max(0, totalSavingsTarget - totalSavingsCurrent)}</Data></Cell>
+    <Cell ss:MergeAcross="2" ss:StyleID="TotalRow"/>
+   </Row>
+  </Table>
+ </Worksheet>
+
+ <!-- 5. WORKSHEET: DAFTAR DOMPET & REKENING -->
+ <Worksheet ss:Name="Daftar Dompet">
+  <Table ss:DefaultRowHeight="20">
+   <Column ss:Width="40"/>
+   <Column ss:Width="190"/>
+   <Column ss:Width="130"/>
+   <Column ss:Width="160"/>
+   <Column ss:Width="150"/>
+   <Column ss:Width="150"/>
+   <Column ss:Width="150"/>
+   <Column ss:Width="160"/>
+
+   <Row ss:Height="26">
+    <Cell ss:MergeAcross="7" ss:StyleID="MainTitle">
+     <Data ss:Type="String">DAFTAR DOMPET &amp; KANTONG KEUANGAN</Data>
+    </Cell>
+   </Row>
+   <Row ss:Height="18">
+    <Cell ss:MergeAcross="7" ss:StyleID="SubTitle">
+     <Data ss:Type="String">Rincian saldo terkini, mutasi masuk/keluar, dan jenis dompet</Data>
+    </Cell>
+   </Row>
+   <Row ss:Height="10"><Cell/></Row>
+
+   <Row ss:Height="22">
+    <Cell ss:StyleID="ThPurple"><Data ss:Type="String">No</Data></Cell>
+    <Cell ss:StyleID="ThPurple"><Data ss:Type="String">Nama Kantong / Rekening</Data></Cell>
+    <Cell ss:StyleID="ThPurple"><Data ss:Type="String">Jenis Dompet</Data></Cell>
+    <Cell ss:StyleID="ThPurple"><Data ss:Type="String">Nomor Rekening / Akun</Data></Cell>
+    <Cell ss:StyleID="ThPurple"><Data ss:Type="String">Saldo Awal (Rp)</Data></Cell>
+    <Cell ss:StyleID="ThPurple"><Data ss:Type="String">Total Masuk (Rp)</Data></Cell>
+    <Cell ss:StyleID="ThPurple"><Data ss:Type="String">Total Keluar (Rp)</Data></Cell>
+    <Cell ss:StyleID="ThPurple"><Data ss:Type="String">Saldo Terkini (Rp)</Data></Cell>
+   </Row>
+
+   ${safeAccs.length === 0 ? `
+   <Row>
+    <Cell ss:MergeAcross="7" ss:StyleID="CellCenter"><Data ss:Type="String">Belum ada akun dompet.</Data></Cell>
+   </Row>` : safeAccs.map((acc, idx) => {
+     const init = Number(acc.initialBalance) || 0;
+     const curBalance = Ledger.getAccountBalance(acc.id, safeAccs, safeTxs);
+     const accTxs = safeTxs.filter(t => t.accountId === acc.id);
+     const inAmt = accTxs.filter(t => t.type === 'INCOME').reduce((s, t) => s + (Number(t.amount) || 0), 0);
+     const outAmt = accTxs.filter(t => t.type === 'EXPENSE').reduce((s, t) => s + (Number(t.amount) || 0), 0);
+
+     return `
+   <Row>
+    <Cell ss:StyleID="CellCenter"><Data ss:Type="Number">${idx + 1}</Data></Cell>
+    <Cell ss:StyleID="CellBold"><Data ss:Type="String">${esc(acc.name)}</Data></Cell>
+    <Cell ss:StyleID="CellLeft"><Data ss:Type="String">${esc(acc.type || 'Cash')}</Data></Cell>
+    <Cell ss:StyleID="CellCenter"><Data ss:Type="String">${esc(acc.accountNumber || '-')}</Data></Cell>
+    <Cell ss:StyleID="Currency"><Data ss:Type="Number">${init}</Data></Cell>
+    <Cell ss:StyleID="CurrencyIncome"><Data ss:Type="Number">${inAmt}</Data></Cell>
+    <Cell ss:StyleID="CurrencyExpense"><Data ss:Type="Number">${outAmt}</Data></Cell>
+    <Cell ss:StyleID="CurrencyBold"><Data ss:Type="Number">${curBalance}</Data></Cell>
+   </Row>`;
+   }).join('')}
+
+   <Row ss:Height="22">
+    <Cell ss:MergeAcross="6" ss:StyleID="TotalRow"><Data ss:Type="String">TOTAL SALDO SELURUH KANTONG KEUANGAN</Data></Cell>
+    <Cell ss:StyleID="TotalCurrency"><Data ss:Type="Number">${totalWalletBalance}</Data></Cell>
+   </Row>
+  </Table>
+ </Worksheet>
+</Workbook>`;
+      },
+
+      exportToExcel: (data) => {
+        try {
+          const xml = ExcelExportService.generateExcelXml(data);
+          const filename = `Voralet_Laporan_Keuangan_Lengkap_${new Date().toISOString().slice(0, 10)}.xls`;
+
+          // 1. Check if running inside Android Native app with FileProvider Bridge
+          if (typeof window !== 'undefined' && window.AndroidBridge && typeof window.AndroidBridge.shareOrSaveFile === 'function') {
+            try {
+              const utf8Bytes = new TextEncoder().encode(xml);
+              let binary = '';
+              for (let i = 0; i < utf8Bytes.length; i++) {
+                binary += String.fromCharCode(utf8Bytes[i]);
+              }
+              const base64 = btoa(binary);
+              const success = window.AndroidBridge.shareOrSaveFile(filename, base64, 'application/vnd.ms-excel');
+              if (success) {
+                return true;
+              }
+            } catch (bridgeErr) {
+              console.warn('[ExcelExportService] Bridge export notice:', bridgeErr);
+            }
+          }
+
+          // 2. Direct Web & PWA Blob Download
+          const blob = new Blob([xml], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => {
+            try {
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+            } catch (e) {}
+          }, 2000);
+          return true;
+        } catch (err) {
+          console.error('[ExcelExportService] Export error:', err);
+          return false;
+        }
+      }
+    };
 """

@@ -35,6 +35,11 @@ object VoraletWebViewConfig {
         webView: WebView,
         backgroundColor: Int
     ) {
+        // Enforce no remote debugging in production
+        try {
+            WebView.setWebContentsDebuggingEnabled(false)
+        } catch (_: Throwable) {}
+
         webView.apply {
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
