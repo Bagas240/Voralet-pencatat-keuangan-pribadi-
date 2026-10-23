@@ -805,14 +805,62 @@ HTML_HEAD = """<!DOCTYPE html>
     /* Pixel Pet & Streak Flame Keyframes */
     @keyframes petIdleBounce {
       0%, 100% { transform: translateY(0) scale(1); }
-      50% { transform: translateY(-4px) scale(1.03, 0.97); }
+      50% { transform: translateY(-4px) scale(1.02, 0.98); }
     }
-    @keyframes petEatHappy {
-      0% { transform: scale(1) translateY(0); }
-      25% { transform: scale(1.2, 0.85) translateY(-8px) rotate(-4deg); }
-      50% { transform: scale(0.92, 1.15) translateY(2px) rotate(4deg); }
-      75% { transform: scale(1.1, 0.95) translateY(-4px) rotate(-2deg); }
-      100% { transform: scale(1) translateY(0); }
+    @keyframes petEatChew {
+      0%, 100% { transform: translateY(0) scale(1); }
+      25% { transform: translateY(3px) scale(1.08, 0.92) rotate(-3deg); }
+      50% { transform: translateY(-2px) scale(0.95, 1.05) rotate(2deg); }
+      75% { transform: translateY(1px) scale(1.04, 0.96) rotate(-1deg); }
+    }
+    @keyframes petDrinkLap {
+      0%, 100% { transform: translateY(0) scale(1); }
+      30% { transform: translateY(3px) scale(1.05, 0.95) rotate(1deg); }
+      60% { transform: translateY(-1px) scale(0.97, 1.03); }
+    }
+    @keyframes petBarkGuk {
+      0%, 100% { transform: translateY(0) scale(1) rotate(0deg); }
+      20% { transform: translateY(-8px) scale(1.14, 0.9) rotate(-5deg); }
+      40% { transform: translateY(-2px) scale(0.94, 1.06) rotate(4deg); }
+      60% { transform: translateY(-6px) scale(1.08, 0.94) rotate(-2deg); }
+      80% { transform: translateY(-1px) scale(1.02, 0.98) rotate(1deg); }
+    }
+    @keyframes petMeowPurr {
+      0%, 100% { transform: translateY(0) scale(1) rotate(0deg); }
+      25% { transform: translateY(-6px) scale(1.08, 0.94) rotate(4deg); }
+      50% { transform: translateY(-2px) scale(0.98, 1.02) rotate(-3deg); }
+      75% { transform: translateY(-4px) scale(1.04, 0.96) rotate(2deg); }
+    }
+    @keyframes petSadDroop {
+      0%, 100% { transform: translateY(0) scale(1, 0.96); }
+      50% { transform: translateY(3px) scale(0.98, 0.93); }
+    }
+    @keyframes petHappyJump {
+      0%, 100% { transform: translateY(0) scale(1) rotate(0deg); }
+      25% { transform: translateY(-12px) scale(1.14, 0.88) rotate(-6deg); }
+      50% { transform: translateY(-16px) scale(0.92, 1.12) rotate(6deg); }
+      75% { transform: translateY(-6px) scale(1.06, 0.94) rotate(-2deg); }
+    }
+    @keyframes petTailWagFast {
+      0%, 100% { transform: rotate(0deg); transform-origin: 17px 20px; }
+      50% { transform: rotate(24deg); transform-origin: 17px 20px; }
+    }
+    @keyframes petTearFall {
+      0% { transform: translateY(0) scale(0.8); opacity: 0; }
+      20% { opacity: 1; }
+      80% { opacity: 1; }
+      100% { transform: translateY(12px) scale(1.2); opacity: 0; }
+    }
+    @keyframes petSplashDrop {
+      0% { transform: translateY(0) scale(0.5); opacity: 0; }
+      40% { transform: translateY(-8px) scale(1.1); opacity: 1; }
+      100% { transform: translateY(-14px) scale(0.6); opacity: 0; }
+    }
+    @keyframes petSoundBubble {
+      0% { transform: scale(0.3) translateY(8px); opacity: 0; }
+      40% { transform: scale(1.12) translateY(-2px); opacity: 1; }
+      70% { transform: scale(0.98) translateY(0); opacity: 1; }
+      100% { transform: scale(1) translateY(0); opacity: 1; }
     }
     @keyframes flameFlicker {
       0%, 100% { transform: scale(1) rotate(-1deg); filter: drop-shadow(0 0 6px rgba(249, 115, 22, 0.45)); }
@@ -826,7 +874,34 @@ HTML_HEAD = """<!DOCTYPE html>
       animation: petIdleBounce 2.4s ease-in-out infinite;
     }
     .animate-pet-eat {
-      animation: petEatHappy 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+      animation: petEatChew 0.75s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+    }
+    .animate-pet-drink {
+      animation: petDrinkLap 0.85s ease-in-out infinite;
+    }
+    .animate-pet-bark {
+      animation: petBarkGuk 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+    }
+    .animate-pet-meow {
+      animation: petMeowPurr 0.85s ease-in-out infinite;
+    }
+    .animate-pet-sad {
+      animation: petSadDroop 2.6s ease-in-out infinite;
+    }
+    .animate-pet-happy {
+      animation: petHappyJump 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+    }
+    .animate-pet-bubble {
+      animation: petSoundBubble 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+    .animate-pet-tear {
+      animation: petTearFall 1.2s ease-in infinite;
+    }
+    .animate-pet-splash {
+      animation: petSplashDrop 0.8s ease-out infinite;
+    }
+    .animate-pet-tail {
+      animation: petTailWagFast 0.35s ease-in-out infinite;
     }
     .animate-flame {
       animation: flameFlicker 1.8s ease-in-out infinite;
@@ -839,6 +914,7 @@ HTML_HEAD = """<!DOCTYPE html>
       image-rendering: -moz-crisp-edges;
       image-rendering: crisp-edges;
     }
+
 
     /* iOS Navigation & Tab Slide View Transitions (Silky Snappy 120 FPS) */
     @keyframes iosTabSlideForward {

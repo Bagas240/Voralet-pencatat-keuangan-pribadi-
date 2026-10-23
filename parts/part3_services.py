@@ -775,6 +775,20 @@ PART3_SERVICES = """
         StorageService.setPetData(pet);
         return { success: true, pet };
       },
+      drinkPet: () => {
+        const pet = StorageService.getPetData();
+        pet.fullness = Math.min(100, (pet.fullness || 50) + 10);
+        pet.happiness = Math.min(100, (pet.happiness || 50) + 15);
+        StorageService.setPetData(pet);
+        return { success: true, pet };
+      },
+      playPet: () => {
+        const pet = StorageService.getPetData();
+        pet.happiness = Math.min(100, (pet.happiness || 50) + 20);
+        StorageService.setPetData(pet);
+        return { success: true, pet };
+      },
+
       getReminderSettings: () => {
         const d = SafeStorage.getItem(STORAGE_KEYS.REMINDER);
         const parsed = SafeStorage.parseJSON(d, null);

@@ -349,6 +349,8 @@ PART8_APP = """
       petData,
       onOpenPetCloset,
       onFeedPet,
+      onDrinkPet,
+      onPlayPet,
       onOpenStreakModal,
       onOpenAddTx,
       onOpenAddIncome,
@@ -384,6 +386,22 @@ PART8_APP = """
       const [endDate, setEndDate] = useState('');
       const [datePreset, setDatePreset] = useState('ALL'); // ALL | TODAY | THIS_WEEK | THIS_MONTH | LAST_MONTH | CUSTOM
       const [isDateFilterOpen, setIsDateFilterOpen] = useState(false);
+      const [dashPetAction, setDashPetAction] = useState('idle');
+      const dashPetTimerRef = useRef(null);
+
+      const triggerDashPetAction = (act, duration = 1800) => {
+        if (dashPetTimerRef.current) clearTimeout(dashPetTimerRef.current);
+        setDashPetAction(act);
+        dashPetTimerRef.current = setTimeout(() => {
+          setDashPetAction('idle');
+        }, duration);
+      };
+
+      useEffect(() => {
+        return () => {
+          if (dashPetTimerRef.current) clearTimeout(dashPetTimerRef.current);
+        };
+      }, []);
 
       const applyDatePreset = (preset) => {
         setDatePreset(preset);
@@ -544,59 +562,104 @@ PART8_APP = """
           </div>
 
           {/* Pixel Pet Interactive Card */}
-          <div
-            className="animate-dashboard-card rounded-2xl p-3.5 bg-gradient-to-r from-amber-50/70 via-sky-50/50 to-indigo-50/60 dark:from-slate-800 dark:via-slate-800 dark:to-slate-800 border border-amber-200/60 dark:border-slate-700 shadow-xs"
-            style={{ animationDelay: '120ms' }}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div
-                  onClick={onOpenPetCloset}
-                  className="cursor-pointer hover:scale-105 transition-transform"
-                  title="Ketuk untuk buka lemari kostum peliharaan"
-                >
-                  <PixelPetSprite type={petData?.type || 'DOG'} outfit={petData?.outfit || 'NONE'} size={54} />
-                </div>
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <h4 className="text-xs font-bold text-slate-900 dark:text-white">
-                      {petData?.name || 'Milo'}
-                    </h4>
-                    <span className="text-[10px] px-1.5 py-0.2 bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 rounded font-semibold">
-                      {petData?.type === 'CAT' ? '🐱 Kucing' : '🐶 Anjing'}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3 mt-1 text-[11px] text-slate-600 dark:text-slate-400">
-                    <span>Kenyang: <b className="text-amber-600 dark:text-amber-400">{petData?.fullness || 50}%</b></span>
-                    <span>•</span>
-                    <span>Senang: <b className="text-rose-500">{petData?.happiness || 50}%</b></span>
-                  </div>
-                </div>
-              </div>
+          {(() => {
+            const isPetSad = (petData?.fullness || 50) < 30 || (petData?.happiness || 50) < 30;
+            const handlePetTap = () => {
+              const vocal = (petData?.type || 'DOG') === 'DOG' ? 'bark' : 'meow';
+              triggerDashPetAction(vocal, 1800);
+              if (onPlayPet) onPlayPet();
+            };
+            const handleFeedClick = () => {
+              if ((petData?.foodCount || 0) <= 0) return;
+              triggerDashPetAction('eat', 1800);
+              if (onFeedPet) onFeedPet();
+            };
+            const handleDrinkClick = () => {
+              triggerDashPetAction('drink', 1800);
+              if (onDrinkPet) onDrinkPet();
+            };
 
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={onFeedPet}
-                  disabled={(petData?.foodCount || 0) <= 0}
-                  className="py-1.5 px-2.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-40 text-white font-bold text-xs rounded-xl shadow-xs ios-btn-tap flex items-center gap-1"
-                  title="Beri makan peliharaan (1 porsi)"
-                >
-                  <span>Makan</span>
-                  <span>{petData?.type === 'CAT' ? '🐟' : '🍖'}</span>
-                  <span className="text-[10px] bg-black/20 px-1 py-0.2 rounded-full ml-0.5">{petData?.foodCount || 0}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={onOpenPetCloset}
-                  className="p-2 bg-white dark:bg-slate-700 hover:bg-slate-50 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-xl shadow-xs ios-btn-tap"
-                  title="Buka Lemari Kostum"
-                >
-                  <Icon name="shirt" className="w-4 h-4 text-brand dark:text-sky-400" />
-                </button>
+            return (
+              <div
+                className="animate-dashboard-card rounded-2xl p-3.5 bg-gradient-to-r from-amber-50/70 via-sky-50/50 to-indigo-50/60 dark:from-slate-800 dark:via-slate-800 dark:to-slate-800 border border-amber-200/60 dark:border-slate-700 shadow-xs"
+                style={{ animationDelay: '120ms' }}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div
+                      onClick={handlePetTap}
+                      className="cursor-pointer hover:scale-105 active:scale-95 transition-transform"
+                      title="Ketuk peliharaan untuk berinteraksi"
+                    >
+                      <PixelPetSprite
+                        type={petData?.type || 'DOG'}
+                        outfit={petData?.outfit || 'NONE'}
+                        action={dashPetAction}
+                        isSad={isPetSad}
+                        size={56}
+                      />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <h4 className="text-xs font-bold text-slate-900 dark:text-white">
+                          {petData?.name || 'Milo'}
+                        </h4>
+                        <span className="text-[10px] px-1.5 py-0.2 bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 rounded font-semibold">
+                          {petData?.type === 'CAT' ? '🐱 Kucing' : '🐶 Anjing'}
+                        </span>
+                        {isPetSad && (
+                          <span className="text-[9px] px-1.5 py-0.2 bg-rose-100 dark:bg-rose-950/80 text-rose-600 dark:text-rose-400 rounded-full font-bold">
+                            Sedih 🥺
+                          </span>
+                        )}
+                        {dashPetAction === 'happy' && (
+                          <span className="text-[9px] px-1.5 py-0.2 bg-amber-100 dark:bg-amber-950/80 text-amber-600 dark:text-amber-400 rounded-full font-bold">
+                            Senang 🥰
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 mt-1 text-[11px] text-slate-600 dark:text-slate-400">
+                        <span>Kenyang: <b className="text-amber-600 dark:text-amber-400">{petData?.fullness || 50}%</b></span>
+                        <span>•</span>
+                        <span>Senang: <b className="text-rose-500">{petData?.happiness || 50}%</b></span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={handleFeedClick}
+                      disabled={(petData?.foodCount || 0) <= 0}
+                      className="py-1.5 px-2.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-40 text-white font-bold text-xs rounded-xl shadow-xs ios-btn-tap flex items-center gap-1"
+                      title="Beri makan peliharaan (1 porsi)"
+                    >
+                      <span>Makan</span>
+                      <span>{petData?.type === 'CAT' ? '🐟' : '🍖'}</span>
+                      <span className="text-[10px] bg-black/20 px-1 py-0.2 rounded-full ml-0.5">{petData?.foodCount || 0}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDrinkClick}
+                      className="p-2 bg-sky-500 hover:bg-sky-600 text-white rounded-xl shadow-xs ios-btn-tap"
+                      title="Beri minum air segar"
+                    >
+                      <span className="text-xs">💧</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={onOpenPetCloset}
+                      className="p-2 bg-white dark:bg-slate-700 hover:bg-slate-50 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-xl shadow-xs ios-btn-tap"
+                      title="Buka Lemari Kostum"
+                    >
+                      <Icon name="shirt" className="w-4 h-4 text-brand dark:text-sky-400" />
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+            );
+          })()}
+
 
           {/* Hero Balance Card - High Contrast Deep Royal Blue in both Light and Dark Mode */}
           <div
@@ -1174,6 +1237,24 @@ PART8_APP = """
           showToast('Stok makanan habis! Catat transaksi untuk dapat makanan 🍖');
         }
       }, [showToast]);
+
+      const handleDrinkPet = useCallback(() => {
+        const res = StorageService.drinkPet();
+        if (res.success) {
+          setPetData(res.pet);
+          showToast(`${res.pet.name} segar dan tidak haus lagi! 💧`);
+        }
+      }, [showToast]);
+
+      const handlePlayPet = useCallback(() => {
+        const res = StorageService.playPet();
+        if (res.success) {
+          setPetData(res.pet);
+          const vocal = res.pet.type === 'DOG' ? 'Guk! Guk! 🐶' : 'Meong~ 🐱';
+          showToast(`${res.pet.name}: "${vocal}" ❤️`);
+        }
+      }, [showToast]);
+
 
       const handleUpdatePet = useCallback((updatedPet) => {
         StorageService.setPetData(updatedPet);
@@ -2094,6 +2175,13 @@ PART8_APP = """
                     userProfile={memoizedUserProfile}
                     hideBalance={hideBalance}
                     onToggleHideBalance={handleToggleHideBalance}
+                    streakData={streakData}
+                    petData={petData}
+                    onOpenPetCloset={() => setIsPetModalOpen(true)}
+                    onFeedPet={handleFeedPet}
+                    onDrinkPet={handleDrinkPet}
+                    onPlayPet={handlePlayPet}
+                    onOpenStreakModal={() => setIsStreakModalOpen(true)}
                     onOpenAddTx={handleOpenAddTx}
                     onOpenAddIncome={handleOpenAddIncome}
                     onOpenAddExpense={handleOpenAddExpense}
@@ -2246,7 +2334,10 @@ PART8_APP = """
             petData={petData}
             onUpdatePet={handleUpdatePet}
             onFeedPet={handleFeedPet}
+            onDrinkPet={handleDrinkPet}
+            onPlayPet={handlePlayPet}
           />
+
 
           <StreakInfoModal
             isOpen={isStreakModalOpen}

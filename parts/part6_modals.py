@@ -2664,12 +2664,81 @@ PART6_MODALS = """
     };
 
     // =========================================================================
-    // PIXEL PET RENDERER (Retro 8-Bit Pixel Art Puppy & Kitty with Outfits)
+    // PIXEL PET RENDERER (Retro 8-Bit Pixel Art Puppy & Kitty with 7 Animations)
+    // Animations: idle, makan (eat), minum (drink), menggonggong (bark),
+    // mengeong (meow), sedih (sad), happy (senang)
     // =========================================================================
-    const PixelPetSprite = ({ type = 'DOG', outfit = 'NONE', isEating = false, size = 110 }) => {
+    const PixelPetSprite = ({
+      type = 'DOG',
+      outfit = 'NONE',
+      action = 'idle',
+      isEating = false,
+      isSad = false,
+      size = 110,
+      showBubble = true,
+      onClick = null
+    }) => {
       const isDog = type === 'DOG';
+
+      // Compute effective animation state
+      let effectiveAction = action;
+      if (isEating) {
+        effectiveAction = 'eat';
+      } else if (action === 'idle' && isSad) {
+        effectiveAction = 'sad';
+      }
+
+      // Map action to CSS animation class
+      let animClass = 'animate-pet-idle';
+      if (effectiveAction === 'eat') animClass = 'animate-pet-eat';
+      else if (effectiveAction === 'drink') animClass = 'animate-pet-drink';
+      else if (effectiveAction === 'bark') animClass = 'animate-pet-bark';
+      else if (effectiveAction === 'meow') animClass = 'animate-pet-meow';
+      else if (effectiveAction === 'sad') animClass = 'animate-pet-sad';
+      else if (effectiveAction === 'happy') animClass = 'animate-pet-happy';
+
       return (
-        <div className={`relative inline-block ${isEating ? 'animate-pet-eat' : 'animate-pet-idle'} pixelated select-none`}>
+        <div
+          onClick={onClick}
+          className={`relative inline-block ${animClass} pixelated select-none ${onClick ? 'cursor-pointer active:scale-95 transition-transform' : ''}`}
+          style={{ width: size, height: size }}
+        >
+          {/* Action Speech Bubble / Floating Reaction */}
+          {showBubble && effectiveAction === 'bark' && (
+            <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-amber-500 text-white font-black text-[11px] px-2 py-0.5 rounded-full shadow-md animate-pet-bubble whitespace-nowrap z-20 pointer-events-none border border-white/60">
+              Guk! Guk! 🦴
+            </div>
+          )}
+          {showBubble && effectiveAction === 'meow' && (
+            <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-rose-500 text-white font-black text-[11px] px-2 py-0.5 rounded-full shadow-md animate-pet-bubble whitespace-nowrap z-20 pointer-events-none border border-white/60">
+              Meong~ 🐾 🎵
+            </div>
+          )}
+          {showBubble && effectiveAction === 'eat' && (
+            <div className="absolute -top-6 left-1/2 -translate-x-1/2 flex items-center gap-0.5 text-xs animate-heart-float pointer-events-none z-20">
+              <span>❤️</span>
+              <span className="text-[10px] font-bold text-amber-500 dark:text-amber-400 bg-white/90 dark:bg-slate-800 px-1 rounded-md shadow-xs">Nyam!</span>
+            </div>
+          )}
+          {showBubble && effectiveAction === 'drink' && (
+            <div className="absolute -top-6 left-1/2 -translate-x-1/2 flex items-center gap-0.5 text-xs animate-heart-float pointer-events-none z-20">
+              <span>💧</span>
+              <span className="text-[10px] font-bold text-sky-500 dark:text-sky-400 bg-white/90 dark:bg-slate-800 px-1 rounded-md shadow-xs">Slurp!</span>
+            </div>
+          )}
+          {showBubble && effectiveAction === 'happy' && (
+            <div className="absolute -top-6 left-1/2 -translate-x-1/2 flex items-center gap-0.5 text-xs animate-heart-float pointer-events-none z-20">
+              <span>✨</span>
+              <span>❤️</span>
+              <span>✨</span>
+            </div>
+          )}
+          {showBubble && effectiveAction === 'sad' && (
+            <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs animate-pet-tear pointer-events-none z-20">
+              💧
+            </div>
+          )}
+
           <svg
             width={size}
             height={size}
@@ -2678,49 +2747,269 @@ PART6_MODALS = """
             style={{ shapeRendering: 'crispEdges' }}
           >
             {isDog ? (
-              // PIXEL DOGGY (Milo)
+              // ==================== PIXEL DOGGY (MILO) ====================
               <g>
+                {/* Body & Belly */}
                 <rect x="7" y="14" width="10" height="7" fill="#F59E0B" />
                 <rect x="9" y="15" width="6" height="5" fill="#FEF3C7" />
+
+                {/* Paws */}
                 <rect x="7" y="20" width="2" height="3" fill="#D97706" />
                 <rect x="15" y="20" width="2" height="3" fill="#D97706" />
-                <rect x="17" y="13" width="2" height="3" fill="#F59E0B" />
-                <rect x="18" y="11" width="2" height="2" fill="#F59E0B" />
+
+                {/* Tail (Wagging when happy, droopy when sad) */}
+                {effectiveAction === 'sad' ? (
+                  <g>
+                    <rect x="17" y="17" width="2" height="3" fill="#B45309" />
+                    <rect x="18" y="19" width="2" height="2" fill="#B45309" />
+                  </g>
+                ) : (
+                  <g className={effectiveAction === 'happy' ? 'animate-pet-tail' : ''}>
+                    <rect x="17" y="13" width="2" height="3" fill="#F59E0B" />
+                    <rect x="18" y="11" width="2" height="2" fill="#F59E0B" />
+                  </g>
+                )}
+
+                {/* Head */}
                 <rect x="5" y="6" width="14" height="9" fill="#F59E0B" />
-                <rect x="4" y="3" width="3" height="4" fill="#B45309" />
-                <rect x="17" y="3" width="3" height="4" fill="#B45309" />
+
+                {/* Ears: Drooped down when sad, perked up when normal/bark/happy */}
+                {effectiveAction === 'sad' ? (
+                  <g>
+                    <rect x="3" y="7" width="3" height="5" fill="#B45309" />
+                    <rect x="18" y="7" width="3" height="5" fill="#B45309" />
+                  </g>
+                ) : (
+                  <g>
+                    <rect x="4" y="3" width="3" height="4" fill="#B45309" />
+                    <rect x="17" y="3" width="3" height="4" fill="#B45309" />
+                  </g>
+                )}
+
+                {/* Snout */}
                 <rect x="5" y="11" width="3" height="3" fill="#FEF3C7" />
                 <rect x="16" y="11" width="3" height="3" fill="#FEF3C7" />
                 <rect x="8" y="11" width="8" height="4" fill="#FEF3C7" />
-                <rect x="7" y="8" width="2" height="2" fill="#1F2937" />
-                <rect x="15" y="8" width="2" height="2" fill="#1F2937" />
+
+                {/* Eyes according to state */}
+                {effectiveAction === 'happy' ? (
+                  // Smiling Curved Eyes ^^
+                  <g>
+                    <rect x="7" y="8" width="3" height="1" fill="#1F2937" />
+                    <rect x="6" y="9" width="1" height="1" fill="#1F2937" />
+                    <rect x="14" y="8" width="3" height="1" fill="#1F2937" />
+                    <rect x="17" y="9" width="1" height="1" fill="#1F2937" />
+                    {/* Pink Rosy Cheeks */}
+                    <rect x="5" y="11" width="2" height="1" fill="#FDA4AF" />
+                    <rect x="17" y="11" width="2" height="1" fill="#FDA4AF" />
+                  </g>
+                ) : effectiveAction === 'sad' ? (
+                  // Tearful Sad Eyes
+                  <g>
+                    <rect x="7" y="8" width="2" height="2" fill="#1F2937" />
+                    <rect x="15" y="8" width="2" height="2" fill="#1F2937" />
+                    {/* Tears */}
+                    <rect x="7" y="10" width="1" height="2" fill="#38BDF8" />
+                    <rect x="15" y="10" width="1" height="2" fill="#38BDF8" />
+                  </g>
+                ) : (
+                  // Alert Cute Eyes
+                  <g>
+                    <rect x="7" y="8" width="2" height="2" fill="#1F2937" />
+                    <rect x="7" y="8" width="1" height="1" fill="#FFFFFF" />
+                    <rect x="15" y="8" width="2" height="2" fill="#1F2937" />
+                    <rect x="15" y="8" width="1" height="1" fill="#FFFFFF" />
+                  </g>
+                )}
+
+                {/* Nose */}
                 <rect x="11" y="11" width="2" height="1" fill="#1F2937" />
-                <rect x="11" y="12" width="2" height="2" fill="#F43F5E" />
+
+                {/* Mouth according to state */}
+                {effectiveAction === 'bark' ? (
+                  // Wide Barking Mouth
+                  <g>
+                    <rect x="10" y="12" width="4" height="3" fill="#991B1B" />
+                    <rect x="11" y="13" width="2" height="2" fill="#F43F5E" />
+                    {/* Bark wave marks */}
+                    <rect x="2" y="9" width="1" height="2" fill="#F59E0B" />
+                    <rect x="1" y="8" width="1" height="4" fill="#F59E0B" />
+                    <rect x="21" y="9" width="1" height="2" fill="#F59E0B" />
+                    <rect x="22" y="8" width="1" height="4" fill="#F59E0B" />
+                  </g>
+                ) : effectiveAction === 'eat' ? (
+                  // Munching Mouth with Crumb
+                  <g>
+                    <rect x="10" y="12" width="4" height="2" fill="#B91C1C" />
+                    <rect x="11" y="12" width="2" height="2" fill="#FDE047" />
+                    <rect x="6" y="13" width="1" height="1" fill="#D97706" />
+                    <rect x="17" y="14" width="1" height="1" fill="#D97706" />
+                  </g>
+                ) : effectiveAction === 'drink' ? (
+                  // Lapping Tongue
+                  <g>
+                    <rect x="11" y="12" width="2" height="3" fill="#F43F5E" />
+                  </g>
+                ) : effectiveAction === 'sad' ? (
+                  // Sad Frown
+                  <g>
+                    <rect x="10" y="13" width="4" height="1" fill="#92400E" />
+                    <rect x="10" y="14" width="1" height="1" fill="#92400E" />
+                    <rect x="13" y="14" width="1" height="1" fill="#92400E" />
+                  </g>
+                ) : effectiveAction === 'happy' ? (
+                  // Cheerful Smile with Tongue
+                  <g>
+                    <rect x="10" y="12" width="4" height="2" fill="#B91C1C" />
+                    <rect x="11" y="13" width="2" height="2" fill="#F43F5E" />
+                  </g>
+                ) : (
+                  // Calm Tongue Stick Out
+                  <rect x="11" y="12" width="2" height="2" fill="#F43F5E" />
+                )}
               </g>
             ) : (
-              // PIXEL CAT (Luna)
+              // ==================== PIXEL CAT (LUNA) ====================
               <g>
+                {/* Body & Belly */}
                 <rect x="7" y="14" width="10" height="7" fill="#64748B" />
                 <rect x="9" y="15" width="6" height="5" fill="#F1F5F9" />
+
+                {/* Paws */}
                 <rect x="7" y="20" width="2" height="3" fill="#475569" />
                 <rect x="15" y="20" width="2" height="3" fill="#475569" />
-                <rect x="17" y="12" width="2" height="6" fill="#64748B" />
-                <rect x="19" y="10" width="2" height="3" fill="#64748B" />
+
+                {/* Tail (Swishing or Low) */}
+                {effectiveAction === 'sad' ? (
+                  <g>
+                    <rect x="17" y="18" width="4" height="2" fill="#475569" />
+                    <rect x="20" y="17" width="2" height="2" fill="#475569" />
+                  </g>
+                ) : (
+                  <g className={effectiveAction === 'happy' ? 'animate-pet-tail' : ''}>
+                    <rect x="17" y="12" width="2" height="6" fill="#64748B" />
+                    <rect x="19" y="10" width="2" height="3" fill="#64748B" />
+                  </g>
+                )}
+
+                {/* Head */}
                 <rect x="5" y="7" width="14" height="8" fill="#64748B" />
-                <rect x="5" y="3" width="3" height="4" fill="#475569" />
-                <rect x="6" y="4" width="1" height="2" fill="#FDA4AF" />
-                <rect x="16" y="3" width="3" height="4" fill="#475569" />
-                <rect x="17" y="4" width="1" height="2" fill="#FDA4AF" />
+
+                {/* Pointy Cat Ears: Flattened/drooped when sad */}
+                {effectiveAction === 'sad' ? (
+                  <g>
+                    <rect x="4" y="6" width="3" height="3" fill="#475569" />
+                    <rect x="5" y="7" width="1" height="1" fill="#FDA4AF" />
+                    <rect x="17" y="6" width="3" height="3" fill="#475569" />
+                    <rect x="18" y="7" width="1" height="1" fill="#FDA4AF" />
+                  </g>
+                ) : (
+                  <g>
+                    <rect x="5" y="3" width="3" height="4" fill="#475569" />
+                    <rect x="6" y="4" width="1" height="2" fill="#FDA4AF" />
+                    <rect x="16" y="3" width="3" height="4" fill="#475569" />
+                    <rect x="17" y="4" width="1" height="2" fill="#FDA4AF" />
+                  </g>
+                )}
+
+                {/* Muzzle */}
                 <rect x="8" y="11" width="8" height="3" fill="#F1F5F9" />
-                <rect x="7" y="8" width="2" height="3" fill="#10B981" />
-                <rect x="7" y="8" width="1" height="1" fill="#FFFFFF" />
-                <rect x="15" y="8" width="2" height="3" fill="#10B981" />
-                <rect x="15" y="8" width="1" height="1" fill="#FFFFFF" />
-                <rect x="11" y="11" width="2" height="1" fill="#FB7185" />
+
+                {/* Whiskers */}
                 <rect x="4" y="11" width="3" height="1" fill="#94A3B8" />
                 <rect x="4" y="13" width="3" height="1" fill="#94A3B8" />
                 <rect x="17" y="11" width="3" height="1" fill="#94A3B8" />
                 <rect x="17" y="13" width="3" height="1" fill="#94A3B8" />
+
+                {/* Eyes according to state */}
+                {effectiveAction === 'happy' ? (
+                  // Smiling Curved Eyes ^^
+                  <g>
+                    <rect x="7" y="8" width="3" height="1" fill="#047857" />
+                    <rect x="6" y="9" width="1" height="1" fill="#047857" />
+                    <rect x="14" y="8" width="3" height="1" fill="#047857" />
+                    <rect x="17" y="9" width="1" height="1" fill="#047857" />
+                    {/* Pink Blush */}
+                    <rect x="5" y="10" width="2" height="1" fill="#FDA4AF" />
+                    <rect x="17" y="10" width="2" height="1" fill="#FDA4AF" />
+                  </g>
+                ) : effectiveAction === 'sad' ? (
+                  // Sad Cat Eyes with Tear
+                  <g>
+                    <rect x="7" y="8" width="2" height="3" fill="#10B981" />
+                    <rect x="15" y="8" width="2" height="3" fill="#10B981" />
+                    <rect x="7" y="11" width="1" height="2" fill="#38BDF8" />
+                    <rect x="15" y="11" width="1" height="2" fill="#38BDF8" />
+                  </g>
+                ) : (
+                  // Classic Emerald Eyes with Pupils
+                  <g>
+                    <rect x="7" y="8" width="2" height="3" fill="#10B981" />
+                    <rect x="7" y="8" width="1" height="1" fill="#FFFFFF" />
+                    <rect x="15" y="8" width="2" height="3" fill="#10B981" />
+                    <rect x="15" y="8" width="1" height="1" fill="#FFFFFF" />
+                  </g>
+                )}
+
+                {/* Pink Nose */}
+                <rect x="11" y="11" width="2" height="1" fill="#FB7185" />
+
+                {/* Mouth according to state */}
+                {effectiveAction === 'meow' ? (
+                  // Wide Open Meow Mouth
+                  <g>
+                    <rect x="10" y="12" width="4" height="2" fill="#E11D48" />
+                    <rect x="11" y="13" width="2" height="1" fill="#FDA4AF" />
+                  </g>
+                ) : effectiveAction === 'eat' ? (
+                  // Eating Fish Nibble
+                  <g>
+                    <rect x="10" y="12" width="4" height="2" fill="#BE123C" />
+                    <rect x="11" y="12" width="2" height="1" fill="#38BDF8" />
+                  </g>
+                ) : effectiveAction === 'drink' ? (
+                  // Lapping Tongue
+                  <g>
+                    <rect x="11" y="12" width="2" height="2" fill="#FB7185" />
+                  </g>
+                ) : effectiveAction === 'sad' ? (
+                  // Downward Pout
+                  <rect x="10" y="13" width="4" height="1" fill="#475569" />
+                ) : effectiveAction === 'happy' ? (
+                  // Sweet Smile
+                  <g>
+                    <rect x="10" y="12" width="4" height="1" fill="#E11D48" />
+                    <rect x="11" y="13" width="2" height="1" fill="#FB7185" />
+                  </g>
+                ) : null}
+              </g>
+            )}
+
+            {/* Food Bowl overlay during 'eat' */}
+            {effectiveAction === 'eat' && (
+              <g>
+                {/* Bowl */}
+                <rect x="8" y="21" width="8" height="2" fill={isDog ? '#EF4444' : '#F59E0B'} />
+                <rect x="7" y="22" width="10" height="2" fill={isDog ? '#DC2626' : '#D97706'} />
+                {/* Treat in bowl */}
+                {isDog ? (
+                  <rect x="10" y="20" width="4" height="1" fill="#FEF3C7" />
+                ) : (
+                  <rect x="10" y="20" width="4" height="1" fill="#38BDF8" />
+                )}
+              </g>
+            )}
+
+            {/* Water Bowl overlay during 'drink' */}
+            {effectiveAction === 'drink' && (
+              <g>
+                {/* Bowl */}
+                <rect x="8" y="21" width="8" height="2" fill="#0284C7" />
+                <rect x="7" y="22" width="10" height="2" fill="#0369A1" />
+                {/* Water surface & droplets */}
+                <rect x="9" y="21" width="6" height="1" fill="#BAE6FD" />
+                <rect x="6" y="19" width="1" height="1" fill="#38BDF8" />
+                <rect x="17" y="19" width="1" height="1" fill="#38BDF8" />
               </g>
             )}
 
@@ -2775,11 +3064,6 @@ PART6_MODALS = """
               </g>
             )}
           </svg>
-          {isEating && (
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2 text-sm animate-heart-float pointer-events-none">
-              ❤️
-            </div>
-          )}
         </div>
       );
     };
@@ -2787,22 +3071,46 @@ PART6_MODALS = """
     // =========================================================================
     // PET CLOSET & CARE MODAL (Lemari Peliharaan & Ganti Kostum)
     // =========================================================================
-    const PetClosetModal = ({ isOpen, onClose, petData = {}, onUpdatePet, onFeedPet }) => {
+    const PetClosetModal = ({
+      isOpen,
+      onClose,
+      petData = {},
+      onUpdatePet,
+      onFeedPet,
+      onDrinkPet,
+      onPlayPet
+    }) => {
       const { shouldRender, isClosing, handleClose } = useModalLifecycle(isOpen, onClose, 350);
       const [petType, setPetType] = useState(petData?.type || 'DOG');
       const [petName, setPetName] = useState(petData?.name || 'Milo');
       const [outfit, setOutfit] = useState(petData?.outfit || 'NONE');
-      const [eating, setEating] = useState(false);
+      const [currentAction, setCurrentAction] = useState('idle');
+      const actionTimeoutRef = useRef(null);
 
       useEffect(() => {
         if (isOpen && petData) {
           setPetType(petData.type || 'DOG');
           setPetName(petData.name || (petData.type === 'CAT' ? 'Luna' : 'Milo'));
           setOutfit(petData.outfit || 'NONE');
+          setCurrentAction('idle');
         }
       }, [isOpen, petData]);
 
+      useEffect(() => {
+        return () => {
+          if (actionTimeoutRef.current) clearTimeout(actionTimeoutRef.current);
+        };
+      }, []);
+
       if (!shouldRender) return null;
+
+      const triggerAction = (actionName, durationMs = 1500) => {
+        if (actionTimeoutRef.current) clearTimeout(actionTimeoutRef.current);
+        setCurrentAction(actionName);
+        actionTimeoutRef.current = setTimeout(() => {
+          setCurrentAction('idle');
+        }, durationMs);
+      };
 
       const OUTFITS = [
         { id: 'NONE', label: 'Polos', emoji: '✨' },
@@ -2827,10 +3135,27 @@ PART6_MODALS = """
 
       const handleFeed = () => {
         if ((petData.foodCount || 0) <= 0) return;
-        setEating(true);
-        setTimeout(() => setEating(false), 900);
-        onFeedPet();
+        triggerAction('eat', 1800);
+        if (onFeedPet) onFeedPet();
       };
+
+      const handleDrink = () => {
+        triggerAction('drink', 1800);
+        if (onDrinkPet) onDrinkPet();
+      };
+
+      const handleSpeak = () => {
+        const vocal = petType === 'DOG' ? 'bark' : 'meow';
+        triggerAction(vocal, 1800);
+        if (onPlayPet) onPlayPet();
+      };
+
+      const handlePetJoy = () => {
+        triggerAction('happy', 2000);
+        if (onPlayPet) onPlayPet();
+      };
+
+      const isPetSad = (petData.fullness || 50) < 30 || (petData.happiness || 50) < 30;
 
       return (
         <div
@@ -2848,20 +3173,44 @@ PART6_MODALS = """
             </div>
 
             <div className="p-4 sm:p-5 space-y-4 max-h-[80vh] overflow-y-auto no-scrollbar">
-              <div className="bg-gradient-to-b from-sky-50 to-indigo-50/40 dark:from-slate-700/60 dark:to-slate-900 border border-sky-100 dark:border-slate-700 rounded-2xl p-4 flex flex-col items-center justify-center text-center shadow-xs">
-                <PixelPetSprite type={petType} outfit={outfit} isEating={eating} size={110} />
-                <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100 mt-2">
-                  {petName} {petType === 'DOG' ? '🐶' : '🐱'}
-                </h4>
+              <div className="bg-gradient-to-b from-sky-50 via-amber-50/30 to-indigo-50/40 dark:from-slate-700/60 dark:via-slate-800 dark:to-slate-900 border border-sky-100 dark:border-slate-700 rounded-2xl p-4 flex flex-col items-center justify-center text-center shadow-xs">
+                {/* Pet Animated Sprite */}
+                <div className="py-2">
+                  <PixelPetSprite
+                    type={petType}
+                    outfit={outfit}
+                    action={currentAction}
+                    isSad={isPetSad}
+                    size={116}
+                    onClick={handlePetJoy}
+                  />
+                </div>
+
+                <div className="flex items-center gap-2 mt-1">
+                  <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100">
+                    {petName} {petType === 'DOG' ? '🐶' : '🐱'}
+                  </h4>
+                  {isPetSad && (
+                    <span className="text-[10px] font-bold bg-rose-100 dark:bg-rose-950/80 text-rose-600 dark:text-rose-400 px-2 py-0.5 rounded-full animate-pulse">
+                      Sedih 🥺
+                    </span>
+                  )}
+                  {currentAction === 'happy' && (
+                    <span className="text-[10px] font-bold bg-amber-100 dark:bg-amber-950/80 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-full">
+                      Senang Banget! 🥰
+                    </span>
+                  )}
+                </div>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Teman setia pencatat keuangan Anda
+                  Ketuk hewan untuk mengelus atau gunakan aksi interaktif di bawah
                 </p>
 
+                {/* Status Bar: Kenyang & Senang */}
                 <div className="w-full grid grid-cols-2 gap-2.5 mt-3 pt-3 border-t border-sky-100 dark:border-slate-700 text-left">
                   <div>
                     <div className="flex items-center justify-between text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
                       <span>Kenyang {petType === 'DOG' ? '🍖' : '🐟'}</span>
-                      <span className="text-amber-600 dark:text-amber-400">{petData.fullness || 50}%</span>
+                      <span className="text-amber-600 dark:text-amber-400 font-bold">{petData.fullness || 50}%</span>
                     </div>
                     <div className="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
                       <div className="bg-amber-500 h-full transition-all duration-300 rounded-full" style={{ width: `${petData.fullness || 50}%` }}></div>
@@ -2870,7 +3219,7 @@ PART6_MODALS = """
                   <div>
                     <div className="flex items-center justify-between text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
                       <span>Senang ❤️</span>
-                      <span className="text-rose-500">{petData.happiness || 50}%</span>
+                      <span className="text-rose-500 font-bold">{petData.happiness || 50}%</span>
                     </div>
                     <div className="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
                       <div className="bg-rose-500 h-full transition-all duration-300 rounded-full" style={{ width: `${petData.happiness || 50}%` }}></div>
@@ -2878,22 +3227,75 @@ PART6_MODALS = """
                   </div>
                 </div>
 
-                <div className="mt-3 w-full flex items-center justify-between bg-white dark:bg-slate-800 p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-700">
-                  <div className="text-left">
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400 block font-medium">Stok Makanan</span>
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                      {petData.foodCount || 0} Porsi (Dapat dari Catat Mutasi)
-                    </span>
-                  </div>
+                {/* Interactive Action Buttons: Makan, Minum, Suara, Elus */}
+                <div className="mt-3 w-full grid grid-cols-4 gap-1.5 pt-2">
                   <button
                     type="button"
                     onClick={handleFeed}
                     disabled={(petData.foodCount || 0) <= 0}
-                    className="py-1.5 px-3 bg-amber-500 hover:bg-amber-600 disabled:opacity-40 text-white font-bold text-xs rounded-lg shadow-xs ios-btn-tap flex items-center gap-1"
+                    className="py-2 px-1 bg-amber-500 hover:bg-amber-600 disabled:opacity-40 text-white rounded-xl text-center shadow-xs ios-btn-tap flex flex-col items-center justify-center gap-0.5"
+                    title="Beri Makan (1 Porsi)"
                   >
-                    <span>Beri Makan</span>
-                    <span>{petType === 'DOG' ? '🍖' : '🐟'}</span>
+                    <span className="text-base">{petType === 'DOG' ? '🍖' : '🐟'}</span>
+                    <span className="text-[10px] font-bold">Makan ({petData.foodCount || 0})</span>
                   </button>
+                  <button
+                    type="button"
+                    onClick={handleDrink}
+                    className="py-2 px-1 bg-sky-500 hover:bg-sky-600 text-white rounded-xl text-center shadow-xs ios-btn-tap flex flex-col items-center justify-center gap-0.5"
+                    title="Beri Minum Air Segar"
+                  >
+                    <span className="text-base">💧</span>
+                    <span className="text-[10px] font-bold">Minum</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSpeak}
+                    className="py-2 px-1 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl text-center shadow-xs ios-btn-tap flex flex-col items-center justify-center gap-0.5"
+                    title={petType === 'DOG' ? 'Suara Menggonggong' : 'Suara Mengeong'}
+                  >
+                    <span className="text-base">{petType === 'DOG' ? '🐶' : '🐱'}</span>
+                    <span className="text-[10px] font-bold">{petType === 'DOG' ? 'Guk!' : 'Meong!'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handlePetJoy}
+                    className="py-2 px-1 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-center shadow-xs ios-btn-tap flex flex-col items-center justify-center gap-0.5"
+                    title="Elus dan Sayang Peliharaan"
+                  >
+                    <span className="text-base">✨</span>
+                    <span className="text-[10px] font-bold">Elus</span>
+                  </button>
+                </div>
+
+                {/* Animation Preview Pills (Tes Animasi) */}
+                <div className="w-full mt-3 pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block mb-1.5 text-left">
+                    Tes Animasi Pixel Pet:
+                  </span>
+                  <div className="flex flex-wrap gap-1">
+                    {[
+                      { id: 'idle', label: 'Idle' },
+                      { id: 'eat', label: 'Makan' },
+                      { id: 'drink', label: 'Minum' },
+                      { id: petType === 'DOG' ? 'bark' : 'meow', label: petType === 'DOG' ? 'Gonggong' : 'Meong' },
+                      { id: 'sad', label: 'Sedih' },
+                      { id: 'happy', label: 'Happy' }
+                    ].map((anim) => (
+                      <button
+                        key={anim.id}
+                        type="button"
+                        onClick={() => triggerAction(anim.id, 2500)}
+                        className={`text-[10px] font-semibold px-2 py-0.5 rounded-lg border transition-all ${
+                          currentAction === anim.id
+                            ? 'bg-brand text-white border-brand shadow-xs'
+                            : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
+                        }`}
+                      >
+                        {anim.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
@@ -2985,6 +3387,7 @@ PART6_MODALS = """
         </div>
       );
     };
+
 
     // =========================================================================
     // MONTHLY FINANCIAL REPORT EXPORT MODAL (PDF & PRINT)

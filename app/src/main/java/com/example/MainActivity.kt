@@ -111,15 +111,8 @@ class MainActivity : ComponentActivity() {
         // Enable edge-to-edge
         enableEdgeToEdge()
 
-        try {
-            // Anti-screenshot & anti-screen recording security protection for personal finance
-            window.setFlags(
-                WindowManager.LayoutParams.FLAG_SECURE,
-                WindowManager.LayoutParams.FLAG_SECURE
-            )
-        } catch (_: Throwable) {
-            // Safe fallback
-        }
+        // Window display setup
+
 
         try {
             val insetsController = WindowCompat.getInsetsController(window, window.decorView)
