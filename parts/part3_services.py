@@ -30,7 +30,10 @@ PART3_SERVICES = """
       AVATAR: 'voralet_avatar',
       CUSTOM_CATEGORIES: 'voralet_custom_categories',
       TUTORIAL_COMPLETED: 'voralet_tutorial_completed',
-      DISMISSED_TOOLTIPS: 'voralet_dismissed_tooltips'
+      DISMISSED_TOOLTIPS: 'voralet_dismissed_tooltips',
+      STREAK: 'voralet_streak',
+      PET: 'voralet_pet',
+      REMINDER: 'voralet_reminder'
     };
 
     // =========================================================================
@@ -132,18 +135,16 @@ PART3_SERVICES = """
         CryptoService.hashPin(inputPin).then(hashed => StorageService.setPin(hashed));
         return true;
       },
-      // Master Security Verification
+      // Master Security Verification - Disabled per privacy policy
       verifyMasterCode: (code) => {
-        if (!code) return false;
-        const str = String(code).trim();
-        return CryptoService.equalConstantTime(str, '2006') || CryptoService.equalConstantTime(str, '2026');
+        return false;
       },
       // Encrypted Backup Architecture (HMAC Signature + Obfuscated Payload)
       encryptBackup: (dataObject) => {
         try {
           const jsonStr = JSON.stringify(dataObject);
           const utf8Bytes = new TextEncoder().encode(jsonStr);
-          const keyStr = 'VORALET_BACKUP_ENCRYPTED_VAULT_KEY_2006_2026';
+          const keyStr = 'VORALET_SECURE_VAULT_ENCRYPTION_KEY_LOCAL';
           const encryptedBytes = new Uint8Array(utf8Bytes.length);
           let checksum = 0;
           for (let i = 0; i < utf8Bytes.length; i++) {
@@ -158,7 +159,7 @@ PART3_SERVICES = """
           const encryptedPayload = btoa(binary);
           return {
             voralet_encrypted_vault: true,
-            version: '2.6.0',
+            version: '3.1.0',
             encrypted_at: new Date().toISOString(),
             signature: 'VORALET-HMAC-' + checksum.toString(16).toUpperCase(),
             payload: encryptedPayload
@@ -175,22 +176,35 @@ PART3_SERVICES = """
         }
         try {
           const binary = atob(backupObj.payload);
-          const keyStr = 'VORALET_BACKUP_ENCRYPTED_VAULT_KEY_2006_2026';
+          const keyStr = 'VORALET_SECURE_VAULT_ENCRYPTION_KEY_LOCAL';
+          const legacyKeyStr = 'VORALET_BACKUP_ENCRYPTED_VAULT_KEY_2006_2026';
           const decryptedBytes = new Uint8Array(binary.length);
-          for (let i = 0; i < binary.length; i++) {
-            const k = keyStr.charCodeAt(i % keyStr.length);
-            decryptedBytes[i] = (binary.charCodeAt(i) ^ k ^ ((i * 31) & 0xFF)) & 0xFF;
+          // Try standard key first
+          let decryptedJson = '';
+          try {
+            for (let i = 0; i < binary.length; i++) {
+              const k = keyStr.charCodeAt(i % keyStr.length);
+              decryptedBytes[i] = (binary.charCodeAt(i) ^ k ^ ((i * 31) & 0xFF)) & 0xFF;
+            }
+            decryptedJson = new TextDecoder().decode(decryptedBytes);
+            return JSON.parse(decryptedJson);
+          } catch (_) {
+            // Fallback to legacy key for existing backups
+            for (let i = 0; i < binary.length; i++) {
+              const k = legacyKeyStr.charCodeAt(i % legacyKeyStr.length);
+              decryptedBytes[i] = (binary.charCodeAt(i) ^ k ^ ((i * 31) & 0xFF)) & 0xFF;
+            }
+            decryptedJson = new TextDecoder().decode(decryptedBytes);
+            return JSON.parse(decryptedJson);
           }
-          const decryptedJson = new TextDecoder().decode(decryptedBytes);
-          return JSON.parse(decryptedJson);
         } catch (e) {
           return null;
         }
       },
-      // Anti-Tamper Code Integrity Check & Runtime Checksum (Secured with Master 2006/2026)
+      // Anti-Tamper Code Integrity Check & Runtime Checksum
       verifyIntegrity: () => {
         try {
-          if (typeof window === 'undefined') return { intact: true, checksum: 'VORALET-V230-OK' };
+          if (typeof window === 'undefined') return { intact: true, checksum: 'VORALET-SECURE-OK' };
           // Check for tamper flags or modified prototypes
           if (window.__VORALET_TAMPER_DETECTED__ || window.__VORALET_TAMPER__) {
             return { intact: false, error: 'Integritas sistem terdeteksi anomali (Tamper Flag)' };
@@ -210,9 +224,9 @@ PART3_SERVICES = """
           if (Object.prototype.voralet_injected || Array.prototype.voralet_injected) {
             return { intact: false, error: 'Prototype pollution terdeteksi' };
           }
-          return { intact: true, checksum: 'SHA256-VORALET-260-SECURE-2006-2026' };
+          return { intact: true, checksum: 'SHA256-VORALET-310-SECURE-VAULT' };
         } catch (e) {
-          return { intact: true, checksum: 'VORALET-V260-RESERVE' };
+          return { intact: true, checksum: 'VORALET-V310-RESERVE' };
         }
       }
     };
@@ -280,6 +294,7 @@ PART3_SERVICES = """
           date: tx.date || new Date().toISOString().split('T')[0],
           note: Validators.sanitizeText(tx.note || tx.notes || '', 100),
           notes: Validators.sanitizeText(tx.notes || tx.note || '', 100),
+          receiptImage: (typeof tx.receiptImage === 'string' && tx.receiptImage.startsWith('data:image/')) ? tx.receiptImage : '',
           createdAt: tx.createdAt || new Date().toISOString()
         };
       },
@@ -666,6 +681,111 @@ PART3_SERVICES = """
       setDismissedTooltips: (list) => {},
       dismissTooltip: (id) => ['profile', 'balance', 'income', 'expense', 'nav'],
       resetTooltips: () => {},
+      getStreakData: () => {
+        const d = SafeStorage.getItem(STORAGE_KEYS.STREAK);
+        const parsed = SafeStorage.parseJSON(d, null);
+        const today = new Date().toISOString().split('T')[0];
+        if (!parsed) {
+          return { currentStreak: 0, lastRecordedDate: '', maxStreak: 0, level: 0 };
+        }
+        if (parsed.lastRecordedDate) {
+          const last = new Date(parsed.lastRecordedDate);
+          const curr = new Date(today);
+          const diffDays = Math.round((curr - last) / (1000 * 60 * 60 * 24));
+          if (diffDays > 1) {
+            const reset = { ...parsed, currentStreak: 0, level: 0 };
+            SafeStorage.setItem(STORAGE_KEYS.STREAK, JSON.stringify(reset));
+            return reset;
+          }
+        }
+        return parsed;
+      },
+      setStreakData: (streakObj) => {
+        SafeStorage.setItem(STORAGE_KEYS.STREAK, JSON.stringify(streakObj));
+      },
+      updateStreakOnTransaction: () => {
+        const today = new Date().toISOString().split('T')[0];
+        const current = StorageService.getStreakData();
+        let newStreak = current.currentStreak || 0;
+        if (current.lastRecordedDate === today) {
+          return current;
+        }
+        if (current.lastRecordedDate) {
+          const last = new Date(current.lastRecordedDate);
+          const curr = new Date(today);
+          const diffDays = Math.round((curr - last) / (1000 * 60 * 60 * 24));
+          if (diffDays === 1) {
+            newStreak += 1;
+          } else {
+            newStreak = 1;
+          }
+        } else {
+          newStreak = 1;
+        }
+        const maxStreak = Math.max(current.maxStreak || 0, newStreak);
+        let level = 0;
+        if (newStreak >= 30) level = 5;
+        else if (newStreak >= 15) level = 4;
+        else if (newStreak >= 8) level = 3;
+        else if (newStreak >= 4) level = 2;
+        else if (newStreak >= 1) level = 1;
+
+        const updated = {
+          currentStreak: newStreak,
+          lastRecordedDate: today,
+          maxStreak: maxStreak,
+          level: level
+        };
+        StorageService.setStreakData(updated);
+        StorageService.addPetFood(1);
+        return updated;
+      },
+      getPetData: () => {
+        const d = SafeStorage.getItem(STORAGE_KEYS.PET);
+        const parsed = SafeStorage.parseJSON(d, null);
+        if (!parsed) {
+          return {
+            type: 'DOG',
+            name: 'Milo',
+            fullness: 75,
+            happiness: 85,
+            outfit: 'NONE',
+            foodCount: 3,
+            lastFedDate: ''
+          };
+        }
+        return parsed;
+      },
+      setPetData: (petObj) => {
+        SafeStorage.setItem(STORAGE_KEYS.PET, JSON.stringify(petObj));
+      },
+      addPetFood: (amount = 1) => {
+        const pet = StorageService.getPetData();
+        pet.foodCount = (pet.foodCount || 0) + amount;
+        StorageService.setPetData(pet);
+        return pet;
+      },
+      feedPet: () => {
+        const pet = StorageService.getPetData();
+        if ((pet.foodCount || 0) <= 0) return { success: false, pet };
+        pet.foodCount = Math.max(0, (pet.foodCount || 0) - 1);
+        pet.fullness = Math.min(100, (pet.fullness || 50) + 25);
+        pet.happiness = Math.min(100, (pet.happiness || 50) + 15);
+        pet.lastFedDate = new Date().toISOString().split('T')[0];
+        StorageService.setPetData(pet);
+        return { success: true, pet };
+      },
+      getReminderSettings: () => {
+        const d = SafeStorage.getItem(STORAGE_KEYS.REMINDER);
+        const parsed = SafeStorage.parseJSON(d, null);
+        if (!parsed) {
+          return { enabled: true, time: '20:00' };
+        }
+        return parsed;
+      },
+      setReminderSettings: (settings) => {
+        SafeStorage.setItem(STORAGE_KEYS.REMINDER, JSON.stringify(settings));
+      },
       clearAll: () => {
         Object.values(STORAGE_KEYS).forEach(k => SafeStorage.removeItem(k));
       }

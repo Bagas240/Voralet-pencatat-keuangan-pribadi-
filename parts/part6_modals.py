@@ -28,9 +28,48 @@ PART6_MODALS = """
         return allCategories.filter(c => c.type === 'ALL' || c.type === type);
       }, [allCategories, type]);
 
+      const [receiptImage, setReceiptImage] = useState(initialData?.receiptImage || '');
+      const [showReceiptLightbox, setShowReceiptLightbox] = useState(false);
+      const receiptInputRef = useRef(null);
+
+      const handleReceiptCapture = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const maxDim = 800;
+            let width = img.width;
+            let height = img.height;
+            if (width > height) {
+              if (width > maxDim) {
+                height = Math.round((height * maxDim) / width);
+                width = maxDim;
+              }
+            } else {
+              if (height > maxDim) {
+                width = Math.round((width * maxDim) / height);
+                height = maxDim;
+              }
+            }
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            const compressed = canvas.toDataURL('image/jpeg', 0.72);
+            setReceiptImage(compressed);
+          };
+          img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+      };
+
       const handleClose = () => {
         setShowAddCategory(false);
         setNewCatName('');
+        setShowReceiptLightbox(false);
         baseClose();
       };
 
@@ -40,12 +79,14 @@ PART6_MODALS = """
           setAmountStr(initialData.amount ? String(initialData.amount) : '');
           setCategory(initialData.category || 'makan');
           setNotes(initialData.notes || '');
+          setReceiptImage(initialData.receiptImage || '');
           if (initialData.accountId) setAccountId(initialData.accountId);
         } else {
           setType('EXPENSE');
           setAmountStr('');
           setCategory('makan');
           setNotes('');
+          setReceiptImage('');
         }
         if (accounts.length > 0 && !accounts.some(a => a.id === accountId)) {
           setAccountId(accounts[0].id);
@@ -96,14 +137,16 @@ PART6_MODALS = """
         }
 
         const newTx = {
-          id: 'tx_' + Date.now(),
+          id: initialData?.id || ('tx_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6)),
           accountId,
           type,
           amount: rawAmount,
           category,
           date,
+          note: notes.trim(),
           notes: notes.trim(),
-          createdAt: new Date().toISOString()
+          receiptImage: receiptImage || '',
+          createdAt: initialData?.createdAt || new Date().toISOString()
         };
 
         HapticFeedback.save();
@@ -319,6 +362,86 @@ PART6_MODALS = """
                   />
                 </div>
               </div>
+
+              {/* Foto Struk Belanja / Bukti Pembayaran */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Foto Struk / Bukti Pembayaran (Opsional)
+                </label>
+                <input
+                  type="file"
+                  ref={receiptInputRef}
+                  accept="image/*"
+                  capture="environment"
+                  onChange={handleReceiptCapture}
+                  className="hidden"
+                />
+                {receiptImage ? (
+                  <div className="relative p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={receiptImage}
+                        alt="Struk Pembayaran"
+                        onClick={() => setShowReceiptLightbox(true)}
+                        className="w-12 h-12 object-cover rounded-lg border border-slate-200 dark:border-slate-700 cursor-pointer shadow-sm hover:opacity-90 transition-opacity"
+                      />
+                      <div>
+                        <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 block">Struk Terlampir</span>
+                        <button
+                          type="button"
+                          onClick={() => setShowReceiptLightbox(true)}
+                          className="text-[11px] text-brand hover:underline font-medium flex items-center gap-1 mt-0.5"
+                        >
+                          <Icon name="search" className="w-3 h-3" />
+                          <span>Perbesar Foto</span>
+                        </button>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setReceiptImage('')}
+                      className="px-2.5 py-1 text-xs font-semibold text-rose-600 bg-rose-50 dark:bg-rose-950/40 rounded-lg hover:bg-rose-100 transition-colors"
+                    >
+                      Hapus
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => receiptInputRef.current?.click()}
+                    className="w-full py-2.5 px-3 bg-slate-50 dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:border-brand hover:text-brand flex items-center justify-center gap-2 transition-colors ios-btn-tap"
+                  >
+                    <Icon name="camera" className="w-4 h-4 text-brand" />
+                    <span>Ambil Foto / Unggah Struk</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Lightbox Modal for Receipt Photo */}
+              {showReceiptLightbox && receiptImage && (
+                <div
+                  className="fixed inset-0 z-[120] bg-black/85 backdrop-blur-sm flex flex-col items-center justify-center p-4"
+                  onClick={() => setShowReceiptLightbox(false)}
+                >
+                  <div className="relative max-w-sm sm:max-w-md w-full max-h-[85vh] flex flex-col items-center" onClick={(e) => e.stopPropagation()}>
+                    <div className="w-full flex justify-between items-center mb-2 px-2 text-white">
+                      <span className="text-xs font-bold">Preview Struk Pembayaran</span>
+                      <button
+                        type="button"
+                        onClick={() => setShowReceiptLightbox(false)}
+                        className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center"
+                      >
+                        <Icon name="x" className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <img
+                      src={receiptImage}
+                      alt="Full Struk"
+                      className="max-h-[75vh] w-auto max-w-full rounded-2xl shadow-2xl object-contain border border-white/20"
+                    />
+                  </div>
+                </div>
+              )}
 
               <div className="pt-2">
                 <button
@@ -1294,6 +1417,21 @@ PART6_MODALS = """
       const [editingCatId, setEditingCatId] = useState(null);
       const [catErrorMsg, setCatErrorMsg] = useState('');
 
+      // Reminder Settings
+      const [reminderSettings, setReminderSettingsState] = useState(() => StorageService.getReminderSettings());
+
+      const handleToggleReminder = (enabled) => {
+        const next = { ...reminderSettings, enabled };
+        setReminderSettingsState(next);
+        StorageService.setReminderSettings(next);
+      };
+
+      const handleChangeReminderTime = (time) => {
+        const next = { ...reminderSettings, time };
+        setReminderSettingsState(next);
+        StorageService.setReminderSettings(next);
+      };
+
       const emojiPresets = ['🍔', '☕', '🚗', '🛍️', '💡', '🎮', '💊', '💼', '🎁', '📈', '🏷️', '🏠', '✈️', '📚', '🐾', '⚽'];
 
       useEffect(() => {
@@ -1891,21 +2029,39 @@ PART6_MODALS = """
                 </p>
               </div>
 
-              {/* Master Developer & Security Gate */}
-              <div className="pt-3 border-t border-slate-100 dark:border-slate-700">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (onOpenDeveloperGate) onOpenDeveloperGate();
-                  }}
-                  className="w-full py-2.5 px-3 bg-sky-50 dark:bg-slate-700/60 hover:bg-sky-100 dark:hover:bg-slate-700 text-sky-700 dark:text-sky-300 text-xs font-semibold rounded-xl border border-sky-200/80 dark:border-slate-600 flex items-center justify-between transition-colors ios-btn-tap"
-                >
+              {/* Pengingat Harian Pencatat Keuangan */}
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-700 space-y-2">
+                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Icon name="shield-check" className="w-4 h-4 text-brand dark:text-sky-400" />
-                    <span>Opsi Pengembang & Keamanan Master</span>
+                    <div className="w-7 h-7 rounded-lg bg-sky-100 dark:bg-slate-700 flex items-center justify-center text-brand dark:text-sky-400">
+                      <Icon name="bell" className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">Pengingat Harian</h4>
+                      <p className="text-[10px] text-slate-400">Ingatkan catat transaksi setiap hari</p>
+                    </div>
                   </div>
-                  <span className="text-[10px] bg-sky-200/70 dark:bg-slate-800 px-2 py-0.5 rounded-md font-mono font-bold text-brand dark:text-sky-300">RAHASIA</span>
-                </button>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={reminderSettings.enabled}
+                      onChange={(e) => handleToggleReminder(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand"></div>
+                  </label>
+                </div>
+                {reminderSettings.enabled && (
+                  <div className="flex items-center justify-between pl-9 pr-1">
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Waktu Pengingat:</span>
+                    <input
+                      type="time"
+                      value={reminderSettings.time}
+                      onChange={(e) => handleChangeReminderTime(e.target.value)}
+                      className="px-2 py-1 text-xs font-semibold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-300 focus:outline-none"
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Reset Data */}
@@ -1913,9 +2069,7 @@ PART6_MODALS = """
                 <button
                   type="button"
                   onClick={() => {
-                    if (onOpenDeveloperGate) {
-                      onOpenDeveloperGate();
-                    } else if (confirm('PERINGATAN: Semua data dompet, mutasi, hutang, dan PIN akan dihapus total dari perangkat ini. Lanjutkan?')) {
+                    if (confirm('PERINGATAN: Semua data dompet, mutasi, hutang, tabungan, dan PIN akan dihapus total secara permanen dari perangkat ini. Lanjutkan?')) {
                       onHardReset();
                     }
                   }}
@@ -2510,48 +2664,172 @@ PART6_MODALS = """
     };
 
     // =========================================================================
-    // MASTER DEVELOPER SECURITY MODAL (VERIFICATION KEY: 2026)
+    // PIXEL PET RENDERER (Retro 8-Bit Pixel Art Puppy & Kitty with Outfits)
     // =========================================================================
-    const DeveloperSecurityModal = ({ isOpen, onClose, onHardReset, accounts, transactions, debts, savingsGoals }) => {
-      const { shouldRender, isClosing, handleClose } = useModalLifecycle(isOpen, onClose, 350);
+    const PixelPetSprite = ({ type = 'DOG', outfit = 'NONE', isEating = false, size = 110 }) => {
+      const isDog = type === 'DOG';
+      return (
+        <div className={`relative inline-block ${isEating ? 'animate-pet-eat' : 'animate-pet-idle'} pixelated select-none`}>
+          <svg
+            width={size}
+            height={size}
+            viewBox="0 0 24 24"
+            className="drop-shadow-md overflow-visible"
+            style={{ shapeRendering: 'crispEdges' }}
+          >
+            {isDog ? (
+              // PIXEL DOGGY (Milo)
+              <g>
+                <rect x="7" y="14" width="10" height="7" fill="#F59E0B" />
+                <rect x="9" y="15" width="6" height="5" fill="#FEF3C7" />
+                <rect x="7" y="20" width="2" height="3" fill="#D97706" />
+                <rect x="15" y="20" width="2" height="3" fill="#D97706" />
+                <rect x="17" y="13" width="2" height="3" fill="#F59E0B" />
+                <rect x="18" y="11" width="2" height="2" fill="#F59E0B" />
+                <rect x="5" y="6" width="14" height="9" fill="#F59E0B" />
+                <rect x="4" y="3" width="3" height="4" fill="#B45309" />
+                <rect x="17" y="3" width="3" height="4" fill="#B45309" />
+                <rect x="5" y="11" width="3" height="3" fill="#FEF3C7" />
+                <rect x="16" y="11" width="3" height="3" fill="#FEF3C7" />
+                <rect x="8" y="11" width="8" height="4" fill="#FEF3C7" />
+                <rect x="7" y="8" width="2" height="2" fill="#1F2937" />
+                <rect x="15" y="8" width="2" height="2" fill="#1F2937" />
+                <rect x="11" y="11" width="2" height="1" fill="#1F2937" />
+                <rect x="11" y="12" width="2" height="2" fill="#F43F5E" />
+              </g>
+            ) : (
+              // PIXEL CAT (Luna)
+              <g>
+                <rect x="7" y="14" width="10" height="7" fill="#64748B" />
+                <rect x="9" y="15" width="6" height="5" fill="#F1F5F9" />
+                <rect x="7" y="20" width="2" height="3" fill="#475569" />
+                <rect x="15" y="20" width="2" height="3" fill="#475569" />
+                <rect x="17" y="12" width="2" height="6" fill="#64748B" />
+                <rect x="19" y="10" width="2" height="3" fill="#64748B" />
+                <rect x="5" y="7" width="14" height="8" fill="#64748B" />
+                <rect x="5" y="3" width="3" height="4" fill="#475569" />
+                <rect x="6" y="4" width="1" height="2" fill="#FDA4AF" />
+                <rect x="16" y="3" width="3" height="4" fill="#475569" />
+                <rect x="17" y="4" width="1" height="2" fill="#FDA4AF" />
+                <rect x="8" y="11" width="8" height="3" fill="#F1F5F9" />
+                <rect x="7" y="8" width="2" height="3" fill="#10B981" />
+                <rect x="7" y="8" width="1" height="1" fill="#FFFFFF" />
+                <rect x="15" y="8" width="2" height="3" fill="#10B981" />
+                <rect x="15" y="8" width="1" height="1" fill="#FFFFFF" />
+                <rect x="11" y="11" width="2" height="1" fill="#FB7185" />
+                <rect x="4" y="11" width="3" height="1" fill="#94A3B8" />
+                <rect x="4" y="13" width="3" height="1" fill="#94A3B8" />
+                <rect x="17" y="11" width="3" height="1" fill="#94A3B8" />
+                <rect x="17" y="13" width="3" height="1" fill="#94A3B8" />
+              </g>
+            )}
 
-      const [masterCode, setMasterCode] = useState('');
-      const [isAuthorized, setIsAuthorized] = useState(false);
-      const [errorMsg, setErrorMsg] = useState('');
-      const [storageReport, setStorageReport] = useState([]);
-      const [integrityReport, setIntegrityReport] = useState(null);
-      const [isShaking, setIsShaking] = useState(false);
+            {/* OUTFITS */}
+            {outfit === 'CROWN' && (
+              <g>
+                <rect x="7" y="1" width="10" height="4" fill="#F59E0B" />
+                <rect x="7" y="0" width="2" height="2" fill="#FBBF24" />
+                <rect x="11" y="0" width="2" height="2" fill="#FBBF24" />
+                <rect x="15" y="0" width="2" height="2" fill="#FBBF24" />
+                <rect x="9" y="2" width="2" height="2" fill="#EF4444" />
+                <rect x="13" y="2" width="2" height="2" fill="#3B82F6" />
+              </g>
+            )}
+            {outfit === 'HAT' && (
+              <g>
+                <rect x="8" y="0" width="8" height="5" fill="#1E1B4B" />
+                <rect x="8" y="4" width="8" height="1" fill="#DC2626" />
+                <rect x="6" y="5" width="12" height="1" fill="#1E1B4B" />
+              </g>
+            )}
+            {outfit === 'GLASSES' && (
+              <g>
+                <rect x="6" y="8" width="4" height="3" fill="#1E293B" />
+                <rect x="14" y="8" width="4" height="3" fill="#1E293B" />
+                <rect x="10" y="8" width="4" height="1" fill="#1E293B" />
+                <rect x="7" y="9" width="1" height="1" fill="#38BDF8" />
+                <rect x="15" y="9" width="1" height="1" fill="#38BDF8" />
+              </g>
+            )}
+            {outfit === 'BOWTIE' && (
+              <g>
+                <rect x="10" y="14" width="4" height="2" fill="#EF4444" />
+                <rect x="9" y="13" width="2" height="4" fill="#DC2626" />
+                <rect x="13" y="13" width="2" height="4" fill="#DC2626" />
+                <rect x="11" y="14" width="2" height="2" fill="#FEF08A" />
+              </g>
+            )}
+            {outfit === 'SCARF' && (
+              <g>
+                <rect x="7" y="13" width="10" height="2" fill="#0284C7" />
+                <rect x="13" y="15" width="3" height="4" fill="#0284C7" />
+                <rect x="8" y="13" width="2" height="2" fill="#F8FAFC" />
+                <rect x="12" y="13" width="2" height="2" fill="#F8FAFC" />
+              </g>
+            )}
+            {outfit === 'CAP' && (
+              <g>
+                <rect x="6" y="3" width="12" height="4" fill="#DC2626" />
+                <rect x="14" y="5" width="6" height="2" fill="#B91C1C" />
+                <rect x="10" y="3" width="4" height="2" fill="#FFFFFF" />
+              </g>
+            )}
+          </svg>
+          {isEating && (
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 text-sm animate-heart-float pointer-events-none">
+              ❤️
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    // =========================================================================
+    // PET CLOSET & CARE MODAL (Lemari Peliharaan & Ganti Kostum)
+    // =========================================================================
+    const PetClosetModal = ({ isOpen, onClose, petData = {}, onUpdatePet, onFeedPet }) => {
+      const { shouldRender, isClosing, handleClose } = useModalLifecycle(isOpen, onClose, 350);
+      const [petType, setPetType] = useState(petData?.type || 'DOG');
+      const [petName, setPetName] = useState(petData?.name || 'Milo');
+      const [outfit, setOutfit] = useState(petData?.outfit || 'NONE');
+      const [eating, setEating] = useState(false);
+
+      useEffect(() => {
+        if (isOpen && petData) {
+          setPetType(petData.type || 'DOG');
+          setPetName(petData.name || (petData.type === 'CAT' ? 'Luna' : 'Milo'));
+          setOutfit(petData.outfit || 'NONE');
+        }
+      }, [isOpen, petData]);
 
       if (!shouldRender) return null;
 
-      useEffect(() => {
-        if (isOpen) {
-          setMasterCode('');
-          setIsAuthorized(false);
-          setErrorMsg('');
-          setIntegrityReport(CryptoService.verifyIntegrity());
-          setStorageReport(SafeStorage.getRawStorageReport());
-        }
-      }, [isOpen]);
+      const OUTFITS = [
+        { id: 'NONE', label: 'Polos', emoji: '✨' },
+        { id: 'CROWN', label: 'Mahkota Raja', emoji: '👑' },
+        { id: 'HAT', label: 'Topi Pesulap', emoji: '🎩' },
+        { id: 'GLASSES', label: 'Kacamata Kece', emoji: '🕶️' },
+        { id: 'BOWTIE', label: 'Dasi Kupu-Kupu', emoji: '🎀' },
+        { id: 'SCARF', label: 'Syal Hangat', emoji: '🧣' },
+        { id: 'CAP', label: 'Topi Gaul', emoji: '🧢' }
+      ];
 
-      const handleAuthorize = (e) => {
-        if (e) e.preventDefault();
-        if (CryptoService.verifyMasterCode(masterCode)) {
-          setIsAuthorized(true);
-          setErrorMsg('');
-          setStorageReport(SafeStorage.getRawStorageReport());
-          setIntegrityReport(CryptoService.verifyIntegrity());
-        } else {
-          setErrorMsg('Kunci Master Salah! Akses ditolak.');
-          setIsShaking(true);
-          setTimeout(() => setIsShaking(false), 500);
-        }
+      const handleSave = () => {
+        const updated = {
+          ...petData,
+          type: petType,
+          name: petName.trim() || (petType === 'CAT' ? 'Luna' : 'Milo'),
+          outfit
+        };
+        onUpdatePet(updated);
+        handleClose();
       };
 
-      const handleReverifyIntegrity = () => {
-        const res = CryptoService.verifyIntegrity();
-        setIntegrityReport(res);
-        setStorageReport(SafeStorage.getRawStorageReport());
+      const handleFeed = () => {
+        if ((petData.foodCount || 0) <= 0) return;
+        setEating(true);
+        setTimeout(() => setEating(false), 900);
+        onFeedPet();
       };
 
       return (
@@ -2559,184 +2837,149 @@ PART6_MODALS = """
           className={`ios-modal-backdrop ${isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'}`}
           onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
         >
-          <div className={`ios-modal-card bg-white dark:bg-slate-800 rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-700 max-h-[92dvh] max-w-lg mx-auto flex flex-col overflow-hidden ${
-            isClosing ? 'animate-ios-sheet-exit' : 'animate-ios-sheet'
-          }`}>
+          <div className={`ios-modal-card bg-white dark:bg-slate-800 ${isClosing ? 'animate-ios-sheet-exit' : 'animate-ios-sheet'}`}>
             <ModalDragHandle onDismiss={handleClose} />
-            {/* Header */}
-            <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-sky-100 dark:bg-slate-700 flex items-center justify-center text-brand dark:text-sky-400">
-                  <Icon name="shield-check" className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">Master Security Gate</h3>
-                  <p className="text-[10px] text-slate-400">Akses Pengembang & Integritas Kode v3.0.1</p>
-                </div>
+            <div className="ios-modal-header px-5 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">🐾</span>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">Peliharaan & Lemari Kostum</h3>
               </div>
               <ModalCloseButton onClick={handleClose} />
             </div>
 
-            {/* Content */}
-            <div className="p-4 sm:p-5 overflow-y-auto space-y-4">
-              {!isAuthorized ? (
-                <div className={`space-y-4 ${isShaking ? 'animate-ios-pin-shake' : ''}`}>
-                  <div className="p-4 bg-sky-50 dark:bg-slate-700/50 rounded-2xl border border-sky-100 dark:border-slate-600 text-center">
-                    <Icon name="lock" className="w-8 h-8 text-brand dark:text-sky-400 mx-auto mb-2" />
-                    <h4 className="text-xs font-bold text-slate-900 dark:text-white">Autentikasi Pengembang</h4>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-300 mt-1">
-                      Masukkan kode otorisasi master rahasia untuk membuka akses konfigurasi tingkat lanjut.
-                    </p>
-                  </div>
+            <div className="p-4 sm:p-5 space-y-4 max-h-[80vh] overflow-y-auto no-scrollbar">
+              <div className="bg-gradient-to-b from-sky-50 to-indigo-50/40 dark:from-slate-700/60 dark:to-slate-900 border border-sky-100 dark:border-slate-700 rounded-2xl p-4 flex flex-col items-center justify-center text-center shadow-xs">
+                <PixelPetSprite type={petType} outfit={outfit} isEating={eating} size={110} />
+                <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100 mt-2">
+                  {petName} {petType === 'DOG' ? '🐶' : '🐱'}
+                </h4>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Teman setia pencatat keuangan Anda
+                </p>
 
-                  <form onSubmit={handleAuthorize} className="space-y-3">
-                    <div>
-                      <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 block mb-1">
-                        Master Security Key
-                      </label>
-                      <input
-                        type="password"
-                        autoFocus
-                        maxLength={6}
-                        value={masterCode}
-                        onChange={(e) => {
-                          setMasterCode(e.target.value.slice(0, 6));
-                          if (errorMsg) setErrorMsg('');
-                        }}
-                        placeholder="••••"
-                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-center font-mono font-bold tracking-widest text-base text-slate-900 dark:text-white focus:outline-none focus:border-brand"
-                      />
+                <div className="w-full grid grid-cols-2 gap-2.5 mt-3 pt-3 border-t border-sky-100 dark:border-slate-700 text-left">
+                  <div>
+                    <div className="flex items-center justify-between text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                      <span>Kenyang {petType === 'DOG' ? '🍖' : '🐟'}</span>
+                      <span className="text-amber-600 dark:text-amber-400">{petData.fullness || 50}%</span>
                     </div>
-
-                    {errorMsg && (
-                      <p className="text-xs font-semibold text-rose-500 text-center">{errorMsg}</p>
-                    )}
-
-                    <button
-                      type="submit"
-                      className="w-full py-2.5 bg-brand text-white font-semibold text-xs rounded-xl hover:bg-brand-hover ios-btn-tap"
-                    >
-                      Buka Akses Master
-                    </button>
-                  </form>
+                    <div className="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
+                      <div className="bg-amber-500 h-full transition-all duration-300 rounded-full" style={{ width: `${petData.fullness || 50}%` }}></div>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                      <span>Senang ❤️</span>
+                      <span className="text-rose-500">{petData.happiness || 50}%</span>
+                    </div>
+                    <div className="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
+                      <div className="bg-rose-500 h-full transition-all duration-300 rounded-full" style={{ width: `${petData.happiness || 50}%` }}></div>
+                    </div>
+                  </div>
                 </div>
-              ) : (
-                <div className="space-y-4 animate-ios-spring-pop">
-                  {/* Authorized Banner */}
-                  <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-2xl flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Icon name="check-circle" className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                      <div>
-                        <p className="text-xs font-bold text-emerald-800 dark:text-emerald-200">MASTER ACCESS GRANTED</p>
-                        <p className="text-[10px] text-emerald-600 dark:text-emerald-400">Kode otentikasi terverifikasi dengan aman</p>
-                      </div>
-                    </div>
-                    <span className="text-[10px] font-mono px-2 py-0.5 bg-emerald-200 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 rounded font-bold">LEVEL-0</span>
-                  </div>
 
-                  {/* Code Integrity & Anti-Tamper */}
-                  <div className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                        <Icon name="shield-check" className="w-3.5 h-3.5 text-brand" />
-                        Integritas Kode & Anti-Tamper
-                      </span>
-                      <button
-                        type="button"
-                        onClick={handleReverifyIntegrity}
-                        className="text-[11px] text-brand dark:text-sky-400 font-semibold hover:underline"
-                      >
-                        Pindai Ulang
-                      </button>
-                    </div>
-                    <div className="text-[11px] font-mono space-y-1 text-slate-600 dark:text-slate-300">
-                      <div className="flex justify-between">
-                        <span>Status Sistem:</span>
-                        <span className="text-emerald-600 font-bold">{integrityReport?.intact ? 'VALID / UNTOUCHED' : 'ANOMALY'}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Checksum Engine:</span>
-                        <span className="text-slate-500">{integrityReport?.checksum || 'SHA256-V230'}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Anti-Tamper Isolation:</span>
-                        <span className="text-emerald-600 font-bold">ACTIVE</span>
-                      </div>
-                    </div>
+                <div className="mt-3 w-full flex items-center justify-between bg-white dark:bg-slate-800 p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-700">
+                  <div className="text-left">
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400 block font-medium">Stok Makanan</span>
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                      {petData.foodCount || 0} Porsi (Dapat dari Catat Mutasi)
+                    </span>
                   </div>
+                  <button
+                    type="button"
+                    onClick={handleFeed}
+                    disabled={(petData.foodCount || 0) <= 0}
+                    className="py-1.5 px-3 bg-amber-500 hover:bg-amber-600 disabled:opacity-40 text-white font-bold text-xs rounded-lg shadow-xs ios-btn-tap flex items-center gap-1"
+                  >
+                    <span>Beri Makan</span>
+                    <span>{petType === 'DOG' ? '🍖' : '🐟'}</span>
+                  </button>
+                </div>
+              </div>
 
-                  {/* Storage Encryption Inspector */}
-                  <div className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                        <Icon name="lock" className="w-3.5 h-3.5 text-brand" />
-                        Enkripsi Penyimpanan (Dynamic Salt)
-                      </span>
-                      <span className="text-[10px] text-emerald-600 font-bold font-mono">enc:v2: ACTIVE</span>
-                    </div>
-                    <p className="text-[10px] text-slate-400">
-                      Seluruh mutasi, saldo, kantong, hutang, dan impian dienkripsi sebelum disimpan ke localStorage.
-                    </p>
-                    <div className="max-h-28 overflow-y-auto space-y-1 text-[10px] font-mono bg-white dark:bg-slate-950 p-2 rounded-xl border border-slate-200 dark:border-slate-800">
-                      {storageReport.length === 0 ? (
-                        <p className="text-slate-400">Penyimpanan kosong atau berbasis memori</p>
-                      ) : (
-                        storageReport.map((item, idx) => (
-                          <div key={idx} className="flex justify-between py-0.5 border-b border-slate-100 dark:border-slate-900 last:border-0">
-                            <span className="text-slate-700 dark:text-slate-300 truncate max-w-[120px]">{item.key}</span>
-                            <span className="text-emerald-500 truncate max-w-[150px]">{item.sample}</span>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                  Pilih Hewan Peliharaan
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPetType('DOG');
+                      if (petName === 'Luna') setPetName('Milo');
+                    }}
+                    className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+                      petType === 'DOG'
+                        ? 'border-brand bg-sky-50 dark:bg-slate-700 text-brand dark:text-sky-400 shadow-xs'
+                        : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
+                    }`}
+                  >
+                    <span className="text-base">🐶</span>
+                    <span>Pixel Doggy</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPetType('CAT');
+                      if (petName === 'Milo') setPetName('Luna');
+                    }}
+                    className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+                      petType === 'CAT'
+                        ? 'border-brand bg-sky-50 dark:bg-slate-700 text-brand dark:text-sky-400 shadow-xs'
+                        : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
+                    }`}
+                  >
+                    <span className="text-base">🐱</span>
+                    <span>Pixel Cat</span>
+                  </button>
+                </div>
+              </div>
 
-                  {/* App Telemetry & Diagnostics */}
-                  <div className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-1 text-[11px] font-mono text-slate-600 dark:text-slate-300">
-                    <div className="flex justify-between">
-                      <span>Versi Voralet:</span>
-                      <span className="font-bold">v2.6.0 (Production)</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>React Core:</span>
-                      <span>18.3.1 (Concurrent Root)</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Kantong Aktif:</span>
-                      <span>{accounts?.length || 0} akun</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Catatan Mutasi:</span>
-                      <span>{transactions?.length || 0} entri</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Hutang / Piutang:</span>
-                      <span>{debts?.length || 0} entri</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Kantong Impian:</span>
-                      <span>{savingsGoals?.length || 0} target</span>
-                    </div>
-                  </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Nama Peliharaan
+                </label>
+                <input
+                  type="text"
+                  maxLength={20}
+                  value={petName}
+                  onChange={(e) => setPetName(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand font-semibold"
+                />
+              </div>
 
-                  {/* Master Reset Operation */}
-                  <div className="pt-2">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                  Lemari Aksesori & Kostum
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {OUTFITS.map((item) => (
                     <button
+                      key={item.id}
                       type="button"
-                      onClick={() => {
-                        if (confirm('PERINGATAN MASTER DEVELOPER: Apakah Anda yakin ingin menghapus semua data aplikasi dan mengembalikan ke kondisi awal pabrik? Tindakan ini tidak dapat dibatalkan.')) {
-                          onHardReset();
-                          onClose();
-                        }
-                      }}
-                      className="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition-colors ios-btn-tap flex items-center justify-center gap-1.5"
+                      onClick={() => setOutfit(item.id)}
+                      className={`py-2 px-2.5 rounded-xl border text-left flex items-center gap-2 transition-all ${
+                        outfit === item.id
+                          ? 'border-brand bg-sky-50 dark:bg-slate-700 text-brand dark:text-sky-300 font-bold shadow-xs'
+                          : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                      }`}
                     >
-                      <Icon name="trash" className="w-4 h-4" />
-                      <span>Eksekusi Master Factory Reset</span>
+                      <span className="text-base">{item.emoji}</span>
+                      <span className="text-xs truncate">{item.label}</span>
                     </button>
-                  </div>
+                  ))}
                 </div>
-              )}
+              </div>
+
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  className="w-full py-2.5 bg-brand hover:bg-brand-hover text-white text-xs font-bold rounded-xl shadow-sm transition-colors ios-btn-tap"
+                >
+                  Simpan Peliharaan & Tutup
+                </button>
+              </div>
             </div>
           </div>
         </div>

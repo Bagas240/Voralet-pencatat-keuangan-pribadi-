@@ -138,6 +138,11 @@ PART8_APP = """
                       <span className="truncate italic max-w-[130px]">{tx.notes}</span>
                     </>
                   )}
+                  {tx.receiptImage && (
+                    <span className="text-[10px] bg-sky-100 dark:bg-slate-700 text-brand dark:text-sky-300 px-1 py-0.2 rounded font-bold ml-1">
+                      🧾 Struk
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -340,6 +345,11 @@ PART8_APP = """
       userProfile,
       hideBalance,
       onToggleHideBalance,
+      streakData,
+      petData,
+      onOpenPetCloset,
+      onFeedPet,
+      onOpenStreakModal,
       onOpenAddTx,
       onOpenAddIncome,
       onOpenAddExpense,
@@ -497,6 +507,93 @@ PART8_APP = """
                     v__VORALET_VERSION__
                   </span>
                 </div>
+              </div>
+            </div>
+
+            {/* Daily Streak Flame Badge */}
+            <button
+              type="button"
+              onClick={onOpenStreakModal}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-2xl border transition-all ios-btn-tap ${
+                (streakData?.currentStreak || 0) > 0
+                  ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-200/80 dark:border-amber-700/60 shadow-xs'
+                  : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 opacity-80'
+              }`}
+              title="Ketuk untuk info Streak Api"
+            >
+              <span className={`text-base ${(streakData?.currentStreak || 0) > 0 ? 'animate-flame' : ''}`}>
+                {(() => {
+                  const lvl = streakData?.level || 0;
+                  if (lvl === 5) return '👑🔥';
+                  if (lvl === 4) return '💎🔥';
+                  if (lvl === 3) return '💜🔥';
+                  if (lvl === 2) return '🔴🔥';
+                  if (lvl === 1) return '🔥';
+                  return '⚪';
+                })()}
+              </span>
+              <div className="text-left leading-tight">
+                <span className="text-xs font-black text-slate-900 dark:text-white block">
+                  {streakData?.currentStreak || 0} <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">Hari</span>
+                </span>
+                <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider block">
+                  Lv. {streakData?.level || 0}
+                </span>
+              </div>
+            </button>
+          </div>
+
+          {/* Pixel Pet Interactive Card */}
+          <div
+            className="animate-dashboard-card rounded-2xl p-3.5 bg-gradient-to-r from-amber-50/70 via-sky-50/50 to-indigo-50/60 dark:from-slate-800 dark:via-slate-800 dark:to-slate-800 border border-amber-200/60 dark:border-slate-700 shadow-xs"
+            style={{ animationDelay: '120ms' }}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div
+                  onClick={onOpenPetCloset}
+                  className="cursor-pointer hover:scale-105 transition-transform"
+                  title="Ketuk untuk buka lemari kostum peliharaan"
+                >
+                  <PixelPetSprite type={petData?.type || 'DOG'} outfit={petData?.outfit || 'NONE'} size={54} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <h4 className="text-xs font-bold text-slate-900 dark:text-white">
+                      {petData?.name || 'Milo'}
+                    </h4>
+                    <span className="text-[10px] px-1.5 py-0.2 bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 rounded font-semibold">
+                      {petData?.type === 'CAT' ? '🐱 Kucing' : '🐶 Anjing'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3 mt-1 text-[11px] text-slate-600 dark:text-slate-400">
+                    <span>Kenyang: <b className="text-amber-600 dark:text-amber-400">{petData?.fullness || 50}%</b></span>
+                    <span>•</span>
+                    <span>Senang: <b className="text-rose-500">{petData?.happiness || 50}%</b></span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={onFeedPet}
+                  disabled={(petData?.foodCount || 0) <= 0}
+                  className="py-1.5 px-2.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-40 text-white font-bold text-xs rounded-xl shadow-xs ios-btn-tap flex items-center gap-1"
+                  title="Beri makan peliharaan (1 porsi)"
+                >
+                  <span>Makan</span>
+                  <span>{petData?.type === 'CAT' ? '🐟' : '🍖'}</span>
+                  <span className="text-[10px] bg-black/20 px-1 py-0.2 rounded-full ml-0.5">{petData?.foodCount || 0}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={onOpenPetCloset}
+                  className="p-2 bg-white dark:bg-slate-700 hover:bg-slate-50 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-xl shadow-xs ios-btn-tap"
+                  title="Buka Lemari Kostum"
+                >
+                  <Icon name="shirt" className="w-4 h-4 text-brand dark:text-sky-400" />
+                </button>
               </div>
             </div>
           </div>
@@ -1030,8 +1127,11 @@ PART8_APP = """
       const [savingsGoalToEdit, setSavingsGoalToEdit] = useState(null);
       const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
       const [isDebtModalOpen, setIsDebtModalOpen] = useState(false);
-      const [isDevModalOpen, setIsDevModalOpen] = useState(false);
       const [isCsvImportModalOpen, setIsCsvImportModalOpen] = useState(false);
+      const [streakData, setStreakData] = useState(() => StorageService.getStreakData());
+      const [petData, setPetData] = useState(() => StorageService.getPetData());
+      const [isPetModalOpen, setIsPetModalOpen] = useState(false);
+      const [isStreakModalOpen, setIsStreakModalOpen] = useState(false);
       const [isMonthlyPdfModalOpen, setIsMonthlyPdfModalOpen] = useState(false);
 
       // Android Back Button Integration: Smoothly close open modals or navigate back to Dashboard
@@ -1042,7 +1142,8 @@ PART8_APP = """
           if (isSavingsModalOpen) { setIsSavingsModalOpen(false); return true; }
           if (isSettingsModalOpen) { setIsSettingsModalOpen(false); return true; }
           if (isDebtModalOpen) { setIsDebtModalOpen(false); return true; }
-          if (isDevModalOpen) { setIsDevModalOpen(false); return true; }
+          if (isPetModalOpen) { setIsPetModalOpen(false); return true; }
+          if (isStreakModalOpen) { setIsStreakModalOpen(false); return true; }
           if (isCsvImportModalOpen) { setIsCsvImportModalOpen(false); return true; }
           if (isMonthlyPdfModalOpen) { setIsMonthlyPdfModalOpen(false); return true; }
           if (activeTab !== 'dashboard') {
@@ -1056,13 +1157,29 @@ PART8_APP = """
         };
       }, [
         isTxModalOpen, isAccModalOpen, isSavingsModalOpen, isSettingsModalOpen,
-        isDebtModalOpen, isDevModalOpen, isCsvImportModalOpen, isMonthlyPdfModalOpen,
+        isDebtModalOpen, isPetModalOpen, isStreakModalOpen, isCsvImportModalOpen, isMonthlyPdfModalOpen,
         activeTab
       ]);
 
       const showToast = useCallback((msg) => {
         setToastMsg(msg);
       }, []);
+
+      const handleFeedPet = useCallback(() => {
+        const res = StorageService.feedPet();
+        if (res.success) {
+          setPetData(res.pet);
+          showToast(`${res.pet.name} kenyang dan senang! ❤️`);
+        } else {
+          showToast('Stok makanan habis! Catat transaksi untuk dapat makanan 🍖');
+        }
+      }, [showToast]);
+
+      const handleUpdatePet = useCallback((updatedPet) => {
+        StorageService.setPetData(updatedPet);
+        setPetData(updatedPet);
+        showToast('Peliharaan berhasil diperbarui! 🐾');
+      }, [showToast]);
 
       // Clean up theme transition timer and classes on unmount
       useEffect(() => {
@@ -1225,6 +1342,9 @@ PART8_APP = """
 
         // Trigger layout slide-in animation for newly added transaction
         if (isNew) {
+          const updatedStreak = StorageService.updateStreakOnTransaction();
+          setStreakData(updatedStreak);
+          setPetData(StorageService.getPetData());
           setNewlyAddedTxIds(prev => {
             const next = new Set(prev);
             next.add(newTx.id);
@@ -1783,9 +1903,11 @@ PART8_APP = """
       const handleExportExcel = useCallback(() => {
         try {
           if (typeof ExcelExportService !== 'undefined') {
+            const exportAccounts = Array.isArray(accounts) ? accounts.filter(Boolean) : [];
+            const exportTransactions = Array.isArray(transactions) ? transactions.filter(Boolean) : [];
             const success = ExcelExportService.exportToExcel({
-              accounts: safeAccounts,
-              transactions: safeTransactions,
+              accounts: exportAccounts,
+              transactions: exportTransactions,
               savingsGoals: savingsGoals,
               debts: debts,
               customCategories: customCategories,
@@ -1799,7 +1921,7 @@ PART8_APP = """
           console.error('[ExcelExport] Failed:', e);
           showToast('Gagal mengekspor data ke Excel');
         }
-      }, [safeAccounts, safeTransactions, savingsGoals, debts, customCategories, name, username, showToast]);
+      }, [accounts, transactions, savingsGoals, debts, customCategories, name, username, showToast]);
 
       const handleImportData = useCallback((data) => {
         // Auto-decrypt if encrypted vault format
@@ -1941,7 +2063,7 @@ PART8_APP = """
         );
       }
 
-      const isAnyModalOpen = isTxModalOpen || isAccModalOpen || isSavingsModalOpen || isSettingsModalOpen || isDebtModalOpen || isDevModalOpen || isMonthlyPdfModalOpen || isCsvImportModalOpen;
+      const isAnyModalOpen = isTxModalOpen || isAccModalOpen || isSavingsModalOpen || isSettingsModalOpen || isDebtModalOpen || isPetModalOpen || isStreakModalOpen || isMonthlyPdfModalOpen || isCsvImportModalOpen;
 
       return (
         <div className={`h-[100dvh] flex flex-col ${theme === 'dark' ? 'dark text-[#F8FAFC]' : 'text-[#0F172A]'} bg-transparent overflow-hidden select-none transition-colors duration-300 ease-in-out relative`}>
@@ -2107,7 +2229,6 @@ PART8_APP = """
             customCategories={customCategories}
             onSaveCustomCategory={handleSaveCustomCategory}
             onDeleteCustomCategory={handleDeleteCustomCategory}
-            onOpenDeveloperGate={() => setIsDevModalOpen(true)}
             onOpenMonthlyPdfReport={() => setIsMonthlyPdfModalOpen(true)}
           />
 
@@ -2119,14 +2240,18 @@ PART8_APP = """
             onImportBatch={handleImportBatchTransactions}
           />
 
-          <DeveloperSecurityModal
-            isOpen={isDevModalOpen}
-            onClose={() => setIsDevModalOpen(false)}
-            onHardReset={handleHardReset}
-            accounts={accounts}
-            transactions={transactions}
-            debts={debts}
-            savingsGoals={savingsGoals}
+          <PetClosetModal
+            isOpen={isPetModalOpen}
+            onClose={() => setIsPetModalOpen(false)}
+            petData={petData}
+            onUpdatePet={handleUpdatePet}
+            onFeedPet={handleFeedPet}
+          />
+
+          <StreakInfoModal
+            isOpen={isStreakModalOpen}
+            onClose={() => setIsStreakModalOpen(false)}
+            streakData={streakData}
           />
 
           <MonthlyPdfReportModal

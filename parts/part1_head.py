@@ -598,7 +598,7 @@ HTML_HEAD = """<!DOCTYPE html>
                   box-shadow 380ms cubic-bezier(0.32, 0.72, 0, 1) !important;
     }
 
-    /* Browser View Transitions API cross-fade overlay specs */
+    /* Browser View Transitions cross-fade overlay specs */
     ::view-transition-old(root) {
       animation: 380ms cubic-bezier(0.32, 0.72, 0, 1) both iosViewTransitionFadeOut;
     }
@@ -746,25 +746,29 @@ HTML_HEAD = """<!DOCTYPE html>
       will-change: transform;
     }
 
-    /* iOS Modal & Sheet Keyframes (Authentic Apple HIG Spring Physics) */
+    /* Modal & Sheet Keyframes (Spring Physics with In/Out Scale Bounce) */
     @keyframes iosSheetEnter {
       0% {
-        transform: translate3d(0, 100%, 0);
-        opacity: 0.92;
+        transform: translate3d(0, 36px, 0) scale(0.86);
+        opacity: 0;
+      }
+      65% {
+        transform: translate3d(0, -6px, 0) scale(1.02);
+        opacity: 1;
       }
       100% {
-        transform: translate3d(0, 0, 0);
+        transform: translate3d(0, 0, 0) scale(1);
         opacity: 1;
       }
     }
     @keyframes iosSheetExit {
       0% {
-        transform: translate3d(0, 0, 0);
+        transform: translate3d(0, 0, 0) scale(1);
         opacity: 1;
       }
       100% {
-        transform: translate3d(0, 100%, 0);
-        opacity: 0.92;
+        transform: translate3d(0, 28px, 0) scale(0.84);
+        opacity: 0;
       }
     }
     @keyframes iosBackdropFadeIn {
@@ -776,16 +780,16 @@ HTML_HEAD = """<!DOCTYPE html>
       100% { opacity: 0; }
     }
     .animate-ios-sheet {
-      animation: iosSheetEnter 0.42s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      animation: iosSheetEnter 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
       will-change: transform, opacity;
-      transform: translateZ(0);
+      transform-origin: center bottom;
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
     }
     .animate-ios-sheet-exit {
-      animation: iosSheetExit 0.38s cubic-bezier(0.32, 0.94, 0.4, 1) forwards;
+      animation: iosSheetExit 0.28s cubic-bezier(0.25, 1, 0.5, 1) forwards;
       will-change: transform, opacity;
-      transform: translateZ(0);
+      transform-origin: center bottom;
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
     }
@@ -794,8 +798,46 @@ HTML_HEAD = """<!DOCTYPE html>
       will-change: opacity;
     }
     .animate-ios-backdrop-exit {
-      animation: iosBackdropFadeOut 0.38s cubic-bezier(0.32, 0.94, 0.4, 1) forwards;
+      animation: iosBackdropFadeOut 0.28s cubic-bezier(0.32, 0.94, 0.4, 1) forwards;
       will-change: opacity;
+    }
+
+    /* Pixel Pet & Streak Flame Keyframes */
+    @keyframes petIdleBounce {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-4px) scale(1.03, 0.97); }
+    }
+    @keyframes petEatHappy {
+      0% { transform: scale(1) translateY(0); }
+      25% { transform: scale(1.2, 0.85) translateY(-8px) rotate(-4deg); }
+      50% { transform: scale(0.92, 1.15) translateY(2px) rotate(4deg); }
+      75% { transform: scale(1.1, 0.95) translateY(-4px) rotate(-2deg); }
+      100% { transform: scale(1) translateY(0); }
+    }
+    @keyframes flameFlicker {
+      0%, 100% { transform: scale(1) rotate(-1deg); filter: drop-shadow(0 0 6px rgba(249, 115, 22, 0.45)); }
+      50% { transform: scale(1.08, 0.96) rotate(1deg); filter: drop-shadow(0 0 12px rgba(239, 68, 68, 0.6)); }
+    }
+    @keyframes heartFloatUp {
+      0% { transform: translateY(0) scale(0.6); opacity: 1; }
+      100% { transform: translateY(-36px) scale(1.2); opacity: 0; }
+    }
+    .animate-pet-idle {
+      animation: petIdleBounce 2.4s ease-in-out infinite;
+    }
+    .animate-pet-eat {
+      animation: petEatHappy 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .animate-flame {
+      animation: flameFlicker 1.8s ease-in-out infinite;
+    }
+    .animate-heart-float {
+      animation: heartFloatUp 0.85s ease-out forwards;
+    }
+    .pixelated {
+      image-rendering: pixelated;
+      image-rendering: -moz-crisp-edges;
+      image-rendering: crisp-edges;
     }
 
     /* iOS Navigation & Tab Slide View Transitions (Silky Snappy 120 FPS) */

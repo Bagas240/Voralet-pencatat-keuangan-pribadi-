@@ -386,6 +386,40 @@ PART2_ICONS = """
               <polyline points="21 15 16 10 5 21" />
             </svg>
           );
+        case 'fire':
+        case 'flame':
+        case 'streak':
+          return (
+            <svg className={computedClass} fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2c-.5 2-2 3.5-3 5.5-1.5 3-1.5 5.5 0 8 1 1.7 2.8 2.5 4.5 2.5 3.3 0 6-2.7 6-6 0-3.5-2.5-6.5-4.5-8.5-.5 1.5-1.5 2.5-2 3.5-.5-1.5-.5-3.5-1-5z" />
+            </svg>
+          );
+        case 'bell':
+        case 'reminder':
+          return (
+            <svg className={computedClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
+          );
+        case 'paw':
+        case 'pet':
+          return (
+            <svg className={computedClass} fill="currentColor" viewBox="0 0 24 24">
+              <circle cx="12" cy="15.5" r="3.5" />
+              <circle cx="7" cy="10" r="2" />
+              <circle cx="10" cy="6.5" r="2" />
+              <circle cx="14" cy="6.5" r="2" />
+              <circle cx="17" cy="10" r="2" />
+            </svg>
+          );
+        case 'shirt':
+        case 'outfit':
+          return (
+            <svg className={computedClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z" />
+            </svg>
+          );
         case 'refresh':
         case 'rotate-cw':
           return (
