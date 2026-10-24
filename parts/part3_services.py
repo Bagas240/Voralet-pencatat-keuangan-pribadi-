@@ -159,7 +159,7 @@ PART3_SERVICES = """
           const encryptedPayload = btoa(binary);
           return {
             voralet_encrypted_vault: true,
-            version: '3.1.0',
+            version: '3.3.0',
             encrypted_at: new Date().toISOString(),
             signature: 'VORALET-HMAC-' + checksum.toString(16).toUpperCase(),
             payload: encryptedPayload
@@ -684,45 +684,62 @@ PART3_SERVICES = """
       getStreakData: () => {
         const d = SafeStorage.getItem(STORAGE_KEYS.STREAK);
         const parsed = SafeStorage.parseJSON(d, null);
-        const today = new Date().toISOString().split('T')[0];
-        if (!parsed) {
-          return { currentStreak: 0, lastRecordedDate: '', maxStreak: 0, level: 0 };
+        const now = Date.now();
+        const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+        const defaultStreak = {
+          currentStreak: 0,
+          lastRecordedDate: '',
+          lastActivityTimestamp: 0,
+          maxStreak: 0,
+          level: 0,
+          isExpired: true
+        };
+        if (!parsed) return defaultStreak;
+
+        const lastTs = Number(parsed.lastActivityTimestamp) || 0;
+        // Check if 24 hours have elapsed without recording activity
+        if (lastTs > 0 && (now - lastTs) > TWENTY_FOUR_HOURS) {
+          const expired = {
+            ...parsed,
+            currentStreak: 0,
+            level: 0,
+            isExpired: true
+          };
+          SafeStorage.setItem(STORAGE_KEYS.STREAK, JSON.stringify(expired));
+          return expired;
         }
-        if (parsed.lastRecordedDate) {
-          const last = new Date(parsed.lastRecordedDate);
-          const curr = new Date(today);
-          const diffDays = Math.round((curr - last) / (1000 * 60 * 60 * 24));
-          if (diffDays > 1) {
-            const reset = { ...parsed, currentStreak: 0, level: 0 };
-            SafeStorage.setItem(STORAGE_KEYS.STREAK, JSON.stringify(reset));
-            return reset;
-          }
-        }
-        return parsed;
+
+        const isExpired = lastTs === 0 || (now - lastTs) > TWENTY_FOUR_HOURS;
+        return {
+          ...parsed,
+          isExpired: isExpired,
+          currentStreak: isExpired ? 0 : (Number(parsed.currentStreak) || 0),
+          level: isExpired ? 0 : (Number(parsed.level) || 0)
+        };
       },
       setStreakData: (streakObj) => {
         SafeStorage.setItem(STORAGE_KEYS.STREAK, JSON.stringify(streakObj));
+        StorageService.syncToNativeWidget(streakObj, null);
       },
-      updateStreakOnTransaction: () => {
+      recordStreakActivity: () => {
+        const now = Date.now();
         const today = new Date().toISOString().split('T')[0];
+        const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
         const current = StorageService.getStreakData();
-        let newStreak = current.currentStreak || 0;
-        if (current.lastRecordedDate === today) {
-          return current;
-        }
-        if (current.lastRecordedDate) {
-          const last = new Date(current.lastRecordedDate);
-          const curr = new Date(today);
-          const diffDays = Math.round((curr - last) / (1000 * 60 * 60 * 24));
-          if (diffDays === 1) {
-            newStreak += 1;
-          } else {
-            newStreak = 1;
-          }
-        } else {
+        const lastTs = Number(current.lastActivityTimestamp) || 0;
+        const isExpired = !lastTs || (now - lastTs) > TWENTY_FOUR_HOURS;
+
+        let newStreak = Number(current.currentStreak) || 0;
+        if (isExpired || newStreak === 0) {
           newStreak = 1;
+        } else {
+          // If active within 24h and new calendar day, advance streak
+          if (current.lastRecordedDate !== today) {
+            newStreak += 1;
+          }
         }
-        const maxStreak = Math.max(current.maxStreak || 0, newStreak);
+
+        const maxStreak = Math.max(Number(current.maxStreak) || 0, newStreak);
         let level = 0;
         if (newStreak >= 30) level = 5;
         else if (newStreak >= 15) level = 4;
@@ -733,12 +750,19 @@ PART3_SERVICES = """
         const updated = {
           currentStreak: newStreak,
           lastRecordedDate: today,
+          lastActivityTimestamp: now,
           maxStreak: maxStreak,
-          level: level
+          level: level,
+          isExpired: false
         };
         StorageService.setStreakData(updated);
-        StorageService.addPetFood(1);
+
+        // Daily Rewards: +1 Makanan, +1 Minuman, +10 Koin Peliharaan
+        StorageService.rewardPetSupplies(1, 1, 10);
         return updated;
+      },
+      updateStreakOnTransaction: () => {
+        return StorageService.recordStreakActivity();
       },
       getPetData: () => {
         const d = SafeStorage.getItem(STORAGE_KEYS.PET);
@@ -746,34 +770,101 @@ PART3_SERVICES = """
         const defaultPet = {
           type: 'DOG',
           name: 'Milo',
-          fullness: 75,
+          fullness: 80,
           happiness: 85,
           outfit: 'NONE',
-          foodCount: 3,
+          unlockedOutfits: ['NONE'],
+          foodCount: 5,
+          drinkCount: 5,
+          coins: 50,
           lastFedDate: ''
         };
         if (!parsed) {
           return defaultPet;
         }
         const merged = { ...defaultPet, ...parsed };
+        if (!Array.isArray(merged.unlockedOutfits)) {
+          merged.unlockedOutfits = ['NONE'];
+        }
+        if (!merged.unlockedOutfits.includes('NONE')) {
+          merged.unlockedOutfits.unshift('NONE');
+        }
+        if (typeof merged.drinkCount !== 'number') {
+          merged.drinkCount = 5;
+        }
+        if (typeof merged.foodCount !== 'number') {
+          merged.foodCount = 5;
+        }
+        if (typeof merged.coins !== 'number') {
+          merged.coins = 50;
+        }
+        const normalizedCoins = typeof merged.coins === 'number' ? merged.coins : (typeof merged.petCoins === 'number' ? merged.petCoins : 50);
+        merged.coins = normalizedCoins;
+        merged.petCoins = normalizedCoins;
+
         if (merged.lastFedDate) {
           const today = new Date().toISOString().split('T')[0];
           const last = new Date(merged.lastFedDate);
           const curr = new Date(today);
           const diffDays = Math.max(0, Math.round((curr - last) / (1000 * 60 * 60 * 24)));
           if (diffDays > 0) {
-            merged.fullness = Math.max(15, (merged.fullness || 75) - (diffDays * 15));
+            merged.fullness = Math.max(15, (merged.fullness || 80) - (diffDays * 15));
             merged.happiness = Math.max(20, (merged.happiness || 85) - (diffDays * 10));
           }
         }
         return merged;
       },
       setPetData: (petObj) => {
+        if (petObj && typeof petObj === 'object') {
+          const c = typeof petObj.coins === 'number' ? petObj.coins : (typeof petObj.petCoins === 'number' ? petObj.petCoins : 50);
+          petObj.coins = c;
+          petObj.petCoins = c;
+        }
         SafeStorage.setItem(STORAGE_KEYS.PET, JSON.stringify(petObj));
+        StorageService.syncToNativeWidget(null, petObj);
       },
-      addPetFood: (amount = 1) => {
+      syncToNativeWidget: (streakObj, petObj) => {
+        try {
+          if (typeof window !== 'undefined' && window.AndroidBridge && typeof window.AndroidBridge.syncWidgetData === 'function') {
+            const streak = streakObj || StorageService.getStreakData();
+            const pet = petObj || StorageService.getPetData();
+            window.AndroidBridge.syncWidgetData(JSON.stringify(streak), JSON.stringify(pet));
+          }
+        } catch (e) {}
+      },
+      checkDailyCareBonus: (petInput) => {
+        const pet = petInput || StorageService.getPetData();
+        const fullness = Number(pet.fullness) || 0;
+        const happiness = Number(pet.happiness) || 0;
+        const today = new Date().toISOString().split('T')[0];
+
+        // Syarat: Kenyang > 80 DAN Senang > 80, dan belum klaim bonus hari ini (+5 koin/hari)
+        if (fullness > 80 && happiness > 80 && pet.lastCareBonusDate !== today) {
+          pet.lastCareBonusDate = today;
+          const currentCoins = Number(pet.coins || pet.petCoins || 0);
+          pet.coins = currentCoins + 5;
+          pet.petCoins = pet.coins;
+          StorageService.setPetData(pet);
+          return {
+            awarded: true,
+            pet,
+            bonusCoins: 5,
+            message: '🎉 Bonus Rawat Harian! Kenyang & Senang > 80%: Kamu dapat +5 Koin Peliharaan 🪙'
+          };
+        }
+        return {
+          awarded: false,
+          pet,
+          bonusCoins: 0,
+          message: ''
+        };
+      },
+      rewardPetSupplies: (food = 1, drink = 1, coins = 10) => {
         const pet = StorageService.getPetData();
-        pet.foodCount = (pet.foodCount || 0) + amount;
+        pet.foodCount = Math.max(0, (pet.foodCount || 0) + food);
+        pet.drinkCount = Math.max(0, (pet.drinkCount || 0) + drink);
+        pet.coins = Math.max(0, (pet.coins || 0) + coins);
+        pet.petCoins = pet.coins;
         StorageService.setPetData(pet);
         return pet;
       },
@@ -784,21 +875,100 @@ PART3_SERVICES = """
         pet.fullness = Math.min(100, (pet.fullness || 50) + 25);
         pet.happiness = Math.min(100, (pet.happiness || 50) + 15);
         pet.lastFedDate = new Date().toISOString().split('T')[0];
-        StorageService.setPetData(pet);
-        return { success: true, pet };
+        const careBonus = StorageService.checkDailyCareBonus(pet);
+        const finalPet = careBonus.awarded ? careBonus.pet : pet;
+        StorageService.setPetData(finalPet);
+        return {
+          success: true,
+          pet: finalPet,
+          careBonusAwarded: careBonus.awarded,
+          careBonusMessage: careBonus.message
+        };
       },
       drinkPet: () => {
         const pet = StorageService.getPetData();
-        pet.fullness = Math.min(100, (pet.fullness || 50) + 10);
+        if ((pet.drinkCount || 0) <= 0) return { success: false, pet };
+        pet.drinkCount = Math.max(0, (pet.drinkCount || 0) - 1);
+        pet.fullness = Math.min(100, (pet.fullness || 50) + 15);
         pet.happiness = Math.min(100, (pet.happiness || 50) + 15);
-        StorageService.setPetData(pet);
-        return { success: true, pet };
+        const careBonus = StorageService.checkDailyCareBonus(pet);
+        const finalPet = careBonus.awarded ? careBonus.pet : pet;
+        StorageService.setPetData(finalPet);
+        return {
+          success: true,
+          pet: finalPet,
+          careBonusAwarded: careBonus.awarded,
+          careBonusMessage: careBonus.message
+        };
       },
       playPet: () => {
         const pet = StorageService.getPetData();
         pet.happiness = Math.min(100, (pet.happiness || 50) + 20);
+        const careBonus = StorageService.checkDailyCareBonus(pet);
+        const finalPet = careBonus.awarded ? careBonus.pet : pet;
+        StorageService.setPetData(finalPet);
+        return {
+          success: true,
+          pet: finalPet,
+          careBonusAwarded: careBonus.awarded,
+          careBonusMessage: careBonus.message
+        };
+      },
+      buyPetMarketItem: (itemId) => {
+        const pet = StorageService.getPetData();
+        const currentCoins = Number(pet.coins) || 0;
+        let cost = 0;
+        let foodGain = 0;
+        let drinkGain = 0;
+        let fullnessGain = 0;
+        let happinessGain = 0;
+        let itemName = '';
+
+        if (itemId === 'FOOD_1') {
+          cost = 5; foodGain = 1; itemName = '1x Makanan Porsi';
+        } else if (itemId === 'FOOD_5') {
+          cost = 20; foodGain = 5; itemName = '5x Paket Makanan Hemat';
+        } else if (itemId === 'DRINK_1') {
+          cost = 5; drinkGain = 1; itemName = '1x Air Minum Segar';
+        } else if (itemId === 'DRINK_5') {
+          cost = 20; drinkGain = 5; itemName = '5x Galon Air Segar';
+        } else if (itemId === 'TREAT') {
+          cost = 15; fullnessGain = 30; happinessGain = 30; itemName = 'Snack Vitamin Spesial';
+        } else {
+          return { success: false, pet, message: 'Item tidak valid' };
+        }
+
+        if (currentCoins < cost) {
+          return { success: false, pet, message: `Koin tidak cukup! Butuh ${cost} koin (Saldo: ${currentCoins})` };
+        }
+
+        pet.coins = currentCoins - cost;
+        pet.foodCount = (pet.foodCount || 0) + foodGain;
+        pet.drinkCount = (pet.drinkCount || 0) + drinkGain;
+        pet.fullness = Math.min(100, (pet.fullness || 50) + fullnessGain);
+        pet.happiness = Math.min(100, (pet.happiness || 50) + happinessGain);
         StorageService.setPetData(pet);
-        return { success: true, pet };
+        return { success: true, pet, message: `Berhasil membeli ${itemName}! 🛍️` };
+      },
+      unlockPetOutfit: (outfitId, coinPrice = 0) => {
+        const pet = StorageService.getPetData();
+        const currentCoins = Number(pet.coins) || 0;
+        if (!Array.isArray(pet.unlockedOutfits)) pet.unlockedOutfits = ['NONE'];
+        if (pet.unlockedOutfits.includes(outfitId)) {
+          pet.outfit = outfitId;
+          StorageService.setPetData(pet);
+          return { success: true, pet, message: 'Kostum dipasang!' };
+        }
+        if (coinPrice > 0 && currentCoins < coinPrice) {
+          return { success: false, pet, message: `Koin tidak cukup! Butuh ${coinPrice} koin` };
+        }
+        if (coinPrice > 0) {
+          pet.coins = currentCoins - coinPrice;
+        }
+        pet.unlockedOutfits.push(outfitId);
+        pet.outfit = outfitId;
+        StorageService.setPetData(pet);
+        return { success: true, pet, message: 'Kostum berhasil dibuka dan dipasang! 👑' };
       },
 
       getReminderSettings: () => {
@@ -2194,7 +2364,7 @@ PART3_SERVICES = """
   <Author>${esc(userName)}</Author>
   <Created>${now.toISOString()}</Created>
   <Company>Voralet Personal Finance</Company>
-  <Version>3.1.0</Version>
+  <Version>3.3.0</Version>
  </DocumentProperties>
  <Styles>
   <Style ss:ID="Default" ss:Name="Normal">

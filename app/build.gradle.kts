@@ -17,8 +17,8 @@ android {
     applicationId = "com.voralet.app"
     minSdk = 24
     targetSdk = 36
-    versionCode = 12
-    versionName = "3.1.0"
+    versionCode = 14
+    versionName = "3.3.0"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }

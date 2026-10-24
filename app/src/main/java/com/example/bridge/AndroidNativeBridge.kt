@@ -23,11 +23,28 @@ class AndroidNativeBridge(
     companion object {
         const val BRIDGE_NAME = "AndroidBridge"
         private const val TAG = "AndroidNativeBridge"
-        private const val APP_VERSION = "3.1.0"
+        private const val APP_VERSION = "3.3.0"
     }
 
     private val clipboardManager: ClipboardManager? by lazy {
         activity.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+    }
+
+    /**
+     * Synchronize live Streak and Pet data to Android Home Screen Widgets.
+     */
+    @JavascriptInterface
+    fun syncWidgetData(streakJson: String?, petJson: String?) {
+        try {
+            if (!streakJson.isNullOrEmpty()) {
+                com.example.widget.StreakWidgetProvider.saveStreakData(activity, streakJson)
+            }
+            if (!petJson.isNullOrEmpty()) {
+                com.example.widget.PetWidgetProvider.savePetData(activity, petJson)
+            }
+        } catch (t: Throwable) {
+            Log.w(TAG, "Error syncing widget data", t)
+        }
     }
 
     /**

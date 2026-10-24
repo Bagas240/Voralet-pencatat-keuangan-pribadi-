@@ -2022,11 +2022,31 @@ PART6_MODALS = """
               <div className="pt-4 border-t border-slate-100 dark:border-slate-700 flex flex-col items-center text-center space-y-1.5 select-none">
                 <VoraletLogo size="md" className="mb-1" />
                 <p className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                  Voralet iOS Edition • Versi v__VORALET_VERSION__
+                  Voralet • Versi v__VORALET_VERSION__ (Enkripsi Brankas Penuh)
                 </p>
                 <p className="text-[10px] text-slate-400 dark:text-slate-500 max-w-xs leading-relaxed">
-                  Keuangan Sehat • Impian Dekat. 100% Offline & Terenkripsi Lokal di Perangkat Anda.
+                  Keuangan Sehat • Impian Dekat. 100% Offline, Zero-Permission, & Terenkripsi Menyeluruh.
                 </p>
+              </div>
+
+              {/* Widget Layar Utama Android (Home Screen Widgets) */}
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-700">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-lg">📱</span>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900 dark:text-white">Widget Layar Utama Android</h4>
+                    <p className="text-[10px] text-slate-400">Api Streak 🔥 & Teman Peliharaan 🐾</p>
+                  </div>
+                </div>
+                <div className="p-3 bg-amber-50/70 dark:bg-slate-900/60 rounded-xl border border-amber-200/60 dark:border-slate-700 text-[11px] text-slate-600 dark:text-slate-300 space-y-1">
+                  <p className="font-semibold text-slate-800 dark:text-slate-200">Cara Memasang di Home Screen HP:</p>
+                  <ol className="list-decimal list-inside space-y-0.5 text-[10px] text-slate-500 dark:text-slate-400">
+                    <li>Tekan & tahan area kosong di Layar Utama HP Android kamu.</li>
+                    <li>Pilih menu <b>Widget</b>.</li>
+                    <li>Cari dan pilih aplikasi <b>Voralet</b>.</li>
+                    <li>Pilih <b>Api Streak</b> atau <b>Teman Peliharaan</b> dan seret ke layar!</li>
+                  </ol>
+                </div>
               </div>
 
               {/* Pengingat Harian Pencatat Keuangan */}
@@ -2663,431 +2683,7 @@ PART6_MODALS = """
       );
     };
 
-    // =========================================================================
-    // PIXEL PET RENDERER (Retro 8-Bit Pixel Art Puppy & Kitty with 7 Animations)
-    // Animations: idle, makan (eat), minum (drink), menggonggong (bark),
-    // mengeong (meow), sedih (sad), happy (senang)
-    // =========================================================================
-    const PixelPetSprite = ({
-      type = 'DOG',
-      outfit = 'NONE',
-      action = 'idle',
-      isEating = false,
-      isSad = false,
-      size = 110,
-      showBubble = true,
-      onClick = null
-    }) => {
-      const isDog = type === 'DOG';
-
-      // Compute effective animation state
-      let effectiveAction = action;
-      if (isEating) {
-        effectiveAction = 'eat';
-      } else if (action === 'idle' && isSad) {
-        effectiveAction = 'sad';
-      }
-      if (effectiveAction === 'bark' && !isDog) effectiveAction = 'meow';
-      if (effectiveAction === 'meow' && isDog) effectiveAction = 'bark';
-
-      // Map action to CSS animation class
-      let animClass = 'animate-pet-idle';
-      if (effectiveAction === 'eat') animClass = 'animate-pet-eat';
-      else if (effectiveAction === 'drink') animClass = 'animate-pet-drink';
-      else if (effectiveAction === 'bark') animClass = 'animate-pet-bark';
-      else if (effectiveAction === 'meow') animClass = 'animate-pet-meow';
-      else if (effectiveAction === 'sad') animClass = 'animate-pet-sad';
-      else if (effectiveAction === 'happy') animClass = 'animate-pet-happy';
-
-      return (
-        <div
-          onClick={onClick}
-          className={`relative inline-block ${animClass} pixelated select-none ${onClick ? 'cursor-pointer active:scale-95 transition-transform' : ''}`}
-          style={{ width: size, height: size }}
-        >
-          {/* Action Speech Bubble / Floating Reaction */}
-          {showBubble && effectiveAction === 'bark' && (
-            <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-amber-500 text-white font-black text-[11px] px-2 py-0.5 rounded-full shadow-md animate-pet-bubble whitespace-nowrap z-20 pointer-events-none border border-white/60">
-              Guk! Guk! 🦴
-            </div>
-          )}
-          {showBubble && effectiveAction === 'meow' && (
-            <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-rose-500 text-white font-black text-[11px] px-2 py-0.5 rounded-full shadow-md animate-pet-bubble whitespace-nowrap z-20 pointer-events-none border border-white/60">
-              Meow~ 🐾 🎵
-            </div>
-          )}
-          {showBubble && effectiveAction === 'eat' && (
-            <div className="absolute -top-6 left-1/2 -translate-x-1/2 flex items-center gap-0.5 text-xs animate-heart-float pointer-events-none z-20">
-              <span>❤️</span>
-              <span className="text-[10px] font-bold text-amber-500 dark:text-amber-400 bg-white/95 dark:bg-slate-800 px-1.5 py-0.5 rounded-md shadow-xs border border-amber-200/60 dark:border-amber-800/60 whitespace-nowrap">
-                {isDog ? 'Nyam! 🍖' : 'Nyam! 🐟'}
-              </span>
-            </div>
-          )}
-          {showBubble && effectiveAction === 'drink' && (
-            <div className="absolute -top-6 left-1/2 -translate-x-1/2 flex items-center gap-0.5 text-xs animate-heart-float pointer-events-none z-20">
-              <span>💧</span>
-              <span className="text-[10px] font-bold text-sky-500 dark:text-sky-400 bg-white/95 dark:bg-slate-800 px-1.5 py-0.5 rounded-md shadow-xs border border-sky-200/60 dark:border-sky-800/60 whitespace-nowrap">
-                Slurp! 💧
-              </span>
-            </div>
-          )}
-          {showBubble && effectiveAction === 'happy' && (
-            <div className="absolute -top-6 left-1/2 -translate-x-1/2 flex items-center gap-0.5 text-xs animate-heart-float pointer-events-none z-20">
-              <span>✨</span>
-              <span>❤️</span>
-              <span>✨</span>
-            </div>
-          )}
-          {showBubble && effectiveAction === 'sad' && (
-            <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs animate-pet-tear pointer-events-none z-20 flex items-center gap-1 bg-white/90 dark:bg-slate-800/90 px-1.5 py-0.5 rounded-full shadow-xs border border-sky-200 dark:border-slate-700 text-[10px] font-bold text-sky-500 whitespace-nowrap">
-              <span>💧</span>
-              <span>🥺</span>
-            </div>
-          )}
-
-          <svg
-            width={size}
-            height={size}
-            viewBox="0 0 24 24"
-            className="drop-shadow-md overflow-visible"
-            style={{ shapeRendering: 'crispEdges' }}
-          >
-            {isDog ? (
-              // ==================== PIXEL DOGGY (MILO) ====================
-              <g>
-                {/* Body & Belly */}
-                <rect x="7" y="14" width="10" height="7" fill="#F59E0B" />
-                <rect x="9" y="15" width="6" height="5" fill="#FEF3C7" />
-
-                {/* Paws */}
-                <rect x="7" y="20" width="2" height="3" fill="#D97706" />
-                <rect x="15" y="20" width="2" height="3" fill="#D97706" />
-
-                {/* Tail (Wagging fast when happy, gentle sway in idle, droopy when sad) */}
-                {effectiveAction === 'sad' ? (
-                  <g>
-                    <rect x="17" y="17" width="2" height="3" fill="#B45309" />
-                    <rect x="18" y="19" width="2" height="2" fill="#B45309" />
-                  </g>
-                ) : (
-                  <g className={effectiveAction === 'happy' ? 'animate-pet-tail' : 'animate-pet-tail-idle'}>
-                    <rect x="17" y="13" width="2" height="3" fill="#F59E0B" />
-                    <rect x="18" y="11" width="2" height="2" fill="#F59E0B" />
-                  </g>
-                )}
-
-                {/* Head */}
-                <rect x="5" y="6" width="14" height="9" fill="#F59E0B" />
-
-                {/* Ears: Drooped down when sad, perked up when normal/bark/happy */}
-                {effectiveAction === 'sad' ? (
-                  <g>
-                    <rect x="3" y="7" width="3" height="5" fill="#B45309" />
-                    <rect x="18" y="7" width="3" height="5" fill="#B45309" />
-                  </g>
-                ) : (
-                  <g>
-                    <rect x="4" y="3" width="3" height="4" fill="#B45309" />
-                    <rect x="17" y="3" width="3" height="4" fill="#B45309" />
-                  </g>
-                )}
-
-                {/* Snout */}
-                <rect x="5" y="11" width="3" height="3" fill="#FEF3C7" />
-                <rect x="16" y="11" width="3" height="3" fill="#FEF3C7" />
-                <rect x="8" y="11" width="8" height="4" fill="#FEF3C7" />
-
-                {/* Eyes according to state */}
-                {effectiveAction === 'happy' ? (
-                  // Smiling Curved Eyes ^^
-                  <g>
-                    <rect x="7" y="8" width="3" height="1" fill="#1F2937" />
-                    <rect x="6" y="9" width="1" height="1" fill="#1F2937" />
-                    <rect x="14" y="8" width="3" height="1" fill="#1F2937" />
-                    <rect x="17" y="9" width="1" height="1" fill="#1F2937" />
-                    {/* Pink Rosy Cheeks */}
-                    <rect x="5" y="11" width="2" height="1" fill="#FDA4AF" />
-                    <rect x="17" y="11" width="2" height="1" fill="#FDA4AF" />
-                  </g>
-                ) : effectiveAction === 'sad' ? (
-                  // Tearful Sad Eyes
-                  <g>
-                    <rect x="7" y="8" width="2" height="2" fill="#1F2937" />
-                    <rect x="15" y="8" width="2" height="2" fill="#1F2937" />
-                    {/* Tears */}
-                    <g className="animate-pet-tear">
-                      <rect x="7" y="10" width="1" height="2" fill="#38BDF8" />
-                      <rect x="15" y="10" width="1" height="2" fill="#38BDF8" />
-                    </g>
-                  </g>
-                ) : (
-                  // Alert Cute Eyes with natural Blinking
-                  <g className="animate-pet-blink">
-                    <rect x="7" y="8" width="2" height="2" fill="#1F2937" />
-                    <rect x="7" y="8" width="1" height="1" fill="#FFFFFF" />
-                    <rect x="15" y="8" width="2" height="2" fill="#1F2937" />
-                    <rect x="15" y="8" width="1" height="1" fill="#FFFFFF" />
-                  </g>
-                )}
-
-                {/* Nose */}
-                <rect x="11" y="11" width="2" height="1" fill="#1F2937" />
-
-                {/* Mouth according to state */}
-                {effectiveAction === 'bark' ? (
-                  // Wide Barking Mouth
-                  <g>
-                    <rect x="10" y="12" width="4" height="3" fill="#991B1B" />
-                    <rect x="11" y="13" width="2" height="2" fill="#F43F5E" />
-                    {/* Bark wave marks */}
-                    <rect x="2" y="9" width="1" height="2" fill="#F59E0B" />
-                    <rect x="1" y="8" width="1" height="4" fill="#F59E0B" />
-                    <rect x="21" y="9" width="1" height="2" fill="#F59E0B" />
-                    <rect x="22" y="8" width="1" height="4" fill="#F59E0B" />
-                  </g>
-                ) : effectiveAction === 'eat' ? (
-                  // Munching Mouth with Crumb
-                  <g>
-                    <rect x="10" y="12" width="4" height="2" fill="#B91C1C" />
-                    <rect x="11" y="12" width="2" height="2" fill="#FDE047" />
-                    <rect x="6" y="13" width="1" height="1" fill="#D97706" />
-                    <rect x="17" y="14" width="1" height="1" fill="#D97706" />
-                  </g>
-                ) : effectiveAction === 'drink' ? (
-                  // Lapping Tongue
-                  <g>
-                    <rect x="11" y="12" width="2" height="3" fill="#F43F5E" />
-                  </g>
-                ) : effectiveAction === 'sad' ? (
-                  // Sad Frown
-                  <g>
-                    <rect x="10" y="13" width="4" height="1" fill="#92400E" />
-                    <rect x="10" y="14" width="1" height="1" fill="#92400E" />
-                    <rect x="13" y="14" width="1" height="1" fill="#92400E" />
-                  </g>
-                ) : effectiveAction === 'happy' ? (
-                  // Cheerful Smile with Tongue
-                  <g>
-                    <rect x="10" y="12" width="4" height="2" fill="#B91C1C" />
-                    <rect x="11" y="13" width="2" height="2" fill="#F43F5E" />
-                  </g>
-                ) : (
-                  // Calm Tongue Stick Out
-                  <rect x="11" y="12" width="2" height="2" fill="#F43F5E" />
-                )}
-              </g>
-            ) : (
-              // ==================== PIXEL CAT (LUNA) ====================
-              <g>
-                {/* Body & Belly */}
-                <rect x="7" y="14" width="10" height="7" fill="#64748B" />
-                <rect x="9" y="15" width="6" height="5" fill="#F1F5F9" />
-
-                {/* Paws */}
-                <rect x="7" y="20" width="2" height="3" fill="#475569" />
-                <rect x="15" y="20" width="2" height="3" fill="#475569" />
-
-                {/* Tail (Swishing or Low) */}
-                {effectiveAction === 'sad' ? (
-                  <g>
-                    <rect x="17" y="18" width="4" height="2" fill="#475569" />
-                    <rect x="20" y="17" width="2" height="2" fill="#475569" />
-                  </g>
-                ) : (
-                  <g className={effectiveAction === 'happy' ? 'animate-pet-tail' : 'animate-pet-tail-idle'}>
-                    <rect x="17" y="12" width="2" height="6" fill="#64748B" />
-                    <rect x="19" y="10" width="2" height="3" fill="#64748B" />
-                  </g>
-                )}
-
-                {/* Head */}
-                <rect x="5" y="7" width="14" height="8" fill="#64748B" />
-
-                {/* Pointy Cat Ears: Flattened/drooped when sad */}
-                {effectiveAction === 'sad' ? (
-                  <g>
-                    <rect x="4" y="6" width="3" height="3" fill="#475569" />
-                    <rect x="5" y="7" width="1" height="1" fill="#FDA4AF" />
-                    <rect x="17" y="6" width="3" height="3" fill="#475569" />
-                    <rect x="18" y="7" width="1" height="1" fill="#FDA4AF" />
-                  </g>
-                ) : (
-                  <g>
-                    <rect x="5" y="3" width="3" height="4" fill="#475569" />
-                    <rect x="6" y="4" width="1" height="2" fill="#FDA4AF" />
-                    <rect x="16" y="3" width="3" height="4" fill="#475569" />
-                    <rect x="17" y="4" width="1" height="2" fill="#FDA4AF" />
-                  </g>
-                )}
-
-                {/* Muzzle */}
-                <rect x="8" y="11" width="8" height="3" fill="#F1F5F9" />
-
-                {/* Whiskers with twitching animation */}
-                <g className={effectiveAction === 'meow' || effectiveAction === 'happy' ? 'animate-pet-whiskers' : ''}>
-                  <rect x="4" y="11" width="3" height="1" fill="#94A3B8" />
-                  <rect x="4" y="13" width="3" height="1" fill="#94A3B8" />
-                  <rect x="17" y="11" width="3" height="1" fill="#94A3B8" />
-                  <rect x="17" y="13" width="3" height="1" fill="#94A3B8" />
-                </g>
-
-                {/* Eyes according to state */}
-                {effectiveAction === 'happy' ? (
-                  // Smiling Curved Eyes ^^
-                  <g>
-                    <rect x="7" y="8" width="3" height="1" fill="#047857" />
-                    <rect x="6" y="9" width="1" height="1" fill="#047857" />
-                    <rect x="14" y="8" width="3" height="1" fill="#047857" />
-                    <rect x="17" y="9" width="1" height="1" fill="#047857" />
-                    {/* Pink Blush */}
-                    <rect x="5" y="10" width="2" height="1" fill="#FDA4AF" />
-                    <rect x="17" y="10" width="2" height="1" fill="#FDA4AF" />
-                  </g>
-                ) : effectiveAction === 'sad' ? (
-                  // Sad Cat Eyes with Tear
-                  <g>
-                    <rect x="7" y="8" width="2" height="3" fill="#10B981" />
-                    <rect x="15" y="8" width="2" height="3" fill="#10B981" />
-                    <g className="animate-pet-tear">
-                      <rect x="7" y="11" width="1" height="2" fill="#38BDF8" />
-                      <rect x="15" y="11" width="1" height="2" fill="#38BDF8" />
-                    </g>
-                  </g>
-                ) : (
-                  // Classic Emerald Eyes with Pupils & natural blink
-                  <g className="animate-pet-blink">
-                    <rect x="7" y="8" width="2" height="3" fill="#10B981" />
-                    <rect x="7" y="8" width="1" height="1" fill="#FFFFFF" />
-                    <rect x="15" y="8" width="2" height="3" fill="#10B981" />
-                    <rect x="15" y="8" width="1" height="1" fill="#FFFFFF" />
-                  </g>
-                )}
-
-                {/* Pink Nose */}
-                <rect x="11" y="11" width="2" height="1" fill="#FB7185" />
-
-                {/* Mouth according to state */}
-                {effectiveAction === 'meow' ? (
-                  // Wide Open Meow Mouth
-                  <g>
-                    <rect x="10" y="12" width="4" height="2" fill="#E11D48" />
-                    <rect x="11" y="13" width="2" height="1" fill="#FDA4AF" />
-                  </g>
-                ) : effectiveAction === 'eat' ? (
-                  // Eating Fish Nibble
-                  <g>
-                    <rect x="10" y="12" width="4" height="2" fill="#BE123C" />
-                    <rect x="11" y="12" width="2" height="1" fill="#38BDF8" />
-                  </g>
-                ) : effectiveAction === 'drink' ? (
-                  // Lapping Tongue
-                  <g>
-                    <rect x="11" y="12" width="2" height="2" fill="#FB7185" />
-                  </g>
-                ) : effectiveAction === 'sad' ? (
-                  // Downward Pout
-                  <rect x="10" y="13" width="4" height="1" fill="#475569" />
-                ) : effectiveAction === 'happy' ? (
-                  // Sweet Smile
-                  <g>
-                    <rect x="10" y="12" width="4" height="1" fill="#E11D48" />
-                    <rect x="11" y="13" width="2" height="1" fill="#FB7185" />
-                  </g>
-                ) : null}
-              </g>
-            )}
-
-            {/* Food Bowl overlay during 'eat' */}
-            {effectiveAction === 'eat' && (
-              <g>
-                {/* Bowl */}
-                <rect x="8" y="21" width="8" height="2" fill={isDog ? '#EF4444' : '#F59E0B'} />
-                <rect x="7" y="22" width="10" height="2" fill={isDog ? '#DC2626' : '#D97706'} />
-                {/* Treat in bowl */}
-                {isDog ? (
-                  <rect x="10" y="20" width="4" height="1" fill="#FEF3C7" />
-                ) : (
-                  <rect x="10" y="20" width="4" height="1" fill="#38BDF8" />
-                )}
-                {/* Flying crumbs */}
-                <g className="animate-pet-splash">
-                  <rect x="6" y="18" width="1" height="1" fill={isDog ? '#F59E0B' : '#38BDF8'} />
-                  <rect x="17" y="18" width="1" height="1" fill={isDog ? '#D97706' : '#0284C7'} />
-                </g>
-              </g>
-            )}
-
-            {/* Water Bowl overlay during 'drink' */}
-            {effectiveAction === 'drink' && (
-              <g>
-                {/* Bowl */}
-                <rect x="8" y="21" width="8" height="2" fill="#0284C7" />
-                <rect x="7" y="22" width="10" height="2" fill="#0369A1" />
-                {/* Water surface & droplets */}
-                <rect x="9" y="21" width="6" height="1" fill="#BAE6FD" />
-                <g className="animate-pet-splash">
-                  <rect x="6" y="19" width="1" height="1" fill="#38BDF8" />
-                  <rect x="17" y="19" width="1" height="1" fill="#38BDF8" />
-                  <rect x="12" y="18" width="1" height="1" fill="#BAE6FD" />
-                </g>
-              </g>
-            )}
-
-            {/* OUTFITS */}
-            {outfit === 'CROWN' && (
-              <g>
-                <rect x="7" y="1" width="10" height="4" fill="#F59E0B" />
-                <rect x="7" y="0" width="2" height="2" fill="#FBBF24" />
-                <rect x="11" y="0" width="2" height="2" fill="#FBBF24" />
-                <rect x="15" y="0" width="2" height="2" fill="#FBBF24" />
-                <rect x="9" y="2" width="2" height="2" fill="#EF4444" />
-                <rect x="13" y="2" width="2" height="2" fill="#3B82F6" />
-              </g>
-            )}
-            {outfit === 'HAT' && (
-              <g>
-                <rect x="8" y="0" width="8" height="5" fill="#1E1B4B" />
-                <rect x="8" y="4" width="8" height="1" fill="#DC2626" />
-                <rect x="6" y="5" width="12" height="1" fill="#1E1B4B" />
-              </g>
-            )}
-            {outfit === 'GLASSES' && (
-              <g>
-                <rect x="6" y="8" width="4" height="3" fill="#1E293B" />
-                <rect x="14" y="8" width="4" height="3" fill="#1E293B" />
-                <rect x="10" y="8" width="4" height="1" fill="#1E293B" />
-                <rect x="7" y="9" width="1" height="1" fill="#38BDF8" />
-                <rect x="15" y="9" width="1" height="1" fill="#38BDF8" />
-              </g>
-            )}
-            {outfit === 'BOWTIE' && (
-              <g>
-                <rect x="10" y="14" width="4" height="2" fill="#EF4444" />
-                <rect x="9" y="13" width="2" height="4" fill="#DC2626" />
-                <rect x="13" y="13" width="2" height="4" fill="#DC2626" />
-                <rect x="11" y="14" width="2" height="2" fill="#FEF08A" />
-              </g>
-            )}
-            {outfit === 'SCARF' && (
-              <g>
-                <rect x="7" y="13" width="10" height="2" fill="#0284C7" />
-                <rect x="13" y="15" width="3" height="4" fill="#0284C7" />
-                <rect x="8" y="13" width="2" height="2" fill="#F8FAFC" />
-                <rect x="12" y="13" width="2" height="2" fill="#F8FAFC" />
-              </g>
-            )}
-            {outfit === 'CAP' && (
-              <g>
-                <rect x="6" y="3" width="12" height="4" fill="#DC2626" />
-                <rect x="14" y="5" width="6" height="2" fill="#B91C1C" />
-                <rect x="10" y="3" width="4" height="2" fill="#FFFFFF" />
-              </g>
-            )}
-          </svg>
-        </div>
-      );
-    };
+    // (PixelPetSprite is declared in PART4_AUTH_PIN for global access across all components)
 
     // =========================================================================
     // STREAK INFO MODAL (Modal Informasi Api Streak Disiplin Keuangan)
@@ -3222,39 +2818,63 @@ PART6_MODALS = """
               </div>
 
               {/* Stats Overview */}
-              <div className="grid grid-cols-2 gap-2.5">
-                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-700/50 border border-slate-200/80 dark:border-slate-700 text-left">
-                  <div className="flex items-center gap-1.5 text-slate-400 dark:text-slate-400 mb-1">
-                    <span className="text-sm">🏆</span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider">Rekor Terbaik</span>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-700/50 border border-slate-200/80 dark:border-slate-700 text-left">
+                  <div className="flex items-center gap-1 text-slate-400 mb-0.5">
+                    <span className="text-xs">🏆</span>
+                    <span className="text-[9px] font-bold uppercase tracking-wider">Rekor</span>
                   </div>
-                  <div className="text-base font-extrabold text-slate-900 dark:text-white">
-                    {maxStreak} <span className="text-xs font-normal text-slate-500">Hari</span>
+                  <div className="text-sm font-extrabold text-slate-900 dark:text-white">
+                    {maxStreak} <span className="text-[10px] font-normal text-slate-500">Hari</span>
                   </div>
                 </div>
 
-                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-700/50 border border-slate-200/80 dark:border-slate-700 text-left">
-                  <div className="flex items-center gap-1.5 text-slate-400 dark:text-slate-400 mb-1">
-                    <span className="text-sm">🍖</span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider">Hadiah Pet</span>
+                <div className="p-2.5 rounded-xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-800/60 text-left">
+                  <div className="flex items-center gap-1 text-amber-600 dark:text-amber-400 mb-0.5">
+                    <span className="text-xs">🔥</span>
+                    <span className="text-[9px] font-bold uppercase tracking-wider">Streak</span>
                   </div>
-                  <div className="text-base font-extrabold text-amber-600 dark:text-amber-400">
-                    +1 Makanan <span className="text-xs font-normal text-slate-500">/ hari</span>
+                  <div className="text-sm font-extrabold text-amber-600 dark:text-amber-400">
+                    +10 🪙 <span className="text-[10px] font-normal text-slate-500">/ hari</span>
+                  </div>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-rose-50/70 dark:bg-rose-950/30 border border-rose-200/60 dark:border-rose-800/60 text-left">
+                  <div className="flex items-center gap-1 text-rose-500 mb-0.5">
+                    <span className="text-xs">🐾</span>
+                    <span className="text-[9px] font-bold uppercase tracking-wider">Rawat</span>
+                  </div>
+                  <div className="text-sm font-extrabold text-rose-500">
+                    +5 🪙 <span className="text-[10px] font-normal text-slate-500">/ hari</span>
                   </div>
                 </div>
               </div>
 
-              {/* How it works */}
+              {/* Cara Mendapatkan Koin & Aturan Streak */}
               <div className="p-3.5 rounded-xl bg-sky-50/70 dark:bg-slate-700/40 border border-sky-100 dark:border-slate-700 text-left space-y-2">
                 <div className="flex items-center gap-1.5 text-sky-800 dark:text-sky-300 text-xs font-bold">
                   <Icon name="info" className="w-4 h-4 text-sky-600 dark:text-sky-400" />
-                  <span>Cara Menjaga & Meningkatkan Streak</span>
+                  <span>Cara Mendapatkan Koin Peliharaan (🪙)</span>
                 </div>
                 <ul className="text-[11px] text-slate-600 dark:text-slate-300 space-y-1.5 list-disc list-inside">
-                  <li>Catat minimal <b>1 transaksi</b> pengeluaran atau pemasukan setiap hari kalender.</li>
-                  <li>Setiap transaksi pertama harian otomatis menambah <b>+1 Porsi Makanan</b> untuk Milo/Luna 🐾.</li>
-                  <li>Jika terlewat 1 hari tanpa catatan, api streak akan padam kembali ke 0. Jangan biarkan padam!</li>
+                  <li><b>Nyalakan Api Streak Harian (+10 🪙)</b>: Catat transaksi, tabung di Kantong Impian, atau bayar hutang untuk dapat <b>10 koin</b>, <b>1 makanan</b>, dan <b>1 minuman</b> setiap hari.</li>
+                  <li><b>Bonus Rawat Peliharaan (+5 🪙)</b>: Jaga peliharaan tetap <b>Kenyang & Senang di atas 80%</b> (> 80%) untuk otomatis mendapatkan <b>5 koin tambahan</b> setiap hari!</li>
+                  <li>Api menyala selama <b>24 jam</b>. Jika lewat dari 24 jam tidak ada aktivitas, api akan padam dan streak mengulang dari awal.</li>
                 </ul>
+              </div>
+
+              {/* Widget Layar Utama Android */}
+              <div className="p-3.5 rounded-xl bg-gradient-to-r from-amber-50/80 via-sky-50/70 to-indigo-50/80 dark:from-slate-800 dark:to-slate-800 border border-amber-200/60 dark:border-slate-700 text-left">
+                <div className="flex items-center gap-1.5 text-slate-900 dark:text-white text-xs font-bold mb-1">
+                  <span>📱</span>
+                  <span>Pasang Widget di Layar Utama Android</span>
+                </div>
+                <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                  Voralet v3.3.0 mendukung <b>Widget Api Streak 🔥</b> dan <b>Widget Teman Peliharaan 🐾</b> langsung di home screen HP kamu:
+                </p>
+                <div className="mt-2 text-[10px] text-slate-500 dark:text-slate-400 bg-white/70 dark:bg-slate-900/60 p-2 rounded-lg border border-slate-200/60 dark:border-slate-700">
+                  <b>Cara Pasang:</b> Tekan & tahan area kosong di Layar Utama Android ➔ Pilih <b>Widget</b> ➔ Cari <b>Voralet</b> ➔ Tambahkan widget <b>Api Streak</b> atau <b>Teman Peliharaan</b>!
+                </div>
               </div>
 
               {/* Level Progression Roadmap */}
@@ -3323,32 +2943,36 @@ PART6_MODALS = """
     };
 
     // =========================================================================
-    // PET CLOSET & CARE MODAL (Lemari Peliharaan & Ganti Kostum)
+    // PET CLOSET & CARE MODAL (Lemari Peliharaan, Ganti Kostum & Toko Peliharaan)
     // =========================================================================
     const PetClosetModal = ({
       isOpen,
       onClose,
       petData = {},
+      streakData = {},
       onUpdatePet,
       onFeedPet,
       onDrinkPet,
-      onPlayPet
+      onPlayPet,
+      showToast
     }) => {
       const { shouldRender, isClosing, handleClose } = useModalLifecycle(isOpen, onClose, 350);
-      const [petType, setPetType] = useState(petData?.type || 'DOG');
-      const [petName, setPetName] = useState(petData?.name || 'Milo');
       const [outfit, setOutfit] = useState(petData?.outfit || 'NONE');
       const [currentAction, setCurrentAction] = useState('idle');
       const actionTimeoutRef = useRef(null);
 
+      const petType = petData?.type || 'DOG';
+      const petName = petData?.name || (petType === 'CAT' ? 'Luna' : 'Milo');
+      const currentStreak = Number(streakData?.currentStreak) || 0;
+      const petCoins = Number(petData?.coins) || 0;
+      const unlockedOutfits = Array.isArray(petData?.unlockedOutfits) ? petData.unlockedOutfits : ['NONE'];
+
       useEffect(() => {
         if (isOpen && petData) {
-          setPetType(petData.type || 'DOG');
-          setPetName(petData.name || (petData.type === 'CAT' ? 'Luna' : 'Milo'));
           setOutfit(petData.outfit || 'NONE');
           setCurrentAction('idle');
         }
-      }, [isOpen, petData]);
+      }, [isOpen, petData?.outfit]);
 
       useEffect(() => {
         return () => {
@@ -3358,7 +2982,7 @@ PART6_MODALS = """
 
       if (!shouldRender) return null;
 
-      const triggerAction = (actionName, durationMs = 1500) => {
+      const triggerAction = (actionName, durationMs = 3500) => {
         if (actionTimeoutRef.current) clearTimeout(actionTimeoutRef.current);
         setCurrentAction(actionName);
         actionTimeoutRef.current = setTimeout(() => {
@@ -3366,47 +2990,84 @@ PART6_MODALS = """
         }, durationMs);
       };
 
-      const OUTFITS = [
-        { id: 'NONE', label: 'Polos', emoji: '✨' },
-        { id: 'CROWN', label: 'Mahkota Raja', emoji: '👑' },
-        { id: 'HAT', label: 'Topi Pesulap', emoji: '🎩' },
-        { id: 'GLASSES', label: 'Kacamata Kece', emoji: '🕶️' },
-        { id: 'BOWTIE', label: 'Dasi Kupu-Kupu', emoji: '🎀' },
-        { id: 'SCARF', label: 'Syal Hangat', emoji: '🧣' },
-        { id: 'CAP', label: 'Topi Gaul', emoji: '🧢' }
+      const OUTFIT_CATALOG = [
+        { id: 'NONE', label: 'Polos', emoji: '✨', streakReq: 0, coinPrice: 0, desc: 'Bebas digunakan' },
+        { id: 'BOWTIE', label: 'Dasi Kupu-Kupu', emoji: '🎀', streakReq: 3, coinPrice: 25, desc: 'Streak 3 Hari / 25 🪙' },
+        { id: 'SCARF', label: 'Syal Hangat', emoji: '🧣', streakReq: 5, coinPrice: 40, desc: 'Streak 5 Hari / 40 🪙' },
+        { id: 'CAP', label: 'Topi Gaul', emoji: '🧢', streakReq: 7, coinPrice: 60, desc: 'Streak 7 Hari / 60 🪙' },
+        { id: 'GLASSES', label: 'Kacamata Kece', emoji: '🕶️', streakReq: 10, coinPrice: 80, desc: 'Streak 10 Hari / 80 🪙' },
+        { id: 'HAT', label: 'Topi Pesulap', emoji: '🎩', streakReq: 15, coinPrice: 120, desc: 'Streak 15 Hari / 120 🪙' },
+        { id: 'CROWN', label: 'Mahkota Raja', emoji: '👑', streakReq: 20, coinPrice: 200, desc: 'Streak 20 Hari / 200 🪙' }
       ];
 
-      const handleSave = () => {
-        const updated = {
-          ...petData,
-          type: petType,
-          name: petName.trim() || (petType === 'CAT' ? 'Luna' : 'Milo'),
-          outfit
-        };
-        onUpdatePet(updated);
-        handleClose();
+      // Direct Outfit Selector with Immediate Reactive Update & Storage Persistence
+      const handleSelectOutfit = (item) => {
+        const isUnlocked = item.id === 'NONE' || unlockedOutfits.includes(item.id) || currentStreak >= item.streakReq;
+        if (!isUnlocked) {
+          // Attempt unlocking with coins if available
+          if (petCoins >= item.coinPrice && item.coinPrice > 0) {
+            const res = StorageService.unlockPetOutfit(item.id, item.coinPrice);
+            if (res.success) {
+              setOutfit(item.id);
+              if (onUpdatePet) onUpdatePet(res.pet);
+              triggerAction('happy', 3500);
+              if (showToast) showToast(`Selamat! ${item.label} berhasil dibuka dan dipasang! 👑`);
+            } else {
+              if (showToast) showToast(res.message);
+            }
+          } else {
+            if (showToast) showToast(`Kostum terkunci! Butuh Streak ${item.streakReq} Hari atau ${item.coinPrice} Koin (Saldo: ${petCoins} 🪙)`);
+          }
+          return;
+        }
+
+        // Outfit is unlocked: equip immediately
+        setOutfit(item.id);
+        const updated = { ...petData, outfit: item.id };
+        StorageService.setPetData(updated);
+        if (onUpdatePet) onUpdatePet(updated);
+        triggerAction('happy', 2500);
+        if (showToast) showToast(`Kostum ${item.label} berhasil dipakai! ✨`);
       };
 
       const handleFeed = () => {
-        if ((petData.foodCount || 0) <= 0) return;
-        triggerAction('eat', 1800);
+        if ((petData.foodCount || 0) <= 0) {
+          if (showToast) showToast('Stok makanan habis! Beli di Toko Peliharaan di bawah 🍖');
+          return;
+        }
+        triggerAction('eat', 3500);
         if (onFeedPet) onFeedPet();
       };
 
       const handleDrink = () => {
-        triggerAction('drink', 1800);
+        if ((petData.drinkCount || 0) <= 0) {
+          if (showToast) showToast('Stok air minum habis! Beli di Toko Peliharaan di bawah 💧');
+          return;
+        }
+        triggerAction('drink', 3500);
         if (onDrinkPet) onDrinkPet();
       };
 
       const handleSpeak = () => {
         const vocal = petType === 'DOG' ? 'bark' : 'meow';
-        triggerAction(vocal, 1800);
+        triggerAction(vocal, 3500);
         if (onPlayPet) onPlayPet();
       };
 
       const handlePetJoy = () => {
-        triggerAction('happy', 2000);
+        triggerAction('happy', 3500);
         if (onPlayPet) onPlayPet();
+      };
+
+      const handleBuyStoreItem = (itemId) => {
+        const res = StorageService.buyPetMarketItem(itemId);
+        if (res.success) {
+          if (onUpdatePet) onUpdatePet(res.pet);
+          triggerAction('happy', 3500);
+          if (showToast) showToast(res.message);
+        } else {
+          if (showToast) showToast(res.message);
+        }
       };
 
       const isPetSad = (petData.fullness || 50) < 30 || (petData.happiness || 50) < 30;
@@ -3426,48 +3087,57 @@ PART6_MODALS = """
               <ModalCloseButton onClick={handleClose} />
             </div>
 
-            <div className="p-4 sm:p-5 space-y-4 max-h-[80vh] overflow-y-auto no-scrollbar">
+            <div className="p-4 sm:p-5 space-y-4 max-h-[82vh] overflow-y-auto no-scrollbar">
+              {/* Pet Display Card */}
               <div className="bg-gradient-to-b from-sky-50 via-amber-50/30 to-indigo-50/40 dark:from-slate-700/60 dark:via-slate-800 dark:to-slate-900 border border-sky-100 dark:border-slate-700 rounded-2xl p-4 flex flex-col items-center justify-center text-center shadow-xs">
                 {/* Pet Animated Sprite */}
-                <div className="py-2">
+                <div className="py-2 cursor-pointer hover:scale-105 active:scale-95 transition-transform" onClick={handlePetJoy}>
                   <PixelPetSprite
                     type={petType}
                     outfit={outfit}
                     action={currentAction}
                     isSad={isPetSad}
                     size={116}
-                    onClick={handlePetJoy}
                   />
                 </div>
 
+                {/* Pet Fixed Info Badge (Identity is locked as requested) */}
                 <div className="flex items-center gap-2 mt-1">
                   <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100">
-                    {petName} {petType === 'DOG' ? '🐶' : '🐱'}
+                    {petName}
                   </h4>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 border border-amber-200/60">
+                    {petType === 'DOG' ? '🐶 Dog' : '🐱 Cat'}
+                  </span>
                   {isPetSad && (
                     <span className="text-[10px] font-bold bg-rose-100 dark:bg-rose-950/80 text-rose-600 dark:text-rose-400 px-2 py-0.5 rounded-full animate-pulse">
-                      Sedih 🥺
+                      Sedih & Lapar 🥺
                     </span>
                   )}
                   {currentAction === 'happy' && (
-                    <span className="text-[10px] font-bold bg-amber-100 dark:bg-amber-950/80 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-full">
+                    <span className="text-[10px] font-bold bg-rose-100 dark:bg-rose-950/80 text-rose-600 dark:text-rose-400 px-2 py-0.5 rounded-full">
                       Senang Banget! 🥰
                     </span>
                   )}
                 </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Ketuk hewan untuk mengelus atau gunakan aksi interaktif di bawah
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                  Ketuk hewan untuk mengelus atau gunakan tombol aksi di bawah
                 </p>
 
-                {/* Status Bar: Kenyang & Senang */}
+                {/* Status Bar: Kenyang & Senang & Stok */}
                 <div className="w-full grid grid-cols-2 gap-2.5 mt-3 pt-3 border-t border-sky-100 dark:border-slate-700 text-left">
                   <div>
                     <div className="flex items-center justify-between text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
                       <span>Kenyang {petType === 'DOG' ? '🍖' : '🐟'}</span>
-                      <span className="text-amber-600 dark:text-amber-400 font-bold">{petData.fullness || 50}%</span>
+                      <span className={`font-bold ${(petData.fullness || 50) < 30 ? 'text-rose-500 animate-pulse' : 'text-amber-600 dark:text-amber-400'}`}>
+                        {petData.fullness || 50}%
+                      </span>
                     </div>
                     <div className="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
-                      <div className="bg-amber-500 h-full transition-all duration-300 rounded-full" style={{ width: `${petData.fullness || 50}%` }}></div>
+                      <div
+                        className={`h-full transition-all duration-300 rounded-full ${(petData.fullness || 50) < 30 ? 'bg-rose-500' : 'bg-amber-500'}`}
+                        style={{ width: `${petData.fullness || 50}%` }}
+                      />
                     </div>
                   </div>
                   <div>
@@ -3476,18 +3146,31 @@ PART6_MODALS = """
                       <span className="text-rose-500 font-bold">{petData.happiness || 50}%</span>
                     </div>
                     <div className="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
-                      <div className="bg-rose-500 h-full transition-all duration-300 rounded-full" style={{ width: `${petData.happiness || 50}%` }}></div>
+                      <div className="bg-rose-500 h-full transition-all duration-300 rounded-full" style={{ width: `${petData.happiness || 50}%` }} />
                     </div>
                   </div>
                 </div>
 
-                {/* Interactive Action Buttons: Makan, Minum, Suara, Elus */}
-                <div className="mt-3 w-full grid grid-cols-4 gap-1.5 pt-2">
+                {/* Daily Care Wellness Bonus Status (> 80% = +5 Coins/day) */}
+                {(petData.fullness || 50) > 80 && (petData.happiness || 50) > 80 ? (
+                  <div className="w-full mt-2.5 py-1 px-2.5 rounded-lg bg-emerald-100/80 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 flex items-center justify-center gap-1.5 animate-pulse">
+                    <span>✨</span>
+                    <span>Peliharaan Sangat Sehat &amp; Bahagia (+5 🪙 Bonus Harian Aktif!)</span>
+                  </div>
+                ) : (
+                  <div className="w-full mt-2.5 py-1 px-2.5 rounded-lg bg-slate-100/80 dark:bg-slate-800/60 text-[10px] text-slate-500 dark:text-slate-400 flex items-center justify-center gap-1">
+                    <span>💡</span>
+                    <span>Jaga Kenyang &amp; Senang &gt; 80% untuk dapat +5 Koin Peliharaan setiap hari!</span>
+                  </div>
+                )}
+
+                {/* Interactive Action Buttons: Makan, Minum, Suara, Elus (Duration: 3500ms) */}
+                <div className="mt-3.5 w-full grid grid-cols-4 gap-1.5 pt-1">
                   <button
                     type="button"
                     onClick={handleFeed}
                     disabled={(petData.foodCount || 0) <= 0}
-                    className="py-2 px-1 bg-amber-500 hover:bg-amber-600 disabled:opacity-40 text-white rounded-xl text-center shadow-xs ios-btn-tap flex flex-col items-center justify-center gap-0.5"
+                    className="py-2.5 px-1 bg-amber-500 hover:bg-amber-600 disabled:opacity-40 text-white rounded-xl text-center shadow-xs ios-btn-tap flex flex-col items-center justify-center gap-0.5"
                     title="Beri Makan (1 Porsi)"
                   >
                     <span className="text-base">{petType === 'DOG' ? '🍖' : '🐟'}</span>
@@ -3496,144 +3179,151 @@ PART6_MODALS = """
                   <button
                     type="button"
                     onClick={handleDrink}
-                    className="py-2 px-1 bg-sky-500 hover:bg-sky-600 text-white rounded-xl text-center shadow-xs ios-btn-tap flex flex-col items-center justify-center gap-0.5"
+                    disabled={(petData.drinkCount || 0) <= 0}
+                    className="py-2.5 px-1 bg-sky-500 hover:bg-sky-600 disabled:opacity-40 text-white rounded-xl text-center shadow-xs ios-btn-tap flex flex-col items-center justify-center gap-0.5"
                     title="Beri Minum Air Segar"
                   >
                     <span className="text-base">💧</span>
-                    <span className="text-[10px] font-bold">Minum</span>
+                    <span className="text-[10px] font-bold">Minum ({petData.drinkCount || 0})</span>
                   </button>
                   <button
                     type="button"
                     onClick={handleSpeak}
-                    className="py-2 px-1 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl text-center shadow-xs ios-btn-tap flex flex-col items-center justify-center gap-0.5"
+                    className="py-2.5 px-1 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl text-center shadow-xs ios-btn-tap flex flex-col items-center justify-center gap-0.5"
                     title={petType === 'DOG' ? 'Suara Menggonggong' : 'Suara Mengeong'}
                   >
                     <span className="text-base">{petType === 'DOG' ? '🐶' : '🐱'}</span>
-                    <span className="text-[10px] font-bold">{petType === 'DOG' ? 'Guk!' : 'Meong!'}</span>
+                    <span className="text-[10px] font-bold">{petType === 'DOG' ? 'Guk! Guk!' : 'Meow~'}</span>
                   </button>
                   <button
                     type="button"
                     onClick={handlePetJoy}
-                    className="py-2 px-1 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-center shadow-xs ios-btn-tap flex flex-col items-center justify-center gap-0.5"
+                    className="py-2.5 px-1 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-center shadow-xs ios-btn-tap flex flex-col items-center justify-center gap-0.5"
                     title="Elus dan Sayang Peliharaan"
                   >
                     <span className="text-base">✨</span>
-                    <span className="text-[10px] font-bold">Elus</span>
+                    <span className="text-[10px] font-bold">Elus Peliharaan</span>
                   </button>
                 </div>
+              </div>
 
-                {/* Animation Preview Pills (Tes Animasi) */}
-                <div className="w-full mt-3 pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block mb-1.5 text-left">
-                    Tes Animasi Pixel Pet:
+              {/* Lemari Aksesori & Kostum with Lock System */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                    <span>👑</span>
+                    <span>Lemari Aksesori & Kostum</span>
+                  </label>
+                  <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                    Saldo: <b className="text-amber-600 dark:text-amber-400">{petCoins} 🪙</b>
                   </span>
-                  <div className="flex flex-wrap gap-1">
-                    {[
-                      { id: 'idle', label: 'Idle' },
-                      { id: 'eat', label: 'Makan' },
-                      { id: 'drink', label: 'Minum' },
-                      { id: petType === 'DOG' ? 'bark' : 'meow', label: petType === 'DOG' ? 'Gonggong' : 'Meong' },
-                      { id: 'sad', label: 'Sedih' },
-                      { id: 'happy', label: 'Happy' }
-                    ].map((anim) => (
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {OUTFIT_CATALOG.map((item) => {
+                    const isUnlocked = item.id === 'NONE' || unlockedOutfits.includes(item.id) || currentStreak >= item.streakReq;
+                    const isEquipped = outfit === item.id;
+                    return (
                       <button
-                        key={anim.id}
+                        key={item.id}
                         type="button"
-                        onClick={() => triggerAction(anim.id, 2500)}
-                        className={`text-[10px] font-semibold px-2 py-0.5 rounded-lg border transition-all ${
-                          currentAction === anim.id
-                            ? 'bg-brand text-white border-brand shadow-xs'
-                            : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
+                        onClick={() => handleSelectOutfit(item)}
+                        className={`p-2.5 rounded-xl border text-left flex flex-col justify-between transition-all ios-card-tap relative overflow-hidden ${
+                          isEquipped
+                            ? 'border-brand bg-sky-50 dark:bg-slate-700/90 text-brand dark:text-sky-300 ring-2 ring-brand/40 shadow-xs'
+                            : isUnlocked
+                            ? 'border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-50'
+                            : 'border-slate-200/60 dark:border-slate-700/60 text-slate-400 dark:text-slate-500 bg-slate-50/70 dark:bg-slate-900/40 opacity-80'
                         }`}
                       >
-                        {anim.label}
+                        <div className="flex items-center justify-between w-full mb-1">
+                          <span className="text-xl">{item.emoji}</span>
+                          {isEquipped ? (
+                            <span className="text-[9px] font-black uppercase bg-brand text-white px-1.5 py-0.2 rounded-full">
+                              Dipakai
+                            </span>
+                          ) : !isUnlocked ? (
+                            <span className="text-[10px] text-slate-400">🔒</span>
+                          ) : (
+                            <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400">
+                              Terbuka
+                            </span>
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <span className="text-xs font-bold block truncate">{item.label}</span>
+                          <span className="text-[10px] text-slate-500 dark:text-slate-400 block truncate">
+                            {isUnlocked ? item.desc : `Req: Streak ${item.streakReq}H / ${item.coinPrice}🪙`}
+                          </span>
+                        </div>
                       </button>
-                    ))}
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Toko Peliharaan (Market Makanan & Minuman) */}
+              <div className="pt-2 border-t border-slate-100 dark:border-slate-700">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-base">🏪</span>
+                    <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                      Toko Peliharaan (Market Makanan & Minuman)
+                    </h4>
                   </div>
+                  <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-2 py-0.5 rounded-full border border-amber-200/60">
+                    🪙 {petCoins} Koin
+                  </span>
                 </div>
-              </div>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-2.5">
+                  Beli stok makanan & minuman menggunakan Koin Peliharaan dari hasil streak disiplin finansial!
+                </p>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                  Pilih Hewan Peliharaan
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPetType('DOG');
-                      if (petName === 'Luna') setPetName('Milo');
-                    }}
-                    className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all ${
-                      petType === 'DOG'
-                        ? 'border-brand bg-sky-50 dark:bg-slate-700 text-brand dark:text-sky-400 shadow-xs'
-                        : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
-                    }`}
-                  >
-                    <span className="text-base">🐶</span>
-                    <span>Pixel Doggy</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPetType('CAT');
-                      if (petName === 'Milo') setPetName('Luna');
-                    }}
-                    className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all ${
-                      petType === 'CAT'
-                        ? 'border-brand bg-sky-50 dark:bg-slate-700 text-brand dark:text-sky-400 shadow-xs'
-                        : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
-                    }`}
-                  >
-                    <span className="text-base">🐱</span>
-                    <span>Pixel Cat</span>
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Nama Peliharaan
-                </label>
-                <input
-                  type="text"
-                  maxLength={20}
-                  value={petName}
-                  onChange={(e) => setPetName(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand font-semibold"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                  Lemari Aksesori & Kostum
-                </label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {OUTFITS.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => setOutfit(item.id)}
-                      className={`py-2 px-2.5 rounded-xl border text-left flex items-center gap-2 transition-all ${
-                        outfit === item.id
-                          ? 'border-brand bg-sky-50 dark:bg-slate-700 text-brand dark:text-sky-300 font-bold shadow-xs'
-                          : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
-                      }`}
+                <div className="space-y-2">
+                  {[
+                    { id: 'FOOD_1', name: petType === 'CAT' ? '1x Porsi Ikan Segar' : '1x Porsi Daging Tulang', icon: petType === 'CAT' ? '🐟' : '🍖', cost: 5, benefit: '+1 Stok Makanan' },
+                    { id: 'FOOD_5', name: petType === 'CAT' ? '5x Paket Ikan Hemat' : '5x Paket Daging Hemat', icon: petType === 'CAT' ? '🐟' : '🍖', cost: 20, benefit: '+5 Stok Makanan (Hemat 5 Koin!)' },
+                    { id: 'DRINK_1', name: '1x Air Minum Segar', icon: '💧', cost: 5, benefit: '+1 Stok Air Minum' },
+                    { id: 'DRINK_5', name: '5x Galon Air Segar', icon: '💧', cost: 20, benefit: '+5 Stok Air Minum (Hemat 5 Koin!)' },
+                    { id: 'TREAT', name: 'Snack Vitamin Spesial', icon: '🌟', cost: 15, benefit: '+30 Kenyang & +30 Senang Instan!' }
+                  ].map((store) => (
+                    <div
+                      key={store.id}
+                      className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-900/50 flex items-center justify-between gap-2"
                     >
-                      <span className="text-base">{item.emoji}</span>
-                      <span className="text-xs truncate">{item.label}</span>
-                    </button>
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span className="text-xl shrink-0">{store.icon}</span>
+                        <div className="min-w-0">
+                          <span className="text-xs font-bold text-slate-900 dark:text-white block truncate">
+                            {store.name}
+                          </span>
+                          <span className="text-[10px] text-slate-500 dark:text-slate-400 block truncate">
+                            {store.benefit}
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleBuyStoreItem(store.id)}
+                        disabled={petCoins < store.cost}
+                        className="py-1.5 px-3 bg-amber-500 hover:bg-amber-600 disabled:opacity-40 text-white text-xs font-bold rounded-xl shadow-xs shrink-0 flex items-center gap-1 ios-btn-tap"
+                      >
+                        <span>Beli</span>
+                        <span>{store.cost} 🪙</span>
+                      </button>
+                    </div>
                   ))}
                 </div>
               </div>
 
+              {/* Close Button */}
               <div className="pt-2">
                 <button
                   type="button"
-                  onClick={handleSave}
+                  onClick={handleClose}
                   className="w-full py-2.5 bg-brand hover:bg-brand-hover text-white text-xs font-bold rounded-xl shadow-sm transition-colors ios-btn-tap"
                 >
-                  Simpan Peliharaan & Tutup
+                  Tutup Lemari Peliharaan
                 </button>
               </div>
             </div>
@@ -3641,6 +3331,8 @@ PART6_MODALS = """
         </div>
       );
     };
+
+
 
 
     // =========================================================================

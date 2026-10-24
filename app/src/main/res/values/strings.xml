@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">Voralet</string>
+    <string name="widget_streak_name">Voralet: Api Streak</string>
+    <string name="widget_streak_description">Pantau api kedisiplinan finansial 24 jam langsung dari layar utama.</string>
+    <string name="widget_pet_name">Voralet: Teman Peliharaan</string>
+    <string name="widget_pet_description">Pantau kondisi kenyang, senang, dan koin peliharaan di layar utama.</string>
 </resources>

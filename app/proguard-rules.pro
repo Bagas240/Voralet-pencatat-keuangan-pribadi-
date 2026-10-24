@@ -14,9 +14,14 @@
     public *;
 }
 
+# Preserve AppWidget Providers
+-keep class com.example.widget.StreakWidgetProvider { *; }
+-keep class com.example.widget.PetWidgetProvider { *; }
+
 # Obfuscate class and method names in release builds
 -repackageclasses ''
 -allowaccessmodification
+-renamesourcefileattribute ""
 
 # Strip verbose debug logs in production
 -assumenosideeffects class android.util.Log {
@@ -24,4 +29,5 @@
     public static *** d(...);
     public static *** i(...);
 }
+
 

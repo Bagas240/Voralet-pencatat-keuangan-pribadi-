@@ -374,7 +374,8 @@ PART8_APP = """
       deletingTxIds = new Set(),
       newlyAddedTxIds = new Set(),
       onClearNewlyAddedTx,
-      balancePulse = false
+      balancePulse = false,
+      showToast
     }) => {
       const [searchQuery, setSearchQuery] = useState('');
       const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -389,7 +390,7 @@ PART8_APP = """
       const [dashPetAction, setDashPetAction] = useState('idle');
       const dashPetTimerRef = useRef(null);
 
-      const triggerDashPetAction = (act, duration = 1800) => {
+      const triggerDashPetAction = (act, duration = 3500) => {
         if (dashPetTimerRef.current) clearTimeout(dashPetTimerRef.current);
         setDashPetAction(act);
         dashPetTimerRef.current = setTimeout(() => {
@@ -567,31 +568,35 @@ PART8_APP = """
             const handlePetTap = () => {
               if (dashPetAction === 'idle') {
                 const vocal = (petData?.type || 'DOG') === 'DOG' ? 'bark' : 'meow';
-                triggerDashPetAction(vocal, 1800);
+                triggerDashPetAction(vocal, 3500);
               } else {
-                triggerDashPetAction('happy', 2000);
+                triggerDashPetAction('happy', 3500);
               }
               if (onPlayPet) onPlayPet();
             };
             const handleFeedClick = () => {
               if ((petData?.foodCount || 0) <= 0) {
-                if (showToast) showToast('Stok makanan habis! Catat transaksi untuk dapat makanan 🍖');
+                if (showToast) showToast('Stok makanan habis! Beli di Toko Peliharaan atau catat transaksi 🍖');
                 return;
               }
-              triggerDashPetAction('eat', 1800);
+              triggerDashPetAction('eat', 3500);
               if (onFeedPet) onFeedPet();
             };
             const handleDrinkClick = () => {
-              triggerDashPetAction('drink', 1800);
+              if ((petData?.drinkCount || 0) <= 0) {
+                if (showToast) showToast('Stok air minum habis! Beli di Toko Peliharaan atau catat transaksi 💧');
+                return;
+              }
+              triggerDashPetAction('drink', 3500);
               if (onDrinkPet) onDrinkPet();
             };
             const handleSpeakClick = () => {
               const vocal = (petData?.type || 'DOG') === 'DOG' ? 'bark' : 'meow';
-              triggerDashPetAction(vocal, 1800);
+              triggerDashPetAction(vocal, 3500);
               if (onPlayPet) onPlayPet();
             };
             const handlePetJoyClick = () => {
-              triggerDashPetAction('happy', 2000);
+              triggerDashPetAction('happy', 3500);
               if (onPlayPet) onPlayPet();
             };
 
@@ -612,7 +617,7 @@ PART8_APP = """
                         outfit={petData?.outfit || 'NONE'}
                         action={dashPetAction}
                         isSad={isPetSad}
-                        size={58}
+                        size={60}
                       />
                     </div>
                     <div className="min-w-0">
@@ -621,7 +626,7 @@ PART8_APP = """
                           {petData?.name || 'Milo'}
                         </h4>
                         <span className="text-[10px] px-1.5 py-0.2 bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 rounded font-semibold shrink-0">
-                          {petData?.type === 'CAT' ? '🐱 Kucing' : '🐶 Anjing'}
+                          {petData?.type === 'CAT' ? '🐱 Cat' : '🐶 Dog'}
                         </span>
                         {isPetSad && (
                           <span className="text-[9px] px-1.5 py-0.2 bg-rose-100 dark:bg-rose-950/80 text-rose-600 dark:text-rose-400 rounded-full font-bold shrink-0 animate-pulse">
@@ -634,10 +639,12 @@ PART8_APP = """
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center gap-2 mt-1 text-[11px] text-slate-600 dark:text-slate-400">
+                      <div className="flex items-center gap-2 mt-1 text-[11px] text-slate-600 dark:text-slate-400 flex-wrap">
                         <span>Kenyang: <b className="text-amber-600 dark:text-amber-400">{petData?.fullness || 50}%</b></span>
                         <span>•</span>
                         <span>Senang: <b className="text-rose-500">{petData?.happiness || 50}%</b></span>
+                        <span>•</span>
+                        <span>Koin: <b className="text-amber-500 font-bold">🪙 {petData?.petCoins || 0}</b></span>
                       </div>
                     </div>
                   </div>
@@ -658,34 +665,38 @@ PART8_APP = """
                     <button
                       type="button"
                       onClick={handleDrinkClick}
-                      className="p-2 bg-sky-500 hover:bg-sky-600 text-white rounded-xl shadow-xs ios-btn-tap flex items-center justify-center"
+                      disabled={(petData?.drinkCount || 0) <= 0}
+                      className="py-1.5 px-2.5 bg-sky-500 hover:bg-sky-600 disabled:opacity-40 text-white font-bold text-xs rounded-xl shadow-xs ios-btn-tap flex items-center gap-1"
                       title="Beri minum air segar"
                     >
-                      <span className="text-xs">💧</span>
+                      <span>Minum</span>
+                      <span>💧</span>
+                      <span className="text-[10px] bg-black/20 px-1 py-0.2 rounded-full ml-0.5">{petData?.drinkCount || 0}</span>
                     </button>
                     <button
                       type="button"
                       onClick={handleSpeakClick}
-                      className="p-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl shadow-xs ios-btn-tap flex items-center justify-center"
+                      className="p-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl shadow-xs ios-btn-tap flex items-center justify-center gap-1 text-xs font-bold"
                       title={petData?.type === 'CAT' ? 'Mengeong (Meow~)' : 'Menggonggong (Guk! Guk!)'}
                     >
-                      <span className="text-xs">{petData?.type === 'CAT' ? '🐱' : '🐶'}</span>
+                      <span>{petData?.type === 'CAT' ? '🐱 Meow' : '🐶 Guk'}</span>
                     </button>
                     <button
                       type="button"
                       onClick={handlePetJoyClick}
-                      className="p-2 bg-rose-500 hover:bg-rose-600 text-white rounded-xl shadow-xs ios-btn-tap flex items-center justify-center"
+                      className="p-2 bg-rose-500 hover:bg-rose-600 text-white rounded-xl shadow-xs ios-btn-tap flex items-center justify-center gap-1 text-xs font-bold"
                       title="Elus dan Sayang Peliharaan"
                     >
-                      <span className="text-xs">✨</span>
+                      <span>👋 Elus</span>
                     </button>
                     <button
                       type="button"
                       onClick={onOpenPetCloset}
-                      className="p-2 bg-white dark:bg-slate-700 hover:bg-slate-50 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-xl shadow-xs ios-btn-tap flex items-center justify-center"
-                      title="Buka Lemari Kostum"
+                      className="p-2 bg-white dark:bg-slate-700 hover:bg-slate-50 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-xl shadow-xs ios-btn-tap flex items-center justify-center gap-1 text-xs font-bold"
+                      title="Buka Lemari Kostum & Toko"
                     >
-                      <Icon name="shirt" className="w-4 h-4 text-brand dark:text-sky-400" />
+                      <Icon name="shirt" className="w-3.5 h-3.5 text-brand dark:text-sky-400" />
+                      <span>Toko</span>
                     </button>
                   </div>
                 </div>
@@ -790,13 +801,10 @@ PART8_APP = """
             </button>
           </div>
 
-          {/* Safe-to-Spend Indicator */}
-          <SafeToSpendCard
-            accounts={safeAccounts}
-            transactions={safeTransactions}
-            hideBalance={hideBalance}
-            safeBudget={safeBudget}
-            onSetBudget={onSetBudget}
+          {/* TikTok-Style Flame Streak Card (Api Keuangan 24 Jam) */}
+          <TikTokStreakFlameCard
+            streakData={streakData}
+            onOpenStreakModal={onOpenStreakModal}
           />
 
           {/* Quick Expense Bar */}
@@ -1257,6 +1265,34 @@ PART8_APP = """
         activeTab
       ]);
 
+      // Native Widget Sync, Daily Care Bonus Check, & Battery Throttling Listener
+      useEffect(() => {
+        // Initial sync to native Android widgets (Streak & Pet)
+        StorageService.syncToNativeWidget(streakData, petData);
+
+        // Check if pet qualifies for daily care bonus (> 80% fullness and happiness)
+        const careRes = StorageService.checkDailyCareBonus(petData);
+        if (careRes.awarded) {
+          setPetData(careRes.pet);
+          showToast(careRes.message);
+        }
+
+        // Smart Battery & RAM optimization: sync on resume from background
+        const handleVisibilityChange = () => {
+          if (document.visibilityState === 'visible') {
+            const currentStreak = StorageService.getStreakData();
+            const currentPet = StorageService.getPetData();
+            setStreakData(currentStreak);
+            setPetData(currentPet);
+            StorageService.syncToNativeWidget(currentStreak, currentPet);
+          }
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => {
+          document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+      }, []);
+
       const showToast = useCallback((msg) => {
         setToastMsg(msg);
       }, []);
@@ -1265,9 +1301,13 @@ PART8_APP = """
         const res = StorageService.feedPet();
         if (res.success) {
           setPetData(res.pet);
-          showToast(`${res.pet.name} kenyang dan senang! ❤️`);
+          if (res.careBonusAwarded) {
+            showToast(res.careBonusMessage);
+          } else {
+            showToast(`${res.pet.name} kenyang dan senang! ❤️`);
+          }
         } else {
-          showToast('Stok makanan habis! Catat transaksi untuk dapat makanan 🍖');
+          showToast('Stok makanan habis! Beli di Toko Peliharaan atau catat transaksi 🍖');
         }
       }, [showToast]);
 
@@ -1275,7 +1315,13 @@ PART8_APP = """
         const res = StorageService.drinkPet();
         if (res.success) {
           setPetData(res.pet);
-          showToast(`${res.pet.name} segar dan tidak haus lagi! 💧`);
+          if (res.careBonusAwarded) {
+            showToast(res.careBonusMessage);
+          } else {
+            showToast(`${res.pet.name} segar dan tidak haus lagi! 💧`);
+          }
+        } else {
+          showToast('Stok air minum habis! Beli di Toko Peliharaan atau catat transaksi 💧');
         }
       }, [showToast]);
 
@@ -1283,8 +1329,12 @@ PART8_APP = """
         const res = StorageService.playPet();
         if (res.success) {
           setPetData(res.pet);
-          const vocal = res.pet.type === 'DOG' ? 'Guk! Guk! 🐶' : 'Meong~ 🐱';
-          showToast(`${res.pet.name}: "${vocal}" ❤️`);
+          if (res.careBonusAwarded) {
+            showToast(res.careBonusMessage);
+          } else {
+            const vocal = res.pet.type === 'DOG' ? 'Guk! Guk! 🐶' : 'Meong~ 🐱';
+            showToast(`${res.pet.name}: "${vocal}" ❤️`);
+          }
         }
       }, [showToast]);
 
@@ -2238,6 +2288,7 @@ PART8_APP = """
                     newlyAddedTxIds={newlyAddedTxIds}
                     onClearNewlyAddedTx={handleClearNewlyAddedTx}
                     balancePulse={balancePulse}
+                    showToast={showToast}
                   />
                 )}
 
@@ -2363,8 +2414,13 @@ PART8_APP = """
 
           <PetClosetModal
             isOpen={isPetModalOpen}
-            onClose={() => setIsPetModalOpen(false)}
+            onClose={() => {
+              setIsPetModalOpen(false);
+              setPetData(StorageService.getPetData());
+            }}
             petData={petData}
+            streakData={streakData}
+            showToast={showToast}
             onUpdatePet={handleUpdatePet}
             onFeedPet={handleFeedPet}
             onDrinkPet={handleDrinkPet}

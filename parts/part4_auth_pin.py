@@ -2,6 +2,434 @@ PART4_AUTH_PIN = """
     // =========================================================================
     // 3. AUTHENTICATION & PIN SECURITY (APPLE HIG LOCK & ONBOARDING)
     // =========================================================================
+
+    // =========================================================================
+    // PIXEL PET RENDERER (Retro 8-Bit Pixel Art Puppy & Kitty with 7 Animations)
+    // Animations: idle, makan (eat), minum (drink), menggonggong (bark),
+    // mengeong (meow), sedih (sad), happy (senang)
+    // =========================================================================
+    const PixelPetSprite = ({
+      type = 'DOG',
+      outfit = 'NONE',
+      action = 'idle',
+      isEating = false,
+      isSad = false,
+      size = 110,
+      showBubble = true,
+      onClick = null
+    }) => {
+      const isDog = type === 'DOG';
+
+      // Compute effective animation state
+      let effectiveAction = action;
+      if (isEating) {
+        effectiveAction = 'eat';
+      } else if (action === 'idle' && isSad) {
+        effectiveAction = 'sad';
+      }
+      if (effectiveAction === 'bark' && !isDog) effectiveAction = 'meow';
+      if (effectiveAction === 'meow' && isDog) effectiveAction = 'bark';
+
+      // Map action to CSS animation class
+      let animClass = 'animate-pet-idle';
+      if (effectiveAction === 'eat') animClass = 'animate-pet-eat';
+      else if (effectiveAction === 'drink') animClass = 'animate-pet-drink';
+      else if (effectiveAction === 'bark') animClass = 'animate-pet-bark';
+      else if (effectiveAction === 'meow') animClass = 'animate-pet-meow';
+      else if (effectiveAction === 'sad') animClass = 'animate-pet-sad';
+      else if (effectiveAction === 'happy') animClass = 'animate-pet-happy';
+
+      return (
+        <div
+          onClick={onClick}
+          className={`relative inline-block ${animClass} pixelated select-none ${onClick ? 'cursor-pointer active:scale-95 transition-transform' : ''}`}
+          style={{ width: size, height: size }}
+        >
+          {/* Action Speech Bubble / Floating Reaction */}
+          {showBubble && effectiveAction === 'bark' && (
+            <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-amber-500 text-white font-black text-[11px] px-2 py-0.5 rounded-full shadow-md animate-pet-bubble whitespace-nowrap z-20 pointer-events-none border border-white/60">
+              Guk! Guk! 🦴 🐶
+            </div>
+          )}
+          {showBubble && effectiveAction === 'meow' && (
+            <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-rose-500 text-white font-black text-[11px] px-2 py-0.5 rounded-full shadow-md animate-pet-bubble whitespace-nowrap z-20 pointer-events-none border border-white/60">
+              Meow~ 🐾 🎵 🐱
+            </div>
+          )}
+          {showBubble && effectiveAction === 'eat' && (
+            <div className="absolute -top-6 left-1/2 -translate-x-1/2 flex items-center gap-0.5 text-xs animate-heart-float pointer-events-none z-20">
+              <span>❤️</span>
+              <span className="text-[10px] font-bold text-amber-500 dark:text-amber-400 bg-white/95 dark:bg-slate-800 px-1.5 py-0.5 rounded-md shadow-xs border border-amber-200/60 dark:border-amber-800/60 whitespace-nowrap">
+                {isDog ? 'Nyam! 🍖' : 'Nyam! 🐟'}
+              </span>
+            </div>
+          )}
+          {showBubble && effectiveAction === 'drink' && (
+            <div className="absolute -top-6 left-1/2 -translate-x-1/2 flex items-center gap-0.5 text-xs animate-heart-float pointer-events-none z-20">
+              <span>💧</span>
+              <span className="text-[10px] font-bold text-sky-500 dark:text-sky-400 bg-white/95 dark:bg-slate-800 px-1.5 py-0.5 rounded-md shadow-xs border border-sky-200/60 dark:border-sky-800/60 whitespace-nowrap">
+                Slurp! 💧 Segar!
+              </span>
+            </div>
+          )}
+          {showBubble && effectiveAction === 'happy' && (
+            <div className="absolute -top-6 left-1/2 -translate-x-1/2 flex items-center gap-0.5 text-xs animate-heart-float pointer-events-none z-20">
+              <span>✨</span>
+              <span>❤️</span>
+              <span className="text-[10px] font-bold text-rose-500 bg-white/95 dark:bg-slate-800 px-1.5 py-0.5 rounded-md shadow-xs border border-rose-200 whitespace-nowrap">
+                Sayang! 🥰
+              </span>
+            </div>
+          )}
+          {showBubble && effectiveAction === 'sad' && (
+            <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs animate-pet-tear pointer-events-none z-20 flex items-center gap-1 bg-white/90 dark:bg-slate-800/90 px-1.5 py-0.5 rounded-full shadow-xs border border-sky-200 dark:border-slate-700 text-[10px] font-bold text-sky-500 whitespace-nowrap">
+              <span>💧</span>
+              <span>🥺 Sedih... Lapar</span>
+            </div>
+          )}
+
+          <svg
+            width={size}
+            height={size}
+            viewBox="0 0 24 24"
+            className="drop-shadow-md overflow-visible"
+            style={{ shapeRendering: 'crispEdges' }}
+          >
+            {isDog ? (
+              // ==================== PIXEL DOGGY (MILO) ====================
+              <g>
+                {/* Body & Belly */}
+                <rect x="7" y="14" width="10" height="7" fill="#F59E0B" />
+                <rect x="9" y="15" width="6" height="5" fill="#FEF3C7" />
+
+                {/* Paws */}
+                <rect x="7" y="20" width="2" height="3" fill="#D97706" />
+                <rect x="15" y="20" width="2" height="3" fill="#D97706" />
+
+                {/* Tail (Wagging fast when happy, gentle sway in idle, droopy when sad) */}
+                {effectiveAction === 'sad' ? (
+                  <g>
+                    <rect x="17" y="17" width="2" height="3" fill="#B45309" />
+                    <rect x="18" y="19" width="2" height="2" fill="#B45309" />
+                  </g>
+                ) : (
+                  <g className={effectiveAction === 'happy' ? 'animate-pet-tail' : 'animate-pet-tail-idle'}>
+                    <rect x="17" y="13" width="2" height="3" fill="#F59E0B" />
+                    <rect x="18" y="11" width="2" height="2" fill="#F59E0B" />
+                  </g>
+                )}
+
+                {/* Head */}
+                <rect x="5" y="6" width="14" height="9" fill="#F59E0B" />
+
+                {/* Ears: Drooped down when sad, perked up when normal/bark/happy */}
+                {effectiveAction === 'sad' ? (
+                  <g>
+                    <rect x="3" y="7" width="3" height="5" fill="#B45309" />
+                    <rect x="18" y="7" width="3" height="5" fill="#B45309" />
+                  </g>
+                ) : (
+                  <g>
+                    <rect x="4" y="3" width="3" height="4" fill="#B45309" />
+                    <rect x="17" y="3" width="3" height="4" fill="#B45309" />
+                  </g>
+                )}
+
+                {/* Snout */}
+                <rect x="5" y="11" width="3" height="3" fill="#FEF3C7" />
+                <rect x="16" y="11" width="3" height="3" fill="#FEF3C7" />
+                <rect x="8" y="11" width="8" height="4" fill="#FEF3C7" />
+
+                {/* Eyes according to state */}
+                {effectiveAction === 'happy' ? (
+                  // Smiling Curved Eyes ^^
+                  <g>
+                    <rect x="7" y="8" width="3" height="1" fill="#1F2937" />
+                    <rect x="6" y="9" width="1" height="1" fill="#1F2937" />
+                    <rect x="14" y="8" width="3" height="1" fill="#1F2937" />
+                    <rect x="17" y="9" width="1" height="1" fill="#1F2937" />
+                    {/* Pink Rosy Cheeks */}
+                    <rect x="5" y="11" width="2" height="1" fill="#FDA4AF" />
+                    <rect x="17" y="11" width="2" height="1" fill="#FDA4AF" />
+                  </g>
+                ) : effectiveAction === 'sad' ? (
+                  // Tearful Sad Eyes
+                  <g>
+                    <rect x="7" y="8" width="2" height="2" fill="#1F2937" />
+                    <rect x="15" y="8" width="2" height="2" fill="#1F2937" />
+                    {/* Tears */}
+                    <g className="animate-pet-tear">
+                      <rect x="7" y="10" width="1" height="2" fill="#38BDF8" />
+                      <rect x="15" y="10" width="1" height="2" fill="#38BDF8" />
+                    </g>
+                  </g>
+                ) : (
+                  // Alert Cute Eyes with natural Blinking
+                  <g className="animate-pet-blink">
+                    <rect x="7" y="8" width="2" height="2" fill="#1F2937" />
+                    <rect x="7" y="8" width="1" height="1" fill="#FFFFFF" />
+                    <rect x="15" y="8" width="2" height="2" fill="#1F2937" />
+                    <rect x="15" y="8" width="1" height="1" fill="#FFFFFF" />
+                  </g>
+                )}
+
+                {/* Nose */}
+                <rect x="11" y="11" width="2" height="1" fill="#1F2937" />
+
+                {/* Mouth according to state */}
+                {effectiveAction === 'bark' ? (
+                  // Wide Barking Mouth
+                  <g>
+                    <rect x="10" y="12" width="4" height="3" fill="#991B1B" />
+                    <rect x="11" y="13" width="2" height="2" fill="#F43F5E" />
+                    {/* Bark wave marks */}
+                    <rect x="2" y="9" width="1" height="2" fill="#F59E0B" />
+                    <rect x="1" y="8" width="1" height="4" fill="#F59E0B" />
+                    <rect x="21" y="9" width="1" height="2" fill="#F59E0B" />
+                    <rect x="22" y="8" width="1" height="4" fill="#F59E0B" />
+                  </g>
+                ) : effectiveAction === 'eat' ? (
+                  // Munching Mouth with Crumb
+                  <g>
+                    <rect x="10" y="12" width="4" height="2" fill="#B91C1C" />
+                    <rect x="11" y="12" width="2" height="2" fill="#FDE047" />
+                    <rect x="6" y="13" width="1" height="1" fill="#D97706" />
+                    <rect x="17" y="14" width="1" height="1" fill="#D97706" />
+                  </g>
+                ) : effectiveAction === 'drink' ? (
+                  // Lapping Tongue
+                  <g>
+                    <rect x="11" y="12" width="2" height="3" fill="#F43F5E" />
+                  </g>
+                ) : effectiveAction === 'sad' ? (
+                  // Sad Frown
+                  <g>
+                    <rect x="10" y="13" width="4" height="1" fill="#92400E" />
+                    <rect x="10" y="14" width="1" height="1" fill="#92400E" />
+                    <rect x="13" y="14" width="1" height="1" fill="#92400E" />
+                  </g>
+                ) : effectiveAction === 'happy' ? (
+                  // Cheerful Smile with Tongue
+                  <g>
+                    <rect x="10" y="12" width="4" height="2" fill="#B91C1C" />
+                    <rect x="11" y="13" width="2" height="2" fill="#F43F5E" />
+                  </g>
+                ) : (
+                  // Calm Tongue Stick Out
+                  <rect x="11" y="12" width="2" height="2" fill="#F43F5E" />
+                )}
+              </g>
+            ) : (
+              // ==================== PIXEL CAT (LUNA) ====================
+              <g>
+                {/* Body & Belly */}
+                <rect x="7" y="14" width="10" height="7" fill="#64748B" />
+                <rect x="9" y="15" width="6" height="5" fill="#F1F5F9" />
+
+                {/* Paws */}
+                <rect x="7" y="20" width="2" height="3" fill="#475569" />
+                <rect x="15" y="20" width="2" height="3" fill="#475569" />
+
+                {/* Tail (Swishing or Low) */}
+                {effectiveAction === 'sad' ? (
+                  <g>
+                    <rect x="17" y="18" width="4" height="2" fill="#475569" />
+                    <rect x="20" y="17" width="2" height="2" fill="#475569" />
+                  </g>
+                ) : (
+                  <g className={effectiveAction === 'happy' ? 'animate-pet-tail' : 'animate-pet-tail-idle'}>
+                    <rect x="17" y="12" width="2" height="6" fill="#64748B" />
+                    <rect x="19" y="10" width="2" height="3" fill="#64748B" />
+                  </g>
+                )}
+
+                {/* Head */}
+                <rect x="5" y="7" width="14" height="8" fill="#64748B" />
+
+                {/* Pointy Cat Ears: Flattened/drooped when sad */}
+                {effectiveAction === 'sad' ? (
+                  <g>
+                    <rect x="4" y="6" width="3" height="3" fill="#475569" />
+                    <rect x="5" y="7" width="1" height="1" fill="#FDA4AF" />
+                    <rect x="17" y="6" width="3" height="3" fill="#475569" />
+                    <rect x="18" y="7" width="1" height="1" fill="#FDA4AF" />
+                  </g>
+                ) : (
+                  <g>
+                    <rect x="5" y="3" width="3" height="4" fill="#475569" />
+                    <rect x="6" y="4" width="1" height="2" fill="#FDA4AF" />
+                    <rect x="16" y="3" width="3" height="4" fill="#475569" />
+                    <rect x="17" y="4" width="1" height="2" fill="#FDA4AF" />
+                  </g>
+                )}
+
+                {/* Muzzle */}
+                <rect x="8" y="11" width="8" height="3" fill="#F1F5F9" />
+
+                {/* Whiskers with twitching animation */}
+                <g className={effectiveAction === 'meow' || effectiveAction === 'happy' ? 'animate-pet-whiskers' : ''}>
+                  <rect x="4" y="11" width="3" height="1" fill="#94A3B8" />
+                  <rect x="4" y="13" width="3" height="1" fill="#94A3B8" />
+                  <rect x="17" y="11" width="3" height="1" fill="#94A3B8" />
+                  <rect x="17" y="13" width="3" height="1" fill="#94A3B8" />
+                </g>
+
+                {/* Eyes according to state */}
+                {effectiveAction === 'happy' ? (
+                  // Smiling Curved Eyes ^^
+                  <g>
+                    <rect x="7" y="8" width="3" height="1" fill="#047857" />
+                    <rect x="6" y="9" width="1" height="1" fill="#047857" />
+                    <rect x="14" y="8" width="3" height="1" fill="#047857" />
+                    <rect x="17" y="9" width="1" height="1" fill="#047857" />
+                    {/* Pink Blush */}
+                    <rect x="5" y="10" width="2" height="1" fill="#FDA4AF" />
+                    <rect x="17" y="10" width="2" height="1" fill="#FDA4AF" />
+                  </g>
+                ) : effectiveAction === 'sad' ? (
+                  // Sad Cat Eyes with Tear
+                  <g>
+                    <rect x="7" y="8" width="2" height="3" fill="#10B981" />
+                    <rect x="15" y="8" width="2" height="3" fill="#10B981" />
+                    <g className="animate-pet-tear">
+                      <rect x="7" y="11" width="1" height="2" fill="#38BDF8" />
+                      <rect x="15" y="11" width="1" height="2" fill="#38BDF8" />
+                    </g>
+                  </g>
+                ) : (
+                  // Classic Emerald Eyes with Pupils & natural blink
+                  <g className="animate-pet-blink">
+                    <rect x="7" y="8" width="2" height="3" fill="#10B981" />
+                    <rect x="7" y="8" width="1" height="1" fill="#FFFFFF" />
+                    <rect x="15" y="8" width="2" height="3" fill="#10B981" />
+                    <rect x="15" y="8" width="1" height="1" fill="#FFFFFF" />
+                  </g>
+                )}
+
+                {/* Pink Nose */}
+                <rect x="11" y="11" width="2" height="1" fill="#FB7185" />
+
+                {/* Mouth according to state */}
+                {effectiveAction === 'meow' ? (
+                  // Wide Open Meow Mouth
+                  <g>
+                    <rect x="10" y="12" width="4" height="2" fill="#E11D48" />
+                    <rect x="11" y="13" width="2" height="1" fill="#FDA4AF" />
+                  </g>
+                ) : effectiveAction === 'eat' ? (
+                  // Eating Fish Nibble
+                  <g>
+                    <rect x="10" y="12" width="4" height="2" fill="#BE123C" />
+                    <rect x="11" y="12" width="2" height="1" fill="#38BDF8" />
+                  </g>
+                ) : effectiveAction === 'drink' ? (
+                  // Lapping Tongue
+                  <g>
+                    <rect x="11" y="12" width="2" height="2" fill="#FB7185" />
+                  </g>
+                ) : effectiveAction === 'sad' ? (
+                  // Downward Pout
+                  <rect x="10" y="13" width="4" height="1" fill="#475569" />
+                ) : effectiveAction === 'happy' ? (
+                  // Sweet Smile
+                  <g>
+                    <rect x="10" y="12" width="4" height="1" fill="#E11D48" />
+                    <rect x="11" y="13" width="2" height="1" fill="#FB7185" />
+                  </g>
+                ) : null}
+              </g>
+            )}
+
+            {/* Food Bowl overlay during 'eat' */}
+            {effectiveAction === 'eat' && (
+              <g>
+                {/* Bowl */}
+                <rect x="8" y="21" width="8" height="2" fill={isDog ? '#EF4444' : '#F59E0B'} />
+                <rect x="7" y="22" width="10" height="2" fill={isDog ? '#DC2626' : '#D97706'} />
+                {/* Treat in bowl */}
+                {isDog ? (
+                  <rect x="10" y="20" width="4" height="1" fill="#FEF3C7" />
+                ) : (
+                  <rect x="10" y="20" width="4" height="1" fill="#38BDF8" />
+                )}
+                {/* Flying crumbs */}
+                <g className="animate-pet-splash">
+                  <rect x="6" y="18" width="1" height="1" fill={isDog ? '#F59E0B' : '#38BDF8'} />
+                  <rect x="17" y="18" width="1" height="1" fill={isDog ? '#D97706' : '#0284C7'} />
+                </g>
+              </g>
+            )}
+
+            {/* Water Bowl overlay during 'drink' */}
+            {effectiveAction === 'drink' && (
+              <g>
+                {/* Bowl */}
+                <rect x="8" y="21" width="8" height="2" fill="#0284C7" />
+                <rect x="7" y="22" width="10" height="2" fill="#0369A1" />
+                {/* Water surface & droplets */}
+                <rect x="9" y="21" width="6" height="1" fill="#BAE6FD" />
+                <g className="animate-pet-splash">
+                  <rect x="6" y="19" width="1" height="1" fill="#38BDF8" />
+                  <rect x="17" y="19" width="1" height="1" fill="#38BDF8" />
+                  <rect x="12" y="18" width="1" height="1" fill="#BAE6FD" />
+                </g>
+              </g>
+            )}
+
+            {/* OUTFITS */}
+            {outfit === 'CROWN' && (
+              <g>
+                <rect x="7" y="1" width="10" height="4" fill="#F59E0B" />
+                <rect x="7" y="0" width="2" height="2" fill="#FBBF24" />
+                <rect x="11" y="0" width="2" height="2" fill="#FBBF24" />
+                <rect x="15" y="0" width="2" height="2" fill="#FBBF24" />
+                <rect x="9" y="2" width="2" height="2" fill="#EF4444" />
+                <rect x="13" y="2" width="2" height="2" fill="#3B82F6" />
+              </g>
+            )}
+            {outfit === 'HAT' && (
+              <g>
+                <rect x="8" y="0" width="8" height="5" fill="#1E1B4B" />
+                <rect x="8" y="4" width="8" height="1" fill="#DC2626" />
+                <rect x="6" y="5" width="12" height="1" fill="#1E1B4B" />
+              </g>
+            )}
+            {outfit === 'GLASSES' && (
+              <g>
+                <rect x="6" y="8" width="4" height="3" fill="#1E293B" />
+                <rect x="14" y="8" width="4" height="3" fill="#1E293B" />
+                <rect x="10" y="8" width="4" height="1" fill="#1E293B" />
+                <rect x="7" y="9" width="1" height="1" fill="#38BDF8" />
+                <rect x="15" y="9" width="1" height="1" fill="#38BDF8" />
+              </g>
+            )}
+            {outfit === 'BOWTIE' && (
+              <g>
+                <rect x="10" y="14" width="4" height="2" fill="#EF4444" />
+                <rect x="9" y="13" width="2" height="4" fill="#DC2626" />
+                <rect x="13" y="13" width="2" height="4" fill="#DC2626" />
+                <rect x="11" y="14" width="2" height="2" fill="#FEF08A" />
+              </g>
+            )}
+            {outfit === 'SCARF' && (
+              <g>
+                <rect x="7" y="13" width="10" height="2" fill="#0284C7" />
+                <rect x="13" y="15" width="3" height="4" fill="#0284C7" />
+                <rect x="8" y="13" width="2" height="2" fill="#F8FAFC" />
+                <rect x="12" y="13" width="2" height="2" fill="#F8FAFC" />
+              </g>
+            )}
+            {outfit === 'CAP' && (
+              <g>
+                <rect x="6" y="3" width="12" height="4" fill="#DC2626" />
+                <rect x="14" y="5" width="6" height="2" fill="#B91C1C" />
+                <rect x="10" y="3" width="4" height="2" fill="#FFFFFF" />
+              </g>
+            )}
+          </svg>
+        </div>
+      );
+    };
     const SplashScreen = ({ onFinish }) => {
       const [isFadingOut, setIsFadingOut] = useState(false);
 
@@ -388,6 +816,12 @@ PART4_AUTH_PIN = """
       const [avatar, setAvatar] = useState('');
       const [identityError, setIdentityError] = useState('');
 
+      // STEP 3: PET SELECTION & NAMING
+      const [petType, setPetType] = useState('DOG'); // 'DOG' | 'CAT'
+      const [petName, setPetName] = useState('Milo');
+      const [petPreviewAction, setPetPreviewAction] = useState('idle');
+
+      // STEP 4: WALLET CREATION
       const [walletName, setWalletName] = useState('BCA Utama');
       const [walletType, setWalletType] = useState('Bank'); // Tunai | Bank | E-Wallet
       const [initialBalance, setInitialBalance] = useState('');
@@ -432,13 +866,22 @@ PART4_AUTH_PIN = """
         setOnboardingStep(3);
       };
 
-      // STEP 3 FINISH ONBOARDING
+      // STEP 3 PET SELECTION HANDLER
+      const handleStep3Next = (e) => {
+        e?.preventDefault();
+        const trimmedPetName = petName.trim() || (petType === 'CAT' ? 'Luna' : 'Milo');
+        setPetName(trimmedPetName);
+        setOnboardingStep(4);
+      };
+
+      // STEP 4 FINISH ONBOARDING
       const handleFinishOnboarding = (e) => {
         e?.preventDefault();
         const trimmedName = name.trim() || 'Sahabat Voralet';
         const cleanUsername = (username.trim().toLowerCase().replace(/^@/, '').replace(/[^a-z0-9_]/g, '') || trimmedName.toLowerCase().replace(/[^a-z0-9_]/g, '') || 'voralet_user');
         const rawBalance = parseRawNumber(initialBalance);
         const trimmedWallet = walletName.trim() || 'BCA Utama';
+        const finalPetName = petName.trim() || (petType === 'CAT' ? 'Luna' : 'Milo');
 
         const firstAccount = {
           id: 'acc_' + Date.now(),
@@ -446,6 +889,28 @@ PART4_AUTH_PIN = """
           type: walletType,
           initialBalance: rawBalance,
           createdAt: new Date().toISOString()
+        };
+
+        const initialPet = {
+          type: petType,
+          name: finalPetName,
+          fullness: 80,
+          happiness: 85,
+          outfit: 'NONE',
+          unlockedOutfits: ['NONE'],
+          foodCount: 5,
+          drinkCount: 5,
+          coins: 50,
+          lastFedDate: new Date().toISOString().split('T')[0]
+        };
+
+        const initialStreak = {
+          currentStreak: 1,
+          lastActivityTimestamp: Date.now(),
+          maxStreak: 1,
+          level: 1,
+          lastRecordedDate: new Date().toISOString().split('T')[0],
+          isExpired: false
         };
 
         CryptoService.hashPin(newPin).then(hashedPin => {
@@ -457,6 +922,8 @@ PART4_AUTH_PIN = """
           StorageService.setTransactions([]);
           StorageService.setSavingsGoals([]);
           StorageService.setDebts([]);
+          StorageService.setPetData(initialPet);
+          StorageService.setStreakData(initialStreak);
 
           onComplete({
             pin: hashedPin,
@@ -466,7 +933,9 @@ PART4_AUTH_PIN = """
             accounts: [firstAccount],
             transactions: [],
             savingsGoals: [],
-            debts: []
+            debts: [],
+            pet: initialPet,
+            streak: initialStreak
           });
         });
       };
@@ -478,7 +947,7 @@ PART4_AUTH_PIN = """
             <div className="pin-keypad-screen flex flex-col justify-between w-full">
               <div className="pt-6 text-center">
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E0F2FE] dark:bg-[#1E293B] border border-[#BAE6FD] dark:border-[#334155] text-[#0284C7] dark:text-[#38BDF8] text-xs font-bold mb-4">
-                  <span>Langkah 1 dari 3</span>
+                  <span>Langkah 1 dari 4</span>
                 </div>
                 <div className="w-16 h-16 rounded-[22px] bg-[#F0F9FF] dark:bg-[#1E293B] border border-[#E0F2FE] dark:border-[#334155] flex items-center justify-center mx-auto mb-3 text-[#0284C7] dark:text-[#38BDF8]">
                   <Icon name="lock" className="w-7 h-7" strokeWidth={1.8} />
@@ -501,7 +970,7 @@ PART4_AUTH_PIN = """
                 )}
               </div>
 
-              {/* Elevated Button Container with generous bottom safe-area padding */}
+              {/* Elevated Button Container */}
               <div className="pb-10 mb-8 pt-2 space-y-4">
                 <Keypad
                   onKeyPress={handleDigitPress}
@@ -529,7 +998,7 @@ PART4_AUTH_PIN = """
               <div className="pt-4">
                 <div className="text-center mb-6">
                   <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E0F2FE] dark:bg-[#1E293B] border border-[#BAE6FD] dark:border-[#334155] text-[#0284C7] dark:text-[#38BDF8] text-xs font-bold mb-3">
-                    <span>Langkah 2 dari 3</span>
+                    <span>Langkah 2 dari 4</span>
                   </div>
                   <h1 className="text-xl font-bold text-[#0F172A] dark:text-[#F8FAFC]">Atur Profil Kamu</h1>
                   <p className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-1">
@@ -638,13 +1107,145 @@ PART4_AUTH_PIN = """
             </div>
           )}
 
-          {/* STEP 3: Setup Dompet Pertama */}
+          {/* STEP 3: Pilih Hewan Teman Keuangan (Dog vs Cat) */}
           {onboardingStep === 3 && (
+            <div className="flex-1 flex flex-col justify-between w-full py-4 overflow-y-auto no-scrollbar">
+              <div className="pt-2">
+                <div className="text-center mb-4">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E0F2FE] dark:bg-[#1E293B] border border-[#BAE6FD] dark:border-[#334155] text-[#0284C7] dark:text-[#38BDF8] text-xs font-bold mb-2">
+                    <span>Langkah 3 dari 4</span>
+                  </div>
+                  <h1 className="text-xl font-bold text-[#0F172A] dark:text-[#F8FAFC]">Pilih Teman Keuanganmu</h1>
+                  <p className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-0.5">
+                    Peliharaan yang akan menemanimu disiplin menabung & mencatat keuangan
+                  </p>
+                </div>
+
+                {/* Live Pet Animated Preview Card */}
+                <div className="bg-gradient-to-b from-amber-50/80 via-sky-50/50 to-indigo-50/60 dark:from-slate-800 dark:via-slate-800 dark:to-slate-800 border border-amber-200/60 dark:border-slate-700 rounded-2xl p-4 flex flex-col items-center justify-center text-center shadow-xs mb-4">
+                  <div className="py-2 cursor-pointer hover:scale-105 active:scale-95 transition-transform" onClick={() => {
+                    setPetPreviewAction('happy');
+                    setTimeout(() => setPetPreviewAction('idle'), 2500);
+                  }}>
+                    <PixelPetSprite
+                      type={petType}
+                      outfit="NONE"
+                      action={petPreviewAction}
+                      size={108}
+                    />
+                  </div>
+                  <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-1">
+                    Tampilan interaktif {petType === 'DOG' ? 'Dog (Anjing)' : 'Cat (Kucing)'} kamu
+                  </p>
+                </div>
+
+                {/* Pet Selection (Buttons labeled strictly "Dog" and "Cat") */}
+                <div className="space-y-3.5 ios-inset-group bg-[#F0F9FF] dark:bg-[#1E293B] border border-[#E0F2FE] dark:border-[#334155] rounded-[22px] p-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-[#0F172A] dark:text-[#F8FAFC] mb-2">
+                      Pilih Jenis Hewan Peliharaan <span className="text-rose-500">*</span>
+                    </label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPetType('DOG');
+                          if (petName === 'Luna') setPetName('Milo');
+                          setPetPreviewAction('bark');
+                          setTimeout(() => setPetPreviewAction('idle'), 2000);
+                        }}
+                        className={`py-3 px-3 rounded-2xl border text-center flex flex-col items-center justify-center gap-1.5 transition-all ios-btn-tap ${
+                          petType === 'DOG'
+                            ? 'bg-[#E0F2FE] dark:bg-slate-700/80 border-[#0284C7] dark:border-[#38BDF8] text-[#0284C7] dark:text-[#38BDF8] font-bold shadow-sm'
+                            : 'bg-white dark:bg-[#0F172A] border-slate-200 dark:border-[#334155] text-slate-600 dark:text-[#94A3B8] hover:bg-slate-50'
+                        }`}
+                      >
+                        <span className="text-2xl">🐶</span>
+                        <span className="text-xs font-bold">Dog</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPetType('CAT');
+                          if (petName === 'Milo') setPetName('Luna');
+                          setPetPreviewAction('meow');
+                          setTimeout(() => setPetPreviewAction('idle'), 2000);
+                        }}
+                        className={`py-3 px-3 rounded-2xl border text-center flex flex-col items-center justify-center gap-1.5 transition-all ios-btn-tap ${
+                          petType === 'CAT'
+                            ? 'bg-[#E0F2FE] dark:bg-slate-700/80 border-[#0284C7] dark:border-[#38BDF8] text-[#0284C7] dark:text-[#38BDF8] font-bold shadow-sm'
+                            : 'bg-white dark:bg-[#0F172A] border-slate-200 dark:border-[#334155] text-slate-600 dark:text-[#94A3B8] hover:bg-slate-50'
+                        }`}
+                      >
+                        <span className="text-2xl">🐱</span>
+                        <span className="text-xs font-bold">Cat</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-[#0F172A] dark:text-[#F8FAFC] mb-1.5">
+                      Nama Peliharaan <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      maxLength={20}
+                      value={petName}
+                      onFocus={handleGlobalInputFocus}
+                      onBlur={handleGlobalInputBlur}
+                      onChange={(e) => setPetName(e.target.value)}
+                      placeholder={petType === 'DOG' ? 'Milo' : 'Luna'}
+                      className="w-full px-3.5 py-3 bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-xl text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC] focus:outline-none focus:border-[#0284C7] dark:focus:border-[#38BDF8] transition-colors"
+                    />
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">
+                      Nama peliharaan akan disimpan permanen untuk pet ini
+                    </span>
+                  </div>
+
+                  {/* Starter Pack Badge */}
+                  <div className="p-3 bg-amber-50/90 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-700/60 rounded-xl text-left">
+                    <span className="text-[11px] font-black uppercase text-amber-700 dark:text-amber-300 block mb-1">
+                      🎁 Starter Pack Peliharaan Baru:
+                    </span>
+                    <div className="flex items-center gap-3 text-xs font-bold text-slate-800 dark:text-slate-200">
+                      <span>{petType === 'CAT' ? '🐟' : '🍖'} 5 Makanan</span>
+                      <span>•</span>
+                      <span>💧 5 Minuman Segar</span>
+                      <span>•</span>
+                      <span>🪙 50 Koin</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-6 pb-2">
+                <button
+                  type="button"
+                  onClick={() => setOnboardingStep(2)}
+                  className="py-3 px-4 bg-[#F0F9FF] dark:bg-[#1E293B] border border-[#E0F2FE] dark:border-[#334155] text-[#0F172A] dark:text-[#F8FAFC] text-sm font-semibold rounded-xl hover:bg-sky-50 dark:hover:bg-[#273549] transition-colors ios-btn-tap shrink-0"
+                >
+                  Kembali
+                </button>
+                <button
+                  type="button"
+                  onClick={handleStep3Next}
+                  className="flex-1 py-3 bg-[#0284C7] hover:bg-[#0369A1] text-white text-sm font-bold rounded-xl shadow-sm transition-colors ios-btn-tap"
+                >
+                  Lanjut ke Dompet
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 4: Setup Dompet Pertama */}
+          {onboardingStep === 4 && (
             <div className="flex-1 flex flex-col justify-between w-full py-4 overflow-y-auto no-scrollbar">
               <div className="pt-4">
                 <div className="text-center mb-6">
                   <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E0F2FE] dark:bg-[#1E293B] border border-[#BAE6FD] dark:border-[#334155] text-[#0284C7] dark:text-[#38BDF8] text-xs font-bold mb-3">
-                    <span>Langkah 3 dari 3</span>
+                    <span>Langkah 4 dari 4</span>
                   </div>
                   <h1 className="text-xl font-bold text-[#0F172A] dark:text-[#F8FAFC]">Buat Dompet Pertama</h1>
                   <p className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-1">
@@ -652,7 +1253,7 @@ PART4_AUTH_PIN = """
                   </p>
                 </div>
 
-                <form id="step3-form" onSubmit={handleFinishOnboarding} className="space-y-4 ios-inset-group bg-[#F0F9FF] dark:bg-[#1E293B] border border-[#E0F2FE] dark:border-[#334155] rounded-[22px] p-4">
+                <form id="step4-form" onSubmit={handleFinishOnboarding} className="space-y-4 ios-inset-group bg-[#F0F9FF] dark:bg-[#1E293B] border border-[#E0F2FE] dark:border-[#334155] rounded-[22px] p-4">
                   {/* Field 1: Nama Dompet */}
                   <div>
                     <label className="block text-xs font-semibold text-[#0F172A] dark:text-[#F8FAFC] mb-1.5">
@@ -671,7 +1272,7 @@ PART4_AUTH_PIN = """
                     />
                   </div>
 
-                  {/* Field 2: Kategori (3 Segmented Buttons: [Tunai] [Bank] [E-Wallet]) */}
+                  {/* Field 2: Kategori */}
                   <div>
                     <label className="block text-xs font-semibold text-[#0F172A] dark:text-[#F8FAFC] mb-1.5">
                       Kategori
@@ -729,11 +1330,11 @@ PART4_AUTH_PIN = """
                 </form>
               </div>
 
-              {/* CTA Button: Mulai Gunakan Voralet -> Saves to LocalStorage and enters Dashboard */}
+              {/* CTA Button: Mulai Gunakan Voralet */}
               <div className="flex gap-3 pt-6 pb-2">
                 <button
                   type="button"
-                  onClick={() => setOnboardingStep(2)}
+                  onClick={() => setOnboardingStep(3)}
                   className="py-3 px-4 bg-[#F0F9FF] dark:bg-[#1E293B] border border-[#E0F2FE] dark:border-[#334155] text-[#0F172A] dark:text-[#F8FAFC] text-sm font-semibold rounded-xl hover:bg-sky-50 dark:hover:bg-[#273549] transition-colors ios-btn-tap shrink-0"
                 >
                   Kembali

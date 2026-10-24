@@ -2,107 +2,237 @@ PART5_DEBTS_MILESTONES = """
     // =========================================================================
     // 4. SAFE-TO-SPEND, QUICK SHORTCUTS & FINANCIAL MILESTONES
     // =========================================================================
-    const SafeToSpendCard = ({ accounts, transactions, hideBalance, onSetBudget, safeBudget }) => {
-      const [isEditingBudget, setIsEditingBudget] = useState(false);
-      const [budgetInput, setBudgetInput] = useState('');
+    // =========================================================================
+    // TIKTOK-STYLE STREAK FLAME CARD (Api Streak 24 Jam dengan Timer Mundur)
+    // =========================================================================
+    const TikTokStreakFlameCard = ({ streakData = {}, onOpenStreakModal, onTriggerAction }) => {
+      const [remainingMs, setRemainingMs] = useState(0);
 
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = now.getMonth();
-      const totalDays = new Date(year, month + 1, 0).getDate();
-      const currentDay = now.getDate();
-      const daysRemaining = Math.max(1, totalDays - currentDay + 1);
+      const currentStreak = Number(streakData?.currentStreak) || 0;
+      const level = Number(streakData?.level) || 0;
+      const lastActivityTs = Number(streakData?.lastActivityTimestamp) || 0;
+      const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
 
-      const totalLiquid = Ledger.getTotalBalance(accounts, transactions);
-      const currentMonthTotals = useMemo(() => {
-        const monthPrefix = `${year}-${String(month + 1).padStart(2, '0')}`;
-        const thisMonthTx = (transactions || []).filter(t => t && t.date && t.date.startsWith(monthPrefix));
-        return Ledger.getSummaryTotals(thisMonthTx);
-      }, [transactions, year, month]);
+      useEffect(() => {
+        let interval = null;
+        const updateRemaining = () => {
+          if (!lastActivityTs) {
+            setRemainingMs(0);
+            return;
+          }
+          const expireTime = lastActivityTs + TWENTY_FOUR_HOURS;
+          const left = Math.max(0, expireTime - Date.now());
+          setRemainingMs(left);
+        };
 
-      const spentThisMonth = currentMonthTotals.expense;
-      const remainingMonthBudget = Math.max(0, safeBudget > 0 ? (safeBudget - spentThisMonth) : totalLiquid);
-      const dailyAllowance = Math.floor(remainingMonthBudget / daysRemaining);
+        const startTimer = () => {
+          updateRemaining();
+          if (!interval) {
+            interval = setInterval(updateRemaining, 1000);
+          }
+        };
 
-      const handleSaveBudget = (e) => {
-        e.preventDefault();
-        const num = parseRawNumber(budgetInput);
-        onSetBudget(num);
-        setIsEditingBudget(false);
+        const stopTimer = () => {
+          if (interval) {
+            clearInterval(interval);
+            interval = null;
+          }
+        };
+
+        startTimer();
+
+        const handleVisibility = () => {
+          if (document.hidden) {
+            stopTimer();
+          } else {
+            startTimer();
+          }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibility);
+        return () => {
+          stopTimer();
+          document.removeEventListener('visibilitychange', handleVisibility);
+        };
+      }, [lastActivityTs]);
+
+      const isPadam = currentStreak === 0 || remainingMs <= 0 || Boolean(streakData?.isExpired);
+
+      // Format remaining time into HH:MM:SS
+      const formatCountdown = (ms) => {
+        if (ms <= 0) return '00:00:00';
+        const totalSeconds = Math.floor(ms / 1000);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
       };
 
+      const percentLeft = Math.min(100, Math.max(0, (remainingMs / TWENTY_FOUR_HOURS) * 100));
+
+      // Dynamic Flame Level Configuration
+      const getFlameConfig = () => {
+        if (isPadam) {
+          return {
+            badge: '⚪',
+            name: 'Api Padam (Butuh Catatan)',
+            badgeText: 'Padam / Mati',
+            bg: 'bg-gradient-to-r from-slate-100 via-slate-50 to-slate-100 dark:from-slate-800/80 dark:via-slate-800 dark:to-slate-800',
+            border: 'border-slate-300 dark:border-slate-700',
+            textColor: 'text-slate-500 dark:text-slate-400',
+            barColor: 'bg-slate-400',
+            flameAnim: '',
+            subtext: 'Catat transaksi, tabungan, atau bayar hutang untuk menyalakan api streak 24 jam!'
+          };
+        }
+        if (level === 1) {
+          return {
+            badge: '🔥',
+            name: 'Api Oranye Menyala',
+            badgeText: 'Aktif 🔥',
+            bg: 'bg-gradient-to-r from-amber-50 via-orange-50 to-amber-100/70 dark:from-amber-950/40 dark:via-orange-950/30 dark:to-slate-800',
+            border: 'border-amber-300 dark:border-amber-700/70',
+            textColor: 'text-amber-600 dark:text-amber-400',
+            barColor: 'bg-gradient-to-r from-amber-500 to-orange-500',
+            flameAnim: 'animate-flame',
+            subtext: 'Pertahankan api selama 24 jam dengan rutin mencatat keuangan!'
+          };
+        }
+        if (level === 2) {
+          return {
+            badge: '🔴🔥',
+            name: 'Api Merah Membara',
+            badgeText: 'Membara 🔴',
+            bg: 'bg-gradient-to-r from-orange-50 via-rose-50 to-red-100/70 dark:from-orange-950/40 dark:via-rose-950/30 dark:to-slate-800',
+            border: 'border-rose-300 dark:border-rose-700/70',
+            textColor: 'text-rose-600 dark:text-rose-400',
+            barColor: 'bg-gradient-to-r from-orange-500 to-rose-600',
+            flameAnim: 'animate-flame',
+            subtext: 'Keren! 4-7 hari beruntun. Disiplin finansialmu mulai membara!'
+          };
+        }
+        if (level === 3) {
+          return {
+            badge: '💜🔥',
+            name: 'Api Ungu Magis',
+            badgeText: 'Magis 💜',
+            bg: 'bg-gradient-to-r from-purple-50 via-pink-50 to-indigo-100/70 dark:from-purple-950/40 dark:via-pink-950/30 dark:to-slate-800',
+            border: 'border-purple-300 dark:border-purple-700/70',
+            textColor: 'text-purple-600 dark:text-purple-400',
+            barColor: 'bg-gradient-to-r from-purple-500 to-pink-500',
+            flameAnim: 'animate-flame',
+            subtext: 'Konsistensi luar biasa! Keuanganmu terlindungi api magis!'
+          };
+        }
+        if (level === 4) {
+          return {
+            badge: '💎🔥',
+            name: 'Api Biru Neon',
+            badgeText: 'Neon 💎',
+            bg: 'bg-gradient-to-r from-cyan-50 via-sky-50 to-blue-100/70 dark:from-cyan-950/40 dark:via-sky-950/30 dark:to-slate-800',
+            border: 'border-cyan-300 dark:border-cyan-700/70',
+            textColor: 'text-cyan-600 dark:text-cyan-400',
+            barColor: 'bg-gradient-to-r from-cyan-400 to-blue-600',
+            flameAnim: 'animate-flame',
+            subtext: 'Separuh bulan tanpa putus! Kamu pengelola keuangan sejati!'
+          };
+        }
+        return {
+          badge: '👑🔥',
+          name: 'Api Dewa Emas',
+          badgeText: 'Dewa Api 👑',
+          bg: 'bg-gradient-to-r from-amber-100 via-yellow-50 to-amber-200/80 dark:from-amber-950/50 dark:via-yellow-950/40 dark:to-slate-800',
+          border: 'border-amber-400 dark:border-amber-600',
+          textColor: 'text-amber-500 dark:text-amber-300',
+          barColor: 'bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-600',
+          flameAnim: 'animate-flame',
+          subtext: 'Level tertinggi tercapai! Disiplin 30+ hari tanpa pernah padam!'
+        };
+      };
+
+      const flameCfg = getFlameConfig();
+
       return (
-        <div className="ios-inset-group mb-4 animate-dashboard-card" style={{ animationDelay: '120ms' }}>
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <IconBadge icon="shield-check" className="p-1.5 rounded-xl bg-sky-100 dark:bg-slate-700 text-brand dark:text-sky-400" iconClass="w-4 h-4" />
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                Safe-to-Spend Harian
+        <div
+          onClick={onOpenStreakModal}
+          className={`ios-inset-group mb-4 animate-dashboard-card rounded-2xl p-4 border transition-all cursor-pointer shadow-xs hover:shadow-md ${flameCfg.bg} ${flameCfg.border}`}
+          style={{ animationDelay: '120ms' }}
+        >
+          {/* Top Row: Flame Icon + Streak Count + Timer */}
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className={`text-3xl sm:text-4xl select-none shrink-0 ${flameCfg.flameAnim}`}>
+                {flameCfg.badge}
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base font-black text-slate-900 dark:text-white tracking-tight">
+                    {isPadam ? '0 Hari' : `${currentStreak} Hari`}
+                  </h3>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shadow-2xs ${
+                    isPadam
+                      ? 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-600'
+                      : 'bg-white/80 dark:bg-slate-900/80 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800'
+                  }`}>
+                    {flameCfg.badgeText}
+                  </span>
+                </div>
+                <p className={`text-xs font-bold ${flameCfg.textColor}`}>
+                  {flameCfg.name}
+                </p>
+              </div>
+            </div>
+
+            {/* Countdown Display Pill */}
+            <div className="text-right shrink-0">
+              <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block">
+                {isPadam ? 'Status Api' : 'Sisa Waktu Nyala'}
               </span>
+              <div className={`text-xs font-mono font-black ${
+                isPadam
+                  ? 'text-slate-500'
+                  : remainingMs < 4 * 3600 * 1000
+                  ? 'text-rose-600 dark:text-rose-400 animate-pulse'
+                  : 'text-slate-900 dark:text-white'
+              }`}>
+                {isPadam ? 'Padam 💤' : formatCountdown(remainingMs)}
+              </div>
+            </div>
+          </div>
+
+          {/* 24-Hour Countdown Progress Bar */}
+          <div className="mt-3">
+            <div className="w-full bg-slate-200/80 dark:bg-slate-700/80 h-2 rounded-full overflow-hidden shadow-inner">
+              <div
+                className={`h-full transition-all duration-1000 rounded-full ${flameCfg.barColor}`}
+                style={{ width: isPadam ? '0%' : `${percentLeft}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Bottom Perks & Explainer */}
+          <div className="mt-2.5 flex items-center justify-between text-[11px] text-slate-600 dark:text-slate-300 pt-1 border-t border-slate-200/60 dark:border-slate-700/60">
+            <div className="flex items-center gap-2 truncate">
+              <span className="font-semibold text-slate-700 dark:text-slate-200">🎁 Hadiah:</span>
+              <span className="truncate">+1 Makanan 🍖 • +1 Minuman 💧 • +10 Koin 🪙</span>
             </div>
             <button
               type="button"
-              onClick={() => {
-                setBudgetInput(safeBudget ? String(safeBudget) : '');
-                setIsEditingBudget(true);
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onOpenStreakModal) onOpenStreakModal();
               }}
-              className="text-[11px] font-semibold text-brand dark:text-sky-400 hover:underline flex items-center gap-1 ios-btn-tap"
+              className="text-[11px] font-bold text-brand dark:text-sky-400 hover:underline shrink-0 ml-2"
             >
-              <Icon name="edit" className="w-3 h-3" />
-              <span>{safeBudget > 0 ? 'Atur Limit' : 'Pasang Limit'}</span>
+              Info Streak →
             </button>
           </div>
-
-          <div className="flex items-baseline justify-between mt-1">
-            <div>
-              <div className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-                <span key={hideBalance ? 'hidden-allow' : `allow-${dailyAllowance}`} className="animate-value-pulse">
-                  {hideBalance ? 'Rp ••••••' : formatIDR(dailyAllowance)}
-                </span>
-                <span className="text-xs font-normal text-slate-400 dark:text-slate-500 ml-1">/ hari</span>
-              </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                Sisa {daysRemaining} hari di bulan ini • Sisa dana {hideBalance ? 'Rp ••••••' : formatIDR(remainingMonthBudget)}
-              </p>
-            </div>
-            <div className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
-              dailyAllowance > 50000 ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50' : 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200/50'
-            }`}>
-              {dailyAllowance > 50000 ? 'Aman' : 'Hemat'}
-            </div>
-          </div>
-
-          {isEditingBudget && (
-            <form onSubmit={handleSaveBudget} className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700 flex gap-2">
-              <input
-                type="text"
-                inputMode="numeric"
-                value={budgetInput ? formatIDR(parseRawNumber(budgetInput)) : ''}
-                onFocus={handleGlobalInputFocus}
-                onBlur={handleGlobalInputBlur}
-                onChange={(e) => setBudgetInput(parseRawNumber(e.target.value).toString())}
-                placeholder="Limit belanja bulanan (Rp)"
-                className="flex-1 px-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-900 dark:text-white focus:outline-none focus:border-brand"
-                autoFocus
-              />
-              <button
-                type="submit"
-                className="px-3 py-1.5 bg-brand text-white text-xs font-semibold rounded-xl hover:bg-brand-hover ios-btn-tap"
-              >
-                Simpan
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsEditingBudget(false)}
-                className="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-medium rounded-xl ios-btn-tap"
-              >
-                Batal
-              </button>
-            </form>
-          )}
         </div>
       );
     };
+
+    // Backward-compatibility alias so existing imports or references don't break
+    const SafeToSpendCard = TikTokStreakFlameCard;
 
     // Quick Expense Presets
     const QuickExpenseBar = ({ onSelectQuickExpense }) => {

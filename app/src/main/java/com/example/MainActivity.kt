@@ -196,11 +196,24 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         currentWebView?.onResume()
+        currentWebView?.resumeTimers()
+        try {
+            com.example.widget.StreakWidgetProvider.updateAllWidgets(this)
+            com.example.widget.PetWidgetProvider.updateAllWidgets(this)
+        } catch (_: Throwable) {}
     }
 
     override fun onPause() {
         super.onPause()
         currentWebView?.onPause()
+        currentWebView?.pauseTimers()
+    }
+
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        if (level >= TRIM_MEMORY_RUNNING_LOW) {
+            currentWebView?.clearCache(false)
+        }
     }
 
     override fun onDestroy() {

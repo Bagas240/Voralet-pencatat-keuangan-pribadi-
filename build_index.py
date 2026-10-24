@@ -27,7 +27,7 @@ def resolve_version():
     except (OSError, subprocess.CalledProcessError):
         pass
 
-    return '3.0.1'
+    return '3.3.0'
 
 
 from parts.part1_head import HTML_HEAD
@@ -69,7 +69,7 @@ process.stdin.setEncoding('utf8');
 process.stdin.on('data', chunk => input += chunk);
 process.stdin.on('end', () => {
     try {
-        const res = Babel.transform(input, { presets: ['react'], compact: false });
+        const res = Babel.transform(input, { presets: ['react'], compact: true, comments: false });
         process.stdout.write(res.code);
     } catch (err) {
         process.stderr.write('Transpile error: ' + err.message);
