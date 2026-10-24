@@ -805,14 +805,74 @@
     /* Pixel Pet & Streak Flame Keyframes */
     @keyframes petIdleBounce {
       0%, 100% { transform: translateY(0) scale(1); }
-      50% { transform: translateY(-4px) scale(1.03, 0.97); }
+      50% { transform: translateY(-4px) scale(1.02, 0.98); }
     }
-    @keyframes petEatHappy {
-      0% { transform: scale(1) translateY(0); }
-      25% { transform: scale(1.2, 0.85) translateY(-8px) rotate(-4deg); }
-      50% { transform: scale(0.92, 1.15) translateY(2px) rotate(4deg); }
-      75% { transform: scale(1.1, 0.95) translateY(-4px) rotate(-2deg); }
-      100% { transform: scale(1) translateY(0); }
+    @keyframes petEatChew {
+      0%, 100% { transform: translateY(0) scale(1); }
+      25% { transform: translateY(3px) scale(1.08, 0.92) rotate(-3deg); }
+      50% { transform: translateY(-2px) scale(0.95, 1.05) rotate(2deg); }
+      75% { transform: translateY(1px) scale(1.04, 0.96) rotate(-1deg); }
+    }
+    @keyframes petDrinkLap {
+      0%, 100% { transform: translateY(0) scale(1); }
+      30% { transform: translateY(3px) scale(1.05, 0.95) rotate(1deg); }
+      60% { transform: translateY(-1px) scale(0.97, 1.03); }
+    }
+    @keyframes petBarkGuk {
+      0%, 100% { transform: translateY(0) scale(1) rotate(0deg); }
+      20% { transform: translateY(-8px) scale(1.14, 0.9) rotate(-5deg); }
+      40% { transform: translateY(-2px) scale(0.94, 1.06) rotate(4deg); }
+      60% { transform: translateY(-6px) scale(1.08, 0.94) rotate(-2deg); }
+      80% { transform: translateY(-1px) scale(1.02, 0.98) rotate(1deg); }
+    }
+    @keyframes petMeowPurr {
+      0%, 100% { transform: translateY(0) scale(1) rotate(0deg); }
+      25% { transform: translateY(-6px) scale(1.08, 0.94) rotate(4deg); }
+      50% { transform: translateY(-2px) scale(0.98, 1.02) rotate(-3deg); }
+      75% { transform: translateY(-4px) scale(1.04, 0.96) rotate(2deg); }
+    }
+    @keyframes petSadDroop {
+      0%, 100% { transform: translateY(0) scale(1, 0.96); }
+      50% { transform: translateY(3px) scale(0.98, 0.93); }
+    }
+    @keyframes petHappyJump {
+      0%, 100% { transform: translateY(0) scale(1) rotate(0deg); }
+      25% { transform: translateY(-12px) scale(1.14, 0.88) rotate(-6deg); }
+      50% { transform: translateY(-16px) scale(0.92, 1.12) rotate(6deg); }
+      75% { transform: translateY(-6px) scale(1.06, 0.94) rotate(-2deg); }
+    }
+    @keyframes petTailWagFast {
+      0%, 100% { transform: rotate(-8deg); transform-origin: 17px 20px; }
+      50% { transform: rotate(26deg); transform-origin: 17px 20px; }
+    }
+    @keyframes petTailIdle {
+      0%, 100% { transform: rotate(0deg); transform-origin: 17px 20px; }
+      50% { transform: rotate(12deg); transform-origin: 17px 20px; }
+    }
+    @keyframes petBlink {
+      0%, 90%, 100% { transform: scaleY(1); }
+      95% { transform: scaleY(0.08); }
+    }
+    @keyframes petWhiskerTwitch {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-0.8px); }
+    }
+    @keyframes petTearFall {
+      0% { transform: translateY(0) scale(0.8); opacity: 0; }
+      20% { opacity: 1; }
+      80% { opacity: 1; }
+      100% { transform: translateY(12px) scale(1.2); opacity: 0; }
+    }
+    @keyframes petSplashDrop {
+      0% { transform: translateY(0) scale(0.5); opacity: 0; }
+      40% { transform: translateY(-8px) scale(1.1); opacity: 1; }
+      100% { transform: translateY(-14px) scale(0.6); opacity: 0; }
+    }
+    @keyframes petSoundBubble {
+      0% { transform: scale(0.3) translateY(8px); opacity: 0; }
+      40% { transform: scale(1.12) translateY(-2px); opacity: 1; }
+      70% { transform: scale(0.98) translateY(0); opacity: 1; }
+      100% { transform: scale(1) translateY(0); opacity: 1; }
     }
     @keyframes flameFlicker {
       0%, 100% { transform: scale(1) rotate(-1deg); filter: drop-shadow(0 0 6px rgba(249, 115, 22, 0.45)); }
@@ -826,7 +886,49 @@
       animation: petIdleBounce 2.4s ease-in-out infinite;
     }
     .animate-pet-eat {
-      animation: petEatHappy 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+      animation: petEatChew 0.75s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+    }
+    .animate-pet-drink {
+      animation: petDrinkLap 0.85s ease-in-out infinite;
+    }
+    .animate-pet-bark {
+      animation: petBarkGuk 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+    }
+    .animate-pet-meow {
+      animation: petMeowPurr 0.85s ease-in-out infinite;
+    }
+    .animate-pet-sad {
+      animation: petSadDroop 2.6s ease-in-out infinite;
+    }
+    .animate-pet-happy {
+      animation: petHappyJump 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+    }
+    .animate-pet-bubble {
+      animation: petSoundBubble 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+    .animate-pet-tear {
+      animation: petTearFall 1.2s ease-in infinite;
+    }
+    .animate-pet-splash {
+      animation: petSplashDrop 0.8s ease-out infinite;
+    }
+    .animate-pet-tail {
+      animation: petTailWagFast 0.32s ease-in-out infinite;
+      transform-box: fill-box;
+      transform-origin: bottom left;
+    }
+    .animate-pet-tail-idle {
+      animation: petTailIdle 1.8s ease-in-out infinite;
+      transform-box: fill-box;
+      transform-origin: bottom left;
+    }
+    .animate-pet-blink {
+      animation: petBlink 3.6s ease-in-out infinite;
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+    .animate-pet-whiskers {
+      animation: petWhiskerTwitch 0.6s ease-in-out infinite;
     }
     .animate-flame {
       animation: flameFlicker 1.8s ease-in-out infinite;
@@ -839,6 +941,7 @@
       image-rendering: -moz-crisp-edges;
       image-rendering: crisp-edges;
     }
+
 
     /* iOS Navigation & Tab Slide View Transitions (Silky Snappy 120 FPS) */
     @keyframes iosTabSlideForward {
@@ -2515,6 +2618,47 @@ const Icon = ({
       }), /*#__PURE__*/React.createElement("path", {
         d: "M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
       }));
+    case 'more-horizontal':
+      return /*#__PURE__*/React.createElement("svg", {
+        className: computedClass,
+        fill: "none",
+        viewBox: "0 0 24 24",
+        stroke: "currentColor",
+        strokeWidth: strokeWidth,
+        strokeLinecap: "round",
+        strokeLinejoin: "round"
+      }, /*#__PURE__*/React.createElement("circle", {
+        cx: "12",
+        cy: "12",
+        r: "1.5",
+        fill: "currentColor"
+      }), /*#__PURE__*/React.createElement("circle", {
+        cx: "19",
+        cy: "12",
+        r: "1.5",
+        fill: "currentColor"
+      }), /*#__PURE__*/React.createElement("circle", {
+        cx: "5",
+        cy: "12",
+        r: "1.5",
+        fill: "currentColor"
+      }));
+    case 'clock':
+      return /*#__PURE__*/React.createElement("svg", {
+        className: computedClass,
+        fill: "none",
+        viewBox: "0 0 24 24",
+        stroke: "currentColor",
+        strokeWidth: strokeWidth,
+        strokeLinecap: "round",
+        strokeLinejoin: "round"
+      }, /*#__PURE__*/React.createElement("circle", {
+        cx: "12",
+        cy: "12",
+        r: "10"
+      }), /*#__PURE__*/React.createElement("polyline", {
+        points: "12 6 12 12 16 14"
+      }));
     case 'tag':
     default:
       return /*#__PURE__*/React.createElement("svg", {
@@ -3774,18 +3918,33 @@ const StorageService = {
   getPetData: () => {
     const d = SafeStorage.getItem(STORAGE_KEYS.PET);
     const parsed = SafeStorage.parseJSON(d, null);
+    const defaultPet = {
+      type: 'DOG',
+      name: 'Milo',
+      fullness: 75,
+      happiness: 85,
+      outfit: 'NONE',
+      foodCount: 3,
+      lastFedDate: ''
+    };
     if (!parsed) {
-      return {
-        type: 'DOG',
-        name: 'Milo',
-        fullness: 75,
-        happiness: 85,
-        outfit: 'NONE',
-        foodCount: 3,
-        lastFedDate: ''
-      };
+      return defaultPet;
     }
-    return parsed;
+    const merged = {
+      ...defaultPet,
+      ...parsed
+    };
+    if (merged.lastFedDate) {
+      const today = new Date().toISOString().split('T')[0];
+      const last = new Date(merged.lastFedDate);
+      const curr = new Date(today);
+      const diffDays = Math.max(0, Math.round((curr - last) / (1000 * 60 * 60 * 24)));
+      if (diffDays > 0) {
+        merged.fullness = Math.max(15, (merged.fullness || 75) - diffDays * 15);
+        merged.happiness = Math.max(20, (merged.happiness || 85) - diffDays * 10);
+      }
+    }
+    return merged;
   },
   setPetData: petObj => {
     SafeStorage.setItem(STORAGE_KEYS.PET, JSON.stringify(petObj));
@@ -3806,6 +3965,25 @@ const StorageService = {
     pet.fullness = Math.min(100, (pet.fullness || 50) + 25);
     pet.happiness = Math.min(100, (pet.happiness || 50) + 15);
     pet.lastFedDate = new Date().toISOString().split('T')[0];
+    StorageService.setPetData(pet);
+    return {
+      success: true,
+      pet
+    };
+  },
+  drinkPet: () => {
+    const pet = StorageService.getPetData();
+    pet.fullness = Math.min(100, (pet.fullness || 50) + 10);
+    pet.happiness = Math.min(100, (pet.happiness || 50) + 15);
+    StorageService.setPetData(pet);
+    return {
+      success: true,
+      pet
+    };
+  },
+  playPet: () => {
+    const pet = StorageService.getPetData();
+    pet.happiness = Math.min(100, (pet.happiness || 50) + 20);
     StorageService.setPetData(pet);
     return {
       success: true,
@@ -9745,18 +9923,59 @@ const CsvImportModal = ({
 };
 
 // =========================================================================
-// PIXEL PET RENDERER (Retro 8-Bit Pixel Art Puppy & Kitty with Outfits)
+// PIXEL PET RENDERER (Retro 8-Bit Pixel Art Puppy & Kitty with 7 Animations)
+// Animations: idle, makan (eat), minum (drink), menggonggong (bark),
+// mengeong (meow), sedih (sad), happy (senang)
 // =========================================================================
 const PixelPetSprite = ({
   type = 'DOG',
   outfit = 'NONE',
+  action = 'idle',
   isEating = false,
-  size = 110
+  isSad = false,
+  size = 110,
+  showBubble = true,
+  onClick = null
 }) => {
   const isDog = type === 'DOG';
+
+  // Compute effective animation state
+  let effectiveAction = action;
+  if (isEating) {
+    effectiveAction = 'eat';
+  } else if (action === 'idle' && isSad) {
+    effectiveAction = 'sad';
+  }
+  if (effectiveAction === 'bark' && !isDog) effectiveAction = 'meow';
+  if (effectiveAction === 'meow' && isDog) effectiveAction = 'bark';
+
+  // Map action to CSS animation class
+  let animClass = 'animate-pet-idle';
+  if (effectiveAction === 'eat') animClass = 'animate-pet-eat';else if (effectiveAction === 'drink') animClass = 'animate-pet-drink';else if (effectiveAction === 'bark') animClass = 'animate-pet-bark';else if (effectiveAction === 'meow') animClass = 'animate-pet-meow';else if (effectiveAction === 'sad') animClass = 'animate-pet-sad';else if (effectiveAction === 'happy') animClass = 'animate-pet-happy';
   return /*#__PURE__*/React.createElement("div", {
-    className: `relative inline-block ${isEating ? 'animate-pet-eat' : 'animate-pet-idle'} pixelated select-none`
-  }, /*#__PURE__*/React.createElement("svg", {
+    onClick: onClick,
+    className: `relative inline-block ${animClass} pixelated select-none ${onClick ? 'cursor-pointer active:scale-95 transition-transform' : ''}`,
+    style: {
+      width: size,
+      height: size
+    }
+  }, showBubble && effectiveAction === 'bark' && /*#__PURE__*/React.createElement("div", {
+    className: "absolute -top-7 left-1/2 -translate-x-1/2 bg-amber-500 text-white font-black text-[11px] px-2 py-0.5 rounded-full shadow-md animate-pet-bubble whitespace-nowrap z-20 pointer-events-none border border-white/60"
+  }, "Guk! Guk! \uD83E\uDDB4"), showBubble && effectiveAction === 'meow' && /*#__PURE__*/React.createElement("div", {
+    className: "absolute -top-7 left-1/2 -translate-x-1/2 bg-rose-500 text-white font-black text-[11px] px-2 py-0.5 rounded-full shadow-md animate-pet-bubble whitespace-nowrap z-20 pointer-events-none border border-white/60"
+  }, "Meow~ \uD83D\uDC3E \uD83C\uDFB5"), showBubble && effectiveAction === 'eat' && /*#__PURE__*/React.createElement("div", {
+    className: "absolute -top-6 left-1/2 -translate-x-1/2 flex items-center gap-0.5 text-xs animate-heart-float pointer-events-none z-20"
+  }, /*#__PURE__*/React.createElement("span", null, "\u2764\uFE0F"), /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] font-bold text-amber-500 dark:text-amber-400 bg-white/95 dark:bg-slate-800 px-1.5 py-0.5 rounded-md shadow-xs border border-amber-200/60 dark:border-amber-800/60 whitespace-nowrap"
+  }, isDog ? 'Nyam! 🍖' : 'Nyam! 🐟')), showBubble && effectiveAction === 'drink' && /*#__PURE__*/React.createElement("div", {
+    className: "absolute -top-6 left-1/2 -translate-x-1/2 flex items-center gap-0.5 text-xs animate-heart-float pointer-events-none z-20"
+  }, /*#__PURE__*/React.createElement("span", null, "\uD83D\uDCA7"), /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] font-bold text-sky-500 dark:text-sky-400 bg-white/95 dark:bg-slate-800 px-1.5 py-0.5 rounded-md shadow-xs border border-sky-200/60 dark:border-sky-800/60 whitespace-nowrap"
+  }, "Slurp! \uD83D\uDCA7")), showBubble && effectiveAction === 'happy' && /*#__PURE__*/React.createElement("div", {
+    className: "absolute -top-6 left-1/2 -translate-x-1/2 flex items-center gap-0.5 text-xs animate-heart-float pointer-events-none z-20"
+  }, /*#__PURE__*/React.createElement("span", null, "\u2728"), /*#__PURE__*/React.createElement("span", null, "\u2764\uFE0F"), /*#__PURE__*/React.createElement("span", null, "\u2728")), showBubble && effectiveAction === 'sad' && /*#__PURE__*/React.createElement("div", {
+    className: "absolute -top-6 left-1/2 -translate-x-1/2 text-xs animate-pet-tear pointer-events-none z-20 flex items-center gap-1 bg-white/90 dark:bg-slate-800/90 px-1.5 py-0.5 rounded-full shadow-xs border border-sky-200 dark:border-slate-700 text-[10px] font-bold text-sky-500 whitespace-nowrap"
+  }, /*#__PURE__*/React.createElement("span", null, "\uD83D\uDCA7"), /*#__PURE__*/React.createElement("span", null, "\uD83E\uDD7A")), /*#__PURE__*/React.createElement("svg", {
     width: size,
     height: size,
     viewBox: "0 0 24 24",
@@ -9766,7 +9985,7 @@ const PixelPetSprite = ({
     }
   }, isDog ?
   /*#__PURE__*/
-  // PIXEL DOGGY (Milo)
+  // ==================== PIXEL DOGGY (MILO) ====================
   React.createElement("g", null, /*#__PURE__*/React.createElement("rect", {
     x: "7",
     y: "14",
@@ -9791,7 +10010,21 @@ const PixelPetSprite = ({
     width: "2",
     height: "3",
     fill: "#D97706"
+  }), effectiveAction === 'sad' ? /*#__PURE__*/React.createElement("g", null, /*#__PURE__*/React.createElement("rect", {
+    x: "17",
+    y: "17",
+    width: "2",
+    height: "3",
+    fill: "#B45309"
   }), /*#__PURE__*/React.createElement("rect", {
+    x: "18",
+    y: "19",
+    width: "2",
+    height: "2",
+    fill: "#B45309"
+  })) : /*#__PURE__*/React.createElement("g", {
+    className: effectiveAction === 'happy' ? 'animate-pet-tail' : 'animate-pet-tail-idle'
+  }, /*#__PURE__*/React.createElement("rect", {
     x: "17",
     y: "13",
     width: "2",
@@ -9803,13 +10036,25 @@ const PixelPetSprite = ({
     width: "2",
     height: "2",
     fill: "#F59E0B"
-  }), /*#__PURE__*/React.createElement("rect", {
+  })), /*#__PURE__*/React.createElement("rect", {
     x: "5",
     y: "6",
     width: "14",
     height: "9",
     fill: "#F59E0B"
+  }), effectiveAction === 'sad' ? /*#__PURE__*/React.createElement("g", null, /*#__PURE__*/React.createElement("rect", {
+    x: "3",
+    y: "7",
+    width: "3",
+    height: "5",
+    fill: "#B45309"
   }), /*#__PURE__*/React.createElement("rect", {
+    x: "18",
+    y: "7",
+    width: "3",
+    height: "5",
+    fill: "#B45309"
+  })) : /*#__PURE__*/React.createElement("g", null, /*#__PURE__*/React.createElement("rect", {
     x: "4",
     y: "3",
     width: "3",
@@ -9821,7 +10066,7 @@ const PixelPetSprite = ({
     width: "3",
     height: "4",
     fill: "#B45309"
-  }), /*#__PURE__*/React.createElement("rect", {
+  })), /*#__PURE__*/React.createElement("rect", {
     x: "5",
     y: "11",
     width: "3",
@@ -9839,7 +10084,49 @@ const PixelPetSprite = ({
     width: "8",
     height: "4",
     fill: "#FEF3C7"
+  }), effectiveAction === 'happy' ?
+  /*#__PURE__*/
+  // Smiling Curved Eyes ^^
+  React.createElement("g", null, /*#__PURE__*/React.createElement("rect", {
+    x: "7",
+    y: "8",
+    width: "3",
+    height: "1",
+    fill: "#1F2937"
   }), /*#__PURE__*/React.createElement("rect", {
+    x: "6",
+    y: "9",
+    width: "1",
+    height: "1",
+    fill: "#1F2937"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "14",
+    y: "8",
+    width: "3",
+    height: "1",
+    fill: "#1F2937"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "17",
+    y: "9",
+    width: "1",
+    height: "1",
+    fill: "#1F2937"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "5",
+    y: "11",
+    width: "2",
+    height: "1",
+    fill: "#FDA4AF"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "17",
+    y: "11",
+    width: "2",
+    height: "1",
+    fill: "#FDA4AF"
+  })) : effectiveAction === 'sad' ?
+  /*#__PURE__*/
+  // Tearful Sad Eyes
+  React.createElement("g", null, /*#__PURE__*/React.createElement("rect", {
     x: "7",
     y: "8",
     width: "2",
@@ -9851,13 +10138,170 @@ const PixelPetSprite = ({
     width: "2",
     height: "2",
     fill: "#1F2937"
+  }), /*#__PURE__*/React.createElement("g", {
+    className: "animate-pet-tear"
+  }, /*#__PURE__*/React.createElement("rect", {
+    x: "7",
+    y: "10",
+    width: "1",
+    height: "2",
+    fill: "#38BDF8"
   }), /*#__PURE__*/React.createElement("rect", {
+    x: "15",
+    y: "10",
+    width: "1",
+    height: "2",
+    fill: "#38BDF8"
+  }))) :
+  /*#__PURE__*/
+  // Alert Cute Eyes with natural Blinking
+  React.createElement("g", {
+    className: "animate-pet-blink"
+  }, /*#__PURE__*/React.createElement("rect", {
+    x: "7",
+    y: "8",
+    width: "2",
+    height: "2",
+    fill: "#1F2937"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "7",
+    y: "8",
+    width: "1",
+    height: "1",
+    fill: "#FFFFFF"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "15",
+    y: "8",
+    width: "2",
+    height: "2",
+    fill: "#1F2937"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "15",
+    y: "8",
+    width: "1",
+    height: "1",
+    fill: "#FFFFFF"
+  })), /*#__PURE__*/React.createElement("rect", {
     x: "11",
     y: "11",
     width: "2",
     height: "1",
     fill: "#1F2937"
+  }), effectiveAction === 'bark' ?
+  /*#__PURE__*/
+  // Wide Barking Mouth
+  React.createElement("g", null, /*#__PURE__*/React.createElement("rect", {
+    x: "10",
+    y: "12",
+    width: "4",
+    height: "3",
+    fill: "#991B1B"
   }), /*#__PURE__*/React.createElement("rect", {
+    x: "11",
+    y: "13",
+    width: "2",
+    height: "2",
+    fill: "#F43F5E"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "2",
+    y: "9",
+    width: "1",
+    height: "2",
+    fill: "#F59E0B"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "1",
+    y: "8",
+    width: "1",
+    height: "4",
+    fill: "#F59E0B"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "21",
+    y: "9",
+    width: "1",
+    height: "2",
+    fill: "#F59E0B"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "22",
+    y: "8",
+    width: "1",
+    height: "4",
+    fill: "#F59E0B"
+  })) : effectiveAction === 'eat' ?
+  /*#__PURE__*/
+  // Munching Mouth with Crumb
+  React.createElement("g", null, /*#__PURE__*/React.createElement("rect", {
+    x: "10",
+    y: "12",
+    width: "4",
+    height: "2",
+    fill: "#B91C1C"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "11",
+    y: "12",
+    width: "2",
+    height: "2",
+    fill: "#FDE047"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "6",
+    y: "13",
+    width: "1",
+    height: "1",
+    fill: "#D97706"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "17",
+    y: "14",
+    width: "1",
+    height: "1",
+    fill: "#D97706"
+  })) : effectiveAction === 'drink' ?
+  /*#__PURE__*/
+  // Lapping Tongue
+  React.createElement("g", null, /*#__PURE__*/React.createElement("rect", {
+    x: "11",
+    y: "12",
+    width: "2",
+    height: "3",
+    fill: "#F43F5E"
+  })) : effectiveAction === 'sad' ?
+  /*#__PURE__*/
+  // Sad Frown
+  React.createElement("g", null, /*#__PURE__*/React.createElement("rect", {
+    x: "10",
+    y: "13",
+    width: "4",
+    height: "1",
+    fill: "#92400E"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "10",
+    y: "14",
+    width: "1",
+    height: "1",
+    fill: "#92400E"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "13",
+    y: "14",
+    width: "1",
+    height: "1",
+    fill: "#92400E"
+  })) : effectiveAction === 'happy' ?
+  /*#__PURE__*/
+  // Cheerful Smile with Tongue
+  React.createElement("g", null, /*#__PURE__*/React.createElement("rect", {
+    x: "10",
+    y: "12",
+    width: "4",
+    height: "2",
+    fill: "#B91C1C"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "11",
+    y: "13",
+    width: "2",
+    height: "2",
+    fill: "#F43F5E"
+  })) :
+  /*#__PURE__*/
+  // Calm Tongue Stick Out
+  React.createElement("rect", {
     x: "11",
     y: "12",
     width: "2",
@@ -9865,7 +10309,7 @@ const PixelPetSprite = ({
     fill: "#F43F5E"
   })) :
   /*#__PURE__*/
-  // PIXEL CAT (Luna)
+  // ==================== PIXEL CAT (LUNA) ====================
   React.createElement("g", null, /*#__PURE__*/React.createElement("rect", {
     x: "7",
     y: "14",
@@ -9890,7 +10334,21 @@ const PixelPetSprite = ({
     width: "2",
     height: "3",
     fill: "#475569"
+  }), effectiveAction === 'sad' ? /*#__PURE__*/React.createElement("g", null, /*#__PURE__*/React.createElement("rect", {
+    x: "17",
+    y: "18",
+    width: "4",
+    height: "2",
+    fill: "#475569"
   }), /*#__PURE__*/React.createElement("rect", {
+    x: "20",
+    y: "17",
+    width: "2",
+    height: "2",
+    fill: "#475569"
+  })) : /*#__PURE__*/React.createElement("g", {
+    className: effectiveAction === 'happy' ? 'animate-pet-tail' : 'animate-pet-tail-idle'
+  }, /*#__PURE__*/React.createElement("rect", {
     x: "17",
     y: "12",
     width: "2",
@@ -9902,13 +10360,37 @@ const PixelPetSprite = ({
     width: "2",
     height: "3",
     fill: "#64748B"
-  }), /*#__PURE__*/React.createElement("rect", {
+  })), /*#__PURE__*/React.createElement("rect", {
     x: "5",
     y: "7",
     width: "14",
     height: "8",
     fill: "#64748B"
+  }), effectiveAction === 'sad' ? /*#__PURE__*/React.createElement("g", null, /*#__PURE__*/React.createElement("rect", {
+    x: "4",
+    y: "6",
+    width: "3",
+    height: "3",
+    fill: "#475569"
   }), /*#__PURE__*/React.createElement("rect", {
+    x: "5",
+    y: "7",
+    width: "1",
+    height: "1",
+    fill: "#FDA4AF"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "17",
+    y: "6",
+    width: "3",
+    height: "3",
+    fill: "#475569"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "18",
+    y: "7",
+    width: "1",
+    height: "1",
+    fill: "#FDA4AF"
+  })) : /*#__PURE__*/React.createElement("g", null, /*#__PURE__*/React.createElement("rect", {
     x: "5",
     y: "3",
     width: "3",
@@ -9932,13 +10414,112 @@ const PixelPetSprite = ({
     width: "1",
     height: "2",
     fill: "#FDA4AF"
-  }), /*#__PURE__*/React.createElement("rect", {
+  })), /*#__PURE__*/React.createElement("rect", {
     x: "8",
     y: "11",
     width: "8",
     height: "3",
     fill: "#F1F5F9"
+  }), /*#__PURE__*/React.createElement("g", {
+    className: effectiveAction === 'meow' || effectiveAction === 'happy' ? 'animate-pet-whiskers' : ''
+  }, /*#__PURE__*/React.createElement("rect", {
+    x: "4",
+    y: "11",
+    width: "3",
+    height: "1",
+    fill: "#94A3B8"
   }), /*#__PURE__*/React.createElement("rect", {
+    x: "4",
+    y: "13",
+    width: "3",
+    height: "1",
+    fill: "#94A3B8"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "17",
+    y: "11",
+    width: "3",
+    height: "1",
+    fill: "#94A3B8"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "17",
+    y: "13",
+    width: "3",
+    height: "1",
+    fill: "#94A3B8"
+  })), effectiveAction === 'happy' ?
+  /*#__PURE__*/
+  // Smiling Curved Eyes ^^
+  React.createElement("g", null, /*#__PURE__*/React.createElement("rect", {
+    x: "7",
+    y: "8",
+    width: "3",
+    height: "1",
+    fill: "#047857"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "6",
+    y: "9",
+    width: "1",
+    height: "1",
+    fill: "#047857"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "14",
+    y: "8",
+    width: "3",
+    height: "1",
+    fill: "#047857"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "17",
+    y: "9",
+    width: "1",
+    height: "1",
+    fill: "#047857"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "5",
+    y: "10",
+    width: "2",
+    height: "1",
+    fill: "#FDA4AF"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "17",
+    y: "10",
+    width: "2",
+    height: "1",
+    fill: "#FDA4AF"
+  })) : effectiveAction === 'sad' ?
+  /*#__PURE__*/
+  // Sad Cat Eyes with Tear
+  React.createElement("g", null, /*#__PURE__*/React.createElement("rect", {
+    x: "7",
+    y: "8",
+    width: "2",
+    height: "3",
+    fill: "#10B981"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "15",
+    y: "8",
+    width: "2",
+    height: "3",
+    fill: "#10B981"
+  }), /*#__PURE__*/React.createElement("g", {
+    className: "animate-pet-tear"
+  }, /*#__PURE__*/React.createElement("rect", {
+    x: "7",
+    y: "11",
+    width: "1",
+    height: "2",
+    fill: "#38BDF8"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "15",
+    y: "11",
+    width: "1",
+    height: "2",
+    fill: "#38BDF8"
+  }))) :
+  /*#__PURE__*/
+  // Classic Emerald Eyes with Pupils & natural blink
+  React.createElement("g", {
+    className: "animate-pet-blink"
+  }, /*#__PURE__*/React.createElement("rect", {
     x: "7",
     y: "8",
     width: "2",
@@ -9962,37 +10543,152 @@ const PixelPetSprite = ({
     width: "1",
     height: "1",
     fill: "#FFFFFF"
-  }), /*#__PURE__*/React.createElement("rect", {
+  })), /*#__PURE__*/React.createElement("rect", {
     x: "11",
     y: "11",
     width: "2",
     height: "1",
     fill: "#FB7185"
+  }), effectiveAction === 'meow' ?
+  /*#__PURE__*/
+  // Wide Open Meow Mouth
+  React.createElement("g", null, /*#__PURE__*/React.createElement("rect", {
+    x: "10",
+    y: "12",
+    width: "4",
+    height: "2",
+    fill: "#E11D48"
   }), /*#__PURE__*/React.createElement("rect", {
-    x: "4",
-    y: "11",
-    width: "3",
-    height: "1",
-    fill: "#94A3B8"
-  }), /*#__PURE__*/React.createElement("rect", {
-    x: "4",
+    x: "11",
     y: "13",
-    width: "3",
+    width: "2",
     height: "1",
-    fill: "#94A3B8"
+    fill: "#FDA4AF"
+  })) : effectiveAction === 'eat' ?
+  /*#__PURE__*/
+  // Eating Fish Nibble
+  React.createElement("g", null, /*#__PURE__*/React.createElement("rect", {
+    x: "10",
+    y: "12",
+    width: "4",
+    height: "2",
+    fill: "#BE123C"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "11",
+    y: "12",
+    width: "2",
+    height: "1",
+    fill: "#38BDF8"
+  })) : effectiveAction === 'drink' ?
+  /*#__PURE__*/
+  // Lapping Tongue
+  React.createElement("g", null, /*#__PURE__*/React.createElement("rect", {
+    x: "11",
+    y: "12",
+    width: "2",
+    height: "2",
+    fill: "#FB7185"
+  })) : effectiveAction === 'sad' ?
+  /*#__PURE__*/
+  // Downward Pout
+  React.createElement("rect", {
+    x: "10",
+    y: "13",
+    width: "4",
+    height: "1",
+    fill: "#475569"
+  }) : effectiveAction === 'happy' ?
+  /*#__PURE__*/
+  // Sweet Smile
+  React.createElement("g", null, /*#__PURE__*/React.createElement("rect", {
+    x: "10",
+    y: "12",
+    width: "4",
+    height: "1",
+    fill: "#E11D48"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "11",
+    y: "13",
+    width: "2",
+    height: "1",
+    fill: "#FB7185"
+  })) : null), effectiveAction === 'eat' && /*#__PURE__*/React.createElement("g", null, /*#__PURE__*/React.createElement("rect", {
+    x: "8",
+    y: "21",
+    width: "8",
+    height: "2",
+    fill: isDog ? '#EF4444' : '#F59E0B'
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "7",
+    y: "22",
+    width: "10",
+    height: "2",
+    fill: isDog ? '#DC2626' : '#D97706'
+  }), isDog ? /*#__PURE__*/React.createElement("rect", {
+    x: "10",
+    y: "20",
+    width: "4",
+    height: "1",
+    fill: "#FEF3C7"
+  }) : /*#__PURE__*/React.createElement("rect", {
+    x: "10",
+    y: "20",
+    width: "4",
+    height: "1",
+    fill: "#38BDF8"
+  }), /*#__PURE__*/React.createElement("g", {
+    className: "animate-pet-splash"
+  }, /*#__PURE__*/React.createElement("rect", {
+    x: "6",
+    y: "18",
+    width: "1",
+    height: "1",
+    fill: isDog ? '#F59E0B' : '#38BDF8'
   }), /*#__PURE__*/React.createElement("rect", {
     x: "17",
-    y: "11",
-    width: "3",
+    y: "18",
+    width: "1",
     height: "1",
-    fill: "#94A3B8"
+    fill: isDog ? '#D97706' : '#0284C7'
+  }))), effectiveAction === 'drink' && /*#__PURE__*/React.createElement("g", null, /*#__PURE__*/React.createElement("rect", {
+    x: "8",
+    y: "21",
+    width: "8",
+    height: "2",
+    fill: "#0284C7"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "7",
+    y: "22",
+    width: "10",
+    height: "2",
+    fill: "#0369A1"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "9",
+    y: "21",
+    width: "6",
+    height: "1",
+    fill: "#BAE6FD"
+  }), /*#__PURE__*/React.createElement("g", {
+    className: "animate-pet-splash"
+  }, /*#__PURE__*/React.createElement("rect", {
+    x: "6",
+    y: "19",
+    width: "1",
+    height: "1",
+    fill: "#38BDF8"
   }), /*#__PURE__*/React.createElement("rect", {
     x: "17",
-    y: "13",
-    width: "3",
+    y: "19",
+    width: "1",
     height: "1",
-    fill: "#94A3B8"
-  })), outfit === 'CROWN' && /*#__PURE__*/React.createElement("g", null, /*#__PURE__*/React.createElement("rect", {
+    fill: "#38BDF8"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "12",
+    y: "18",
+    width: "1",
+    height: "1",
+    fill: "#BAE6FD"
+  }))), outfit === 'CROWN' && /*#__PURE__*/React.createElement("g", null, /*#__PURE__*/React.createElement("rect", {
     x: "7",
     y: "1",
     width: "10",
@@ -10142,9 +10838,201 @@ const PixelPetSprite = ({
     width: "4",
     height: "2",
     fill: "#FFFFFF"
-  }))), isEating && /*#__PURE__*/React.createElement("div", {
-    className: "absolute -top-3 left-1/2 -translate-x-1/2 text-sm animate-heart-float pointer-events-none"
-  }, "\u2764\uFE0F"));
+  }))));
+};
+
+// =========================================================================
+// STREAK INFO MODAL (Modal Informasi Api Streak Disiplin Keuangan)
+// =========================================================================
+const StreakInfoModal = ({
+  isOpen,
+  onClose,
+  streakData = {}
+}) => {
+  const {
+    shouldRender,
+    isClosing,
+    handleClose
+  } = useModalLifecycle(isOpen, onClose, 350);
+  if (!shouldRender) return null;
+  const currentStreak = Number(streakData?.currentStreak) || 0;
+  const maxStreak = Math.max(Number(streakData?.maxStreak) || 0, currentStreak);
+  const level = Number(streakData?.level) || 0;
+  const lastRecordedDate = streakData?.lastRecordedDate || '';
+  const today = new Date().toISOString().split('T')[0];
+  const isRecordedToday = lastRecordedDate === today;
+  const STREAK_LEVELS = [{
+    lvl: 1,
+    badge: '🔥',
+    name: 'Api Pemula (Ember Flame)',
+    days: '1 - 3 Hari',
+    bgGradient: 'from-amber-50 to-yellow-50 dark:from-amber-950/40 dark:to-yellow-950/30',
+    textColor: 'text-amber-600 dark:text-amber-400',
+    borderColor: 'border-amber-200 dark:border-amber-700/60',
+    desc: 'Langkah awal membiasakan mencatat keuangan setiap hari.'
+  }, {
+    lvl: 2,
+    badge: '🔴🔥',
+    name: 'Api Membara (Ruby Fire)',
+    days: '4 - 7 Hari',
+    bgGradient: 'from-orange-50 to-rose-50 dark:from-orange-950/40 dark:to-rose-950/30',
+    textColor: 'text-rose-600 dark:text-rose-400',
+    borderColor: 'border-rose-200 dark:border-rose-700/60',
+    desc: 'Konsistensi 1 minggu penuh! Pola budgeting mulai terbentuk.'
+  }, {
+    lvl: 3,
+    badge: '💜🔥',
+    name: 'Api Mistik (Amethyst Blaze)',
+    days: '8 - 14 Hari',
+    bgGradient: 'from-purple-50 to-indigo-50 dark:from-purple-950/40 dark:to-indigo-950/30',
+    textColor: 'text-purple-600 dark:text-purple-400',
+    borderColor: 'border-purple-200 dark:border-purple-700/60',
+    desc: 'Disiplin 2 minggu tanpa henti. Pengeluaran terkendali rapi.'
+  }, {
+    lvl: 4,
+    badge: '💎🔥',
+    name: 'Api Kristal (Diamond Cyan)',
+    days: '15 - 29 Hari',
+    bgGradient: 'from-cyan-50 to-sky-50 dark:from-cyan-950/40 dark:to-sky-950/30',
+    textColor: 'text-cyan-600 dark:text-cyan-400',
+    borderColor: 'border-cyan-200 dark:border-cyan-700/60',
+    desc: 'Separuh bulan penuh catatan rapi! Kebiasaan finansial matang.'
+  }, {
+    lvl: 5,
+    badge: '👑🔥',
+    name: 'Api Mahkota (Celestial Flame)',
+    days: '30+ Hari',
+    bgGradient: 'from-amber-50 via-rose-50 to-indigo-50 dark:from-amber-950/50 dark:via-rose-950/40 dark:to-indigo-950/50',
+    textColor: 'text-amber-500 dark:text-amber-300',
+    borderColor: 'border-amber-300 dark:border-amber-600',
+    desc: 'Tingkat Legendaris! Penguasa keuangan sejati 1 bulan nonstop.'
+  }];
+  const currentLvlObj = STREAK_LEVELS.find(l => l.lvl === level) || {
+    lvl: 0,
+    badge: '⚪',
+    name: 'Api Belum Menyala',
+    days: '0 Hari',
+    bgGradient: 'from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-800',
+    textColor: 'text-slate-500 dark:text-slate-400',
+    borderColor: 'border-slate-200 dark:border-slate-700',
+    desc: 'Catat transaksi hari ini untuk mulai menyalakan api pertamamu!'
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    className: `ios-modal-backdrop ${isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'}`,
+    onClick: e => {
+      if (e.target === e.currentTarget) handleClose();
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: `ios-modal-card bg-white dark:bg-slate-800 ${isClosing ? 'animate-ios-sheet-exit' : 'animate-ios-sheet'}`
+  }, /*#__PURE__*/React.createElement(ModalDragHandle, {
+    onDismiss: handleClose
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "ios-modal-header px-5 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-xl"
+  }, "\uD83D\uDD25"), /*#__PURE__*/React.createElement("h3", {
+    className: "text-base font-bold text-slate-900 dark:text-white"
+  }, "Streak Catat Keuangan")), /*#__PURE__*/React.createElement(ModalCloseButton, {
+    onClick: handleClose
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "p-4 sm:p-5 space-y-4 max-h-[80vh] overflow-y-auto no-scrollbar"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: `rounded-2xl p-4 sm:p-5 border text-center shadow-xs bg-gradient-to-b ${currentLvlObj.bgGradient} ${currentLvlObj.borderColor}`
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "inline-block py-2"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: `text-5xl sm:text-6xl inline-block ${currentStreak > 0 ? 'animate-flame' : ''}`
+  }, currentLvlObj.badge)), /*#__PURE__*/React.createElement("div", {
+    className: "mt-1"
+  }, /*#__PURE__*/React.createElement("h4", {
+    className: "text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight"
+  }, currentStreak, " ", /*#__PURE__*/React.createElement("span", {
+    className: "text-sm sm:text-base font-bold text-slate-500 dark:text-slate-400"
+  }, "Hari Beruntun")), /*#__PURE__*/React.createElement("p", {
+    className: `text-xs font-bold uppercase tracking-wider mt-0.5 ${currentLvlObj.textColor}`
+  }, "Level ", level, ": ", currentLvlObj.name)), /*#__PURE__*/React.createElement("div", {
+    className: "mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold shadow-2xs border transition-all"
+  }, isRecordedToday ? /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-1.5 text-emerald-700 dark:text-emerald-300 bg-emerald-100/80 dark:bg-emerald-950/80 border border-emerald-200 dark:border-emerald-800 px-3 py-1 rounded-full"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "w-2 h-2 rounded-full bg-emerald-500 animate-ping inline-block"
+  }), /*#__PURE__*/React.createElement("span", null, "\u2713 Hari ini sudah mencatat transaksi! Api streak aman \uD83D\uDD25")) : /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-1.5 text-amber-700 dark:text-amber-300 bg-amber-100/80 dark:bg-amber-950/80 border border-amber-200 dark:border-amber-800 px-3 py-1 rounded-full"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "w-2 h-2 rounded-full bg-amber-500 inline-block"
+  }), /*#__PURE__*/React.createElement("span", null, "\u26A0\uFE0F Belum mencatat transaksi hari ini. Catat agar streak berlanjut!")))), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-2 gap-2.5"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "p-3 rounded-xl bg-slate-50 dark:bg-slate-700/50 border border-slate-200/80 dark:border-slate-700 text-left"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-1.5 text-slate-400 dark:text-slate-400 mb-1"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-sm"
+  }, "\uD83C\uDFC6"), /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] font-bold uppercase tracking-wider"
+  }, "Rekor Terbaik")), /*#__PURE__*/React.createElement("div", {
+    className: "text-base font-extrabold text-slate-900 dark:text-white"
+  }, maxStreak, " ", /*#__PURE__*/React.createElement("span", {
+    className: "text-xs font-normal text-slate-500"
+  }, "Hari"))), /*#__PURE__*/React.createElement("div", {
+    className: "p-3 rounded-xl bg-slate-50 dark:bg-slate-700/50 border border-slate-200/80 dark:border-slate-700 text-left"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-1.5 text-slate-400 dark:text-slate-400 mb-1"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-sm"
+  }, "\uD83C\uDF56"), /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] font-bold uppercase tracking-wider"
+  }, "Hadiah Pet")), /*#__PURE__*/React.createElement("div", {
+    className: "text-base font-extrabold text-amber-600 dark:text-amber-400"
+  }, "+1 Makanan ", /*#__PURE__*/React.createElement("span", {
+    className: "text-xs font-normal text-slate-500"
+  }, "/ hari")))), /*#__PURE__*/React.createElement("div", {
+    className: "p-3.5 rounded-xl bg-sky-50/70 dark:bg-slate-700/40 border border-sky-100 dark:border-slate-700 text-left space-y-2"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-1.5 text-sky-800 dark:text-sky-300 text-xs font-bold"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "info",
+    className: "w-4 h-4 text-sky-600 dark:text-sky-400"
+  }), /*#__PURE__*/React.createElement("span", null, "Cara Menjaga & Meningkatkan Streak")), /*#__PURE__*/React.createElement("ul", {
+    className: "text-[11px] text-slate-600 dark:text-slate-300 space-y-1.5 list-disc list-inside"
+  }, /*#__PURE__*/React.createElement("li", null, "Catat minimal ", /*#__PURE__*/React.createElement("b", null, "1 transaksi"), " pengeluaran atau pemasukan setiap hari kalender."), /*#__PURE__*/React.createElement("li", null, "Setiap transaksi pertama harian otomatis menambah ", /*#__PURE__*/React.createElement("b", null, "+1 Porsi Makanan"), " untuk Milo/Luna \uD83D\uDC3E."), /*#__PURE__*/React.createElement("li", null, "Jika terlewat 1 hari tanpa catatan, api streak akan padam kembali ke 0. Jangan biarkan padam!"))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h5", {
+    className: "text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2 text-left"
+  }, "Tingkatan Level Api Streak"), /*#__PURE__*/React.createElement("div", {
+    className: "space-y-2"
+  }, STREAK_LEVELS.map(lvl => {
+    const isCurrent = lvl.lvl === level;
+    const isUnlocked = currentStreak >= (lvl.lvl === 1 ? 1 : lvl.lvl === 2 ? 4 : lvl.lvl === 3 ? 8 : lvl.lvl === 4 ? 15 : 30);
+    return /*#__PURE__*/React.createElement("div", {
+      key: lvl.lvl,
+      className: `p-3 rounded-xl border flex items-center justify-between gap-3 text-left transition-all ${isCurrent ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-600 shadow-xs ring-1 ring-amber-400/50' : isUnlocked ? 'bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700' : 'bg-slate-50/50 dark:bg-slate-900/40 border-slate-200/50 dark:border-slate-800 opacity-60'}`
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-2.5 min-w-0"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-xl shrink-0"
+    }, lvl.badge), /*#__PURE__*/React.createElement("div", {
+      className: "min-w-0"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-1.5"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-xs font-bold text-slate-900 dark:text-white truncate"
+    }, "Level ", lvl.lvl, ": ", lvl.name), isCurrent && /*#__PURE__*/React.createElement("span", {
+      className: "text-[9px] font-black uppercase bg-amber-500 text-white px-1.5 py-0.2 rounded-full"
+    }, "Aktif")), /*#__PURE__*/React.createElement("p", {
+      className: "text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug"
+    }, lvl.desc))), /*#__PURE__*/React.createElement("div", {
+      className: "text-right shrink-0"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-[11px] font-bold text-slate-700 dark:text-slate-300 block"
+    }, lvl.days)));
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "pt-2"
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: handleClose,
+    className: "w-full py-3 bg-brand hover:bg-brand-hover text-white font-bold text-xs rounded-xl shadow-xs ios-btn-tap"
+  }, "Mengerti & Lanjutkan")))));
 };
 
 // =========================================================================
@@ -10155,7 +11043,9 @@ const PetClosetModal = ({
   onClose,
   petData = {},
   onUpdatePet,
-  onFeedPet
+  onFeedPet,
+  onDrinkPet,
+  onPlayPet
 }) => {
   const {
     shouldRender,
@@ -10165,15 +11055,29 @@ const PetClosetModal = ({
   const [petType, setPetType] = useState(petData?.type || 'DOG');
   const [petName, setPetName] = useState(petData?.name || 'Milo');
   const [outfit, setOutfit] = useState(petData?.outfit || 'NONE');
-  const [eating, setEating] = useState(false);
+  const [currentAction, setCurrentAction] = useState('idle');
+  const actionTimeoutRef = useRef(null);
   useEffect(() => {
     if (isOpen && petData) {
       setPetType(petData.type || 'DOG');
       setPetName(petData.name || (petData.type === 'CAT' ? 'Luna' : 'Milo'));
       setOutfit(petData.outfit || 'NONE');
+      setCurrentAction('idle');
     }
   }, [isOpen, petData]);
+  useEffect(() => {
+    return () => {
+      if (actionTimeoutRef.current) clearTimeout(actionTimeoutRef.current);
+    };
+  }, []);
   if (!shouldRender) return null;
+  const triggerAction = (actionName, durationMs = 1500) => {
+    if (actionTimeoutRef.current) clearTimeout(actionTimeoutRef.current);
+    setCurrentAction(actionName);
+    actionTimeoutRef.current = setTimeout(() => {
+      setCurrentAction('idle');
+    }, durationMs);
+  };
   const OUTFITS = [{
     id: 'NONE',
     label: 'Polos',
@@ -10215,10 +11119,23 @@ const PetClosetModal = ({
   };
   const handleFeed = () => {
     if ((petData.foodCount || 0) <= 0) return;
-    setEating(true);
-    setTimeout(() => setEating(false), 900);
-    onFeedPet();
+    triggerAction('eat', 1800);
+    if (onFeedPet) onFeedPet();
   };
+  const handleDrink = () => {
+    triggerAction('drink', 1800);
+    if (onDrinkPet) onDrinkPet();
+  };
+  const handleSpeak = () => {
+    const vocal = petType === 'DOG' ? 'bark' : 'meow';
+    triggerAction(vocal, 1800);
+    if (onPlayPet) onPlayPet();
+  };
+  const handlePetJoy = () => {
+    triggerAction('happy', 2000);
+    if (onPlayPet) onPlayPet();
+  };
+  const isPetSad = (petData.fullness || 50) < 30 || (petData.happiness || 50) < 30;
   return /*#__PURE__*/React.createElement("div", {
     className: `ios-modal-backdrop ${isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'}`,
     onClick: e => {
@@ -10241,22 +11158,32 @@ const PetClosetModal = ({
   })), /*#__PURE__*/React.createElement("div", {
     className: "p-4 sm:p-5 space-y-4 max-h-[80vh] overflow-y-auto no-scrollbar"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "bg-gradient-to-b from-sky-50 to-indigo-50/40 dark:from-slate-700/60 dark:to-slate-900 border border-sky-100 dark:border-slate-700 rounded-2xl p-4 flex flex-col items-center justify-center text-center shadow-xs"
+    className: "bg-gradient-to-b from-sky-50 via-amber-50/30 to-indigo-50/40 dark:from-slate-700/60 dark:via-slate-800 dark:to-slate-900 border border-sky-100 dark:border-slate-700 rounded-2xl p-4 flex flex-col items-center justify-center text-center shadow-xs"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "py-2"
   }, /*#__PURE__*/React.createElement(PixelPetSprite, {
     type: petType,
     outfit: outfit,
-    isEating: eating,
-    size: 110
-  }), /*#__PURE__*/React.createElement("h4", {
-    className: "text-sm font-bold text-slate-800 dark:text-slate-100 mt-2"
-  }, petName, " ", petType === 'DOG' ? '🐶' : '🐱'), /*#__PURE__*/React.createElement("p", {
+    action: currentAction,
+    isSad: isPetSad,
+    size: 116,
+    onClick: handlePetJoy
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2 mt-1"
+  }, /*#__PURE__*/React.createElement("h4", {
+    className: "text-sm font-bold text-slate-800 dark:text-slate-100"
+  }, petName, " ", petType === 'DOG' ? '🐶' : '🐱'), isPetSad && /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] font-bold bg-rose-100 dark:bg-rose-950/80 text-rose-600 dark:text-rose-400 px-2 py-0.5 rounded-full animate-pulse"
+  }, "Sedih \uD83E\uDD7A"), currentAction === 'happy' && /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] font-bold bg-amber-100 dark:bg-amber-950/80 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-full"
+  }, "Senang Banget! \uD83E\uDD70")), /*#__PURE__*/React.createElement("p", {
     className: "text-[11px] text-slate-500 dark:text-slate-400"
-  }, "Teman setia pencatat keuangan Anda"), /*#__PURE__*/React.createElement("div", {
+  }, "Ketuk hewan untuk mengelus atau gunakan aksi interaktif di bawah"), /*#__PURE__*/React.createElement("div", {
     className: "w-full grid grid-cols-2 gap-2.5 mt-3 pt-3 border-t border-sky-100 dark:border-slate-700 text-left"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center justify-between text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1"
   }, /*#__PURE__*/React.createElement("span", null, "Kenyang ", petType === 'DOG' ? '🍖' : '🐟'), /*#__PURE__*/React.createElement("span", {
-    className: "text-amber-600 dark:text-amber-400"
+    className: "text-amber-600 dark:text-amber-400 font-bold"
   }, petData.fullness || 50, "%")), /*#__PURE__*/React.createElement("div", {
     className: "w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden"
   }, /*#__PURE__*/React.createElement("div", {
@@ -10267,7 +11194,7 @@ const PetClosetModal = ({
   }))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center justify-between text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1"
   }, /*#__PURE__*/React.createElement("span", null, "Senang \u2764\uFE0F"), /*#__PURE__*/React.createElement("span", {
-    className: "text-rose-500"
+    className: "text-rose-500 font-bold"
   }, petData.happiness || 50, "%")), /*#__PURE__*/React.createElement("div", {
     className: "w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden"
   }, /*#__PURE__*/React.createElement("div", {
@@ -10276,19 +11203,74 @@ const PetClosetModal = ({
       width: `${petData.happiness || 50}%`
     }
   })))), /*#__PURE__*/React.createElement("div", {
-    className: "mt-3 w-full flex items-center justify-between bg-white dark:bg-slate-800 p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-700"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "text-left"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "text-[11px] text-slate-500 dark:text-slate-400 block font-medium"
-  }, "Stok Makanan"), /*#__PURE__*/React.createElement("span", {
-    className: "text-xs font-bold text-slate-800 dark:text-slate-200"
-  }, petData.foodCount || 0, " Porsi (Dapat dari Catat Mutasi)")), /*#__PURE__*/React.createElement("button", {
+    className: "mt-3 w-full grid grid-cols-4 gap-1.5 pt-2"
+  }, /*#__PURE__*/React.createElement("button", {
     type: "button",
     onClick: handleFeed,
     disabled: (petData.foodCount || 0) <= 0,
-    className: "py-1.5 px-3 bg-amber-500 hover:bg-amber-600 disabled:opacity-40 text-white font-bold text-xs rounded-lg shadow-xs ios-btn-tap flex items-center gap-1"
-  }, /*#__PURE__*/React.createElement("span", null, "Beri Makan"), /*#__PURE__*/React.createElement("span", null, petType === 'DOG' ? '🍖' : '🐟')))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "py-2 px-1 bg-amber-500 hover:bg-amber-600 disabled:opacity-40 text-white rounded-xl text-center shadow-xs ios-btn-tap flex flex-col items-center justify-center gap-0.5",
+    title: "Beri Makan (1 Porsi)"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-base"
+  }, petType === 'DOG' ? '🍖' : '🐟'), /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] font-bold"
+  }, "Makan (", petData.foodCount || 0, ")")), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: handleDrink,
+    className: "py-2 px-1 bg-sky-500 hover:bg-sky-600 text-white rounded-xl text-center shadow-xs ios-btn-tap flex flex-col items-center justify-center gap-0.5",
+    title: "Beri Minum Air Segar"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-base"
+  }, "\uD83D\uDCA7"), /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] font-bold"
+  }, "Minum")), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: handleSpeak,
+    className: "py-2 px-1 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl text-center shadow-xs ios-btn-tap flex flex-col items-center justify-center gap-0.5",
+    title: petType === 'DOG' ? 'Suara Menggonggong' : 'Suara Mengeong'
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-base"
+  }, petType === 'DOG' ? '🐶' : '🐱'), /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] font-bold"
+  }, petType === 'DOG' ? 'Guk!' : 'Meong!')), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: handlePetJoy,
+    className: "py-2 px-1 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-center shadow-xs ios-btn-tap flex flex-col items-center justify-center gap-0.5",
+    title: "Elus dan Sayang Peliharaan"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-base"
+  }, "\u2728"), /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] font-bold"
+  }, "Elus"))), /*#__PURE__*/React.createElement("div", {
+    className: "w-full mt-3 pt-2 border-t border-slate-200/60 dark:border-slate-700/60"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block mb-1.5 text-left"
+  }, "Tes Animasi Pixel Pet:"), /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-wrap gap-1"
+  }, [{
+    id: 'idle',
+    label: 'Idle'
+  }, {
+    id: 'eat',
+    label: 'Makan'
+  }, {
+    id: 'drink',
+    label: 'Minum'
+  }, {
+    id: petType === 'DOG' ? 'bark' : 'meow',
+    label: petType === 'DOG' ? 'Gonggong' : 'Meong'
+  }, {
+    id: 'sad',
+    label: 'Sedih'
+  }, {
+    id: 'happy',
+    label: 'Happy'
+  }].map(anim => /*#__PURE__*/React.createElement("button", {
+    key: anim.id,
+    type: "button",
+    onClick: () => triggerAction(anim.id, 2500),
+    className: `text-[10px] font-semibold px-2 py-0.5 rounded-lg border transition-all ${currentAction === anim.id ? 'bg-brand text-white border-brand shadow-xs' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'}`
+  }, anim.label))))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
     className: "block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5"
   }, "Pilih Hewan Peliharaan"), /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-2 gap-2"
@@ -12825,6 +13807,8 @@ const MainDashboard = React.memo(({
   petData,
   onOpenPetCloset,
   onFeedPet,
+  onDrinkPet,
+  onPlayPet,
   onOpenStreakModal,
   onOpenAddTx,
   onOpenAddIncome,
@@ -12860,6 +13844,20 @@ const MainDashboard = React.memo(({
   const [endDate, setEndDate] = useState('');
   const [datePreset, setDatePreset] = useState('ALL'); // ALL | TODAY | THIS_WEEK | THIS_MONTH | LAST_MONTH | CUSTOM
   const [isDateFilterOpen, setIsDateFilterOpen] = useState(false);
+  const [dashPetAction, setDashPetAction] = useState('idle');
+  const dashPetTimerRef = useRef(null);
+  const triggerDashPetAction = (act, duration = 1800) => {
+    if (dashPetTimerRef.current) clearTimeout(dashPetTimerRef.current);
+    setDashPetAction(act);
+    dashPetTimerRef.current = setTimeout(() => {
+      setDashPetAction('idle');
+    }, duration);
+  };
+  useEffect(() => {
+    return () => {
+      if (dashPetTimerRef.current) clearTimeout(dashPetTimerRef.current);
+    };
+  }, []);
   const applyDatePreset = preset => {
     setDatePreset(preset);
     const now = new Date();
@@ -13001,54 +13999,116 @@ const MainDashboard = React.memo(({
     className: "text-[10px] font-semibold text-slate-500 dark:text-slate-400"
   }, "Hari")), /*#__PURE__*/React.createElement("span", {
     className: "text-[9px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider block"
-  }, "Lv. ", streakData?.level || 0)))), /*#__PURE__*/React.createElement("div", {
-    className: "animate-dashboard-card rounded-2xl p-3.5 bg-gradient-to-r from-amber-50/70 via-sky-50/50 to-indigo-50/60 dark:from-slate-800 dark:via-slate-800 dark:to-slate-800 border border-amber-200/60 dark:border-slate-700 shadow-xs",
-    style: {
-      animationDelay: '120ms'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center justify-between"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center gap-3"
-  }, /*#__PURE__*/React.createElement("div", {
-    onClick: onOpenPetCloset,
-    className: "cursor-pointer hover:scale-105 transition-transform",
-    title: "Ketuk untuk buka lemari kostum peliharaan"
-  }, /*#__PURE__*/React.createElement(PixelPetSprite, {
-    type: petData?.type || 'DOG',
-    outfit: petData?.outfit || 'NONE',
-    size: 54
-  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center gap-1.5"
-  }, /*#__PURE__*/React.createElement("h4", {
-    className: "text-xs font-bold text-slate-900 dark:text-white"
-  }, petData?.name || 'Milo'), /*#__PURE__*/React.createElement("span", {
-    className: "text-[10px] px-1.5 py-0.2 bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 rounded font-semibold"
-  }, petData?.type === 'CAT' ? '🐱 Kucing' : '🐶 Anjing')), /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center gap-3 mt-1 text-[11px] text-slate-600 dark:text-slate-400"
-  }, /*#__PURE__*/React.createElement("span", null, "Kenyang: ", /*#__PURE__*/React.createElement("b", {
-    className: "text-amber-600 dark:text-amber-400"
-  }, petData?.fullness || 50, "%")), /*#__PURE__*/React.createElement("span", null, "\u2022"), /*#__PURE__*/React.createElement("span", null, "Senang: ", /*#__PURE__*/React.createElement("b", {
-    className: "text-rose-500"
-  }, petData?.happiness || 50, "%"))))), /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center gap-1.5"
-  }, /*#__PURE__*/React.createElement("button", {
-    type: "button",
-    onClick: onFeedPet,
-    disabled: (petData?.foodCount || 0) <= 0,
-    className: "py-1.5 px-2.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-40 text-white font-bold text-xs rounded-xl shadow-xs ios-btn-tap flex items-center gap-1",
-    title: "Beri makan peliharaan (1 porsi)"
-  }, /*#__PURE__*/React.createElement("span", null, "Makan"), /*#__PURE__*/React.createElement("span", null, petData?.type === 'CAT' ? '🐟' : '🍖'), /*#__PURE__*/React.createElement("span", {
-    className: "text-[10px] bg-black/20 px-1 py-0.2 rounded-full ml-0.5"
-  }, petData?.foodCount || 0)), /*#__PURE__*/React.createElement("button", {
-    type: "button",
-    onClick: onOpenPetCloset,
-    className: "p-2 bg-white dark:bg-slate-700 hover:bg-slate-50 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-xl shadow-xs ios-btn-tap",
-    title: "Buka Lemari Kostum"
-  }, /*#__PURE__*/React.createElement(Icon, {
-    name: "shirt",
-    className: "w-4 h-4 text-brand dark:text-sky-400"
-  }))))), /*#__PURE__*/React.createElement("div", {
+  }, "Lv. ", streakData?.level || 0)))), (() => {
+    const isPetSad = (petData?.fullness || 50) < 30 || (petData?.happiness || 50) < 30;
+    const handlePetTap = () => {
+      if (dashPetAction === 'idle') {
+        const vocal = (petData?.type || 'DOG') === 'DOG' ? 'bark' : 'meow';
+        triggerDashPetAction(vocal, 1800);
+      } else {
+        triggerDashPetAction('happy', 2000);
+      }
+      if (onPlayPet) onPlayPet();
+    };
+    const handleFeedClick = () => {
+      if ((petData?.foodCount || 0) <= 0) {
+        if (showToast) showToast('Stok makanan habis! Catat transaksi untuk dapat makanan 🍖');
+        return;
+      }
+      triggerDashPetAction('eat', 1800);
+      if (onFeedPet) onFeedPet();
+    };
+    const handleDrinkClick = () => {
+      triggerDashPetAction('drink', 1800);
+      if (onDrinkPet) onDrinkPet();
+    };
+    const handleSpeakClick = () => {
+      const vocal = (petData?.type || 'DOG') === 'DOG' ? 'bark' : 'meow';
+      triggerDashPetAction(vocal, 1800);
+      if (onPlayPet) onPlayPet();
+    };
+    const handlePetJoyClick = () => {
+      triggerDashPetAction('happy', 2000);
+      if (onPlayPet) onPlayPet();
+    };
+    return /*#__PURE__*/React.createElement("div", {
+      className: "animate-dashboard-card rounded-2xl p-3.5 bg-gradient-to-r from-amber-50/70 via-sky-50/50 to-indigo-50/60 dark:from-slate-800 dark:via-slate-800 dark:to-slate-800 border border-amber-200/60 dark:border-slate-700 shadow-xs",
+      style: {
+        animationDelay: '120ms'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-3"
+    }, /*#__PURE__*/React.createElement("div", {
+      onClick: handlePetTap,
+      className: "cursor-pointer hover:scale-105 active:scale-95 transition-transform shrink-0",
+      title: "Ketuk peliharaan untuk berinteraksi"
+    }, /*#__PURE__*/React.createElement(PixelPetSprite, {
+      type: petData?.type || 'DOG',
+      outfit: petData?.outfit || 'NONE',
+      action: dashPetAction,
+      isSad: isPetSad,
+      size: 58
+    })), /*#__PURE__*/React.createElement("div", {
+      className: "min-w-0"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-1.5 flex-wrap"
+    }, /*#__PURE__*/React.createElement("h4", {
+      className: "text-xs font-bold text-slate-900 dark:text-white truncate"
+    }, petData?.name || 'Milo'), /*#__PURE__*/React.createElement("span", {
+      className: "text-[10px] px-1.5 py-0.2 bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 rounded font-semibold shrink-0"
+    }, petData?.type === 'CAT' ? '🐱 Kucing' : '🐶 Anjing'), isPetSad && /*#__PURE__*/React.createElement("span", {
+      className: "text-[9px] px-1.5 py-0.2 bg-rose-100 dark:bg-rose-950/80 text-rose-600 dark:text-rose-400 rounded-full font-bold shrink-0 animate-pulse"
+    }, "Sedih \uD83E\uDD7A"), dashPetAction === 'happy' && /*#__PURE__*/React.createElement("span", {
+      className: "text-[9px] px-1.5 py-0.2 bg-amber-100 dark:bg-amber-950/80 text-amber-600 dark:text-amber-400 rounded-full font-bold shrink-0"
+    }, "Senang \uD83E\uDD70")), /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-2 mt-1 text-[11px] text-slate-600 dark:text-slate-400"
+    }, /*#__PURE__*/React.createElement("span", null, "Kenyang: ", /*#__PURE__*/React.createElement("b", {
+      className: "text-amber-600 dark:text-amber-400"
+    }, petData?.fullness || 50, "%")), /*#__PURE__*/React.createElement("span", null, "\u2022"), /*#__PURE__*/React.createElement("span", null, "Senang: ", /*#__PURE__*/React.createElement("b", {
+      className: "text-rose-500"
+    }, petData?.happiness || 50, "%"))))), /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-1.5 flex-wrap shrink-0"
+    }, /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: handleFeedClick,
+      disabled: (petData?.foodCount || 0) <= 0,
+      className: "py-1.5 px-2.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-40 text-white font-bold text-xs rounded-xl shadow-xs ios-btn-tap flex items-center gap-1",
+      title: "Beri makan peliharaan (1 porsi)"
+    }, /*#__PURE__*/React.createElement("span", null, "Makan"), /*#__PURE__*/React.createElement("span", null, petData?.type === 'CAT' ? '🐟' : '🍖'), /*#__PURE__*/React.createElement("span", {
+      className: "text-[10px] bg-black/20 px-1 py-0.2 rounded-full ml-0.5"
+    }, petData?.foodCount || 0)), /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: handleDrinkClick,
+      className: "p-2 bg-sky-500 hover:bg-sky-600 text-white rounded-xl shadow-xs ios-btn-tap flex items-center justify-center",
+      title: "Beri minum air segar"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-xs"
+    }, "\uD83D\uDCA7")), /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: handleSpeakClick,
+      className: "p-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl shadow-xs ios-btn-tap flex items-center justify-center",
+      title: petData?.type === 'CAT' ? 'Mengeong (Meow~)' : 'Menggonggong (Guk! Guk!)'
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-xs"
+    }, petData?.type === 'CAT' ? '🐱' : '🐶')), /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: handlePetJoyClick,
+      className: "p-2 bg-rose-500 hover:bg-rose-600 text-white rounded-xl shadow-xs ios-btn-tap flex items-center justify-center",
+      title: "Elus dan Sayang Peliharaan"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-xs"
+    }, "\u2728")), /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: onOpenPetCloset,
+      className: "p-2 bg-white dark:bg-slate-700 hover:bg-slate-50 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-xl shadow-xs ios-btn-tap flex items-center justify-center",
+      title: "Buka Lemari Kostum"
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: "shirt",
+      className: "w-4 h-4 text-brand dark:text-sky-400"
+    })))));
+  })(), /*#__PURE__*/React.createElement("div", {
     className: "animate-dashboard-card rounded-[22px] p-5 bg-[#0284C7] dark:bg-[#0369A1] text-white border border-[#0369A1] dark:border-sky-600/40 shadow-md transition-colors duration-300 ease-in-out",
     style: {
       animationDelay: '50ms'
@@ -13556,6 +14616,21 @@ const App = () => {
       showToast(`${res.pet.name} kenyang dan senang! ❤️`);
     } else {
       showToast('Stok makanan habis! Catat transaksi untuk dapat makanan 🍖');
+    }
+  }, [showToast]);
+  const handleDrinkPet = useCallback(() => {
+    const res = StorageService.drinkPet();
+    if (res.success) {
+      setPetData(res.pet);
+      showToast(`${res.pet.name} segar dan tidak haus lagi! 💧`);
+    }
+  }, [showToast]);
+  const handlePlayPet = useCallback(() => {
+    const res = StorageService.playPet();
+    if (res.success) {
+      setPetData(res.pet);
+      const vocal = res.pet.type === 'DOG' ? 'Guk! Guk! 🐶' : 'Meong~ 🐱';
+      showToast(`${res.pet.name}: "${vocal}" ❤️`);
     }
   }, [showToast]);
   const handleUpdatePet = useCallback(updatedPet => {
@@ -14448,6 +15523,13 @@ Tindakan ini tidak dapat dibatalkan.`);
     userProfile: memoizedUserProfile,
     hideBalance: hideBalance,
     onToggleHideBalance: handleToggleHideBalance,
+    streakData: streakData,
+    petData: petData,
+    onOpenPetCloset: () => setIsPetModalOpen(true),
+    onFeedPet: handleFeedPet,
+    onDrinkPet: handleDrinkPet,
+    onPlayPet: handlePlayPet,
+    onOpenStreakModal: () => setIsStreakModalOpen(true),
     onOpenAddTx: handleOpenAddTx,
     onOpenAddIncome: handleOpenAddIncome,
     onOpenAddExpense: handleOpenAddExpense,
@@ -14565,7 +15647,9 @@ Tindakan ini tidak dapat dibatalkan.`);
     onClose: () => setIsPetModalOpen(false),
     petData: petData,
     onUpdatePet: handleUpdatePet,
-    onFeedPet: handleFeedPet
+    onFeedPet: handleFeedPet,
+    onDrinkPet: handleDrinkPet,
+    onPlayPet: handlePlayPet
   }), /*#__PURE__*/React.createElement(StreakInfoModal, {
     isOpen: isStreakModalOpen,
     onClose: () => setIsStreakModalOpen(false),

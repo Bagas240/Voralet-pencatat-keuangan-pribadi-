@@ -565,12 +565,19 @@ PART8_APP = """
           {(() => {
             const isPetSad = (petData?.fullness || 50) < 30 || (petData?.happiness || 50) < 30;
             const handlePetTap = () => {
-              const vocal = (petData?.type || 'DOG') === 'DOG' ? 'bark' : 'meow';
-              triggerDashPetAction(vocal, 1800);
+              if (dashPetAction === 'idle') {
+                const vocal = (petData?.type || 'DOG') === 'DOG' ? 'bark' : 'meow';
+                triggerDashPetAction(vocal, 1800);
+              } else {
+                triggerDashPetAction('happy', 2000);
+              }
               if (onPlayPet) onPlayPet();
             };
             const handleFeedClick = () => {
-              if ((petData?.foodCount || 0) <= 0) return;
+              if ((petData?.foodCount || 0) <= 0) {
+                if (showToast) showToast('Stok makanan habis! Catat transaksi untuk dapat makanan 🍖');
+                return;
+              }
               triggerDashPetAction('eat', 1800);
               if (onFeedPet) onFeedPet();
             };
@@ -578,17 +585,26 @@ PART8_APP = """
               triggerDashPetAction('drink', 1800);
               if (onDrinkPet) onDrinkPet();
             };
+            const handleSpeakClick = () => {
+              const vocal = (petData?.type || 'DOG') === 'DOG' ? 'bark' : 'meow';
+              triggerDashPetAction(vocal, 1800);
+              if (onPlayPet) onPlayPet();
+            };
+            const handlePetJoyClick = () => {
+              triggerDashPetAction('happy', 2000);
+              if (onPlayPet) onPlayPet();
+            };
 
             return (
               <div
                 className="animate-dashboard-card rounded-2xl p-3.5 bg-gradient-to-r from-amber-50/70 via-sky-50/50 to-indigo-50/60 dark:from-slate-800 dark:via-slate-800 dark:to-slate-800 border border-amber-200/60 dark:border-slate-700 shadow-xs"
                 style={{ animationDelay: '120ms' }}
               >
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <div
                       onClick={handlePetTap}
-                      className="cursor-pointer hover:scale-105 active:scale-95 transition-transform"
+                      className="cursor-pointer hover:scale-105 active:scale-95 transition-transform shrink-0"
                       title="Ketuk peliharaan untuk berinteraksi"
                     >
                       <PixelPetSprite
@@ -596,24 +612,24 @@ PART8_APP = """
                         outfit={petData?.outfit || 'NONE'}
                         action={dashPetAction}
                         isSad={isPetSad}
-                        size={56}
+                        size={58}
                       />
                     </div>
-                    <div>
-                      <div className="flex items-center gap-1.5">
-                        <h4 className="text-xs font-bold text-slate-900 dark:text-white">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">
                           {petData?.name || 'Milo'}
                         </h4>
-                        <span className="text-[10px] px-1.5 py-0.2 bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 rounded font-semibold">
+                        <span className="text-[10px] px-1.5 py-0.2 bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 rounded font-semibold shrink-0">
                           {petData?.type === 'CAT' ? '🐱 Kucing' : '🐶 Anjing'}
                         </span>
                         {isPetSad && (
-                          <span className="text-[9px] px-1.5 py-0.2 bg-rose-100 dark:bg-rose-950/80 text-rose-600 dark:text-rose-400 rounded-full font-bold">
+                          <span className="text-[9px] px-1.5 py-0.2 bg-rose-100 dark:bg-rose-950/80 text-rose-600 dark:text-rose-400 rounded-full font-bold shrink-0 animate-pulse">
                             Sedih 🥺
                           </span>
                         )}
                         {dashPetAction === 'happy' && (
-                          <span className="text-[9px] px-1.5 py-0.2 bg-amber-100 dark:bg-amber-950/80 text-amber-600 dark:text-amber-400 rounded-full font-bold">
+                          <span className="text-[9px] px-1.5 py-0.2 bg-amber-100 dark:bg-amber-950/80 text-amber-600 dark:text-amber-400 rounded-full font-bold shrink-0">
                             Senang 🥰
                           </span>
                         )}
@@ -626,7 +642,8 @@ PART8_APP = """
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1.5">
+                  {/* Interactive Action Buttons */}
+                  <div className="flex items-center gap-1.5 flex-wrap shrink-0">
                     <button
                       type="button"
                       onClick={handleFeedClick}
@@ -641,15 +658,31 @@ PART8_APP = """
                     <button
                       type="button"
                       onClick={handleDrinkClick}
-                      className="p-2 bg-sky-500 hover:bg-sky-600 text-white rounded-xl shadow-xs ios-btn-tap"
+                      className="p-2 bg-sky-500 hover:bg-sky-600 text-white rounded-xl shadow-xs ios-btn-tap flex items-center justify-center"
                       title="Beri minum air segar"
                     >
                       <span className="text-xs">💧</span>
                     </button>
                     <button
                       type="button"
+                      onClick={handleSpeakClick}
+                      className="p-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl shadow-xs ios-btn-tap flex items-center justify-center"
+                      title={petData?.type === 'CAT' ? 'Mengeong (Meow~)' : 'Menggonggong (Guk! Guk!)'}
+                    >
+                      <span className="text-xs">{petData?.type === 'CAT' ? '🐱' : '🐶'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handlePetJoyClick}
+                      className="p-2 bg-rose-500 hover:bg-rose-600 text-white rounded-xl shadow-xs ios-btn-tap flex items-center justify-center"
+                      title="Elus dan Sayang Peliharaan"
+                    >
+                      <span className="text-xs">✨</span>
+                    </button>
+                    <button
+                      type="button"
                       onClick={onOpenPetCloset}
-                      className="p-2 bg-white dark:bg-slate-700 hover:bg-slate-50 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-xl shadow-xs ios-btn-tap"
+                      className="p-2 bg-white dark:bg-slate-700 hover:bg-slate-50 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-xl shadow-xs ios-btn-tap flex items-center justify-center"
                       title="Buka Lemari Kostum"
                     >
                       <Icon name="shirt" className="w-4 h-4 text-brand dark:text-sky-400" />

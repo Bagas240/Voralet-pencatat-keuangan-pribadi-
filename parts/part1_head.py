@@ -842,8 +842,20 @@ HTML_HEAD = """<!DOCTYPE html>
       75% { transform: translateY(-6px) scale(1.06, 0.94) rotate(-2deg); }
     }
     @keyframes petTailWagFast {
+      0%, 100% { transform: rotate(-8deg); transform-origin: 17px 20px; }
+      50% { transform: rotate(26deg); transform-origin: 17px 20px; }
+    }
+    @keyframes petTailIdle {
       0%, 100% { transform: rotate(0deg); transform-origin: 17px 20px; }
-      50% { transform: rotate(24deg); transform-origin: 17px 20px; }
+      50% { transform: rotate(12deg); transform-origin: 17px 20px; }
+    }
+    @keyframes petBlink {
+      0%, 90%, 100% { transform: scaleY(1); }
+      95% { transform: scaleY(0.08); }
+    }
+    @keyframes petWhiskerTwitch {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-0.8px); }
     }
     @keyframes petTearFall {
       0% { transform: translateY(0) scale(0.8); opacity: 0; }
@@ -901,7 +913,22 @@ HTML_HEAD = """<!DOCTYPE html>
       animation: petSplashDrop 0.8s ease-out infinite;
     }
     .animate-pet-tail {
-      animation: petTailWagFast 0.35s ease-in-out infinite;
+      animation: petTailWagFast 0.32s ease-in-out infinite;
+      transform-box: fill-box;
+      transform-origin: bottom left;
+    }
+    .animate-pet-tail-idle {
+      animation: petTailIdle 1.8s ease-in-out infinite;
+      transform-box: fill-box;
+      transform-origin: bottom left;
+    }
+    .animate-pet-blink {
+      animation: petBlink 3.6s ease-in-out infinite;
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+    .animate-pet-whiskers {
+      animation: petWhiskerTwitch 0.6s ease-in-out infinite;
     }
     .animate-flame {
       animation: flameFlicker 1.8s ease-in-out infinite;

@@ -2687,6 +2687,8 @@ PART6_MODALS = """
       } else if (action === 'idle' && isSad) {
         effectiveAction = 'sad';
       }
+      if (effectiveAction === 'bark' && !isDog) effectiveAction = 'meow';
+      if (effectiveAction === 'meow' && isDog) effectiveAction = 'bark';
 
       // Map action to CSS animation class
       let animClass = 'animate-pet-idle';
@@ -2711,19 +2713,23 @@ PART6_MODALS = """
           )}
           {showBubble && effectiveAction === 'meow' && (
             <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-rose-500 text-white font-black text-[11px] px-2 py-0.5 rounded-full shadow-md animate-pet-bubble whitespace-nowrap z-20 pointer-events-none border border-white/60">
-              Meong~ 🐾 🎵
+              Meow~ 🐾 🎵
             </div>
           )}
           {showBubble && effectiveAction === 'eat' && (
             <div className="absolute -top-6 left-1/2 -translate-x-1/2 flex items-center gap-0.5 text-xs animate-heart-float pointer-events-none z-20">
               <span>❤️</span>
-              <span className="text-[10px] font-bold text-amber-500 dark:text-amber-400 bg-white/90 dark:bg-slate-800 px-1 rounded-md shadow-xs">Nyam!</span>
+              <span className="text-[10px] font-bold text-amber-500 dark:text-amber-400 bg-white/95 dark:bg-slate-800 px-1.5 py-0.5 rounded-md shadow-xs border border-amber-200/60 dark:border-amber-800/60 whitespace-nowrap">
+                {isDog ? 'Nyam! 🍖' : 'Nyam! 🐟'}
+              </span>
             </div>
           )}
           {showBubble && effectiveAction === 'drink' && (
             <div className="absolute -top-6 left-1/2 -translate-x-1/2 flex items-center gap-0.5 text-xs animate-heart-float pointer-events-none z-20">
               <span>💧</span>
-              <span className="text-[10px] font-bold text-sky-500 dark:text-sky-400 bg-white/90 dark:bg-slate-800 px-1 rounded-md shadow-xs">Slurp!</span>
+              <span className="text-[10px] font-bold text-sky-500 dark:text-sky-400 bg-white/95 dark:bg-slate-800 px-1.5 py-0.5 rounded-md shadow-xs border border-sky-200/60 dark:border-sky-800/60 whitespace-nowrap">
+                Slurp! 💧
+              </span>
             </div>
           )}
           {showBubble && effectiveAction === 'happy' && (
@@ -2734,8 +2740,9 @@ PART6_MODALS = """
             </div>
           )}
           {showBubble && effectiveAction === 'sad' && (
-            <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs animate-pet-tear pointer-events-none z-20">
-              💧
+            <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs animate-pet-tear pointer-events-none z-20 flex items-center gap-1 bg-white/90 dark:bg-slate-800/90 px-1.5 py-0.5 rounded-full shadow-xs border border-sky-200 dark:border-slate-700 text-[10px] font-bold text-sky-500 whitespace-nowrap">
+              <span>💧</span>
+              <span>🥺</span>
             </div>
           )}
 
@@ -2757,14 +2764,14 @@ PART6_MODALS = """
                 <rect x="7" y="20" width="2" height="3" fill="#D97706" />
                 <rect x="15" y="20" width="2" height="3" fill="#D97706" />
 
-                {/* Tail (Wagging when happy, droopy when sad) */}
+                {/* Tail (Wagging fast when happy, gentle sway in idle, droopy when sad) */}
                 {effectiveAction === 'sad' ? (
                   <g>
                     <rect x="17" y="17" width="2" height="3" fill="#B45309" />
                     <rect x="18" y="19" width="2" height="2" fill="#B45309" />
                   </g>
                 ) : (
-                  <g className={effectiveAction === 'happy' ? 'animate-pet-tail' : ''}>
+                  <g className={effectiveAction === 'happy' ? 'animate-pet-tail' : 'animate-pet-tail-idle'}>
                     <rect x="17" y="13" width="2" height="3" fill="#F59E0B" />
                     <rect x="18" y="11" width="2" height="2" fill="#F59E0B" />
                   </g>
@@ -2809,12 +2816,14 @@ PART6_MODALS = """
                     <rect x="7" y="8" width="2" height="2" fill="#1F2937" />
                     <rect x="15" y="8" width="2" height="2" fill="#1F2937" />
                     {/* Tears */}
-                    <rect x="7" y="10" width="1" height="2" fill="#38BDF8" />
-                    <rect x="15" y="10" width="1" height="2" fill="#38BDF8" />
+                    <g className="animate-pet-tear">
+                      <rect x="7" y="10" width="1" height="2" fill="#38BDF8" />
+                      <rect x="15" y="10" width="1" height="2" fill="#38BDF8" />
+                    </g>
                   </g>
                 ) : (
-                  // Alert Cute Eyes
-                  <g>
+                  // Alert Cute Eyes with natural Blinking
+                  <g className="animate-pet-blink">
                     <rect x="7" y="8" width="2" height="2" fill="#1F2937" />
                     <rect x="7" y="8" width="1" height="1" fill="#FFFFFF" />
                     <rect x="15" y="8" width="2" height="2" fill="#1F2937" />
@@ -2886,7 +2895,7 @@ PART6_MODALS = """
                     <rect x="20" y="17" width="2" height="2" fill="#475569" />
                   </g>
                 ) : (
-                  <g className={effectiveAction === 'happy' ? 'animate-pet-tail' : ''}>
+                  <g className={effectiveAction === 'happy' ? 'animate-pet-tail' : 'animate-pet-tail-idle'}>
                     <rect x="17" y="12" width="2" height="6" fill="#64748B" />
                     <rect x="19" y="10" width="2" height="3" fill="#64748B" />
                   </g>
@@ -2915,11 +2924,13 @@ PART6_MODALS = """
                 {/* Muzzle */}
                 <rect x="8" y="11" width="8" height="3" fill="#F1F5F9" />
 
-                {/* Whiskers */}
-                <rect x="4" y="11" width="3" height="1" fill="#94A3B8" />
-                <rect x="4" y="13" width="3" height="1" fill="#94A3B8" />
-                <rect x="17" y="11" width="3" height="1" fill="#94A3B8" />
-                <rect x="17" y="13" width="3" height="1" fill="#94A3B8" />
+                {/* Whiskers with twitching animation */}
+                <g className={effectiveAction === 'meow' || effectiveAction === 'happy' ? 'animate-pet-whiskers' : ''}>
+                  <rect x="4" y="11" width="3" height="1" fill="#94A3B8" />
+                  <rect x="4" y="13" width="3" height="1" fill="#94A3B8" />
+                  <rect x="17" y="11" width="3" height="1" fill="#94A3B8" />
+                  <rect x="17" y="13" width="3" height="1" fill="#94A3B8" />
+                </g>
 
                 {/* Eyes according to state */}
                 {effectiveAction === 'happy' ? (
@@ -2938,12 +2949,14 @@ PART6_MODALS = """
                   <g>
                     <rect x="7" y="8" width="2" height="3" fill="#10B981" />
                     <rect x="15" y="8" width="2" height="3" fill="#10B981" />
-                    <rect x="7" y="11" width="1" height="2" fill="#38BDF8" />
-                    <rect x="15" y="11" width="1" height="2" fill="#38BDF8" />
+                    <g className="animate-pet-tear">
+                      <rect x="7" y="11" width="1" height="2" fill="#38BDF8" />
+                      <rect x="15" y="11" width="1" height="2" fill="#38BDF8" />
+                    </g>
                   </g>
                 ) : (
-                  // Classic Emerald Eyes with Pupils
-                  <g>
+                  // Classic Emerald Eyes with Pupils & natural blink
+                  <g className="animate-pet-blink">
                     <rect x="7" y="8" width="2" height="3" fill="#10B981" />
                     <rect x="7" y="8" width="1" height="1" fill="#FFFFFF" />
                     <rect x="15" y="8" width="2" height="3" fill="#10B981" />
@@ -2997,6 +3010,11 @@ PART6_MODALS = """
                 ) : (
                   <rect x="10" y="20" width="4" height="1" fill="#38BDF8" />
                 )}
+                {/* Flying crumbs */}
+                <g className="animate-pet-splash">
+                  <rect x="6" y="18" width="1" height="1" fill={isDog ? '#F59E0B' : '#38BDF8'} />
+                  <rect x="17" y="18" width="1" height="1" fill={isDog ? '#D97706' : '#0284C7'} />
+                </g>
               </g>
             )}
 
@@ -3008,8 +3026,11 @@ PART6_MODALS = """
                 <rect x="7" y="22" width="10" height="2" fill="#0369A1" />
                 {/* Water surface & droplets */}
                 <rect x="9" y="21" width="6" height="1" fill="#BAE6FD" />
-                <rect x="6" y="19" width="1" height="1" fill="#38BDF8" />
-                <rect x="17" y="19" width="1" height="1" fill="#38BDF8" />
+                <g className="animate-pet-splash">
+                  <rect x="6" y="19" width="1" height="1" fill="#38BDF8" />
+                  <rect x="17" y="19" width="1" height="1" fill="#38BDF8" />
+                  <rect x="12" y="18" width="1" height="1" fill="#BAE6FD" />
+                </g>
               </g>
             )}
 
@@ -3064,6 +3085,239 @@ PART6_MODALS = """
               </g>
             )}
           </svg>
+        </div>
+      );
+    };
+
+    // =========================================================================
+    // STREAK INFO MODAL (Modal Informasi Api Streak Disiplin Keuangan)
+    // =========================================================================
+    const StreakInfoModal = ({
+      isOpen,
+      onClose,
+      streakData = {}
+    }) => {
+      const { shouldRender, isClosing, handleClose } = useModalLifecycle(isOpen, onClose, 350);
+
+      if (!shouldRender) return null;
+
+      const currentStreak = Number(streakData?.currentStreak) || 0;
+      const maxStreak = Math.max(Number(streakData?.maxStreak) || 0, currentStreak);
+      const level = Number(streakData?.level) || 0;
+      const lastRecordedDate = streakData?.lastRecordedDate || '';
+      const today = new Date().toISOString().split('T')[0];
+      const isRecordedToday = lastRecordedDate === today;
+
+      const STREAK_LEVELS = [
+        {
+          lvl: 1,
+          badge: '🔥',
+          name: 'Api Pemula (Ember Flame)',
+          days: '1 - 3 Hari',
+          bgGradient: 'from-amber-50 to-yellow-50 dark:from-amber-950/40 dark:to-yellow-950/30',
+          textColor: 'text-amber-600 dark:text-amber-400',
+          borderColor: 'border-amber-200 dark:border-amber-700/60',
+          desc: 'Langkah awal membiasakan mencatat keuangan setiap hari.'
+        },
+        {
+          lvl: 2,
+          badge: '🔴🔥',
+          name: 'Api Membara (Ruby Fire)',
+          days: '4 - 7 Hari',
+          bgGradient: 'from-orange-50 to-rose-50 dark:from-orange-950/40 dark:to-rose-950/30',
+          textColor: 'text-rose-600 dark:text-rose-400',
+          borderColor: 'border-rose-200 dark:border-rose-700/60',
+          desc: 'Konsistensi 1 minggu penuh! Pola budgeting mulai terbentuk.'
+        },
+        {
+          lvl: 3,
+          badge: '💜🔥',
+          name: 'Api Mistik (Amethyst Blaze)',
+          days: '8 - 14 Hari',
+          bgGradient: 'from-purple-50 to-indigo-50 dark:from-purple-950/40 dark:to-indigo-950/30',
+          textColor: 'text-purple-600 dark:text-purple-400',
+          borderColor: 'border-purple-200 dark:border-purple-700/60',
+          desc: 'Disiplin 2 minggu tanpa henti. Pengeluaran terkendali rapi.'
+        },
+        {
+          lvl: 4,
+          badge: '💎🔥',
+          name: 'Api Kristal (Diamond Cyan)',
+          days: '15 - 29 Hari',
+          bgGradient: 'from-cyan-50 to-sky-50 dark:from-cyan-950/40 dark:to-sky-950/30',
+          textColor: 'text-cyan-600 dark:text-cyan-400',
+          borderColor: 'border-cyan-200 dark:border-cyan-700/60',
+          desc: 'Separuh bulan penuh catatan rapi! Kebiasaan finansial matang.'
+        },
+        {
+          lvl: 5,
+          badge: '👑🔥',
+          name: 'Api Mahkota (Celestial Flame)',
+          days: '30+ Hari',
+          bgGradient: 'from-amber-50 via-rose-50 to-indigo-50 dark:from-amber-950/50 dark:via-rose-950/40 dark:to-indigo-950/50',
+          textColor: 'text-amber-500 dark:text-amber-300',
+          borderColor: 'border-amber-300 dark:border-amber-600',
+          desc: 'Tingkat Legendaris! Penguasa keuangan sejati 1 bulan nonstop.'
+        }
+      ];
+
+      const currentLvlObj = STREAK_LEVELS.find(l => l.lvl === level) || {
+        lvl: 0,
+        badge: '⚪',
+        name: 'Api Belum Menyala',
+        days: '0 Hari',
+        bgGradient: 'from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-800',
+        textColor: 'text-slate-500 dark:text-slate-400',
+        borderColor: 'border-slate-200 dark:border-slate-700',
+        desc: 'Catat transaksi hari ini untuk mulai menyalakan api pertamamu!'
+      };
+
+      return (
+        <div
+          className={`ios-modal-backdrop ${isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'}`}
+          onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
+        >
+          <div className={`ios-modal-card bg-white dark:bg-slate-800 ${isClosing ? 'animate-ios-sheet-exit' : 'animate-ios-sheet'}`}>
+            <ModalDragHandle onDismiss={handleClose} />
+            <div className="ios-modal-header px-5 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">🔥</span>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">Streak Catat Keuangan</h3>
+              </div>
+              <ModalCloseButton onClick={handleClose} />
+            </div>
+
+            <div className="p-4 sm:p-5 space-y-4 max-h-[80vh] overflow-y-auto no-scrollbar">
+              {/* Hero Streak Flame Card */}
+              <div className={`rounded-2xl p-4 sm:p-5 border text-center shadow-xs bg-gradient-to-b ${currentLvlObj.bgGradient} ${currentLvlObj.borderColor}`}>
+                <div className="inline-block py-2">
+                  <div className={`text-5xl sm:text-6xl inline-block ${currentStreak > 0 ? 'animate-flame' : ''}`}>
+                    {currentLvlObj.badge}
+                  </div>
+                </div>
+
+                <div className="mt-1">
+                  <h4 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                    {currentStreak} <span className="text-sm sm:text-base font-bold text-slate-500 dark:text-slate-400">Hari Beruntun</span>
+                  </h4>
+                  <p className={`text-xs font-bold uppercase tracking-wider mt-0.5 ${currentLvlObj.textColor}`}>
+                    Level {level}: {currentLvlObj.name}
+                  </p>
+                </div>
+
+                {/* Today's Recording Status Pill */}
+                <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold shadow-2xs border transition-all">
+                  {isRecordedToday ? (
+                    <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-300 bg-emerald-100/80 dark:bg-emerald-950/80 border border-emerald-200 dark:border-emerald-800 px-3 py-1 rounded-full">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping inline-block" />
+                      <span>✓ Hari ini sudah mencatat transaksi! Api streak aman 🔥</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5 text-amber-700 dark:text-amber-300 bg-amber-100/80 dark:bg-amber-950/80 border border-amber-200 dark:border-amber-800 px-3 py-1 rounded-full">
+                      <span className="w-2 h-2 rounded-full bg-amber-500 inline-block" />
+                      <span>⚠️ Belum mencatat transaksi hari ini. Catat agar streak berlanjut!</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Stats Overview */}
+              <div className="grid grid-cols-2 gap-2.5">
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-700/50 border border-slate-200/80 dark:border-slate-700 text-left">
+                  <div className="flex items-center gap-1.5 text-slate-400 dark:text-slate-400 mb-1">
+                    <span className="text-sm">🏆</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider">Rekor Terbaik</span>
+                  </div>
+                  <div className="text-base font-extrabold text-slate-900 dark:text-white">
+                    {maxStreak} <span className="text-xs font-normal text-slate-500">Hari</span>
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-700/50 border border-slate-200/80 dark:border-slate-700 text-left">
+                  <div className="flex items-center gap-1.5 text-slate-400 dark:text-slate-400 mb-1">
+                    <span className="text-sm">🍖</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider">Hadiah Pet</span>
+                  </div>
+                  <div className="text-base font-extrabold text-amber-600 dark:text-amber-400">
+                    +1 Makanan <span className="text-xs font-normal text-slate-500">/ hari</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* How it works */}
+              <div className="p-3.5 rounded-xl bg-sky-50/70 dark:bg-slate-700/40 border border-sky-100 dark:border-slate-700 text-left space-y-2">
+                <div className="flex items-center gap-1.5 text-sky-800 dark:text-sky-300 text-xs font-bold">
+                  <Icon name="info" className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+                  <span>Cara Menjaga & Meningkatkan Streak</span>
+                </div>
+                <ul className="text-[11px] text-slate-600 dark:text-slate-300 space-y-1.5 list-disc list-inside">
+                  <li>Catat minimal <b>1 transaksi</b> pengeluaran atau pemasukan setiap hari kalender.</li>
+                  <li>Setiap transaksi pertama harian otomatis menambah <b>+1 Porsi Makanan</b> untuk Milo/Luna 🐾.</li>
+                  <li>Jika terlewat 1 hari tanpa catatan, api streak akan padam kembali ke 0. Jangan biarkan padam!</li>
+                </ul>
+              </div>
+
+              {/* Level Progression Roadmap */}
+              <div>
+                <h5 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2 text-left">
+                  Tingkatan Level Api Streak
+                </h5>
+                <div className="space-y-2">
+                  {STREAK_LEVELS.map((lvl) => {
+                    const isCurrent = lvl.lvl === level;
+                    const isUnlocked = currentStreak >= (lvl.lvl === 1 ? 1 : lvl.lvl === 2 ? 4 : lvl.lvl === 3 ? 8 : lvl.lvl === 4 ? 15 : 30);
+                    return (
+                      <div
+                        key={lvl.lvl}
+                        className={`p-3 rounded-xl border flex items-center justify-between gap-3 text-left transition-all ${
+                          isCurrent
+                            ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-600 shadow-xs ring-1 ring-amber-400/50'
+                            : isUnlocked
+                            ? 'bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700'
+                            : 'bg-slate-50/50 dark:bg-slate-900/40 border-slate-200/50 dark:border-slate-800 opacity-60'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span className="text-xl shrink-0">{lvl.badge}</span>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                                Level {lvl.lvl}: {lvl.name}
+                              </span>
+                              {isCurrent && (
+                                <span className="text-[9px] font-black uppercase bg-amber-500 text-white px-1.5 py-0.2 rounded-full">
+                                  Aktif
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">
+                              {lvl.desc}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block">
+                            {lvl.days}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Close Button */}
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  className="w-full py-3 bg-brand hover:bg-brand-hover text-white font-bold text-xs rounded-xl shadow-xs ios-btn-tap"
+                >
+                  Mengerti & Lanjutkan
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       );
     };

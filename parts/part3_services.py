@@ -743,18 +743,30 @@ PART3_SERVICES = """
       getPetData: () => {
         const d = SafeStorage.getItem(STORAGE_KEYS.PET);
         const parsed = SafeStorage.parseJSON(d, null);
+        const defaultPet = {
+          type: 'DOG',
+          name: 'Milo',
+          fullness: 75,
+          happiness: 85,
+          outfit: 'NONE',
+          foodCount: 3,
+          lastFedDate: ''
+        };
         if (!parsed) {
-          return {
-            type: 'DOG',
-            name: 'Milo',
-            fullness: 75,
-            happiness: 85,
-            outfit: 'NONE',
-            foodCount: 3,
-            lastFedDate: ''
-          };
+          return defaultPet;
         }
-        return parsed;
+        const merged = { ...defaultPet, ...parsed };
+        if (merged.lastFedDate) {
+          const today = new Date().toISOString().split('T')[0];
+          const last = new Date(merged.lastFedDate);
+          const curr = new Date(today);
+          const diffDays = Math.max(0, Math.round((curr - last) / (1000 * 60 * 60 * 24)));
+          if (diffDays > 0) {
+            merged.fullness = Math.max(15, (merged.fullness || 75) - (diffDays * 15));
+            merged.happiness = Math.max(20, (merged.happiness || 85) - (diffDays * 10));
+          }
+        }
+        return merged;
       },
       setPetData: (petObj) => {
         SafeStorage.setItem(STORAGE_KEYS.PET, JSON.stringify(petObj));
