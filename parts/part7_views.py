@@ -1110,6 +1110,8 @@ PART7_VIEWS = """
       const [color, setColor] = useState('#0284C7');
       const [expandedCardId, setExpandedCardId] = useState(null);
       const [settlingId, setSettlingId] = useState(null);
+      const [unstackedCategories, setUnstackedCategories] = useState({});
+      const [selectedCategoryTab, setSelectedCategoryTab] = useState('ALL');
 
       // Drag and drop reordering state
       const [draggedId, setDraggedId] = useState(null);
@@ -1589,281 +1591,428 @@ PART7_VIEWS = """
             </form>
           )}
 
-          {/* Simplified Pocket Cards List */}
-          <div className="space-y-2.5">
-            <div className="flex items-center justify-between px-1">
-              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                Daftar Kantong ({safeAccounts.length})
-              </span>
-              {safeAccounts.length > 1 ? (
-                <span className="text-[10px] text-slate-400 flex items-center gap-1 font-medium">
-                  <Icon name="grip-vertical" className="w-3 h-3 text-sky-500" />
-                  <span>Tahan & geser untuk atur prioritas</span>
-                </span>
-              ) : (
-                <span className="text-[10px] text-slate-400">Ketuk kantong untuk mutasi & opsi</span>
-              )}
-            </div>
+          {/* CATEGORIZED APPLE WALLET CARDS WITH CONTINUOUS STACKING & BEJEJER ANIMATION */}
+          {(() => {
+            const categorizeAccount = (acc) => {
+              const norm = String(acc.type || '').toUpperCase();
+              if (norm === 'CASH' || norm === 'TUNAI') return 'CASH';
+              if (norm.includes('WALLET') || norm === 'EWALLET') return 'EWALLET';
+              if (norm === 'INVESTASI' || norm === 'INVEST') return 'INVESTASI';
+              return 'BANK';
+            };
 
-            {safeAccounts.length === 0 ? (
-              <div className="p-8 text-center bg-[#F0F9FF] dark:bg-slate-800 rounded-2xl border border-sky-100 dark:border-slate-700">
-                <Icon name="credit-card" className="w-8 h-8 text-slate-400 mx-auto mb-2" />
-                <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Belum ada kantong</p>
-                <p className="text-[11px] text-slate-400 mt-1">Tambahkan kantong pertama Anda untuk mulai mengelola dana.</p>
-              </div>
-            ) : (
-              safeAccounts.map((acc, index) => {
-                const bal = Ledger.getAccountBalance(acc.id, safeAccounts, safeTransactions);
-                const isExpanded = expandedCardId === acc.id;
-                const hasAnySelected = expandedCardId !== null;
-                const isDragging = draggedId === acc.id;
-                const isSettling = settlingId === acc.id;
-                const isDragTarget = dragOverId === acc.id && draggedId !== acc.id;
-                const showIndicatorBefore = isDragTarget && dragPosition === 'before';
-                const showIndicatorAfter = isDragTarget && dragPosition === 'after';
+            const CATEGORY_DEFS = [
+              { key: 'BANK', title: 'Rekening Bank', icon: 'bank', color: '#0284C7', desc: 'BCA, Mandiri, BRI, Jago' },
+              { key: 'EWALLET', title: 'E-Wallet', icon: 'smartphone', color: '#4F46E5', desc: 'GoPay, OVO, DANA, ShopeePay' },
+              { key: 'CASH', title: 'Kas Tunai', icon: 'cash', color: '#0D9488', desc: 'Dompet Fisik & Uang Tunai' },
+              { key: 'INVESTASI', title: 'Investasi & Aset', icon: 'award', color: '#B45309', desc: 'Bibit, Tabungan, Emas' }
+            ];
 
-                const normType = String(acc.type || '').toUpperCase();
-                const isCash = normType === 'CASH' || normType === 'TUNAI';
-                const isEWallet = normType.includes('WALLET') || normType === 'EWALLET';
-                const isInvest = normType === 'INVESTASI';
-                const iconName = isCash ? 'cash' : isEWallet ? 'smartphone' : isInvest ? 'award' : 'bank';
-                const typeLabel = isCash ? 'Kas Tunai' : isEWallet ? 'E-Wallet' : isInvest ? 'Investasi' : 'Rekening Bank';
+            // Filter genuine user accounts (excluding any residual demo accounts)
+            const activeAccounts = safeAccounts.filter(a =>
+              !a.isSample &&
+              !a.id.startsWith('acc_mandiri_') &&
+              !a.id.startsWith('acc_gopay_') &&
+              !a.id.startsWith('acc_dana_') &&
+              !a.id.startsWith('acc_tunai_')
+            );
+            const userAccounts = activeAccounts.length > 0 ? activeAccounts : safeAccounts;
 
-                // Flat Solid Apple Wallet Card Colors (No Gradients)
-                const cardBg = isCash
-                  ? 'bg-[#0D9488]'
-                  : isEWallet
-                  ? 'bg-[#4F46E5]'
-                  : isInvest
-                  ? 'bg-[#B45309]'
-                  : 'bg-[#0284C7]';
+            const groupedAccounts = {
+              BANK: userAccounts.filter(a => categorizeAccount(a) === 'BANK'),
+              EWALLET: userAccounts.filter(a => categorizeAccount(a) === 'EWALLET'),
+              CASH: userAccounts.filter(a => categorizeAccount(a) === 'CASH'),
+              INVESTASI: userAccounts.filter(a => categorizeAccount(a) === 'INVESTASI')
+            };
 
-                // Get last 4 mutations for this account
-                const accountTxs = safeTransactions
-                  .filter(tx => tx.accountId === acc.id)
-                  .slice(0, 4);
+            const COLLAPSED_CARD_HEIGHT = 156;
+            const STACK_OFFSET_Y = 52;
+            const UNSTACKED_GAP = 14;
+            const DRAWER_HEIGHT = 155;
 
-                const maskedNumber = (acc.accountNumber && String(acc.accountNumber).trim())
-                  ? `•••• ${String(acc.accountNumber).replace(/\s/g, '').slice(-4)}`
-                  : `•••• ${String(acc.id || '8829').replace(/\D/g, '').slice(-4) || '8829'}`;
+            const renderSingleCard = (acc, indexInCat, totalInCat, isStackedInDeck, yOffset, onToggleStack) => {
+              const bal = Ledger.getAccountBalance(acc.id, safeAccounts, safeTransactions);
+              const isExpanded = expandedCardId === acc.id;
+              const hasAnySelected = expandedCardId !== null;
+              const isDragging = draggedId === acc.id;
+              const isSettling = settlingId === acc.id;
+              const isDragTarget = dragOverId === acc.id && draggedId !== acc.id;
 
-                return (
-                  <React.Fragment key={acc.id}>
-                    {showIndicatorBefore && (
-                      <div className="ios-card-drop-indicator" />
-                    )}
-                    <div
-                      ref={el => { cardRefs.current[acc.id] = el; }}
-                      draggable={safeAccounts.length > 1}
-                      onDragStart={(e) => handleHtmlDragStart(e, acc.id)}
-                      onDragOver={(e) => handleHtmlDragOver(e, acc.id)}
-                      onDrop={(e) => handleHtmlDrop(e, acc.id)}
-                      onDragEnd={handleHtmlDragEnd}
-                      onPointerDown={(e) => handleCardPointerDown(acc.id, e)}
-                      onClick={() => {
-                        if (justDraggedRef.current || isDraggingRef.current) return;
-                        if (window.VoraletHaptics?.selection) {
-                          window.VoraletHaptics.selection();
-                        } else if (window.VoraletHaptics?.tap) {
-                          window.VoraletHaptics.tap();
-                        }
-                        setExpandedCardId(isExpanded ? null : acc.id);
-                      }}
-                      className={`relative w-full rounded-2xl ${cardBg} p-4 text-white select-none cursor-pointer overflow-hidden ios-card-stack-item ${
-                        isDragging
-                          ? 'is-dragging'
-                          : isSettling
-                          ? 'is-settling'
-                          : isDragTarget
-                          ? 'is-drag-target'
-                          : isExpanded
-                          ? 'is-lifted'
-                          : hasAnySelected
-                          ? 'is-dimmed'
-                          : 'shadow-md hover:shadow-lg'
-                      }`}
-                    >
-                      {/* Top row: Type chip/badge, priority indicator, and drag handle */}
-                      <div className="relative z-10 flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-xl bg-white/20 border border-white/25 flex items-center justify-center text-white shadow-xs">
-                            <Icon name={iconName} className="w-4 h-4" />
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-[10px] font-bold uppercase tracking-wider text-sky-100 block">
-                                {typeLabel}
-                              </span>
-                              {index === 0 ? (
-                                <span className="px-1.5 py-0.5 rounded-full bg-amber-400 text-slate-950 text-[9px] font-extrabold tracking-wide flex items-center gap-0.5 shadow-xs">
-                                  <span>★</span>
-                                  <span>Utama</span>
-                                </span>
-                              ) : (
-                                <span className="px-1.5 py-0.2 rounded-md bg-white/15 text-sky-100 text-[9px] font-semibold">
-                                  #{index + 1}
-                                </span>
-                              )}
-                            </div>
-                            <h4 className="text-sm font-extrabold text-white truncate leading-tight apple-card-emboss">
-                              {acc.name}
-                            </h4>
-                          </div>
-                        </div>
+              const normType = String(acc.type || '').toUpperCase();
+              const isCash = normType === 'CASH' || normType === 'TUNAI';
+              const isEWallet = normType.includes('WALLET') || normType === 'EWALLET';
+              const isInvest = normType === 'INVESTASI';
+              const iconName = isCash ? 'cash' : isEWallet ? 'smartphone' : isInvest ? 'award' : 'bank';
+              const typeLabel = isCash ? 'Kas Tunai' : isEWallet ? 'E-Wallet' : isInvest ? 'Investasi' : 'Rekening Bank';
 
-                        {/* Right elements: Card number & Drag handle */}
-                        <div className="flex items-center gap-2">
-                          <div className="px-2 py-0.5 rounded-md bg-white/15 border border-white/20 text-[9px] font-mono font-bold tracking-wider text-sky-100">
-                            {maskedNumber}
-                          </div>
-                          {safeAccounts.length > 1 && (
-                            <div
-                              role="button"
-                              tabIndex={0}
-                              title="Tahan & geser untuk mengatur urutan prioritas"
-                              aria-label={`Geser untuk atur urutan ${acc.name}`}
-                              onPointerDown={(e) => handleDragHandlePointerDown(acc.id, e)}
-                              onClick={(e) => e.stopPropagation()}
-                              className="p-1.5 -mr-1 rounded-lg text-white/80 hover:text-white hover:bg-white/20 active:bg-white/30 cursor-grab active:cursor-grabbing transition-colors touch-none select-none flex items-center justify-center ios-btn-tap"
-                              style={{ touchAction: 'none' }}
-                            >
-                              <Icon name="grip-vertical" className="w-4 h-4" />
-                            </div>
+              const cardBg = isCash
+                ? 'bg-[#0D9488]'
+                : isEWallet
+                ? 'bg-[#4F46E5]'
+                : isInvest
+                ? 'bg-[#B45309]'
+                : 'bg-[#0284C7]';
+
+              const accountTxs = safeTransactions
+                .filter(tx => tx.accountId === acc.id)
+                .slice(0, 4);
+
+              const maskedNumber = (acc.accountNumber && String(acc.accountNumber).trim())
+                ? `•••• ${String(acc.accountNumber).replace(/\s/g, '').slice(-4)}`
+                : `•••• ${String(acc.id || '8829').replace(/\D/g, '').slice(-4) || '8829'}`;
+
+              const currentY = isStackedInDeck ? (indexInCat * STACK_OFFSET_Y) : yOffset;
+              const currentScale = isStackedInDeck ? (1 - (totalInCat - 1 - indexInCat) * 0.022) : 1;
+              const currentZ = isDragging ? 60 : isExpanded ? 50 : (10 + indexInCat);
+
+              const cardStyle = {
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                width: '100%',
+                transform: `translate3d(0, ${currentY}px, 0) scale3d(${currentScale}, ${currentScale}, 1)`,
+                transformOrigin: 'top center',
+                zIndex: currentZ,
+                boxShadow: isStackedInDeck
+                  ? `0 ${6 + indexInCat * 4}px ${16 + indexInCat * 4}px -4px rgba(0, 0, 0, 0.32), inset 0 1px 1px rgba(255, 255, 255, 0.35)`
+                  : isExpanded
+                  ? '0 18px 40px -8px rgba(0, 0, 0, 0.42), 0 0 0 2px rgba(255, 255, 255, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.4)'
+                  : '0 4px 14px -2px rgba(0, 0, 0, 0.16), inset 0 1px 1px rgba(255, 255, 255, 0.25)',
+                transition: isDragging
+                  ? 'none'
+                  : 'transform 0.52s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease, filter 0.3s ease'
+              };
+
+              return (
+                <div
+                  key={acc.id}
+                  ref={el => { cardRefs.current[acc.id] = el; }}
+                  style={cardStyle}
+                  draggable={!isStackedInDeck && safeAccounts.length > 1}
+                  onDragStart={(e) => !isStackedInDeck && handleHtmlDragStart(e, acc.id)}
+                  onDragOver={(e) => !isStackedInDeck && handleHtmlDragOver(e, acc.id)}
+                  onDrop={(e) => !isStackedInDeck && handleHtmlDrop(e, acc.id)}
+                  onDragEnd={handleHtmlDragEnd}
+                  onPointerDown={(e) => !isStackedInDeck && handleCardPointerDown(acc.id, e)}
+                  onClick={(e) => {
+                    if (isStackedInDeck) {
+                      e.stopPropagation();
+                      if (onToggleStack) onToggleStack();
+                      return;
+                    }
+                    if (justDraggedRef.current || isDraggingRef.current) return;
+                    if (window.VoraletHaptics?.selection) {
+                      window.VoraletHaptics.selection();
+                    } else if (window.VoraletHaptics?.tap) {
+                      window.VoraletHaptics.tap();
+                    }
+                    setExpandedCardId(isExpanded ? null : acc.id);
+                  }}
+                  className={`w-full rounded-2xl ${cardBg} p-4 text-white select-none cursor-pointer overflow-hidden apple-wallet-stacked-card border border-white/20 ${
+                    isDragging
+                      ? 'is-dragging'
+                      : isSettling
+                      ? 'is-settling'
+                      : isDragTarget
+                      ? 'is-drag-target'
+                      : isExpanded
+                      ? 'is-lifted'
+                      : hasAnySelected && !isStackedInDeck
+                      ? 'is-dimmed'
+                      : ''
+                  }`}
+                >
+                  <div className="relative z-10 flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-xl bg-white/20 border border-white/25 flex items-center justify-center text-white shadow-xs">
+                        <Icon name={iconName} className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-sky-100 block">
+                            {typeLabel}
+                          </span>
+                          {indexInCat === 0 && (
+                            <span className="px-1.5 py-0.5 rounded-full bg-amber-400 text-slate-950 text-[9px] font-extrabold tracking-wide flex items-center gap-0.5 shadow-xs">
+                              <span>★</span>
+                              <span>Utama</span>
+                            </span>
                           )}
                         </div>
+                        <h4 className="text-sm font-extrabold text-white truncate leading-tight apple-card-emboss">
+                          {acc.name}
+                        </h4>
                       </div>
+                    </div>
 
-                      {/* Bottom row: Saldo and status */}
-                      <div className="relative z-10 pt-2 border-t border-white/15 flex items-end justify-between">
-                        <div>
-                          <span className="text-[9px] font-semibold uppercase tracking-wider text-sky-100/90 block mb-0.5">
-                            Saldo Tersedia
-                          </span>
-                          <div className="text-lg sm:text-xl font-black tracking-tight text-white apple-card-emboss">
-                            <AnimatedCurrency value={bal} hideBalance={hideBalance} duration={600} className="text-lg sm:text-xl font-black tracking-tight text-white apple-card-emboss" />
-                          </div>
-                        </div>
-
-                        <div className="text-right flex items-center gap-1.5">
-                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-sky-100 bg-white/15 px-2 py-0.5 rounded-lg backdrop-blur-xs">
-                            <span>{isExpanded ? 'Tutup Opsi' : 'Kelola'}</span>
-                            <Icon name={isExpanded ? 'chevron-up' : 'chevron-down'} className="w-3 h-3" />
-                          </span>
-                        </div>
+                    <div className="flex items-center gap-2">
+                      <div className="px-2 py-0.5 rounded-md bg-white/15 border border-white/20 text-[9px] font-mono font-bold tracking-wider text-sky-100">
+                        {maskedNumber}
                       </div>
-
-                      {/* Expanded Pocket Actions & Recent Mutations (Apple Wallet Spring Drawer) */}
-                      {isExpanded && (
-                        <div className="relative z-10 mt-3.5 pt-3 border-t border-white/20 space-y-3 ios-wallet-drawer text-slate-800 dark:text-slate-100" onClick={(e) => e.stopPropagation()}>
-                          {/* Quick Action Buttons */}
-                          <div className="flex gap-2">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (onOpenAddTx) onOpenAddTx(acc.id);
-                              }}
-                              className="flex-1 py-2 px-2 bg-white text-[#0284C7] text-[11px] font-bold rounded-xl flex items-center justify-center gap-1 shadow-xs hover:bg-sky-50 transition-colors ios-btn-tap"
-                            >
-                              <Icon name="plus" className="w-3.5 h-3.5" />
-                              <span>Catat Mutasi</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={(e) => handleStartEdit(acc, e)}
-                              className="py-2 px-3 bg-white/20 hover:bg-white/30 text-white text-[11px] font-bold rounded-xl flex items-center gap-1 border border-white/30 transition-colors ios-btn-tap"
-                            >
-                              <Icon name="edit" className="w-3.5 h-3.5" />
-                              <span>Edit</span>
-                            </button>
-                            {safeAccounts.length > 1 && (
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onDeleteAccount(acc.id);
-                                }}
-                                className="py-2 px-2.5 bg-rose-500/80 hover:bg-rose-600 text-white text-[11px] font-bold rounded-xl flex items-center gap-1 border border-rose-400/40 transition-colors ios-btn-tap"
-                              >
-                                <Icon name="trash" className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-                          </div>
-
-                          {/* Priority Reordering Controls (Quick Tap Alternative) */}
-                          {safeAccounts.length > 1 && (
-                            <div className="flex items-center justify-between py-1 px-1.5 bg-white/10 rounded-xl text-white">
-                              <div className="text-[10px] font-bold text-sky-100 uppercase tracking-wider pl-1 flex items-center gap-1">
-                                <Icon name="grip-vertical" className="w-3 h-3 text-sky-200" />
-                                <span>Prioritas: {index === 0 ? 'Akun Utama' : `Urutan #${index + 1}`}</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                {index > 0 && (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleMoveAccount(acc.id, 'top')}
-                                    className="px-2 py-1 bg-amber-400 hover:bg-amber-300 text-slate-950 text-[10px] font-black rounded-lg shadow-xs transition-colors flex items-center gap-1 ios-btn-tap"
-                                    title="Jadikan akun utama di posisi teratas"
-                                  >
-                                    <span>★ Jadikan Utama</span>
-                                  </button>
-                                )}
-                                {index > 0 && (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleMoveAccount(acc.id, 'up')}
-                                    className="p-1.5 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-colors ios-btn-tap"
-                                    title="Naikkan urutan"
-                                    aria-label="Naikkan urutan"
-                                  >
-                                    <Icon name="arrow-up" className="w-3 h-3" strokeWidth={2.5} />
-                                  </button>
-                                )}
-                                {index < safeAccounts.length - 1 && (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleMoveAccount(acc.id, 'down')}
-                                    className="p-1.5 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-colors ios-btn-tap"
-                                    title="Turunkan urutan"
-                                    aria-label="Turunkan urutan"
-                                  >
-                                    <Icon name="arrow-down" className="w-3 h-3" strokeWidth={2.5} />
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Recent Mutations for this account */}
-                          <div className="space-y-1.5 pt-1">
-                            <p className="text-[10px] font-bold text-sky-100 uppercase tracking-wider">
-                              Mutasi Terakhir
-                            </p>
-                            {accountTxs.length === 0 ? (
-                              <p className="text-[11px] text-sky-200/80 py-1 italic">Belum ada mutasi di kantong ini.</p>
-                            ) : (
-                              accountTxs.map(tx => (
-                                <div key={tx.id} className="flex items-center justify-between py-1.5 px-2.5 rounded-xl bg-black/15 text-xs text-white">
-                                  <span className="truncate max-w-[150px] font-medium text-sky-50">
-                                    {tx.notes || tx.category || 'Mutasi'}
-                                  </span>
-                                  <span className="font-bold text-white">
-                                    {tx.type === 'INCOME' ? '+' : '-'}{formatIDR(tx.amount)}
-                                  </span>
-                                </div>
-                              ))
-                            )}
-                          </div>
+                      {!isStackedInDeck && safeAccounts.length > 1 && (
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          title="Tahan & geser untuk mengatur urutan prioritas"
+                          aria-label={`Geser untuk atur urutan ${acc.name}`}
+                          onPointerDown={(e) => handleDragHandlePointerDown(acc.id, e)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="p-1.5 -mr-1 rounded-lg text-white/80 hover:text-white hover:bg-white/20 active:bg-white/30 cursor-grab active:cursor-grabbing transition-colors touch-none select-none flex items-center justify-center ios-btn-tap"
+                          style={{ touchAction: 'none' }}
+                        >
+                          <Icon name="grip-vertical" className="w-4 h-4" />
                         </div>
                       )}
                     </div>
-                    {showIndicatorAfter && (
-                      <div className="ios-card-drop-indicator" />
+                  </div>
+
+                  <div className="relative z-10 pt-2 border-t border-white/15 flex items-end justify-between">
+                    <div>
+                      <span className="text-[9px] font-semibold uppercase tracking-wider text-sky-100/90 block mb-0.5">
+                        Saldo Tersedia
+                      </span>
+                      <div className="text-lg sm:text-xl font-black tracking-tight text-white apple-card-emboss">
+                        <AnimatedCurrency value={bal} hideBalance={hideBalance} duration={600} className="text-lg sm:text-xl font-black tracking-tight text-white apple-card-emboss" />
+                      </div>
+                    </div>
+
+                    <div className="text-right flex items-center gap-1.5">
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-sky-100 bg-white/15 px-2 py-0.5 rounded-lg backdrop-blur-xs">
+                        <span>{isStackedInDeck ? 'Ketuk Buka Kartu' : (isExpanded ? 'Tutup Opsi' : 'Kelola')}</span>
+                        <Icon name={isStackedInDeck ? 'chevron-down' : (isExpanded ? 'chevron-up' : 'chevron-down')} className="w-3 h-3" />
+                      </span>
+                    </div>
+                  </div>
+
+                  {!isStackedInDeck && isExpanded && (
+                    <div className="relative z-10 mt-3.5 pt-3 border-t border-white/20 space-y-3 ios-wallet-drawer text-slate-800 dark:text-slate-100" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (onOpenAddTx) onOpenAddTx(acc.id);
+                          }}
+                          className="flex-1 py-2 px-2 bg-white text-[#0284C7] text-[11px] font-bold rounded-xl flex items-center justify-center gap-1 shadow-xs hover:bg-sky-50 transition-colors ios-btn-tap"
+                        >
+                          <Icon name="plus" className="w-3.5 h-3.5" />
+                          <span>Catat Mutasi</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => handleStartEdit(acc, e)}
+                          className="py-2 px-3 bg-white/20 hover:bg-white/30 text-white text-[11px] font-bold rounded-xl flex items-center gap-1 border border-white/30 transition-colors ios-btn-tap"
+                        >
+                          <Icon name="edit" className="w-3.5 h-3.5" />
+                          <span>Edit</span>
+                        </button>
+                        {safeAccounts.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDeleteAccount(acc.id);
+                            }}
+                            className="py-2 px-2.5 bg-rose-500/80 hover:bg-rose-600 text-white text-[11px] font-bold rounded-xl flex items-center gap-1 border border-rose-400/40 transition-colors ios-btn-tap"
+                          >
+                            <Icon name="trash" className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="space-y-1.5 pt-1">
+                        <p className="text-[10px] font-bold text-sky-100 uppercase tracking-wider">
+                          Mutasi Terakhir
+                        </p>
+                        {accountTxs.length === 0 ? (
+                          <p className="text-[11px] text-sky-200/80 py-1 italic">Belum ada mutasi di kantong ini.</p>
+                        ) : (
+                          accountTxs.map(tx => (
+                            <div key={tx.id} className="flex items-center justify-between py-1.5 px-2.5 rounded-xl bg-black/15 text-xs text-white">
+                              <span className="truncate max-w-[150px] font-medium text-sky-50">
+                                {tx.notes || tx.category || 'Mutasi'}
+                              </span>
+                              <span className="font-bold text-white">
+                                {tx.type === 'INCOME' ? '+' : '-'}{formatIDR(tx.amount)}
+                              </span>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            };
+
+            const renderCardDeck = (deckKey, title, icon, list) => {
+              if (list.length === 0) return null;
+
+              const isUnstacked = unstackedCategories[deckKey] === true;
+              const isDeckStacked = list.length > 1 && !isUnstacked;
+              const deckBalance = list.reduce((acc, a) => acc + Ledger.getAccountBalance(a.id, safeAccounts, safeTransactions), 0);
+
+              const yOffsets = [];
+              let runningY = 0;
+              for (let i = 0; i < list.length; i++) {
+                yOffsets.push(runningY);
+                const isExp = expandedCardId === list[i].id;
+                const h = isExp ? (COLLAPSED_CARD_HEIGHT + DRAWER_HEIGHT) : COLLAPSED_CARD_HEIGHT;
+                runningY += h + UNSTACKED_GAP;
+              }
+
+              const containerHeight = isDeckStacked
+                ? (COLLAPSED_CARD_HEIGHT + (list.length - 1) * STACK_OFFSET_Y)
+                : Math.max(COLLAPSED_CARD_HEIGHT, runningY - UNSTACKED_GAP + 6);
+
+              const handleToggleStack = () => {
+                if (window.VoraletHaptics?.selection) {
+                  window.VoraletHaptics.selection();
+                } else if (window.VoraletHaptics?.tap) {
+                  window.VoraletHaptics.tap();
+                }
+                setUnstackedCategories(prev => ({
+                  ...prev,
+                  [deckKey]: !prev[deckKey]
+                }));
+                if (isUnstacked) {
+                  setExpandedCardId(null);
+                }
+              };
+
+              return (
+                <div key={deckKey} className="space-y-2.5">
+                  <div className="flex items-center justify-between px-1">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-lg bg-sky-100 dark:bg-slate-800 flex items-center justify-center text-[#0284C7] dark:text-sky-300">
+                        <Icon name={icon} className="w-3.5 h-3.5" />
+                      </div>
+                      <div>
+                        <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                          {title}
+                        </span>
+                        <span className="text-[10px] text-slate-400 ml-1.5">
+                          ({list.length} kartu {list.length > 1 ? (isDeckStacked ? '• Bertumpuk' : '• Terbuka') : ''})
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300">
+                        <AnimatedCurrency value={deckBalance} hideBalance={hideBalance} duration={550} className="text-xs font-extrabold text-slate-700 dark:text-slate-300" />
+                      </span>
+
+                      {list.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={handleToggleStack}
+                          className="px-2.5 py-1 rounded-lg bg-sky-50 dark:bg-slate-800 hover:bg-sky-100 dark:hover:bg-slate-700 text-[#0284C7] dark:text-sky-400 text-[10px] font-bold flex items-center gap-1 border border-sky-200/60 dark:border-slate-700 transition-colors ios-btn-tap"
+                        >
+                          <Icon name={isDeckStacked ? 'chevron-down' : 'chevron-up'} className="w-3 h-3" />
+                          <span>{isDeckStacked ? 'Buka Kartu' : 'Tumpuk Kartu'}</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* CONTINUOUS ABSOLUTE CONTAINER: Zero DOM teardown for genuine Apple Wallet spring glide */}
+                  <div
+                    style={{
+                      height: `${containerHeight}px`,
+                      transition: 'height 0.52s cubic-bezier(0.34, 1.56, 0.64, 1)'
+                    }}
+                    className={`relative w-full select-none apple-wallet-category-stack ${
+                      isDeckStacked ? 'cursor-pointer' : ''
+                    }`}
+                    onClick={isDeckStacked ? handleToggleStack : undefined}
+                  >
+                    {list.map((acc, idx) =>
+                      renderSingleCard(acc, idx, list.length, isDeckStacked, yOffsets[idx], handleToggleStack)
                     )}
-                  </React.Fragment>
-                );
-              })
-            )}
-          </div>
+
+                    {isDeckStacked && list.length > 1 && (
+                      <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 z-40 px-3 py-1 rounded-full bg-slate-900/80 backdrop-blur-md border border-white/20 text-white text-[10px] font-bold flex items-center gap-1.5 shadow-lg pointer-events-none animate-pulse">
+                        <Icon name="layers" className="w-3 h-3 text-sky-400" />
+                        <span>Ketuk tumpukan untuk membuka ({list.length} kartu)</span>
+                        <Icon name="chevron-down" className="w-3 h-3 text-sky-400" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            };
+
+            return (
+              <div className="space-y-4">
+                {/* Category Filter Pills (Apple Segmented Style) */}
+                <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCategoryTab('ALL')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ios-btn-tap ${
+                      selectedCategoryTab === 'ALL'
+                        ? 'bg-[#0284C7] text-white shadow-xs'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
+                    }`}
+                  >
+                    Per Kategori ({userAccounts.length})
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCategoryTab('DECK')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ios-btn-tap ${
+                      selectedCategoryTab === 'DECK'
+                        ? 'bg-[#0284C7] text-white shadow-xs'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
+                    }`}
+                  >
+                    <Icon name="layers" className="w-3.5 h-3.5" />
+                    <span>Dek Master ({userAccounts.length})</span>
+                  </button>
+
+                  {CATEGORY_DEFS.map(cat => {
+                    const count = groupedAccounts[cat.key]?.length || 0;
+                    if (count === 0 && selectedCategoryTab !== cat.key) return null;
+                    return (
+                      <button
+                        key={cat.key}
+                        type="button"
+                        onClick={() => setSelectedCategoryTab(cat.key)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ios-btn-tap ${
+                          selectedCategoryTab === cat.key
+                            ? 'bg-[#0284C7] text-white shadow-xs'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
+                        }`}
+                      >
+                        <Icon name={cat.icon} className="w-3.5 h-3.5" />
+                        <span>{cat.title} ({count})</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* VIEW RENDER: DECK OR PER CATEGORY */}
+                {selectedCategoryTab === 'DECK' ? (
+                  renderCardDeck('MASTER_DECK', 'Dek Apple Wallet (Semua Kartu)', 'layers', userAccounts)
+                ) : (
+                  CATEGORY_DEFS.map(cat => {
+                    if (selectedCategoryTab !== 'ALL' && selectedCategoryTab !== cat.key) return null;
+                    const catAccounts = groupedAccounts[cat.key] || [];
+                    return renderCardDeck(cat.key, cat.title, cat.icon, catAccounts);
+                  })
+                )}
+
+                {userAccounts.length === 0 && (
+                  <div className="p-8 text-center bg-[#F0F9FF] dark:bg-slate-800 rounded-2xl border border-sky-100 dark:border-slate-700">
+                    <Icon name="credit-card" className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Belum ada kantong</p>
+                    <p className="text-[11px] text-slate-400 mt-1">Tambahkan kantong pertama Anda untuk mulai mengelola dana.</p>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
       );
     };

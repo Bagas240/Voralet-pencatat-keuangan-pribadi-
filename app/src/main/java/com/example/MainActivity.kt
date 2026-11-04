@@ -111,8 +111,21 @@ class MainActivity : ComponentActivity() {
         // Enable edge-to-edge
         enableEdgeToEdge()
 
-        // Window display setup
+        // Anti-Screen Scraping & Malware Screenshot Protection for Financial Vault & PINs
+        try {
+            window.setFlags(
+                WindowManager.LayoutParams.FLAG_SECURE,
+                WindowManager.LayoutParams.FLAG_SECURE
+            )
+        } catch (_: Throwable) {}
 
+        // Security Guard RASP verification (anti-debugger, anti-hooking)
+        try {
+            val report = com.example.security.AppSecurityGuard.verifyEnvironmentIntegrity(this)
+            if (!report.isSafe && !com.example.webview.VoraletWebViewConfig.isEmulator) {
+                Log.w(TAG, "Security Guard Notice: debugging/hooking trace detected.")
+            }
+        } catch (_: Throwable) {}
 
         try {
             val insetsController = WindowCompat.getInsetsController(window, window.decorView)
@@ -276,6 +289,8 @@ fun VoraletWebViewContainer(
             factory = { context ->
                 WebView(context).apply {
                     VoraletWebViewConfig.applySettings(this, backgroundColor)
+                    setOnLongClickListener { true } // Disables context menu & inspect popup
+                    isHapticFeedbackEnabled = true
 
                     val bridge = AndroidNativeBridge(activity)
                     addJavascriptInterface(bridge, AndroidNativeBridge.BRIDGE_NAME)

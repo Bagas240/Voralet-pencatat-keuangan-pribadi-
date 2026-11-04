@@ -355,6 +355,7 @@ PART8_APP = """
       onOpenAddTx,
       onOpenAddIncome,
       onOpenAddExpense,
+      onOpenReceiptScanner,
       onOpenAccounts,
       onOpenSettings,
       onOpenDebts,
@@ -801,6 +802,29 @@ PART8_APP = """
             </button>
           </div>
 
+          {/* Foto Struk Belanja Quick Action Button (+10 Koin) */}
+          <div className="animate-dashboard-card" style={{ animationDelay: '110ms' }}>
+            <button
+              type="button"
+              onClick={onOpenReceiptScanner}
+              className="w-full py-3 px-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 active:scale-[0.98] text-white rounded-2xl flex items-center justify-between shadow-[0_4px_16px_rgba(245,158,11,0.28)] transition-all ios-btn-tap"
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-white/25 flex items-center justify-center shrink-0">
+                  <Icon name="camera" className="w-4 h-4 text-white" strokeWidth={2.4} />
+                </div>
+                <div className="text-left leading-tight">
+                  <span className="text-xs font-bold block">Foto & Pindai Struk Belanja</span>
+                  <span className="text-[10px] text-amber-100 block font-medium">Otomatis catat pengeluaran & keterangan</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/20 text-white text-[11px] font-extrabold shrink-0 border border-white/20">
+                <span>🪙</span>
+                <span>+10 Koin</span>
+              </div>
+            </button>
+          </div>
+
           {/* TikTok-Style Flame Streak Card (Api Keuangan 24 Jam) */}
           <TikTokStreakFlameCard
             streakData={streakData}
@@ -1237,10 +1261,12 @@ PART8_APP = """
       const [isPetModalOpen, setIsPetModalOpen] = useState(false);
       const [isStreakModalOpen, setIsStreakModalOpen] = useState(false);
       const [isMonthlyPdfModalOpen, setIsMonthlyPdfModalOpen] = useState(false);
+      const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
 
       // Android Back Button Integration: Smoothly close open modals or navigate back to Dashboard
       useEffect(() => {
         window.handleAndroidBack = () => {
+          if (isReceiptModalOpen) { setIsReceiptModalOpen(false); return true; }
           if (isTxModalOpen) { setIsTxModalOpen(false); return true; }
           if (isAccModalOpen) { setIsAccModalOpen(false); return true; }
           if (isSavingsModalOpen) { setIsSavingsModalOpen(false); return true; }
@@ -2268,6 +2294,7 @@ PART8_APP = """
                     onOpenAddTx={handleOpenAddTx}
                     onOpenAddIncome={handleOpenAddIncome}
                     onOpenAddExpense={handleOpenAddExpense}
+                    onOpenReceiptScanner={() => setIsReceiptModalOpen(true)}
                     onOpenAccounts={handleOpenAccounts}
                     onOpenSettings={handleOpenSettings}
                     onOpenDebts={handleOpenDebtsTab}
@@ -2362,6 +2389,26 @@ PART8_APP = """
             onAddTransaction={handleAddTransaction}
             customCategories={customCategories}
             onSaveCustomCategory={handleSaveCustomCategory}
+            onOpenReceiptScanner={() => setIsReceiptModalOpen(true)}
+          />
+
+          <ReceiptScannerModal
+            isOpen={isReceiptModalOpen}
+            onClose={() => setIsReceiptModalOpen(false)}
+            accounts={accounts}
+            onSaveTransaction={(tx) => {
+              handleAddTransaction(tx);
+              const updatedPet = StorageService.getPetData();
+              setPetData(updatedPet);
+              StorageService.syncToNativeWidget(streakData, updatedPet);
+              if (showToast) showToast('🎉 Struk Belanja Berhasil Dicatat! +10 Koin Diperoleh 🪙');
+            }}
+            onAddCoins={(coins) => {
+              const updatedPet = StorageService.getPetData();
+              setPetData(updatedPet);
+              StorageService.syncToNativeWidget(streakData, updatedPet);
+            }}
+            customCategories={customCategories}
           />
 
           <AccountsManagerModal

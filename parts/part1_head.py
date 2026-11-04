@@ -15,6 +15,41 @@ HTML_HEAD = """<!DOCTYPE html>
 
   <!-- Security & Anti-Tampering Content Policy -->
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: file:; img-src 'self' data: blob: file:; font-src 'self' data: https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; connect-src 'self' data: blob:; object-src 'none';" />
+
+  <!-- Client-side Anti-Inspection, Anti-Debugging & Security Hardening Shield -->
+  <script>
+    (function() {
+      if (typeof window !== 'undefined') {
+        // 1. Production Console Silencer: Prevents dumping confidential financial balances & PINs to logcat/DevTools
+        try {
+          const noop = function() {};
+          console.log = noop;
+          console.info = noop;
+          console.debug = noop;
+          console.table = noop;
+        } catch (_) {}
+
+        // 2. Anti-Context Menu & Text Selection Inspection
+        document.addEventListener('contextmenu', function(e) {
+          e.preventDefault();
+          return false;
+        }, { passive: false });
+
+        // 3. Block Inspection Keyboard Shortcuts (F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C, Ctrl+U, Ctrl+S)
+        window.addEventListener('keydown', function(e) {
+          if (
+            e.key === 'F12' ||
+            (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c')) ||
+            (e.ctrlKey && (e.key === 'u' || e.key === 'U' || e.key === 's' || e.key === 'S'))
+          ) {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+          }
+        }, true);
+      }
+    })();
+  </script>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -800,6 +835,50 @@ HTML_HEAD = """<!DOCTYPE html>
     .animate-ios-backdrop-exit {
       animation: iosBackdropFadeOut 0.28s cubic-bezier(0.32, 0.94, 0.4, 1) forwards;
       will-change: opacity;
+    }
+
+    /* Receipt Scanner Laser & HUD Animations */
+    @keyframes scannerLaserSweep {
+      0% { top: 4%; opacity: 0.95; }
+      50% { top: 92%; opacity: 1; }
+      100% { top: 4%; opacity: 0.95; }
+    }
+    .animate-scanner-laser {
+      animation: scannerLaserSweep 2.2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+      box-shadow: 0 0 16px 3px rgba(2, 132, 199, 0.85), 0 0 30px 6px rgba(56, 189, 248, 0.4);
+    }
+    @keyframes coinRewardPop {
+      0% { transform: scale(0.3) translateY(36px); opacity: 0; }
+      60% { transform: scale(1.15) translateY(-8px); opacity: 1; }
+      80% { transform: scale(0.95) translateY(2px); }
+      100% { transform: scale(1) translateY(0); opacity: 1; }
+    }
+    .animate-coin-reward {
+      animation: coinRewardPop 0.52s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    /* Apple Wallet Stacking & Fan-out Vertical Physics */
+    .apple-wallet-category-stack {
+      position: relative;
+      width: 100%;
+      transition: height 0.52s cubic-bezier(0.34, 1.56, 0.64, 1);
+      will-change: height;
+    }
+    .apple-wallet-stacked-card {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      width: 100%;
+      transition: transform 0.52s cubic-bezier(0.34, 1.56, 0.64, 1),
+                  box-shadow 0.42s ease,
+                  opacity 0.3s ease,
+                  filter 0.3s ease;
+      will-change: transform, box-shadow;
+      transform-origin: top center;
+    }
+    .apple-wallet-stacked-card:active {
+      filter: brightness(0.96);
     }
 
     /* Pixel Pet & Streak Flame Keyframes */

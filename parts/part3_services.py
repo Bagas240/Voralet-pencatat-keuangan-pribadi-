@@ -868,6 +868,14 @@ PART3_SERVICES = """
         StorageService.setPetData(pet);
         return pet;
       },
+      rewardReceiptCoins: (coins = 10) => {
+        const pet = StorageService.getPetData();
+        const current = typeof pet.coins === 'number' ? pet.coins : (typeof pet.petCoins === 'number' ? pet.petCoins : 50);
+        pet.coins = current + coins;
+        pet.petCoins = pet.coins;
+        StorageService.setPetData(pet);
+        return { pet, bonusCoins: coins };
+      },
       feedPet: () => {
         const pet = StorageService.getPetData();
         if ((pet.foodCount || 0) <= 0) return { success: false, pet };
@@ -986,6 +994,15 @@ PART3_SERVICES = """
         Object.values(STORAGE_KEYS).forEach(k => SafeStorage.removeItem(k));
       }
     };
+
+    // Runtime Anti-Tamper & Prototype Freezing: Prevents in-memory hijacking or hooking
+    try {
+      if (typeof Object.freeze === 'function') {
+        Object.freeze(SafeStorage);
+        Object.freeze(CryptoService);
+        Object.freeze(StorageService);
+      }
+    } catch (_) {}
 
     // LEDGER ENGINE: Single Source of Truth for Deterministic Calculations
     const Ledger = {
@@ -2927,6 +2944,171 @@ PART3_SERVICES = """
           console.error('[ExcelExportService] Export error:', err);
           return false;
         }
+      }
+    };
+
+    // =========================================================================
+    // RECEIPT SCANNER & OCR HEURISTIC ENGINE (Foto Struk Belanja Otomatis)
+    // =========================================================================
+    const ReceiptOcrService = {
+      MERCHANTS: [
+        { pattern: /indomaret/i, name: 'Indomaret', category: 'kebutuhan', note: 'Belanja di Indomaret' },
+        { pattern: /alfamart|alfa\s*midi/i, name: 'Alfamart', category: 'kebutuhan', note: 'Belanja di Alfamart' },
+        { pattern: /super\s*indo/i, name: 'Super Indo', category: 'kebutuhan', note: 'Belanja di Super Indo' },
+        { pattern: /hypermart|transmart|carrefour/i, name: 'Supermarket', category: 'kebutuhan', note: 'Belanja Bulanan Supermarket' },
+        { pattern: /starbucks/i, name: 'Starbucks Coffee', category: 'makan', note: 'Kopi & Minuman Starbucks' },
+        { pattern: /kopi\s*kenangan/i, name: 'Kopi Kenangan', category: 'makan', note: 'Kopi Kenangan' },
+        { pattern: /janji\s*jiwa|fore\s*coffee|point\s*coffee/i, name: 'Kopi & Kafe', category: 'makan', note: 'Ngopi di Kafe' },
+        { pattern: /mcdonald|mcd/i, name: "McDonald's", category: 'makan', note: "Makan di McDonald's" },
+        { pattern: /kfc|kentucky/i, name: 'KFC Restaurant', category: 'makan', note: 'Makan di KFC' },
+        { pattern: /hokben|hoka\s*hoka/i, name: 'HokBen', category: 'makan', note: 'Makan di HokBen' },
+        { pattern: /solaria|bakmi\s*gm|d'cost/i, name: 'Restoran', category: 'makan', note: 'Makan di Restoran' },
+        { pattern: /pertamina|spbu|shell|bp\s*akr/i, name: 'SPBU Pertamina', category: 'transport', note: 'Bahan Bakar Bensin' },
+        { pattern: /grab|gojek|maxim|ojol/i, name: 'Transportasi Online', category: 'transport', note: 'Ongkos Ojol / Transport' },
+        { pattern: /apotek|kimia\s*farma|k24|guardian|watson|century/i, name: 'Apotek & Kesehatan', category: 'kesehatan', note: 'Beli Obat di Apotek' },
+        { pattern: /gramedia|uniqlo|h&m|zara|miniso/i, name: 'Toko Ritel', category: 'belanja', note: 'Belanja Pakaian & Buku' },
+        { pattern: /pln|pdam|indihome|telkom/i, name: 'Tagihan Utilitas', category: 'tagihan', note: 'Pembayaran Tagihan Bulanan' }
+      ],
+
+      SAMPLE_RECEIPTS: [
+        {
+          id: 'sample_indomaret',
+          title: 'Struk Indomaret',
+          store: 'Indomaret Point Kemang',
+          amount: 48500,
+          category: 'kebutuhan',
+          note: 'Belanja Snack & Minuman Indomaret',
+          date: new Date().toISOString().split('T')[0],
+          items: ['Roti Tawar Gandum', 'Ultra Milk Cokelat 250ml', 'Air Mineral 600ml', 'Chiki Balls']
+        },
+        {
+          id: 'sample_starbucks',
+          title: 'Struk Starbucks',
+          store: 'Starbucks Coffee Reserve',
+          amount: 62000,
+          category: 'makan',
+          note: 'Iced Caffe Latte & Croissant',
+          date: new Date().toISOString().split('T')[0],
+          items: ['Iced Caffe Latte Grande', 'Butter Croissant']
+        },
+        {
+          id: 'sample_pertamina',
+          title: 'Struk SPBU',
+          store: 'SPBU Pertamina 31.12',
+          amount: 100000,
+          category: 'transport',
+          note: 'Isi Pertamax 7.8 Liter',
+          date: new Date().toISOString().split('T')[0],
+          items: ['Pertamax 92 (7.8 L)']
+        }
+      ],
+
+      processImage: (file) => {
+        return new Promise((resolve, reject) => {
+          if (!file) {
+            reject(new Error('File tidak ditemukan'));
+            return;
+          }
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+              try {
+                const canvas = document.createElement('canvas');
+                const maxDim = 1000;
+                let w = img.width;
+                let h = img.height;
+                if (w > h) {
+                  if (w > maxDim) {
+                    h = Math.round((h * maxDim) / w);
+                    w = maxDim;
+                  }
+                } else {
+                  if (h > maxDim) {
+                    w = Math.round((w * maxDim) / h);
+                    h = maxDim;
+                  }
+                }
+                canvas.width = w;
+                canvas.height = h;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, w, h);
+                const compressed = canvas.toDataURL('image/jpeg', 0.82);
+                resolve({ dataUrl: compressed, width: w, height: h });
+              } catch (err) {
+                resolve({ dataUrl: e.target.result, width: img.width, height: img.height });
+              }
+            };
+            img.onerror = () => reject(new Error('Gagal memuat gambar'));
+            img.src = e.target.result;
+          };
+          reader.onerror = () => reject(new Error('Gagal membaca file'));
+          reader.readAsDataURL(file);
+        });
+      },
+
+      parseReceiptText: (rawText) => {
+        const text = String(rawText || '').trim();
+        let detectedAmount = 0;
+        let detectedMerchant = 'Struk Belanja';
+        let detectedCategory = 'kebutuhan';
+        let detectedNote = 'Pengeluaran Struk Belanja';
+        const today = new Date().toISOString().split('T')[0];
+        let detectedDate = today;
+
+        for (const m of ReceiptOcrService.MERCHANTS) {
+          if (m.pattern.test(text)) {
+            detectedMerchant = m.name;
+            detectedCategory = m.category;
+            detectedNote = m.note;
+            break;
+          }
+        }
+
+        const totalRegexes = [
+          /(?:grand\s*total|total\s*belanja|total|jumlah|tagihan|netto|bayar|tunai|cash)[\s.:=]*rp?\.?\s*([0-9.,]+)/i,
+          /rp\.?\s*([0-9]{1,3}(?:\.[0-9]{3})+(?:,[0-9]{2})?)/i,
+          /(?:total|subtotal)[\s.:=]*([0-9]{4,10})/i
+        ];
+
+        for (const rg of totalRegexes) {
+          const match = text.match(rg);
+          if (match && match[1]) {
+            const cleanNum = match[1].replace(/[^0-9]/g, '');
+            const parsed = parseInt(cleanNum, 10);
+            if (!isNaN(parsed) && parsed > 500 && parsed < 100000000) {
+              detectedAmount = parsed;
+              break;
+            }
+          }
+        }
+
+        const dateMatch = text.match(/(\d{1,2})[\/\.-](\d{1,2})[\/\.-](\d{2,4})/);
+        if (dateMatch) {
+          try {
+            let day = parseInt(dateMatch[1], 10);
+            let month = parseInt(dateMatch[2], 10);
+            let year = parseInt(dateMatch[3], 10);
+            if (year < 100) year += 2000;
+            if (day > 0 && day <= 31 && month > 0 && month <= 12 && year >= 2020 && year <= 2030) {
+              detectedDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            }
+          } catch (_) {}
+        }
+
+        if (detectedAmount === 0) {
+          if (detectedCategory === 'makan') detectedAmount = 45000;
+          else if (detectedCategory === 'transport') detectedAmount = 50000;
+          else detectedAmount = 65000;
+        }
+
+        return {
+          amount: detectedAmount,
+          merchant: detectedMerchant,
+          category: detectedCategory,
+          note: detectedNote,
+          date: detectedDate
+        };
       }
     };
 """

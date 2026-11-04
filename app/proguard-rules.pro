@@ -1,9 +1,5 @@
 # Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# Strong Anti-Decompilation & Reverse Engineering Hardening
 
 # Preserve JavaScript interface for WebView
 -keepattributes *Annotation*
@@ -18,16 +14,26 @@
 -keep class com.example.widget.StreakWidgetProvider { *; }
 -keep class com.example.widget.PetWidgetProvider { *; }
 
-# Obfuscate class and method names in release builds
+# Aggressive Obfuscation & Bytecode Flattening
+# Flattens all packages into root, renaming to unreadable single-letter symbols
 -repackageclasses ''
+-flattenpackagehierarchy ''
 -allowaccessmodification
+-overloadaggressively
 -renamesourcefileattribute ""
+-dontkeepattributes SourceFile,LineNumberTable
 
-# Strip verbose debug logs in production
+# Strip all debugging symbols and logging calls in production
 -assumenosideeffects class android.util.Log {
     public static *** v(...);
     public static *** d(...);
     public static *** i(...);
+    public static *** w(...);
+    public static *** e(...);
+    public static *** wtf(...);
 }
 
-
+# Protect Security Verification classes from inlining while allowing obfuscation
+-keepclassmembers class com.example.security.AppSecurityGuard {
+    public static *** *(...);
+}

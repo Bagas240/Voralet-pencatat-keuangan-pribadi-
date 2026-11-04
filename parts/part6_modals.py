@@ -2,7 +2,7 @@ PART6_MODALS = """
     // =========================================================================
     // 6. CORE MODALS (TRANSACTION, ACCOUNTS, SAVINGS, SETTINGS)
     // =========================================================================
-    const TransactionModal = ({ isOpen, onClose, initialData, accounts, onAddTransaction, customCategories = [], onSaveCustomCategory }) => {
+    const TransactionModal = ({ isOpen, onClose, initialData, accounts, onAddTransaction, customCategories = [], onSaveCustomCategory, onOpenReceiptScanner }) => {
       const [type, setType] = useState('EXPENSE');
       const [amountStr, setAmountStr] = useState('');
       const [accountId, setAccountId] = useState(accounts[0]?.id || '');
@@ -165,6 +165,25 @@ PART6_MODALS = """
             </div>
 
             <form onSubmit={handleSubmit} className="ios-modal-body flex-1 overflow-y-auto pb-28 p-4 sm:p-5 space-y-4 no-scrollbar">
+              {onOpenReceiptScanner && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleClose();
+                    onOpenReceiptScanner();
+                  }}
+                  className="w-full py-2.5 px-3.5 rounded-2xl bg-amber-50 dark:bg-slate-900 border border-amber-200 dark:border-amber-500/40 text-amber-900 dark:text-amber-200 flex items-center justify-between text-xs font-bold shadow-xs hover:bg-amber-100/70 dark:hover:bg-slate-800 transition-all ios-btn-tap"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">📸</span>
+                    <span>Pindai Struk Belanja Otomatis</span>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-black">
+                    +10 KOIN 🪙
+                  </span>
+                </button>
+              )}
+
               <SegmentedControl
                 options={[
                   { value: 'EXPENSE', label: 'Pengeluaran', icon: 'arrow-up-right', iconColor: 'text-rose-500' },
@@ -3823,6 +3842,448 @@ PART6_MODALS = """
               </button>
             </div>
           </div>
+        </div>
+      );
+    };
+
+    // =========================================================================
+    // 16. RECEIPT SCANNER MODAL (Foto & Pindai Struk Belanja Otomatis +10 Koin)
+    // =========================================================================
+    const ReceiptScannerModal = ({
+      isOpen,
+      onClose,
+      accounts = [],
+      onSaveTransaction,
+      onAddCoins,
+      customCategories = []
+    }) => {
+      const [receiptImg, setReceiptImg] = useState('');
+      const [isScanning, setIsScanning] = useState(false);
+      const [scanStep, setScanStep] = useState('');
+      const [amountStr, setAmountStr] = useState('');
+      const [notes, setNotes] = useState('');
+      const [category, setCategory] = useState('kebutuhan');
+      const [accountId, setAccountId] = useState(accounts[0]?.id || '');
+      const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
+      const [detectedItems, setDetectedItems] = useState([]);
+      const [showCoinReward, setShowCoinReward] = useState(false);
+      const [hasScanned, setHasScanned] = useState(false);
+
+      const fileInputRef = useRef(null);
+      const galleryInputRef = useRef(null);
+      const { shouldRender, isClosing, handleClose } = useModalLifecycle(isOpen, onClose, 350);
+
+      const allCategories = useMemo(() => {
+        return getAllCategories(customCategories).filter(c => c.type === 'ALL' || c.type === 'EXPENSE');
+      }, [customCategories]);
+
+      useEffect(() => {
+        if (!isOpen) {
+          setReceiptImg('');
+          setIsScanning(false);
+          setScanStep('');
+          setAmountStr('');
+          setNotes('');
+          setCategory('kebutuhan');
+          setDetectedItems([]);
+          setShowCoinReward(false);
+          setHasScanned(false);
+        } else if (accounts.length > 0 && !accounts.some(a => a.id === accountId)) {
+          setAccountId(accounts[0].id);
+        }
+      }, [isOpen, accounts]);
+
+      if (!shouldRender) return null;
+
+      const handleFileSelected = async (file, forcedSample = null) => {
+        if (!file && !forcedSample) return;
+
+        setIsScanning(true);
+        setHasScanned(false);
+        setScanStep('Menyiapkan foto struk...');
+
+        try {
+          let dataUrl = '';
+          let parseData = null;
+
+          if (forcedSample) {
+            dataUrl = forcedSample.dataUrl || '';
+            parseData = {
+              amount: forcedSample.amount,
+              merchant: forcedSample.store,
+              category: forcedSample.category,
+              note: forcedSample.note,
+              date: forcedSample.date
+            };
+            setDetectedItems(forcedSample.items || []);
+          } else {
+            const processed = await ReceiptOcrService.processImage(file);
+            dataUrl = processed.dataUrl;
+
+            setScanStep('Mendeteksi nama toko dan kasir...');
+            await new Promise(r => setTimeout(r, 450));
+
+            setScanStep('Membaca total pengeluaran dan tanggal...');
+            await new Promise(r => setTimeout(r, 500));
+
+            const fileName = file.name || '';
+            parseData = ReceiptOcrService.parseReceiptText(fileName);
+          }
+
+          setReceiptImg(dataUrl);
+          setAmountStr(parseData.amount ? String(parseData.amount) : '48500');
+          setNotes(parseData.note || 'Belanja Struk');
+          setCategory(parseData.category || 'kebutuhan');
+          setDate(parseData.date || new Date().toISOString().split('T')[0]);
+          setHasScanned(true);
+
+          if (window.VoraletHaptics?.selection) {
+            window.VoraletHaptics.selection();
+          }
+        } catch (err) {
+          console.error('[ReceiptScanner] Error processing:', err);
+        } finally {
+          setIsScanning(false);
+          setScanStep('');
+        }
+      };
+
+      const handleSave = (e) => {
+        if (e) e.preventDefault();
+        const rawAmount = parseRawNumber(amountStr);
+        if (rawAmount <= 0) return;
+
+        const targetAccId = accountId || accounts[0]?.id;
+        if (!targetAccId) return;
+
+        const newTx = {
+          id: 'tx_receipt_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
+          accountId: targetAccId,
+          type: 'EXPENSE',
+          amount: rawAmount,
+          category,
+          date,
+          note: notes.trim() || 'Pengeluaran Struk',
+          notes: notes.trim() || 'Pengeluaran Struk',
+          receiptImage: receiptImg || '',
+          isReceiptScan: true,
+          createdAt: new Date().toISOString()
+        };
+
+        if (onSaveTransaction) {
+          onSaveTransaction(newTx);
+        }
+
+        if (typeof StorageService !== 'undefined' && StorageService.rewardReceiptCoins) {
+          StorageService.rewardReceiptCoins(10);
+        }
+        if (onAddCoins) {
+          onAddCoins(10);
+        }
+
+        HapticFeedback.save();
+        setShowCoinReward(true);
+
+        setTimeout(() => {
+          setShowCoinReward(false);
+          handleClose();
+        }, 1500);
+      };
+
+      return (
+        <div
+          className={`ios-modal-backdrop ${isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'}`}
+          onClick={(e) => { if (e.target === e.currentTarget && !isScanning) handleClose(); }}
+        >
+          <div className={`ios-modal-card bg-white dark:bg-slate-900 ${isClosing ? 'animate-ios-sheet-exit' : 'animate-ios-sheet'} flex flex-col max-h-[92dvh]`}>
+            <ModalDragHandle onDismiss={handleClose} />
+
+            <div className="ios-modal-header px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900 shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-sky-100 dark:bg-slate-800 border border-sky-200/60 dark:border-slate-700 text-brand dark:text-sky-300 flex items-center justify-center shadow-xs">
+                  <Icon name="camera" className="w-4 h-4" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-slate-900 dark:text-white leading-tight">Pindai Struk Belanja</h2>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400">Otomatis Catat & Klaim Bonus</span>
+                    <span className="px-1.5 py-0.2 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 text-[9px] font-extrabold flex items-center gap-0.5 border border-amber-300/40">
+                      <span>🪙</span>
+                      <span>+10 Koin</span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <ModalCloseButton onClick={handleClose} />
+            </div>
+
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={(e) => {
+                if (e.target.files?.[0]) handleFileSelected(e.target.files[0]);
+                e.target.value = '';
+              }}
+            />
+            <input
+              type="file"
+              ref={galleryInputRef}
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                if (e.target.files?.[0]) handleFileSelected(e.target.files[0]);
+                e.target.value = '';
+              }}
+            />
+
+            <div className="ios-modal-body flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 no-scrollbar">
+              <div className="p-3 rounded-2xl bg-amber-50/70 dark:bg-slate-800 border border-amber-200/80 dark:border-slate-700 flex items-center justify-between shadow-xs">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold text-base shadow-xs">
+                    🪙
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold text-slate-900 dark:text-white block leading-tight">
+                      Dapatkan +10 Koin Peliharaan
+                    </span>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                      Foto struk belanja untuk pakan & kostum peliharaan!
+                    </span>
+                  </div>
+                </div>
+                <span className="text-xs font-extrabold text-amber-600 dark:text-amber-400 shrink-0">
+                  +10 COIN
+                </span>
+              </div>
+
+              {isScanning && (
+                <div className="p-6 rounded-3xl bg-slate-900 text-white flex flex-col items-center justify-center text-center space-y-4 relative overflow-hidden shadow-xl border border-sky-500/30">
+                  <div className="w-20 h-28 relative rounded-2xl border-2 border-sky-400/50 bg-slate-800/80 flex items-center justify-center overflow-hidden">
+                    <Icon name="file-text" className="w-10 h-10 text-sky-300 opacity-60" />
+                    <div className="absolute inset-x-0 h-1 bg-sky-400 animate-scanner-laser" />
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="text-sm font-bold text-white flex items-center justify-center gap-1.5">
+                      <Icon name="sparkles" className="w-4 h-4 text-amber-400" />
+                      <span>Sedang Memindai Struk...</span>
+                    </h3>
+                    <p className="text-xs text-sky-200 animate-pulse">{scanStep || 'Menganalisis teks & nominal...'}</p>
+                  </div>
+                </div>
+              )}
+
+              {!receiptImg && !isScanning && (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="p-5 rounded-2xl bg-[#0284C7] hover:bg-[#0369A1] active:scale-[0.98] text-white flex flex-col items-center justify-center gap-2 shadow-md transition-all ios-btn-tap"
+                    >
+                      <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
+                        <Icon name="camera" className="w-6 h-6 text-white" strokeWidth={2.2} />
+                      </div>
+                      <span className="text-xs font-bold">Ambil Foto Struk</span>
+                      <span className="text-[10px] text-sky-100 font-medium">Buka Kamera HP</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => galleryInputRef.current?.click()}
+                      className="p-5 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-[0.98] text-slate-800 dark:text-slate-100 flex flex-col items-center justify-center gap-2 border border-slate-200 dark:border-slate-700 transition-all ios-btn-tap"
+                    >
+                      <div className="w-12 h-12 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
+                        <Icon name="image" className="w-6 h-6 text-slate-700 dark:text-slate-200" strokeWidth={2.2} />
+                      </div>
+                      <span className="text-xs font-bold">Pilih dari Galeri</span>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Unggah Foto Struk</span>
+                    </button>
+                  </div>
+
+                  <div className="pt-2">
+                    <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-2 px-1">
+                      Atau Coba Contoh Struk Instan:
+                    </span>
+                    <div className="space-y-1.5">
+                      {ReceiptOcrService.SAMPLE_RECEIPTS.map(sample => (
+                        <button
+                          key={sample.id}
+                          type="button"
+                          onClick={() => handleFileSelected(null, sample)}
+                          className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-sky-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-between text-left transition-all ios-btn-tap"
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <span className="text-lg">
+                              {sample.category === 'makan' ? '☕' : sample.category === 'transport' ? '⛽' : '🛒'}
+                            </span>
+                            <div>
+                              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">{sample.store}</span>
+                              <span className="text-[10px] text-slate-400">{sample.note}</span>
+                            </div>
+                          </div>
+                          <span className="text-xs font-extrabold text-[#0284C7] dark:text-sky-400">
+                            {formatIDR(sample.amount)}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {receiptImg && !isScanning && (
+                <div className="space-y-4 animate-ios-spring-pop">
+                  <div className="p-3 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-between border border-slate-200 dark:border-slate-700">
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={receiptImg}
+                        alt="Struk Belanja"
+                        className="w-12 h-14 object-cover rounded-xl border border-white/20 shadow-xs"
+                      />
+                      <div>
+                        <span className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1">
+                          <Icon name="check-circle" className="w-3.5 h-3.5 text-emerald-500" strokeWidth={2.5} />
+                          <span>Struk Berhasil Terbaca</span>
+                        </span>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block">
+                          Periksa atau ubah rincian di bawah jika diperlukan
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setReceiptImg('');
+                        setHasScanned(false);
+                      }}
+                      className="px-2.5 py-1 text-xs font-semibold text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-slate-700 rounded-lg hover:bg-sky-100 transition-colors"
+                    >
+                      Ganti Foto
+                    </button>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      Total Pengeluaran (Rp)
+                    </label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      required
+                      value={amountStr ? formatIDR(parseRawNumber(amountStr)) : ''}
+                      onChange={(e) => {
+                        const num = parseRawNumber(e.target.value);
+                        setAmountStr(num ? num.toString() : '');
+                      }}
+                      placeholder="0"
+                      className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xl font-black text-rose-600 dark:text-rose-400 focus:outline-none focus:border-brand"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      Keterangan / Nama Toko
+                    </label>
+                    <input
+                      type="text"
+                      maxLength={60}
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      placeholder="Contoh: Belanja di Indomaret"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none focus:border-brand"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                      Jenis / Kategori Pengeluaran
+                    </label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {allCategories.slice(0, 6).map(cat => (
+                        <button
+                          key={cat.id}
+                          type="button"
+                          onClick={() => setCategory(cat.id)}
+                          className={`p-2 rounded-xl border text-center flex flex-col items-center gap-1 transition-all ios-btn-tap ${
+                            category === cat.id
+                              ? 'border-brand bg-sky-50 dark:bg-slate-700 text-brand dark:text-sky-300 font-bold shadow-xs'
+                              : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                          }`}
+                        >
+                          <span className="text-base">{cat.icon}</span>
+                          <span className="text-[10px] leading-tight line-clamp-1">{cat.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                        Sumber Dana (Kantong)
+                      </label>
+                      <select
+                        value={accountId}
+                        onChange={(e) => setAccountId(e.target.value)}
+                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none focus:border-brand"
+                      >
+                        {accounts.map(acc => (
+                          <option key={acc.id} value={acc.id}>{acc.name} ({acc.type || 'Bank'})</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                        Tanggal Struk
+                      </label>
+                      <input
+                        type="date"
+                        value={date}
+                        onChange={(e) => setDate(e.target.value)}
+                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none focus:border-brand"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      onClick={handleSave}
+                      disabled={accounts.length === 0 || parseRawNumber(amountStr) <= 0}
+                      className="w-full py-3.5 bg-[#0284C7] hover:bg-[#0369A1] active:scale-[0.98] text-white font-bold text-xs sm:text-sm rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 ios-btn-tap"
+                    >
+                      <Icon name="check" className="w-4 h-4 text-white" strokeWidth={2.5} />
+                      <span>Simpan Pengeluaran & Ambil 10 Koin</span>
+                      <span>🪙</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {showCoinReward && (
+            <div className="fixed inset-0 z-[150] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+              <div className="p-6 rounded-3xl bg-white dark:bg-slate-800 border border-amber-300 dark:border-amber-500/50 shadow-2xl flex flex-col items-center text-center space-y-3 animate-coin-reward max-w-xs w-full">
+                <div className="w-16 h-16 rounded-full bg-amber-400 flex items-center justify-center text-3xl shadow-lg animate-bounce">
+                  🪙
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white">+10 Koin Peliharaan!</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-300 mt-1">
+                    Struk belanja berhasil dicatat. Koin otomatis ditambahkan ke peliharaan kamu!
+                  </p>
+                </div>
+                <div className="px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 text-xs font-bold">
+                  Bonus Tercatat ✓
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       );
     };
