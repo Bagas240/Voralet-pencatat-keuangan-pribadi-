@@ -51,7 +51,6 @@ PART8_APP = """
         if (offsetX < -48) {
           // Reached delete threshold! Pas dilepas langsung hilang
           setOffsetX(-320); // quick smooth slide-out
-          if (window.VoraletHaptics) window.VoraletHaptics.tap();
           setTimeout(() => {
             onDelete(tx.id);
           }, 180);
@@ -978,9 +977,6 @@ PART8_APP = """
                       type="button"
                       onClick={() => {
                         setSearchQuery('');
-                        if (window.VoraletHaptics?.tap) {
-                          window.VoraletHaptics.tap();
-                        }
                       }}
                       className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5"
                     >
@@ -1445,6 +1441,9 @@ PART8_APP = """
           const rootEl = document.getElementById('root');
           if (rootEl) rootEl.classList.remove('dark');
         }
+        try {
+          window.AndroidBridge?.setStatusBarTheme?.(isDark);
+        } catch (_) {}
       }, [theme]);
 
       // Automatically synchronize the app's dark mode setting with the user's system OS theme preferences using 'window.matchMedia('(prefers-color-scheme: dark)')'
@@ -1580,10 +1579,6 @@ PART8_APP = """
           next.add(txId);
           return next;
         });
-
-        if (window.VoraletHaptics && typeof window.VoraletHaptics.delete === 'function') {
-          window.VoraletHaptics.delete();
-        }
 
         setTimeout(() => {
           // Revert linked debt payments if applicable

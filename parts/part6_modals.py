@@ -151,7 +151,6 @@ PART6_MODALS = """
           createdAt: initialData?.createdAt || new Date().toISOString()
         };
 
-        HapticFeedback.save();
         onAddTransaction(newTx);
         handleClose();
       };
@@ -834,13 +833,6 @@ PART6_MODALS = """
       if (!shouldRender) return null;
 
       const handleCardSelect = (accId) => {
-        try {
-          if (window.VoraletHaptics && typeof window.VoraletHaptics.tap === 'function') {
-            window.VoraletHaptics.tap();
-          } else if (typeof HapticFeedback !== 'undefined' && HapticFeedback.selection) {
-            HapticFeedback.selection();
-          }
-        } catch (e) {}
         setSelectedId(prev => (prev === accId ? null : accId));
       };
 
@@ -894,7 +886,6 @@ PART6_MODALS = """
           setSelectedId(newAcc.id);
         }
 
-        HapticFeedback.save();
         setName('');
         setAccountNumber('');
         setSelectedTheme('bca');
@@ -1295,7 +1286,6 @@ PART6_MODALS = """
           createdAt: goalToEdit ? goalToEdit.createdAt : new Date().toISOString()
         };
 
-        HapticFeedback.save();
         onSaveGoal(goalData);
         handleClose();
       };
@@ -2338,7 +2328,6 @@ PART6_MODALS = """
         if (typeof onImportBatch === 'function') {
           onImportBatch(previewTransactions);
         }
-        HapticFeedback.save();
         setStep(3);
       };
 
@@ -2905,7 +2894,7 @@ PART6_MODALS = """
                   <span>Pasang Widget di Layar Utama Android</span>
                 </div>
                 <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
-                  Voralet v3.3.0 mendukung <b>Widget Api Streak 🔥</b> dan <b>Widget Teman Peliharaan 🐾</b> langsung di home screen HP kamu:
+                  Voralet v__VORALET_VERSION__ mendukung <b>Widget Api Streak 🔥</b> dan <b>Widget Teman Peliharaan 🐾</b> langsung di home screen HP kamu:
                 </p>
                 <div className="mt-2 text-[10px] text-slate-500 dark:text-slate-400 bg-white/70 dark:bg-slate-900/60 p-2 rounded-lg border border-slate-200/60 dark:border-slate-700">
                   <b>Cara Pasang:</b> Tekan & tahan area kosong di Layar Utama Android ➔ Pilih <b>Widget</b> ➔ Cari <b>Voralet</b> ➔ Tambahkan widget <b>Api Streak</b> atau <b>Teman Peliharaan</b>!
@@ -3434,14 +3423,12 @@ PART6_MODALS = """
         try {
           setIsExporting(true);
           setStatusMessage({ text: 'Menyiapkan dan menyusun dokumen PDF...', isError: false });
-          HapticFeedback.tap();
 
           const filename = `Laporan_Keuangan_Voralet_${reportData.periodKey.replace('-', '_')}.pdf`;
           const success = await PdfReportService.exportDirectPdf(reportHtml, filename);
 
           if (success) {
             setStatusMessage({ text: 'Dokumen PDF berhasil disimpan ke memori perangkat!', isError: false });
-            HapticFeedback.save();
             setTimeout(() => setStatusMessage({ text: '', isError: false }), 4500);
           } else {
             setStatusMessage({ text: 'Membuka dialog cetak sistem untuk menyimpan PDF...', isError: false });
@@ -3457,7 +3444,6 @@ PART6_MODALS = """
       };
 
       const handlePrintSystem = () => {
-        HapticFeedback.tap();
         setStatusMessage({ text: 'Membuka dialog cetak sistem (Print / Save as PDF)...', isError: false });
         PdfReportService.printOrSavePdf(reportHtml, `Laporan Keuangan Voralet ${reportData.periodLabel}`);
         setTimeout(() => setStatusMessage({ text: '', isError: false }), 4000);
@@ -3549,7 +3535,6 @@ PART6_MODALS = """
                     type="button"
                     onClick={() => {
                       setSelectedPeriod(thisMonthKey);
-                      HapticFeedback.tap();
                     }}
                     className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-colors ios-btn-tap ${
                       selectedPeriod === thisMonthKey
@@ -3563,7 +3548,6 @@ PART6_MODALS = """
                     type="button"
                     onClick={() => {
                       setSelectedPeriod(lastMonthKey);
-                      HapticFeedback.tap();
                     }}
                     className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-colors ios-btn-tap ${
                       selectedPeriod === lastMonthKey
@@ -3945,7 +3929,6 @@ PART6_MODALS = """
         }
 
         setAutoSavedTxId(txId);
-        HapticFeedback.save();
         return finalTx;
       };
 
@@ -4012,10 +3995,6 @@ PART6_MODALS = """
               setShowCoinReward(true);
               setTimeout(() => setShowCoinReward(false), 1600);
             }
-          }
-
-          if (window.VoraletHaptics?.selection) {
-            window.VoraletHaptics.selection();
           }
         } catch (err) {
           setOcrNotice('Gagal memproses foto struk. Coba ulangi dengan pencahayaan lebih jelas.');

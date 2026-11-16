@@ -520,6 +520,32 @@ PART2_ICONS = """
               <polyline points="12 6 12 12 16 14" />
             </svg>
           );
+        case 'info':
+          return (
+            <svg className={computedClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="16" x2="12" y2="12" />
+              <line x1="12" y1="8" x2="12.01" y2="8" />
+            </svg>
+          );
+        case 'share':
+          return (
+            <svg className={computedClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="18" cy="5" r="3" />
+              <circle cx="6" cy="12" r="3" />
+              <circle cx="18" cy="19" r="3" />
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+            </svg>
+          );
+        case 'alert-triangle':
+          return (
+            <svg className={computedClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+              <line x1="12" y1="9" x2="12" y2="13" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+          );
         case 'tag':
         default:
           return (
@@ -719,7 +745,6 @@ PART2_ICONS = """
             card.style.transition = 'transform 0.38s cubic-bezier(0.32, 0.94, 0.4, 1), opacity 0.38s ease';
             card.style.transform = 'translate3d(0, 100%, 0)';
             card.style.opacity = '0.92';
-            if (window.VoraletHaptics) window.VoraletHaptics.tap();
             setTimeout(() => {
               if (typeof onDismiss === 'function') onDismiss();
             }, 370);
@@ -920,61 +945,6 @@ PART2_ICONS = """
             </>
           )}
         </button>
-      );
-    };
-
-    const InputField = ({
-      label,
-      value,
-      onChange,
-      type = "text",
-      placeholder = "",
-      error = "",
-      hint = "",
-      required = false,
-      autoFocus = false,
-      prefix = null,
-      icon = null,
-      className = "",
-      inputClassName = "",
-      ...props
-    }) => {
-      return (
-        <div className={`space-y-1 ${className}`}>
-          {label && (
-            <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200">
-              {label} {required && <span className="text-rose-500">*</span>}
-            </label>
-          )}
-          <div className="relative flex items-center">
-            {prefix && (
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-sm font-bold select-none">
-                {prefix}
-              </span>
-            )}
-            {icon && !prefix && (
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 select-none">
-                <Icon name={icon} className="w-4 h-4" />
-              </span>
-            )}
-            <input
-              type={type}
-              value={value}
-              onChange={onChange}
-              placeholder={placeholder}
-              required={required}
-              autoFocus={autoFocus}
-              onFocus={handleGlobalInputFocus}
-              onBlur={handleGlobalInputBlur}
-              className={`w-full py-2.5 rounded-xl border bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-xs font-medium focus:outline-none focus:border-brand dark:focus:border-sky-400 transition-colors ${
-                prefix ? "pl-8 pr-3.5" : icon ? "pl-10 pr-3.5" : "px-3.5"
-              } ${error ? "border-rose-400 dark:border-rose-500" : "border-slate-200 dark:border-slate-700"} ${inputClassName}`}
-              {...props}
-            />
-          </div>
-          {hint && !error && <p className="text-[11px] text-slate-400">{hint}</p>}
-          {error && <p className="text-[11px] font-semibold text-rose-500">{error}</p>}
-        </div>
       );
     };
 

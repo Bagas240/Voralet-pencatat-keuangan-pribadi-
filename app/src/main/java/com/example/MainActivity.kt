@@ -108,33 +108,21 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        if (VoraletWebViewConfig.isEmulator) {
-            try {
-                android.system.Os.setenv("LIBGL_DRI3_DISABLE", "1", true)
-                android.system.Os.setenv("EGL_LOG_LEVEL", "fatal", true)
-                android.system.Os.setenv("MESA_DEBUG", "0", true)
-                android.system.Os.setenv("MESA_LOG_LEVEL", "fatal", true)
-                android.system.Os.setenv("LIBGL_DEBUG", "quiet", true)
-                android.system.Os.setenv("MESA_LOG_FILE", "/dev/null", true)
-                System.setProperty("log.tag.MESA", "SUPPRESS")
-                File("/data/local/tmp/webview-command-line").writeText(
-                    "_ --disable-gpu --disable-gpu-rasterization --disable-gpu-compositing"
-                )
-            } catch (_: Throwable) {}
-        }
-
         super.onCreate(savedInstanceState)
         prepareWebViewStorage(this)
 
         enableEdgeToEdge()
 
-        // Anti-Screen Scraping & Malware Screenshot Protection for Financial Vault & PINs
-        try {
-            window.setFlags(
-                WindowManager.LayoutParams.FLAG_SECURE,
-                WindowManager.LayoutParams.FLAG_SECURE
-            )
-        } catch (_: Throwable) {}
+        // Anti-Screen Scraping & Malware Screenshot Protection on physical release devices only
+        // (FLAG_SECURE blacks out VirtualDisplay / Streaming Emulator frames if enabled on emulators)
+        if (!VoraletWebViewConfig.isEmulator && !AppSecurityGuard.isDebuggableBuild(this)) {
+            try {
+                window.setFlags(
+                    WindowManager.LayoutParams.FLAG_SECURE,
+                    WindowManager.LayoutParams.FLAG_SECURE
+                )
+            } catch (_: Throwable) {}
+        }
 
         // Runtime Integrity Guard (Anti-Debugger, Anti-Frida, Signature Check)
         var securityWarning = false

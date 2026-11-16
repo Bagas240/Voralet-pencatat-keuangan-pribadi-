@@ -231,9 +231,6 @@ PART5_DEBTS_MILESTONES = """
       );
     };
 
-    // Backward-compatibility alias so existing imports or references don't break
-    const SafeToSpendCard = TikTokStreakFlameCard;
-
     // Quick Expense Presets
     const QuickExpenseBar = ({ onSelectQuickExpense }) => {
       const presets = [
@@ -440,7 +437,6 @@ PART5_DEBTS_MILESTONES = """
           createdAt: debtToEdit ? debtToEdit.createdAt : new Date().toISOString()
         };
 
-        HapticFeedback.save();
         onSaveDebt(debtData);
         handleClose();
       };
@@ -611,20 +607,18 @@ PART5_DEBTS_MILESTONES = """
     // 5.1 MODAL BAYAR HUTANG / TERIMA PIUTANG
     // =========================================================================
     const PayDebtModal = ({ isOpen, onClose, debt, accounts = [], onConfirmPayment }) => {
-      if (!isOpen || !debt) return null;
-
-      const isHutang = debt.type === 'HUTANG';
-      const totalAmount = Number(debt.amount) || 0;
-      const paidAmount = Number(debt.paidAmount) || 0;
+      const safeDebt = debt || {};
+      const isHutang = safeDebt.type === 'HUTANG';
+      const totalAmount = Number(safeDebt.amount) || 0;
+      const paidAmount = Number(safeDebt.paidAmount) || 0;
       const remainingAmount = Math.max(0, totalAmount - paidAmount);
-      const nextInstallmentNum = (debt.payments?.length || 0) + 1;
+      const nextInstallmentNum = (safeDebt.payments?.length || 0) + 1;
 
       // Mode: 'CICILAN' (bayar bertahap/cicilan) vs 'LUNAS' (bayar lunas penuh)
       const [payMode, setPayMode] = useState(() => (remainingAmount > 100000 || paidAmount > 0) ? 'CICILAN' : 'LUNAS');
       const [payAmountStr, setPayAmountStr] = useState(() => {
         if (remainingAmount <= 0) return '';
         if (paidAmount > 0) {
-          // Default to half of remaining for installment
           const half = Math.round(remainingAmount / 2);
           return half > 0 ? String(half) : String(remainingAmount);
         }
@@ -634,11 +628,11 @@ PART5_DEBTS_MILESTONES = """
       const [date, setDate] = useState(() => getLocalDateString());
       const [notes, setNotes] = useState(() => (
         isHutang
-          ? `Cicilan ke-${nextInstallmentNum}: ${debt.personName}`
-          : `Terima cicilan ke-${nextInstallmentNum}: ${debt.personName}`
+          ? `Cicilan ke-${nextInstallmentNum}: ${safeDebt.personName || ''}`
+          : `Terima cicilan ke-${nextInstallmentNum}: ${safeDebt.personName || ''}`
       ));
       const [error, setError] = useState('');
-      const { shouldRender, isClosing, handleClose } = useModalLifecycle(isOpen, onClose, 350);
+      const { shouldRender, isClosing, handleClose } = useModalLifecycle(isOpen && !!debt, onClose, 350);
 
       useEffect(() => {
         if (debt) {
@@ -646,23 +640,27 @@ PART5_DEBTS_MILESTONES = """
           const paid = Number(debt.paidAmount) || 0;
           const rem = Math.max(0, tot - paid);
           const nextNum = (debt.payments?.length || 0) + 1;
-          
+          const hutangFlag = debt.type === 'HUTANG';
+
           if (paid > 0) {
             setPayMode('CICILAN');
             const half = Math.round(rem / 2);
             setPayAmountStr(half > 0 ? String(half) : String(rem));
-            setNotes(isHutang ? `Cicilan ke-${nextNum}: ${debt.personName}` : `Terima cicilan ke-${nextNum}: ${debt.personName}`);
+            setNotes(hutangFlag ? `Cicilan ke-${nextNum}: ${debt.personName}` : `Terima cicilan ke-${nextNum}: ${debt.personName}`);
           } else {
+            setPayMode('LUNAS');
             setPayAmountStr(rem > 0 ? String(rem) : '');
-            setNotes(isHutang ? `Bayar hutang ke ${debt.personName}` : `Terima piutang dari ${debt.personName}`);
+            setNotes(hutangFlag ? `Bayar hutang ke ${debt.personName}` : `Terima piutang dari ${debt.personName}`);
           }
+          setDate(getLocalDateString());
+          setError('');
           if (accounts.length > 0 && !accounts.some(a => a.id === accountId)) {
             setAccountId(accounts[0].id);
           }
         }
       }, [debt, accounts]);
 
-      if (!shouldRender) return null;
+      if (!shouldRender || !debt) return null;
 
       const handleSelectMode = (mode) => {
         setPayMode(mode);
@@ -691,7 +689,6 @@ PART5_DEBTS_MILESTONES = """
           setError('Pilih dompet / kantong terlebih dahulu');
           return;
         }
-        HapticFeedback.save();
         const chosenAccount = accounts.find(a => a.id === accountId);
         onConfirmPayment({
           amount: num,

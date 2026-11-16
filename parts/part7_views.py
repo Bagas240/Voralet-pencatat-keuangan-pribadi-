@@ -193,7 +193,6 @@ PART7_VIEWS = """
           return;
         }
 
-        HapticFeedback.save();
         onDepositGoal(depositGoal.id, amt, depositMode, selectedAccountId, customNotes);
         handleCloseDeposit();
       };
@@ -1143,11 +1142,6 @@ PART7_VIEWS = """
         if (onReorderAccounts) {
           onReorderAccounts(next);
         }
-        if (window.VoraletHaptics?.notification) {
-          window.VoraletHaptics.notification('success');
-        } else if (window.VoraletHaptics?.tap) {
-          window.VoraletHaptics.tap();
-        }
       }, [safeAccounts, onReorderAccounts]);
 
       // Pointer & Touch drag handler for mobile WebView and desktop
@@ -1159,10 +1153,6 @@ PART7_VIEWS = """
         const pointerId = e.pointerId;
         const startY = e.clientY;
         const startX = e.clientX;
-
-        if (window.VoraletHaptics?.tap) {
-          window.VoraletHaptics.tap();
-        }
 
         touchStateRef.current = {
           accId,
@@ -1182,9 +1172,6 @@ PART7_VIEWS = """
               touchStateRef.current.isStarted = true;
               isDraggingRef.current = true;
               setDraggedId(accId);
-              if (window.VoraletHaptics?.selection) {
-                window.VoraletHaptics.selection();
-              }
             } else {
               return;
             }
@@ -1265,11 +1252,6 @@ PART7_VIEWS = """
                       if (onReorderAccounts) {
                         onReorderAccounts(next);
                       }
-                      if (window.VoraletHaptics?.notification) {
-                        window.VoraletHaptics.notification('success');
-                      } else if (window.VoraletHaptics?.tap) {
-                        window.VoraletHaptics.tap();
-                      }
                     }
                   }
                   return null;
@@ -1343,11 +1325,6 @@ PART7_VIEWS = """
             // Apple Wallet snappy spring snapback
             cardEl.style.transition = 'transform 0.48s cubic-bezier(0.34, 1.68, 0.64, 1)';
             cardEl.style.transform = '';
-            if (window.VoraletHaptics?.selection) {
-              window.VoraletHaptics.selection();
-            } else if (window.VoraletHaptics?.tap) {
-              window.VoraletHaptics.tap();
-            }
             setTimeout(() => {
               justDraggedRef.current = false;
               if (cardEl) cardEl.style.transition = '';
@@ -1398,9 +1375,6 @@ PART7_VIEWS = """
             next.splice(insertIdx, 0, moved);
             if (onReorderAccounts) {
               onReorderAccounts(next);
-            }
-            if (window.VoraletHaptics?.notification) {
-              window.VoraletHaptics.notification('success');
             }
           }
         }
@@ -1702,11 +1676,6 @@ PART7_VIEWS = """
                       return;
                     }
                     if (justDraggedRef.current || isDraggingRef.current) return;
-                    if (window.VoraletHaptics?.selection) {
-                      window.VoraletHaptics.selection();
-                    } else if (window.VoraletHaptics?.tap) {
-                      window.VoraletHaptics.tap();
-                    }
                     setExpandedCardId(isExpanded ? null : acc.id);
                   }}
                   className={`w-full rounded-2xl ${cardBg} p-4 text-white select-none cursor-pointer overflow-hidden apple-wallet-stacked-card border border-white/20 ${
@@ -1866,11 +1835,6 @@ PART7_VIEWS = """
                 : Math.max(COLLAPSED_CARD_HEIGHT, runningY - UNSTACKED_GAP + 6);
 
               const handleToggleStack = () => {
-                if (window.VoraletHaptics?.selection) {
-                  window.VoraletHaptics.selection();
-                } else if (window.VoraletHaptics?.tap) {
-                  window.VoraletHaptics.tap();
-                }
                 setUnstackedCategories(prev => ({
                   ...prev,
                   [deckKey]: !prev[deckKey]

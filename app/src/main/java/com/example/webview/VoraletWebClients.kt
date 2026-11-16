@@ -12,7 +12,6 @@ import android.webkit.PermissionRequest
 import android.webkit.RenderProcessGoneDetail
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
-import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
@@ -105,14 +104,6 @@ class VoraletWebViewClient(
             uri.host == VoraletWebViewConfig.VIRTUAL_HOST
         // Strict offline policy: block navigation to any external URL
         return !isTrusted
-    }
-
-    override fun onReceivedError(
-        view: WebView?,
-        request: WebResourceRequest?,
-        error: WebResourceError?
-    ) {
-        super.onReceivedError(view, request, error)
     }
 
     override fun onRenderProcessGone(

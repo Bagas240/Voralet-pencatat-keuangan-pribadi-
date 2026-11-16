@@ -42,8 +42,12 @@ def verify_file_integrity():
     with open("parts/part3_services.py", "r", encoding="utf-8") as f:
         services_code = f.read()
 
-    if "verifyMasterCode" not in services_code:
-        log("✗ ERROR: verifyMasterCode is missing from CryptoService!")
+    if "verifyMasterCode" in services_code:
+        log("✗ ERROR: Obsolete verifyMasterCode backdoor stub must not exist!")
+        return False
+
+    if "verifyIntegrity" not in services_code:
+        log("✗ ERROR: verifyIntegrity is missing from CryptoService!")
         return False
 
     if "SafeStorage" not in services_code:

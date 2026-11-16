@@ -1,8 +1,6 @@
 package com.example.bridge
 
 import android.app.Activity
-import android.content.ClipData
-import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.os.Build
@@ -37,15 +35,10 @@ class AndroidNativeBridge(
 ) {
     companion object {
         const val BRIDGE_NAME = "AndroidBridge"
-        private const val APP_VERSION = "3.4.0"
         private const val XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     }
 
     private val workerExecutor = Executors.newSingleThreadExecutor()
-
-    private val clipboardManager: ClipboardManager? by lazy {
-        activity.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
-    }
 
     @JavascriptInterface
     fun syncWidgetData(streakJson: String?, petJson: String?) {
@@ -60,23 +53,6 @@ class AndroidNativeBridge(
     }
 
     @JavascriptInterface
-    fun hapticFeedback(type: String?) {
-        // Silent per zero-permission policy
-    }
-
-    @JavascriptInterface
-    fun copyToClipboard(label: String?, text: String?): Boolean {
-        if (text.isNullOrEmpty()) return false
-        return try {
-            val clip = ClipData.newPlainText(label ?: "Voralet", text)
-            clipboardManager?.setPrimaryClip(clip)
-            true
-        } catch (_: Throwable) {
-            false
-        }
-    }
-
-    @JavascriptInterface
     fun setStatusBarTheme(isDark: Boolean) {
         activity.runOnUiThread {
             try {
@@ -87,12 +63,6 @@ class AndroidNativeBridge(
             } catch (_: Throwable) {}
         }
     }
-
-    @JavascriptInterface
-    fun getAppVersion(): String = APP_VERSION
-
-    @JavascriptInterface
-    fun isHardwareAccelerated(): Boolean = !VoraletWebViewConfig.isEmulator
 
     @JavascriptInterface
     fun printHtml(htmlContent: String?, jobTitle: String?) {

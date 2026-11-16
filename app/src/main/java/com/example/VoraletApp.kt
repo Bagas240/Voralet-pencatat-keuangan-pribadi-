@@ -15,9 +15,6 @@ class VoraletApp : Application() {
 
   override fun onCreate() {
     super.onCreate()
-    if (VoraletWebViewConfig.isEmulator) {
-      configureEmulatorGraphicsEnvironment()
-    }
     if (isMainProcess()) {
       MainActivity.prepareWebViewStorage(this)
     }
@@ -46,8 +43,9 @@ class VoraletApp : Application() {
 
     try {
       val cmdLineFile = java.io.File("/data/local/tmp/webview-command-line")
-      cmdLineFile.writeText("_ --disable-gpu --disable-gpu-rasterization --disable-gpu-compositing")
-      cmdLineFile.setReadable(true, false)
+      if (cmdLineFile.exists()) {
+        cmdLineFile.delete()
+      }
     } catch (_: Throwable) {}
   }
 

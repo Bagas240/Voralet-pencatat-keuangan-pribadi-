@@ -144,24 +144,6 @@ HTML_HEAD = """<!DOCTYPE html>
     })();
   </script>
 
-  <!-- Haptic & Vibration Feedback Engine - Disabled per user request -->
-  <script>
-    (function() {
-      // Unified Voralet Haptics Engine - Completely silent
-      window.VoraletHaptics = {
-        trigger: function() {},
-        tap: function() {},
-        pinKey: function() {},
-        pinBackspace: function() {},
-        pinSuccess: function() {},
-        pinError: function() {},
-        save: function() {},
-        delete: function() {},
-        selection: function() {}
-      };
-    })();
-  </script>
-
   <style>
     :root {
       --ios-ease: cubic-bezier(0.25, 1, 0.5, 1);
