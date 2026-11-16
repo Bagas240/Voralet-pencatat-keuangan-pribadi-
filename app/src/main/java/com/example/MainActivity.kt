@@ -2,12 +2,11 @@ package com.example
 
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.graphics.Color
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
-import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.webkit.ValueCallback
@@ -15,62 +14,82 @@ import android.webkit.WebView
 import android.widget.FrameLayout
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
-import androidx.activity.compose.BackHandler
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.bridge.AndroidNativeBridge
+import com.example.security.AppSecurityGuard
 import com.example.webview.VoraletWebChromeClient
 import com.example.webview.VoraletWebViewClient
 import com.example.webview.VoraletWebViewConfig
+import com.example.widget.PetWidgetProvider
+import com.example.widget.StreakWidgetProvider
 import java.io.File
+import java.util.concurrent.Executors
 
 /**
- * Main Activity for Voralet Personal Finance App v3.1.0.
- * Architected with Clean Principles, Edge-to-Edge display, and robust fallback handling.
- * Eliminates GPU rendernode crashes in emulator containers by using native software rendering.
+ * Main Activity for Voralet Personal Finance App.
+ * 100% Offline, Edge-to-Edge, FLAG_SECURE vault protection, zero-permission camera/SAF integration,
+ * and battery-aware animation throttling on pause/background.
  */
 class MainActivity : ComponentActivity() {
 
     private var currentWebView: WebView? = null
+    private var nativeBridge: AndroidNativeBridge? = null
     private var rootContainer: FrameLayout? = null
     private var fileCallback: ValueCallback<Array<Uri>>? = null
+    private var pendingCameraUri: Uri? = null
+    private var pendingExportBytes: ByteArray? = null
+    private val ioExecutor = Executors.newSingleThreadExecutor()
 
     private val fileChooserLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        val uri = result.data?.data
-        if (uri != null) {
-            fileCallback?.onReceiveValue(arrayOf(uri))
-        } else {
-            val clipData = result.data?.clipData
-            if (clipData != null && clipData.itemCount > 0) {
-                val uris = Array(clipData.itemCount) { i -> clipData.getItemAt(i).uri }
-                fileCallback?.onReceiveValue(uris)
+        val callback = fileCallback
+        fileCallback = null
+        val capturedUri = pendingCameraUri
+        pendingCameraUri = null
+
+        if (callback == null) return@registerForActivityResult
+
+        if (result.resultCode == RESULT_OK) {
+            val dataUri = result.data?.data
+            if (dataUri != null) {
+                callback.onReceiveValue(arrayOf(dataUri))
+            } else if (result.data?.clipData != null && result.data!!.clipData!!.itemCount > 0) {
+                val clip = result.data!!.clipData!!
+                callback.onReceiveValue(Array(clip.itemCount) { i -> clip.getItemAt(i).uri })
+            } else if (capturedUri != null) {
+                callback.onReceiveValue(arrayOf(capturedUri))
             } else {
-                fileCallback?.onReceiveValue(null)
+                callback.onReceiveValue(null)
+            }
+        } else {
+            callback.onReceiveValue(null)
+        }
+    }
+
+    private val saveDocumentLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val bytesToWrite = pendingExportBytes
+        pendingExportBytes = null
+        val destUri = result.data?.data
+        if (result.resultCode == RESULT_OK && destUri != null && bytesToWrite != null) {
+            ioExecutor.execute {
+                try {
+                    contentResolver.openOutputStream(destUri)?.use { os ->
+                        os.write(bytesToWrite)
+                        os.flush()
+                    }
+                } catch (_: Throwable) {}
             }
         }
-        fileCallback = null
     }
 
     companion object {
-        private const val TAG = "MainActivity"
-
         fun prepareWebViewStorage(context: Context) {
             try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -80,35 +99,33 @@ class MainActivity : ComponentActivity() {
                         WebView.setDataDirectorySuffix(processName)
                     }
                 }
-                // Ensure required cache subdirectories exist so Chromium's SimpleCache
-                // enumerators and index writers do not encounter missing directory errors.
                 val httpCacheDir = File(context.cacheDir, "WebView/Default/HTTP Cache")
                 File(httpCacheDir, "index-dir").mkdirs()
                 File(httpCacheDir, "Code Cache/wasm").mkdirs()
                 File(httpCacheDir, "Code Cache/js").mkdirs()
-            } catch (t: Throwable) {
-                Log.w(TAG, "Storage directory preparation notice: ${t.message}")
-            }
+            } catch (_: Throwable) {}
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        try {
-            android.system.Os.setenv("LIBGL_DRI3_DISABLE", "1", true)
-            android.system.Os.setenv("EGL_LOG_LEVEL", "fatal", true)
-            android.system.Os.setenv("MESA_DEBUG", "0", true)
-            android.system.Os.setenv("MESA_LOG_LEVEL", "fatal", true)
-            android.system.Os.setenv("LIBGL_DEBUG", "quiet", true)
-            android.system.Os.setenv("MESA_LOG_FILE", "/dev/null", true)
-            System.setProperty("log.tag.MESA", "SUPPRESS")
-            File("/data/local/tmp/webview-command-line").writeText("_ --disable-gpu --disable-gpu-rasterization --disable-gpu-compositing")
-        } catch (_: Throwable) {
-            // Safe fallback
+        if (VoraletWebViewConfig.isEmulator) {
+            try {
+                android.system.Os.setenv("LIBGL_DRI3_DISABLE", "1", true)
+                android.system.Os.setenv("EGL_LOG_LEVEL", "fatal", true)
+                android.system.Os.setenv("MESA_DEBUG", "0", true)
+                android.system.Os.setenv("MESA_LOG_LEVEL", "fatal", true)
+                android.system.Os.setenv("LIBGL_DEBUG", "quiet", true)
+                android.system.Os.setenv("MESA_LOG_FILE", "/dev/null", true)
+                System.setProperty("log.tag.MESA", "SUPPRESS")
+                File("/data/local/tmp/webview-command-line").writeText(
+                    "_ --disable-gpu --disable-gpu-rasterization --disable-gpu-compositing"
+                )
+            } catch (_: Throwable) {}
         }
+
         super.onCreate(savedInstanceState)
         prepareWebViewStorage(this)
 
-        // Enable edge-to-edge
         enableEdgeToEdge()
 
         // Anti-Screen Scraping & Malware Screenshot Protection for Financial Vault & PINs
@@ -119,23 +136,25 @@ class MainActivity : ComponentActivity() {
             )
         } catch (_: Throwable) {}
 
-        // Security Guard RASP verification (anti-debugger, anti-hooking)
+        // Runtime Integrity Guard (Anti-Debugger, Anti-Frida, Signature Check)
+        var securityWarning = false
         try {
-            val report = com.example.security.AppSecurityGuard.verifyEnvironmentIntegrity(this)
-            if (!report.isSafe && !com.example.webview.VoraletWebViewConfig.isEmulator) {
-                Log.w(TAG, "Security Guard Notice: debugging/hooking trace detected.")
+            val report = AppSecurityGuard.verifyEnvironmentIntegrity(this)
+            if (!report.isSafe && !VoraletWebViewConfig.isEmulator) {
+                securityWarning = true
             }
         } catch (_: Throwable) {}
 
+        val isSystemDark = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+            Configuration.UI_MODE_NIGHT_YES
+        val initialBg = if (isSystemDark) Color.parseColor("#0F172A") else Color.parseColor("#F8FAFC")
+
         try {
             val insetsController = WindowCompat.getInsetsController(window, window.decorView)
-            insetsController.isAppearanceLightStatusBars = true
-            insetsController.isAppearanceLightNavigationBars = true
-        } catch (t: Throwable) {
-            Log.d(TAG, "Status bar appearance notice: ${t.message}")
-        }
+            insetsController.isAppearanceLightStatusBars = !isSystemDark
+            insetsController.isAppearanceLightNavigationBars = !isSystemDark
+        } catch (_: Throwable) {}
 
-        // Back button navigation dispatcher
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 val wv = currentWebView
@@ -155,13 +174,12 @@ class MainActivity : ComponentActivity() {
             }
         })
 
-        // Root container with edge-to-edge window insets handling
         val container = FrameLayout(this).apply {
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
             )
-            setBackgroundColor(Color.parseColor("#F8FAFC"))
+            setBackgroundColor(initialBg)
         }
         rootContainer = container
         setContentView(container)
@@ -172,34 +190,68 @@ class MainActivity : ComponentActivity() {
             windowInsets
         }
 
-        setupWebView()
+        setupWebView(initialBg, securityWarning)
     }
 
-    private fun setupWebView() {
+    private fun launchSaveDocument(fileName: String, mimeType: String, bytes: ByteArray) {
+        pendingExportBytes = bytes
+        try {
+            val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                addCategory(Intent.CATEGORY_OPENABLE)
+                type = mimeType
+                putExtra(Intent.EXTRA_TITLE, fileName)
+            }
+            saveDocumentLauncher.launch(intent)
+        } catch (_: Throwable) {
+            pendingExportBytes = null
+            nativeBridge?.shareOrSaveFile(
+                fileName,
+                android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP),
+                mimeType
+            )
+        }
+    }
+
+    private fun setupWebView(backgroundColor: Int, securityWarning: Boolean = false) {
         val container = rootContainer ?: return
         currentWebView?.let { wv ->
             container.removeView(wv)
             wv.destroy()
         }
+        nativeBridge?.release()
+
+        val bridge = AndroidNativeBridge(
+            activity = this,
+            webViewProvider = { currentWebView },
+            safSaveRequester = ::launchSaveDocument
+        )
+        nativeBridge = bridge
 
         val webView = WebView(this).apply {
-            VoraletWebViewConfig.applySettings(this, Color.parseColor("#F8FAFC"))
-
-            val bridge = AndroidNativeBridge(this@MainActivity)
+            VoraletWebViewConfig.applySettings(this, backgroundColor)
             addJavascriptInterface(bridge, AndroidNativeBridge.BRIDGE_NAME)
 
             webViewClient = VoraletWebViewClient(
+                appContext = applicationContext,
                 onCrashRecover = {
-                    setupWebView()
+                    setupWebView(backgroundColor, securityWarning)
                 }
             )
 
             webChromeClient = VoraletWebChromeClient(
+                context = this@MainActivity,
                 fileChooserLauncher = fileChooserLauncher,
-                onFileCallbackReady = { cb -> fileCallback = cb }
+                onFileCallbackReady = { cb -> fileCallback = cb },
+                onCameraUriReady = { uri -> pendingCameraUri = uri }
             )
 
-            loadUrl("file:///android_asset/index.html")
+            loadUrl(VoraletWebViewConfig.ENTRY_URL)
+        }
+
+        if (securityWarning) {
+            webView.postDelayed({
+                webView.evaluateJavascript("window.__VORALET_TAMPER_DETECTED__ = true;", null)
+            }, 800)
         }
 
         currentWebView = webView
@@ -208,28 +260,42 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        currentWebView?.onResume()
-        currentWebView?.resumeTimers()
+        currentWebView?.let { wv ->
+            wv.onResume()
+            wv.resumeTimers()
+            wv.evaluateJavascript(
+                "document.documentElement.classList.remove('voralet-paused'); window.dispatchEvent(new Event('voralet-resume'));",
+                null
+            )
+        }
         try {
-            com.example.widget.StreakWidgetProvider.updateAllWidgets(this)
-            com.example.widget.PetWidgetProvider.updateAllWidgets(this)
+            StreakWidgetProvider.updateAllWidgets(this)
+            PetWidgetProvider.updateAllWidgets(this)
         } catch (_: Throwable) {}
     }
 
     override fun onPause() {
+        currentWebView?.let { wv ->
+            wv.evaluateJavascript("document.documentElement.classList.add('voralet-paused');", null)
+            wv.onPause()
+            wv.pauseTimers()
+        }
         super.onPause()
-        currentWebView?.onPause()
-        currentWebView?.pauseTimers()
     }
 
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
-        if (level >= TRIM_MEMORY_RUNNING_LOW) {
+        if (level >= TRIM_MEMORY_BACKGROUND) {
             currentWebView?.clearCache(false)
         }
     }
 
     override fun onDestroy() {
+        try {
+            ioExecutor.shutdownNow()
+        } catch (_: Throwable) {}
+        nativeBridge?.release()
+        nativeBridge = null
         currentWebView?.let { wv ->
             (wv.parent as? ViewGroup)?.removeView(wv)
             wv.destroy()
@@ -237,88 +303,5 @@ class MainActivity : ComponentActivity() {
         currentWebView = null
         rootContainer = null
         super.onDestroy()
-    }
-}
-
-@Composable
-fun VoraletWebViewContainer(
-    activity: ComponentActivity,
-    backgroundColor: Int,
-    onWebViewReady: (WebView?) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    var reloadKey by remember { mutableIntStateOf(0) }
-    var webViewInstance by remember { mutableStateOf<WebView?>(null) }
-    var fileCallback by remember { mutableStateOf<ValueCallback<Array<Uri>>?>(null) }
-
-    val fileChooserLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        val uri = result.data?.data
-        if (uri != null) {
-            fileCallback?.onReceiveValue(arrayOf(uri))
-        } else {
-            val clipData = result.data?.clipData
-            if (clipData != null && clipData.itemCount > 0) {
-                val uris = Array(clipData.itemCount) { i -> clipData.getItemAt(i).uri }
-                fileCallback?.onReceiveValue(uris)
-            } else {
-                fileCallback?.onReceiveValue(null)
-            }
-        }
-        fileCallback = null
-    }
-
-    BackHandler(enabled = true) {
-        if (webViewInstance?.canGoBack() == true) {
-            webViewInstance?.goBack()
-        } else {
-            activity.finish()
-        }
-    }
-
-    DisposableEffect(Unit) {
-        onDispose {
-            onWebViewReady(null)
-        }
-    }
-
-    key(reloadKey) {
-        AndroidView(
-            modifier = modifier.fillMaxSize(),
-            factory = { context ->
-                WebView(context).apply {
-                    VoraletWebViewConfig.applySettings(this, backgroundColor)
-                    setOnLongClickListener { true } // Disables context menu & inspect popup
-                    isHapticFeedbackEnabled = true
-
-                    val bridge = AndroidNativeBridge(activity)
-                    addJavascriptInterface(bridge, AndroidNativeBridge.BRIDGE_NAME)
-
-                    webViewClient = VoraletWebViewClient(
-                        onCrashRecover = {
-                            (this.parent as? ViewGroup)?.removeView(this)
-                            this.destroy()
-                            webViewInstance = null
-                            onWebViewReady(null)
-                            reloadKey++
-                        }
-                    )
-
-                    webChromeClient = VoraletWebChromeClient(
-                        fileChooserLauncher = fileChooserLauncher,
-                        onFileCallbackReady = { cb -> fileCallback = cb }
-                    )
-
-                    loadUrl("file:///android_asset/index.html")
-                    webViewInstance = this
-                    onWebViewReady(this)
-                }
-            },
-            update = { webView ->
-                webViewInstance = webView
-                onWebViewReady(webView)
-            }
-        )
     }
 }

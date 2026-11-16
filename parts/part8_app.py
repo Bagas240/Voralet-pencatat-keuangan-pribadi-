@@ -1287,8 +1287,8 @@ PART8_APP = """
         };
       }, [
         isTxModalOpen, isAccModalOpen, isSavingsModalOpen, isSettingsModalOpen,
-        isDebtModalOpen, isPetModalOpen, isStreakModalOpen, isCsvImportModalOpen, isMonthlyPdfModalOpen,
-        activeTab
+        isDebtModalOpen, isPetModalOpen, isStreakModalOpen, isCsvImportModalOpen,
+        isMonthlyPdfModalOpen, isReceiptModalOpen, activeTab
       ]);
 
       // Native Widget Sync, Daily Care Bonus Check, & Battery Throttling Listener
@@ -1655,7 +1655,10 @@ PART8_APP = """
           amount: tx.amount,
           category: tx.category,
           accountId: tx.accountId,
-          notes: tx.notes
+          date: tx.date,
+          notes: tx.notes || tx.note || '',
+          receiptImage: tx.receiptImage || '',
+          createdAt: tx.createdAt
         });
         setIsTxModalOpen(true);
       }, []);
@@ -1664,7 +1667,7 @@ PART8_APP = """
         const dupTx = {
           ...tx,
           id: 'tx_' + Date.now(),
-          date: new Date().toISOString().split('T')[0],
+          date: getLocalDateString(),
           createdAt: new Date().toISOString()
         };
         handleAddTransaction(dupTx);
@@ -1754,7 +1757,7 @@ PART8_APP = """
               type: 'EXPENSE',
               amount: initAmount,
               category: 'tabungan',
-              date: new Date().toISOString().split('T')[0],
+              date: getLocalDateString(),
               notes: `Setoran Awal: ${goalData.title}`,
               createdAt: new Date().toISOString()
             };
@@ -1803,7 +1806,7 @@ PART8_APP = """
             type: isDeposit ? 'EXPENSE' : 'INCOME',
             amount: Number(amount),
             category: 'tabungan',
-            date: new Date().toISOString().split('T')[0],
+            date: getLocalDateString(),
             notes: finalNote,
             createdAt: new Date().toISOString()
           };
@@ -1849,7 +1852,7 @@ PART8_APP = """
               type: isHutang ? 'INCOME' : 'EXPENSE',
               amount: Number(debtData.amount),
               category: 'hutang',
-              date: new Date().toISOString().split('T')[0],
+              date: getLocalDateString(),
               notes: isHutang ? `Pinjaman dana dari ${debtData.personName}` : `Meminjamkan dana ke ${debtData.personName}`,
               createdAt: new Date().toISOString()
             };
@@ -1881,7 +1884,7 @@ PART8_APP = """
               const payRecord = {
                 id: 'pay_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
                 amount: amount,
-                date: date || new Date().toISOString().split('T')[0],
+                date: date || getLocalDateString(),
                 accountId: accountId || '',
                 accountName: chosenAccount?.name || 'Kantong',
                 notes: notes || (isHutang ? `Bayar hutang ke ${d.personName}` : `Terima piutang dari ${d.personName}`)
@@ -1916,7 +1919,7 @@ PART8_APP = """
             type: isHutang ? 'EXPENSE' : 'INCOME',
             amount: Number(amount),
             category: 'hutang',
-            date: date || new Date().toISOString().split('T')[0],
+            date: date || getLocalDateString(),
             notes: finalNote,
             createdAt: new Date().toISOString()
           };
@@ -1956,7 +1959,7 @@ PART8_APP = """
             type: isHutang ? 'EXPENSE' : 'INCOME',
             amount: remainingToPay,
             category: 'hutang',
-            date: new Date().toISOString().split('T')[0],
+            date: getLocalDateString(),
             notes: isHutang ? `Pelunasan hutang: ${currentDebt.personName}` : `Pelunasan piutang: ${currentDebt.personName}`,
             createdAt: new Date().toISOString()
           };
@@ -2077,20 +2080,34 @@ PART8_APP = """
           customCategories,
           safeBudget
         };
-        // Ultra-secure encrypted vault backup: non-verifiable & tamper-proof without Voralet
         const encryptedBackup = CryptoService.encryptBackup(rawPayload);
         const finalExport = encryptedBackup || rawPayload;
-        const blob = new Blob([JSON.stringify(finalExport, null, 2)], { type: 'application/json' });
+        const jsonString = JSON.stringify(finalExport, null, 2);
+        const fileName = `voralet_encrypted_vault_${getLocalDateString()}.json`;
+
+        if (typeof window !== 'undefined' && window.AndroidBridge && typeof window.AndroidBridge.saveFileToDevice === 'function') {
+          try {
+            const bytes = new TextEncoder().encode(jsonString);
+            let bin = '';
+            for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+            if (window.AndroidBridge.saveFileToDevice(fileName, btoa(bin), 'application/json')) {
+              showToast('Pilih lokasi penyimpanan cadangan brankas terenkripsi 🔒');
+              return;
+            }
+          } catch (_) {}
+        }
+
+        const blob = new Blob([jsonString], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `voralet_encrypted_vault_${new Date().toISOString().slice(0, 10)}.json`;
+        a.download = fileName;
         a.click();
         URL.revokeObjectURL(url);
         showToast('Cadangan brankas terenkripsi berhasil diunduh 🔒');
-      }, [name, username, accounts, transactions, savingsGoals, debts, customCategories, safeBudget]);
+      }, [name, username, accounts, transactions, savingsGoals, debts, customCategories, safeBudget, showToast]);
 
-      const handleExportExcel = useCallback(() => {
+      const handleExportExcel = useCallback((mode = 'save') => {
         try {
           if (typeof ExcelExportService !== 'undefined') {
             const exportAccounts = Array.isArray(accounts) ? accounts.filter(Boolean) : [];
@@ -2102,14 +2119,18 @@ PART8_APP = """
               debts: debts,
               customCategories: customCategories,
               userProfile: { name, username }
-            });
+            }, mode === 'share' ? 'share' : 'save');
             if (success) {
-              showToast('Laporan Excel (.xls) berhasil diekspor & siap dibuka! 📊');
+              showToast(
+                mode === 'share'
+                  ? 'Laporan Excel (.xlsx) siap dibagikan atau dibuka! 📊'
+                  : 'Menyiapkan file Excel (.xlsx) untuk disimpan ke perangkat... 📊'
+              );
             }
           }
         } catch (e) {
           console.error('[ExcelExport] Failed:', e);
-          showToast('Gagal mengekspor data ke Excel');
+          showToast('Gagal mengekspor data ke Excel (.xlsx)');
         }
       }, [accounts, transactions, savingsGoals, debts, customCategories, name, username, showToast]);
 
@@ -2253,7 +2274,7 @@ PART8_APP = """
         );
       }
 
-      const isAnyModalOpen = isTxModalOpen || isAccModalOpen || isSavingsModalOpen || isSettingsModalOpen || isDebtModalOpen || isPetModalOpen || isStreakModalOpen || isMonthlyPdfModalOpen || isCsvImportModalOpen;
+      const isAnyModalOpen = isTxModalOpen || isAccModalOpen || isSavingsModalOpen || isSettingsModalOpen || isDebtModalOpen || isPetModalOpen || isStreakModalOpen || isMonthlyPdfModalOpen || isCsvImportModalOpen || isReceiptModalOpen;
 
       return (
         <div className={`h-[100dvh] flex flex-col ${theme === 'dark' ? 'dark text-[#F8FAFC]' : 'text-[#0F172A]'} bg-transparent overflow-hidden select-none transition-colors duration-300 ease-in-out relative`}>
@@ -2396,14 +2417,20 @@ PART8_APP = """
             isOpen={isReceiptModalOpen}
             onClose={() => setIsReceiptModalOpen(false)}
             accounts={accounts}
-            onSaveTransaction={(tx) => {
+            onSaveTransaction={(tx, isInitialBonus) => {
               handleAddTransaction(tx);
               const updatedPet = StorageService.getPetData();
               setPetData(updatedPet);
               StorageService.syncToNativeWidget(streakData, updatedPet);
-              if (showToast) showToast('🎉 Struk Belanja Berhasil Dicatat! +10 Koin Diperoleh 🪙');
+              if (showToast) {
+                showToast(
+                  isInitialBonus
+                    ? '🎉 Struk Belanja Otomatis Tercatat! +10 Koin Diperoleh 🪙'
+                    : 'Rincian pengeluaran struk diperbarui ✓'
+                );
+              }
             }}
-            onAddCoins={(coins) => {
+            onAddCoins={() => {
               const updatedPet = StorageService.getPetData();
               setPetData(updatedPet);
               StorageService.syncToNativeWidget(streakData, updatedPet);

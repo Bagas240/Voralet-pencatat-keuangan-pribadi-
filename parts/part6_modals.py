@@ -7,7 +7,7 @@ PART6_MODALS = """
       const [amountStr, setAmountStr] = useState('');
       const [accountId, setAccountId] = useState(accounts[0]?.id || '');
       const [category, setCategory] = useState('makan');
-      const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
+      const [date, setDate] = useState(() => getLocalDateString());
       const [notes, setNotes] = useState('');
       const [error, setError] = useState('');
       const { shouldRender, isClosing, handleClose: baseClose } = useModalLifecycle(isOpen, onClose, 350);
@@ -78,6 +78,7 @@ PART6_MODALS = """
           setType(initialData.type || 'EXPENSE');
           setAmountStr(initialData.amount ? String(initialData.amount) : '');
           setCategory(initialData.category || 'makan');
+          setDate(initialData.date || getLocalDateString());
           setNotes(initialData.notes || '');
           setReceiptImage(initialData.receiptImage || '');
           if (initialData.accountId) setAccountId(initialData.accountId);
@@ -85,6 +86,7 @@ PART6_MODALS = """
           setType('EXPENSE');
           setAmountStr('');
           setCategory('makan');
+          setDate(getLocalDateString());
           setNotes('');
           setReceiptImage('');
         }
@@ -2010,18 +2012,32 @@ PART6_MODALS = """
                   </label>
                 </div>
 
-                {/* Ekspor Seluruh Pembukuan ke Excel (.xls) */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleClose();
-                    if (onExportExcel) onExportExcel();
-                  }}
-                  className="w-full py-2.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 text-xs font-bold rounded-xl border border-emerald-200/80 dark:border-emerald-800/60 flex items-center justify-center gap-2 ios-btn-tap shadow-xs"
-                >
-                  <Icon name="file-text" className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                  <span>Ekspor Seluruh Pembukuan ke Excel (.xls)</span>
-                </button>
+                {/* Ekspor Seluruh Pembukuan ke Excel (.xlsx) */}
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleClose();
+                      if (onExportExcel) onExportExcel('save');
+                    }}
+                    className="flex-1 py-2.5 px-3 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 text-xs font-bold rounded-xl border border-emerald-200/80 dark:border-emerald-800/60 flex items-center justify-center gap-1.5 ios-btn-tap shadow-xs"
+                  >
+                    <Icon name="file-text" className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <span>Simpan Excel (.xlsx)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleClose();
+                      if (onExportExcel) onExportExcel('share');
+                    }}
+                    className="py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 ios-btn-tap shadow-xs"
+                    title="Bagikan / Buka di Aplikasi Excel"
+                  >
+                    <Icon name="share" className="w-4 h-4" />
+                    <span>Bagikan</span>
+                  </button>
+                </div>
 
                 {/* Ekspor Laporan Bulanan PDF */}
                 <button
@@ -2720,7 +2736,7 @@ PART6_MODALS = """
       const maxStreak = Math.max(Number(streakData?.maxStreak) || 0, currentStreak);
       const level = Number(streakData?.level) || 0;
       const lastRecordedDate = streakData?.lastRecordedDate || '';
-      const today = new Date().toISOString().split('T')[0];
+      const today = getLocalDateString();
       const isRecordedToday = lastRecordedDate === today;
 
       const STREAK_LEVELS = [
@@ -3376,26 +3392,23 @@ PART6_MODALS = """
       }, [transactions]);
 
       const [selectedPeriod, setSelectedPeriod] = useState(
-        availableMonths.length > 0 ? availableMonths[0].key : new Date().toISOString().slice(0, 7)
+        availableMonths.length > 0 ? availableMonths[0].key : getLocalDateString().slice(0, 7)
       );
       const [selectedAccountId, setSelectedAccountId] = useState('ALL');
       const [isExporting, setIsExporting] = useState(false);
       const [statusMessage, setStatusMessage] = useState({ text: '', isError: false });
       const [activeTab, setActiveTab] = useState('PREVIEW'); // 'PREVIEW' | 'CATEGORIES' | 'TRANSACTIONS'
 
-      if (!shouldRender) return null;
-
-      // Reset state when opening
+      // Reset state when opening (MUST run unconditionally before early return)
       useEffect(() => {
         if (isOpen) {
-          setIsClosing(false);
           if (availableMonths.length > 0 && !availableMonths.some(m => m.key === selectedPeriod)) {
             setSelectedPeriod(availableMonths[0].key);
           }
           setStatusMessage({ text: '', isError: false });
           setIsExporting(false);
         }
-      }, [isOpen]);
+      }, [isOpen, availableMonths, selectedPeriod]);
 
       // Computed report data
       const reportData = useMemo(() => {
@@ -3414,6 +3427,8 @@ PART6_MODALS = """
       const reportHtml = useMemo(() => {
         return PdfReportService.generateReportHtml(reportData, userProfile);
       }, [reportData, userProfile]);
+
+      if (!shouldRender) return null;
 
       const handleDownloadPdf = async () => {
         try {
@@ -3828,7 +3843,7 @@ PART6_MODALS = """
                 className="py-3 px-3.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-xs ios-btn-tap flex items-center justify-center gap-1.5"
               >
                 <Icon name="file-text" className="w-4 h-4" />
-                <span>Ekspor Excel (.xls)</span>
+                <span>Ekspor Excel (.xlsx)</span>
               </button>
 
               <button
@@ -3847,7 +3862,7 @@ PART6_MODALS = """
     };
 
     // =========================================================================
-    // 16. RECEIPT SCANNER MODAL (Foto & Pindai Struk Belanja Otomatis +10 Koin)
+    // 16. RECEIPT SCANNER MODAL (Offline OCR + Otomatis Catat Struk +10 Koin)
     // =========================================================================
     const ReceiptScannerModal = ({
       isOpen,
@@ -3862,12 +3877,14 @@ PART6_MODALS = """
       const [scanStep, setScanStep] = useState('');
       const [amountStr, setAmountStr] = useState('');
       const [notes, setNotes] = useState('');
-      const [category, setCategory] = useState('kebutuhan');
+      const [category, setCategory] = useState('belanja');
       const [accountId, setAccountId] = useState(accounts[0]?.id || '');
-      const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
+      const [date, setDate] = useState(() => getLocalDateString());
       const [detectedItems, setDetectedItems] = useState([]);
       const [showCoinReward, setShowCoinReward] = useState(false);
-      const [hasScanned, setHasScanned] = useState(false);
+      const [autoRecord, setAutoRecord] = useState(true);
+      const [autoSavedTxId, setAutoSavedTxId] = useState('');
+      const [ocrNotice, setOcrNotice] = useState('');
 
       const fileInputRef = useRef(null);
       const galleryInputRef = useRef(null);
@@ -3884,10 +3901,12 @@ PART6_MODALS = """
           setScanStep('');
           setAmountStr('');
           setNotes('');
-          setCategory('kebutuhan');
+          setCategory('belanja');
+          setDate(getLocalDateString());
           setDetectedItems([]);
           setShowCoinReward(false);
-          setHasScanned(false);
+          setAutoSavedTxId('');
+          setOcrNotice('');
         } else if (accounts.length > 0 && !accounts.some(a => a.id === accountId)) {
           setAccountId(accounts[0].id);
         }
@@ -3895,53 +3914,111 @@ PART6_MODALS = """
 
       if (!shouldRender) return null;
 
+      const commitReceiptTransaction = (txPayload, grantCoins = true) => {
+        const targetAccId = txPayload.accountId || accountId || accounts[0]?.id;
+        if (!targetAccId || !txPayload.amount || txPayload.amount <= 0) return null;
+
+        const txId = txPayload.id || autoSavedTxId || ('tx_receipt_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6));
+        const finalTx = {
+          id: txId,
+          accountId: targetAccId,
+          type: 'EXPENSE',
+          amount: Number(txPayload.amount),
+          category: txPayload.category || 'belanja',
+          date: txPayload.date || getLocalDateString(),
+          note: (txPayload.note || 'Pengeluaran Struk').trim(),
+          notes: (txPayload.notes || txPayload.note || 'Pengeluaran Struk').trim(),
+          receiptImage: txPayload.receiptImage || '',
+          isReceiptScan: true,
+          createdAt: txPayload.createdAt || new Date().toISOString()
+        };
+
+        if (grantCoins && !autoSavedTxId && typeof StorageService !== 'undefined' && StorageService.rewardReceiptCoins) {
+          StorageService.rewardReceiptCoins(10);
+        }
+
+        if (onSaveTransaction) {
+          onSaveTransaction(finalTx, grantCoins && !autoSavedTxId);
+        }
+        if (grantCoins && !autoSavedTxId && onAddCoins) {
+          onAddCoins(10);
+        }
+
+        setAutoSavedTxId(txId);
+        HapticFeedback.save();
+        return finalTx;
+      };
+
       const handleFileSelected = async (file, forcedSample = null) => {
         if (!file && !forcedSample) return;
 
         setIsScanning(true);
-        setHasScanned(false);
-        setScanStep('Menyiapkan foto struk...');
+        setAutoSavedTxId('');
+        setOcrNotice('');
+        setScanStep('Memproses gambar struk...');
 
         try {
           let dataUrl = '';
           let parseData = null;
 
           if (forcedSample) {
-            dataUrl = forcedSample.dataUrl || '';
+            dataUrl = forcedSample.dataUrl || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 150"%3E%3Crect width="120" height="150" rx="12" fill="%23f8fafc" stroke="%23cbd5e1"/%3E%3Ctext x="60" y="34" text-anchor="middle" font-size="11" font-family="monospace" font-weight="bold" fill="%230f172a"%3EVORALET%3C/text%3E%3Ctext x="60" y="54" text-anchor="middle" font-size="8" font-family="monospace" fill="%2364748b"%3ESTRUK CONTOH%3C/text%3E%3Cline x1="16" y1="68" x2="104" y2="68" stroke="%23cbd5e1" stroke-dasharray="3 3"/%3E%3Ctext x="60" y="96" text-anchor="middle" font-size="12" font-family="monospace" font-weight="bold" fill="%230284c7"%3ERP ' + forcedSample.amount.toLocaleString('id-ID') + '%3C/text%3E%3C/svg%3E';
             parseData = {
               amount: forcedSample.amount,
               merchant: forcedSample.store,
               category: forcedSample.category,
               note: forcedSample.note,
-              date: forcedSample.date
+              date: forcedSample.date || getLocalDateString(),
+              items: forcedSample.items || [],
+              ocrSuccess: true
             };
-            setDetectedItems(forcedSample.items || []);
           } else {
             const processed = await ReceiptOcrService.processImage(file);
             dataUrl = processed.dataUrl;
 
-            setScanStep('Mendeteksi nama toko dan kasir...');
-            await new Promise(r => setTimeout(r, 450));
+            setScanStep('Membaca teks struk secara offline...');
+            const ocrRes = await ReceiptOcrService.recognizeImage(dataUrl);
 
-            setScanStep('Membaca total pengeluaran dan tanggal...');
-            await new Promise(r => setTimeout(r, 500));
-
-            const fileName = file.name || '';
-            parseData = ReceiptOcrService.parseReceiptText(fileName);
+            setScanStep('Mengekstrak nama toko, nominal & tanggal...');
+            parseData = ReceiptOcrService.parseReceiptText(ocrRes.fullText, file.name || '');
           }
 
+          const finalDate = parseData.date || getLocalDateString();
+          const finalNote = parseData.note || 'Pengeluaran Struk Belanja';
+          const finalCat = parseData.category || 'belanja';
+          const finalAmt = Number(parseData.amount) || 0;
+
           setReceiptImg(dataUrl);
-          setAmountStr(parseData.amount ? String(parseData.amount) : '48500');
-          setNotes(parseData.note || 'Belanja Struk');
-          setCategory(parseData.category || 'kebutuhan');
-          setDate(parseData.date || new Date().toISOString().split('T')[0]);
-          setHasScanned(true);
+          setAmountStr(finalAmt > 0 ? String(finalAmt) : '');
+          setNotes(finalNote);
+          setCategory(finalCat);
+          setDate(finalDate);
+          setDetectedItems(Array.isArray(parseData.items) ? parseData.items : []);
+
+          if (finalAmt <= 0) {
+            setOcrNotice('Nominal total tidak terbaca jelas dari foto. Silakan isi nominal di bawah lalu tekan Simpan.');
+          } else if (autoRecord && accounts.length > 0) {
+            const saved = commitReceiptTransaction({
+              accountId: accountId || accounts[0]?.id,
+              amount: finalAmt,
+              category: finalCat,
+              date: finalDate,
+              note: finalNote,
+              notes: finalNote,
+              receiptImage: forcedSample ? '' : dataUrl
+            }, true);
+            if (saved) {
+              setOcrNotice(`Otomatis tercatat ${formatIDR(finalAmt)} ke pengeluaran! Ubah rincian di bawah jika perlu lalu tekan Perbarui.`);
+              setShowCoinReward(true);
+              setTimeout(() => setShowCoinReward(false), 1600);
+            }
+          }
 
           if (window.VoraletHaptics?.selection) {
             window.VoraletHaptics.selection();
           }
         } catch (err) {
-          console.error('[ReceiptScanner] Error processing:', err);
+          setOcrNotice('Gagal memproses foto struk. Coba ulangi dengan pencahayaan lebih jelas.');
         } finally {
           setIsScanning(false);
           setScanStep('');
@@ -3956,38 +4033,29 @@ PART6_MODALS = """
         const targetAccId = accountId || accounts[0]?.id;
         if (!targetAccId) return;
 
-        const newTx = {
-          id: 'tx_receipt_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
+        const wasAlreadyAutoSaved = Boolean(autoSavedTxId);
+        const saved = commitReceiptTransaction({
+          id: autoSavedTxId || undefined,
           accountId: targetAccId,
-          type: 'EXPENSE',
           amount: rawAmount,
           category,
           date,
           note: notes.trim() || 'Pengeluaran Struk',
           notes: notes.trim() || 'Pengeluaran Struk',
-          receiptImage: receiptImg || '',
-          isReceiptScan: true,
-          createdAt: new Date().toISOString()
-        };
+          receiptImage: receiptImg || ''
+        }, !wasAlreadyAutoSaved);
 
-        if (onSaveTransaction) {
-          onSaveTransaction(newTx);
+        if (saved) {
+          if (!wasAlreadyAutoSaved) {
+            setShowCoinReward(true);
+            setTimeout(() => {
+              setShowCoinReward(false);
+              handleClose();
+            }, 1300);
+          } else {
+            handleClose();
+          }
         }
-
-        if (typeof StorageService !== 'undefined' && StorageService.rewardReceiptCoins) {
-          StorageService.rewardReceiptCoins(10);
-        }
-        if (onAddCoins) {
-          onAddCoins(10);
-        }
-
-        HapticFeedback.save();
-        setShowCoinReward(true);
-
-        setTimeout(() => {
-          setShowCoinReward(false);
-          handleClose();
-        }, 1500);
       };
 
       return (
@@ -4004,9 +4072,9 @@ PART6_MODALS = """
                   <Icon name="camera" className="w-4 h-4" />
                 </div>
                 <div>
-                  <h2 className="text-base font-bold text-slate-900 dark:text-white leading-tight">Pindai Struk Belanja</h2>
+                  <h2 className="text-base font-bold text-slate-900 dark:text-white leading-tight">Pindai Struk Offline</h2>
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400">Otomatis Catat & Klaim Bonus</span>
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400">OCR Lokal Tanpa Internet</span>
                     <span className="px-1.5 py-0.2 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 text-[9px] font-extrabold flex items-center gap-0.5 border border-amber-300/40">
                       <span>🪙</span>
                       <span>+10 Koin</span>
@@ -4040,23 +4108,25 @@ PART6_MODALS = """
             />
 
             <div className="ios-modal-body flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 no-scrollbar">
-              <div className="p-3 rounded-2xl bg-amber-50/70 dark:bg-slate-800 border border-amber-200/80 dark:border-slate-700 flex items-center justify-between shadow-xs">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold text-base shadow-xs">
-                    🪙
-                  </div>
-                  <div>
-                    <span className="text-xs font-bold text-slate-900 dark:text-white block leading-tight">
-                      Dapatkan +10 Koin Peliharaan
-                    </span>
-                    <span className="text-[10px] text-slate-500 dark:text-slate-400">
-                      Foto struk belanja untuk pakan & kostum peliharaan!
-                    </span>
-                  </div>
+              {/* Auto-Catat Toggle Banner */}
+              <div className="p-3 rounded-2xl bg-sky-50/80 dark:bg-slate-800 border border-sky-200/70 dark:border-slate-700 flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <span className="text-xs font-bold text-slate-900 dark:text-white block leading-tight">
+                    Auto-Catat Langsung Setelah Pindai
+                  </span>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-0.5">
+                    Total struk langsung masuk ke pengeluaran &amp; klaim +10 koin
+                  </span>
                 </div>
-                <span className="text-xs font-extrabold text-amber-600 dark:text-amber-400 shrink-0">
-                  +10 COIN
-                </span>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={autoRecord}
+                  onClick={() => setAutoRecord(prev => !prev)}
+                  className={`w-11 h-6 rounded-full transition-colors p-0.5 shrink-0 ${autoRecord ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'}`}
+                >
+                  <span className={`block w-5 h-5 rounded-full bg-white shadow-xs transition-transform ${autoRecord ? 'translate-x-5' : 'translate-x-0'}`} />
+                </button>
               </div>
 
               {isScanning && (
@@ -4067,10 +4137,10 @@ PART6_MODALS = """
                   </div>
                   <div className="space-y-1">
                     <h3 className="text-sm font-bold text-white flex items-center justify-center gap-1.5">
-                      <Icon name="sparkles" className="w-4 h-4 text-amber-400" />
-                      <span>Sedang Memindai Struk...</span>
+                      <Icon name="camera" className="w-4 h-4 text-sky-400" />
+                      <span>Memindai Struk Secara Offline...</span>
                     </h3>
-                    <p className="text-xs text-sky-200 animate-pulse">{scanStep || 'Menganalisis teks & nominal...'}</p>
+                    <p className="text-xs text-sky-200">{scanStep || 'Membaca teks & nominal...'}</p>
                   </div>
                 </div>
               )}
@@ -4105,10 +4175,10 @@ PART6_MODALS = """
 
                   <div className="pt-2">
                     <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-2 px-1">
-                      Atau Coba Contoh Struk Instan:
+                      Atau Simulasi Cepat Contoh Struk:
                     </span>
                     <div className="space-y-1.5">
-                      {ReceiptOcrService.SAMPLE_RECEIPTS.map(sample => (
+                      {ReceiptOcrService.getSampleReceipts().map(sample => (
                         <button
                           key={sample.id}
                           type="button"
@@ -4136,20 +4206,20 @@ PART6_MODALS = """
 
               {receiptImg && !isScanning && (
                 <div className="space-y-4 animate-ios-spring-pop">
-                  <div className="p-3 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-between border border-slate-200 dark:border-slate-700">
-                    <div className="flex items-center gap-3">
+                  <div className={`p-3 rounded-2xl flex items-center justify-between border ${autoSavedTxId ? 'bg-emerald-50/90 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800' : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700'}`}>
+                    <div className="flex items-center gap-3 min-w-0">
                       <img
                         src={receiptImg}
                         alt="Struk Belanja"
-                        className="w-12 h-14 object-cover rounded-xl border border-white/20 shadow-xs"
+                        className="w-12 h-14 object-cover rounded-xl border border-white/20 shadow-xs shrink-0"
                       />
-                      <div>
+                      <div className="min-w-0">
                         <span className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1">
-                          <Icon name="check-circle" className="w-3.5 h-3.5 text-emerald-500" strokeWidth={2.5} />
-                          <span>Struk Berhasil Terbaca</span>
+                          <Icon name={autoSavedTxId ? 'check-circle' : 'file-text'} className={`w-3.5 h-3.5 shrink-0 ${autoSavedTxId ? 'text-emerald-500' : 'text-sky-500'}`} strokeWidth={2.5} />
+                          <span className="truncate">{autoSavedTxId ? 'Pengeluaran Otomatis Tercatat!' : 'Hasil Pemindaian Struk'}</span>
                         </span>
-                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block">
-                          Periksa atau ubah rincian di bawah jika diperlukan
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-0.5">
+                          {ocrNotice || 'Periksa atau ubah rincian di bawah jika diperlukan'}
                         </span>
                       </div>
                     </div>
@@ -4157,13 +4227,29 @@ PART6_MODALS = """
                       type="button"
                       onClick={() => {
                         setReceiptImg('');
-                        setHasScanned(false);
+                        setAutoSavedTxId('');
+                        setOcrNotice('');
                       }}
-                      className="px-2.5 py-1 text-xs font-semibold text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-slate-700 rounded-lg hover:bg-sky-100 transition-colors"
+                      className="px-2.5 py-1 text-xs font-semibold text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-slate-700 rounded-lg hover:bg-sky-100 transition-colors shrink-0 ml-2"
                     >
-                      Ganti Foto
+                      Pindai Ulang
                     </button>
                   </div>
+
+                  {detectedItems.length > 0 && (
+                    <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+                        Item Terdeteksi di Struk:
+                      </span>
+                      <div className="space-y-0.5">
+                        {detectedItems.map((it, idx) => (
+                          <div key={idx} className="text-[11px] font-mono text-slate-600 dark:text-slate-300 truncate">
+                            • {it}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
@@ -4178,7 +4264,7 @@ PART6_MODALS = """
                         const num = parseRawNumber(e.target.value);
                         setAmountStr(num ? num.toString() : '');
                       }}
-                      placeholder="0"
+                      placeholder="Masukkan total struk..."
                       className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xl font-black text-rose-600 dark:text-rose-400 focus:outline-none focus:border-brand"
                     />
                   </div>
@@ -4249,16 +4335,15 @@ PART6_MODALS = """
                     </div>
                   </div>
 
-                  <div className="pt-2">
+                  <div className="pt-2 flex gap-2">
                     <button
                       type="button"
                       onClick={handleSave}
                       disabled={accounts.length === 0 || parseRawNumber(amountStr) <= 0}
-                      className="w-full py-3.5 bg-[#0284C7] hover:bg-[#0369A1] active:scale-[0.98] text-white font-bold text-xs sm:text-sm rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 ios-btn-tap"
+                      className="flex-1 py-3.5 bg-[#0284C7] hover:bg-[#0369A1] disabled:opacity-50 active:scale-[0.98] text-white font-bold text-xs sm:text-sm rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 ios-btn-tap"
                     >
                       <Icon name="check" className="w-4 h-4 text-white" strokeWidth={2.5} />
-                      <span>Simpan Pengeluaran & Ambil 10 Koin</span>
-                      <span>🪙</span>
+                      <span>{autoSavedTxId ? 'Simpan Perubahan & Tutup' : 'Simpan Pengeluaran (+10 Koin 🪙)'}</span>
                     </button>
                   </div>
                 </div>
@@ -4267,19 +4352,19 @@ PART6_MODALS = """
           </div>
 
           {showCoinReward && (
-            <div className="fixed inset-0 z-[150] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="fixed inset-0 z-[150] bg-black/50 flex items-center justify-center p-4 pointer-events-none">
               <div className="p-6 rounded-3xl bg-white dark:bg-slate-800 border border-amber-300 dark:border-amber-500/50 shadow-2xl flex flex-col items-center text-center space-y-3 animate-coin-reward max-w-xs w-full">
-                <div className="w-16 h-16 rounded-full bg-amber-400 flex items-center justify-center text-3xl shadow-lg animate-bounce">
+                <div className="w-16 h-16 rounded-full bg-amber-400 flex items-center justify-center text-3xl shadow-lg">
                   🪙
                 </div>
                 <div>
                   <h3 className="text-base font-extrabold text-slate-900 dark:text-white">+10 Koin Peliharaan!</h3>
                   <p className="text-xs text-slate-500 dark:text-slate-300 mt-1">
-                    Struk belanja berhasil dicatat. Koin otomatis ditambahkan ke peliharaan kamu!
+                    Struk belanja otomatis tercatat ke pengeluaran &amp; koin masuk ke peliharaanmu!
                   </p>
                 </div>
                 <div className="px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 text-xs font-bold">
-                  Bonus Tercatat ✓
+                  Otomatis Tercatat ✓
                 </div>
               </div>
             </div>

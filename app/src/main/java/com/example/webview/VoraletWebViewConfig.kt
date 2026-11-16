@@ -9,9 +9,13 @@ import android.webkit.WebView
 
 /**
  * Standardized, security-hardened WebView configurator.
- * Follows modern Android development guidelines and OWASP Mobile recommendations.
+ * 100% offline local engine using virtual origin https://appassets.androidplatform.net/
+ * with strict file-access lockdown and anti-inspection hardening.
  */
 object VoraletWebViewConfig {
+
+    const val VIRTUAL_HOST = "appassets.androidplatform.net"
+    const val ENTRY_URL = "https://$VIRTUAL_HOST/index.html"
 
     val isEmulator: Boolean by lazy {
         val fingerprint = Build.FINGERPRINT.lowercase()
@@ -20,13 +24,13 @@ object VoraletWebViewConfig {
         val product = Build.PRODUCT.lowercase()
 
         fingerprint.startsWith("generic")
-                || fingerprint.startsWith("unknown")
-                || model.contains("google_sdk")
-                || model.contains("emulator")
-                || hardware.contains("goldfish")
-                || hardware.contains("ranchu")
-                || product.contains("sdk")
-                || product.contains("emulator")
+            || fingerprint.startsWith("unknown")
+            || model.contains("google_sdk")
+            || model.contains("emulator")
+            || hardware.contains("goldfish")
+            || hardware.contains("ranchu")
+            || product.contains("sdk")
+            || product.contains("emulator")
     }
 
     @Suppress("DEPRECATION")
@@ -35,7 +39,7 @@ object VoraletWebViewConfig {
         webView: WebView,
         backgroundColor: Int
     ) {
-        // Enforce no remote debugging in production
+        // Strictly disable remote DevTools / USB WebView inspection
         try {
             WebView.setWebContentsDebuggingEnabled(false)
         } catch (_: Throwable) {}
@@ -50,31 +54,37 @@ object VoraletWebViewConfig {
             isVerticalScrollBarEnabled = false
             isHorizontalScrollBarEnabled = false
             isNestedScrollingEnabled = true
+            isLongClickable = false
+            isHapticFeedbackEnabled = false
+            setOnLongClickListener { true }
 
             settings.apply {
                 javaScriptEnabled = true
                 domStorageEnabled = true
                 databaseEnabled = true
 
-                // Security Hardening: Never allow local file URLs to access arbitrary files or external origins
-                allowFileAccess = true
-                allowContentAccess = true
+                // Security Hardening: Disable file:// & content:// access completely;
+                // all local assets are served via shouldInterceptRequest over virtual HTTPS origin.
+                allowFileAccess = false
+                allowContentAccess = false
                 allowFileAccessFromFileURLs = false
                 allowUniversalAccessFromFileURLs = false
+                // Offline isolation is enforced by VoraletWebViewClient + zero INTERNET permission
+                blockNetworkLoads = false
 
                 // Security: Block mixed HTTP/HTTPS content
                 mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
 
-                // Security: Enable Google Safe Browsing on supported OS versions
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     safeBrowsingEnabled = true
                 }
 
-                // Smooth display and viewport metrics
+                cacheMode = WebSettings.LOAD_NO_CACHE
                 useWideViewPort = true
                 loadWithOverviewMode = true
                 setSupportMultipleWindows(false)
-                textZoom = 100 // Maintain precise layout geometry
+                setGeolocationEnabled(false)
+                textZoom = 100
             }
         }
     }

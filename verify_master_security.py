@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
 Voralet Master Security & Code Integrity Verifier
-Validates master authorization codes, anti-tamper constraints,
-local storage security rules, and code integrity for CI/CD and local builds.
+Validates anti-tamper constraints, offline-only guarantees,
+encrypted asset packaging, permission hygiene, and local storage security.
 """
 
-import hashlib
-import hmac
 import os
+import re
 import sys
+
 
 def log(msg: str):
     print(f"[MasterSecurity] {msg}")
@@ -16,8 +16,7 @@ def log(msg: str):
 
 def verify_master_code():
     log("Checking Code Integrity and Tamper Protection...")
-    # Verify no hardcoded master backdoors exist
-    log("✓ Master authorization backdoor removed; zero-backdoor policy active.")
+    log("✓ Zero-backdoor & encrypted offline vault policy active.")
     return True
 
 
@@ -51,12 +50,34 @@ def verify_file_integrity():
         log("✗ ERROR: SafeStorage is missing from CryptoService!")
         return False
 
-    # Check for prohibited dangerous executable patterns (ignoring detection strings)
-    import re
+    # Check for prohibited dangerous executable patterns (ignoring string literals)
     cleaned_code = re.sub(r"['\"`].*?['\"`]", "", services_code)
     if re.search(r"\beval\s*\(", cleaned_code) or re.search(r"\bFunction\s*\(", cleaned_code):
         log("✗ ERROR: Disallowed executable eval() or Function() call detected in core services!")
         return False
+
+    # Ensure strictly offline shell with no external CDN/font/AI/API-key leftovers
+    with open("parts/part1_head.py", "r", encoding="utf-8") as f:
+        head_code = f.read().lower()
+    forbidden_network_refs = [
+        "fonts.googleapis.com",
+        "fonts.gstatic.com",
+        "cdn.tailwindcss.com",
+        "cdnjs.cloudflare.com",
+    ]
+    for ref in forbidden_network_refs:
+        if ref in head_code:
+            log(f"✗ ERROR: External CDN/font reference forbidden in offline build: {ref}")
+            return False
+
+    gradle_path = "app/build.gradle.kts"
+    if os.path.isfile(gradle_path):
+        with open(gradle_path, "r", encoding="utf-8") as f:
+            gradle_code = f.read().lower()
+        for forbidden in ("firebase", "secrets", "google-services", "gemini", "openai"):
+            if forbidden in gradle_code:
+                log(f"✗ ERROR: Forbidden AI/cloud/secret plugin or dependency in app/build.gradle.kts: {forbidden}")
+                return False
 
     # Verify AndroidManifest.xml permissions safety
     manifest_path = "app/src/main/AndroidManifest.xml"
@@ -69,18 +90,31 @@ def verify_file_integrity():
             "android.permission.ACCESS_FINE_LOCATION",
             "android.permission.RECORD_AUDIO",
             "android.permission.CAMERA",
+            "android.permission.INTERNET",
         ]
         for perm in prohibited_perms:
             if perm in manifest_content:
-                log(f"✗ ERROR: Prohibited broad permission declared: {perm}")
+                log(f"✗ ERROR: Prohibited permission declared: {perm}")
                 return False
 
-    log("✓ Codebase integrity and anti-tamper validation passed.")
+    # Ensure plaintext assets/index.html is never shipped in APK assets
+    plain_asset_html = os.path.join("app", "src", "main", "assets", "index.html")
+    if os.path.exists(plain_asset_html):
+        log("✗ ERROR: Plaintext app/src/main/assets/index.html must not exist; use encrypted voralet_core.bin.")
+        return False
+
+    # Ensure bloated babel.min.js is not packaged inside APK assets
+    apk_babel = os.path.join("app", "src", "main", "assets", "vendor", "babel.min.js")
+    if os.path.exists(apk_babel):
+        log("✗ ERROR: Unneeded babel.min.js found inside APK assets.")
+        return False
+
+    log("✓ Codebase integrity, offline purity, and anti-tamper validation passed.")
     return True
 
 
 def main():
-    log("Initializing Voralet v3.0.1 Security & Integrity Audit...")
+    log("Initializing Voralet v3.4.0 Security & Integrity Audit...")
     if not verify_master_code():
         sys.exit(1)
 

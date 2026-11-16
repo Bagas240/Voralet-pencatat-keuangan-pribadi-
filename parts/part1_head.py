@@ -13,8 +13,8 @@ HTML_HEAD = """<!DOCTYPE html>
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="theme-color" content="#FFFFFF" />
 
-  <!-- Security & Anti-Tampering Content Policy -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: file:; img-src 'self' data: blob: file:; font-src 'self' data: https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; connect-src 'self' data: blob:; object-src 'none';" />
+  <!-- Security & Anti-Tampering Content Policy (100% Offline, Zero External Network Calls) -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: file:; img-src 'self' data: blob: file:; font-src 'self' data:; style-src 'self' 'unsafe-inline'; connect-src 'self' data: blob:; object-src 'none';" />
 
   <!-- Client-side Anti-Inspection, Anti-Debugging & Security Hardening Shield -->
   <script>
@@ -51,9 +51,7 @@ HTML_HEAD = """<!DOCTYPE html>
     })();
   </script>
   
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Offline Local System Typography Stack (Zero External Font Requests) -->
   
   <!-- Tailwind CSS Configuration (MANDATORY BEFORE CDN SCRIPT FOR darkMode: 'class') -->
   <script>
@@ -106,13 +104,8 @@ HTML_HEAD = """<!DOCTYPE html>
       }
     };
   </script>
-  <!-- Tailwind CSS (Local asset with CDN fallback) -->
+  <!-- Tailwind CSS (100% Bundled Offline Asset) -->
   <script src="./vendor/tailwindcss.js"></script>
-  <script>
-    if (!window.tailwind) {
-      document.write('<script src="https://cdn.tailwindcss.com"><\/script>');
-    }
-  </script>
   <script>
     if (window.tailwind) {
       window.tailwind.config = window.tailwind.config || {};
@@ -120,27 +113,12 @@ HTML_HEAD = """<!DOCTYPE html>
     }
   </script>
 
-  <!-- React 18 & ReactDOM 18 (Local assets with CDN fallback) -->
+  <!-- React 18 & ReactDOM 18 (100% Bundled Offline Assets) -->
   <script src="./vendor/react.production.min.js"></script>
-  <script>
-    if (!window.React) {
-      document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"><\/script>');
-    }
-  </script>
   <script src="./vendor/react-dom.production.min.js"></script>
-  <script>
-    if (!window.ReactDOM) {
-      document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"><\/script>');
-    }
-  </script>
 
-  <!-- html2pdf.js for Client-Side PDF Generation (Local asset with CDN fallback) -->
+  <!-- html2pdf.js for Client-Side PDF Generation (100% Bundled Offline Asset) -->
   <script src="./vendor/html2pdf.bundle.min.js"></script>
-  <script>
-    if (!window.html2pdf) {
-      document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"><\/script>');
-    }
-  </script>
 
   <!-- Theme Synchronization Initialization -->
   <script>
@@ -620,17 +598,18 @@ HTML_HEAD = """<!DOCTYPE html>
       }
     }
 
-    /* Active cross-fade global smoothing during theme transitions */
+    /* Active cross-fade global smoothing during theme transitions (composited lightweight properties only) */
     .theme-crossfade-active,
-    .theme-crossfade-active *,
-    .theme-crossfade-active *::before,
-    .theme-crossfade-active *::after {
-      transition: background-color 380ms cubic-bezier(0.32, 0.72, 0, 1),
-                  border-color 380ms cubic-bezier(0.32, 0.72, 0, 1),
-                  color 380ms cubic-bezier(0.32, 0.72, 0, 1),
-                  fill 380ms cubic-bezier(0.32, 0.72, 0, 1),
-                  stroke 380ms cubic-bezier(0.32, 0.72, 0, 1),
-                  box-shadow 380ms cubic-bezier(0.32, 0.72, 0, 1) !important;
+    .theme-crossfade-active * {
+      transition: background-color 240ms cubic-bezier(0.32, 0.72, 0, 1),
+                  border-color 240ms cubic-bezier(0.32, 0.72, 0, 1),
+                  color 240ms cubic-bezier(0.32, 0.72, 0, 1) !important;
+    }
+
+    /* Battery Saver: Freeze all CSS animations when app is backgrounded or tab hidden */
+    html.voralet-paused *,
+    .voralet-paused * {
+      animation-play-state: paused !important;
     }
 
     /* Browser View Transitions cross-fade overlay specs */
@@ -954,8 +933,8 @@ HTML_HEAD = """<!DOCTYPE html>
       100% { transform: scale(1) translateY(0); opacity: 1; }
     }
     @keyframes flameFlicker {
-      0%, 100% { transform: scale(1) rotate(-1deg); filter: drop-shadow(0 0 6px rgba(249, 115, 22, 0.45)); }
-      50% { transform: scale(1.08, 0.96) rotate(1deg); filter: drop-shadow(0 0 12px rgba(239, 68, 68, 0.6)); }
+      0%, 100% { transform: scale3d(1, 1, 1) rotate(-1.5deg); opacity: 0.94; }
+      50% { transform: scale3d(1.07, 0.96, 1) rotate(1.5deg); opacity: 1; }
     }
     @keyframes heartFloatUp {
       0% { transform: translateY(0) scale(0.6); opacity: 1; }
@@ -1011,6 +990,7 @@ HTML_HEAD = """<!DOCTYPE html>
     }
     .animate-flame {
       animation: flameFlicker 1.8s ease-in-out infinite;
+      will-change: transform, opacity;
     }
     .animate-heart-float {
       animation: heartFloatUp 0.85s ease-out forwards;
@@ -1236,7 +1216,20 @@ HTML_HEAD = """<!DOCTYPE html>
       .animate-tx-fade-out,
       .animate-ios-tab-slide-forward,
       .animate-ios-tab-slide-backward,
-      .animate-ios-tab-view {
+      .animate-ios-tab-view,
+      .animate-pet-idle,
+      .animate-pet-eat,
+      .animate-pet-drink,
+      .animate-pet-bark,
+      .animate-pet-meow,
+      .animate-pet-sad,
+      .animate-pet-happy,
+      .animate-pet-tail,
+      .animate-pet-tail-idle,
+      .animate-pet-blink,
+      .animate-pet-whiskers,
+      .animate-flame,
+      .animate-scanner-laser {
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
         transform: none !important;
@@ -1473,6 +1466,15 @@ HTML_HEAD = """<!DOCTYPE html>
           return false;
         }
       }, { capture: true });
+
+      // Battery-friendly visibility throttle: freeze background animations when tab hidden
+      document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+          document.documentElement.classList.add('voralet-paused');
+        } else {
+          document.documentElement.classList.remove('voralet-paused');
+        }
+      });
 
       // Secure prototype pollution guard
       try {

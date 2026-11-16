@@ -1,50 +1,110 @@
 package com.example.webview
 
+import android.app.AlertDialog
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
-import android.util.Log
+import android.provider.MediaStore
 import android.webkit.ConsoleMessage
 import android.webkit.JsResult
+import android.webkit.PermissionRequest
 import android.webkit.RenderProcessGoneDetail
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.result.ActivityResultLauncher
+import androidx.core.content.FileProvider
+import com.example.security.AssetVaultDecryptor
+import java.io.ByteArrayInputStream
+import java.io.File
 
 class VoraletWebViewClient(
+    private val appContext: Context,
     private val onCrashRecover: () -> Unit
 ) : WebViewClient() {
 
-    companion object {
-        private const val TAG = "VoraletWebViewClient"
+    private val allowedAssetPattern = Regex("^[a-zA-Z0-9._-]+$")
+
+    override fun shouldInterceptRequest(
+        view: WebView?,
+        request: WebResourceRequest?
+    ): WebResourceResponse? {
+        val uri = request?.url ?: return blockedResponse()
+        val scheme = uri.scheme?.lowercase()
+
+        if (scheme == "data" || scheme == "blob") {
+            return null
+        }
+
+        if (scheme != "https" || uri.host != VoraletWebViewConfig.VIRTUAL_HOST) {
+            return blockedResponse()
+        }
+
+        val rawPath = (uri.encodedPath ?: "/").trimStart('/')
+        val normalizedPath = if (rawPath.startsWith("assets/")) {
+            rawPath.removePrefix("assets/")
+        } else {
+            rawPath
+        }
+
+        if (normalizedPath.isEmpty() || normalizedPath == "index.html") {
+            return try {
+                val htmlBytes = AssetVaultDecryptor.loadDecryptedHtml(appContext)
+                WebResourceResponse(
+                    "text/html",
+                    "UTF-8",
+                    200,
+                    "OK",
+                    mapOf(
+                        "Cache-Control" to "no-store, no-cache, must-revalidate",
+                        "X-Content-Type-Options" to "nosniff"
+                    ),
+                    ByteArrayInputStream(htmlBytes)
+                )
+            } catch (_: Throwable) {
+                blockedResponse()
+            }
+        }
+
+        if (normalizedPath.startsWith("vendor/") && !normalizedPath.contains("..")) {
+            val fileName = normalizedPath.removePrefix("vendor/")
+            if (allowedAssetPattern.matches(fileName)) {
+                return try {
+                    val stream = appContext.assets.open("vendor/$fileName")
+                    WebResourceResponse(
+                        mimeTypeFor(fileName),
+                        "UTF-8",
+                        200,
+                        "OK",
+                        mapOf(
+                            "Cache-Control" to "no-store, no-cache, must-revalidate",
+                            "X-Content-Type-Options" to "nosniff"
+                        ),
+                        stream
+                    )
+                } catch (_: Throwable) {
+                    blockedResponse()
+                }
+            }
+        }
+
+        return blockedResponse()
     }
 
     override fun shouldOverrideUrlLoading(
         view: WebView?,
         request: WebResourceRequest?
     ): Boolean {
-        val uri = request?.url ?: return false
-        val url = uri.toString()
-
-        // Only allow trusted local asset files inside the WebView
-        if (url.startsWith("file:///android_asset/")) {
-            return false
-        }
-
-        // Open external web links or external intent protocols safely via the Android system
-        try {
-            val intent = Intent(Intent.ACTION_VIEW, uri).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-            view?.context?.startActivity(intent)
-        } catch (e: Exception) {
-            Log.w(TAG, "Blocked or unable to open external URL: $url", e)
-        }
-        return true
+        val uri = request?.url ?: return true
+        val isTrusted = uri.scheme.equals("https", ignoreCase = true) &&
+            uri.host == VoraletWebViewConfig.VIRTUAL_HOST
+        // Strict offline policy: block navigation to any external URL
+        return !isTrusted
     }
 
     override fun onReceivedError(
@@ -53,57 +113,56 @@ class VoraletWebViewClient(
         error: WebResourceError?
     ) {
         super.onReceivedError(view, request, error)
-        if (request?.isForMainFrame == true) {
-            Log.w(TAG, "Main frame error: ${error?.description} (code ${error?.errorCode})")
-        }
     }
 
     override fun onRenderProcessGone(
         view: WebView?,
         detail: RenderProcessGoneDetail?
     ): Boolean {
-        val didCrash = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            detail?.didCrash() ?: false
-        } else {
-            false
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            detail?.didCrash()
         }
-        Log.e(TAG, "Render process gone! Crash: $didCrash. Initiating clean recovery.")
         onCrashRecover()
         return true
     }
+
+    private fun mimeTypeFor(fileName: String): String = when {
+        fileName.endsWith(".js", ignoreCase = true) -> "application/javascript"
+        fileName.endsWith(".css", ignoreCase = true) -> "text/css"
+        fileName.endsWith(".svg", ignoreCase = true) -> "image/svg+xml"
+        fileName.endsWith(".png", ignoreCase = true) -> "image/png"
+        fileName.endsWith(".webp", ignoreCase = true) -> "image/webp"
+        fileName.endsWith(".html", ignoreCase = true) -> "text/html"
+        else -> "application/octet-stream"
+    }
+
+    private fun blockedResponse(): WebResourceResponse = WebResourceResponse(
+        "text/plain",
+        "UTF-8",
+        403,
+        "Forbidden",
+        mapOf("Cache-Control" to "no-store"),
+        ByteArrayInputStream(ByteArray(0))
+    )
 }
 
 class VoraletWebChromeClient(
+    private val context: Context,
     private val fileChooserLauncher: ActivityResultLauncher<Intent>,
-    private val onFileCallbackReady: (ValueCallback<Array<Uri>>?) -> Unit
+    private val onFileCallbackReady: (ValueCallback<Array<Uri>>?) -> Unit,
+    private val onCameraUriReady: (Uri?) -> Unit
 ) : WebChromeClient() {
 
-    companion object {
-        private const val TAG = "VoraletWebChrome"
-    }
-
     override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
-        val msg = consoleMessage?.message() ?: ""
-        val line = consoleMessage?.lineNumber() ?: 0
-        val source = consoleMessage?.sourceId() ?: ""
-        val isError = consoleMessage?.messageLevel() == ConsoleMessage.MessageLevel.ERROR
-        // Informational notices (such as Babel code generator deoptimisation notes) should not be reported as ERROR
-        val isInfoNote = msg.startsWith("[BABEL] Note:") || msg.contains("exceeds the max of 500KB")
-        if (isError && !isInfoNote) {
-            Log.e(TAG, "[$source:$line] $msg")
-        } else {
-            Log.d(TAG, "[$source:$line] $msg")
-        }
+        // Silence console output in production to prevent sensitive ledger leaks to logcat
         return true
     }
 
-    override fun onPermissionRequest(request: android.webkit.PermissionRequest?) {
-        // Zero permissions policy: strictly deny all web resource permissions
+    override fun onPermissionRequest(request: PermissionRequest?) {
+        // Zero permissions policy: strictly deny all web API hardware permission requests
         try {
             request?.deny()
-        } catch (e: Exception) {
-            Log.w(TAG, "Web onPermissionRequest deny notice", e)
-        }
+        } catch (_: Throwable) {}
     }
 
     override fun onShowFileChooser(
@@ -112,17 +171,62 @@ class VoraletWebChromeClient(
         fileChooserParams: FileChooserParams?
     ): Boolean {
         onFileCallbackReady(filePathCallback)
-        val intent = fileChooserParams?.createIntent() ?: Intent(Intent.ACTION_GET_CONTENT).apply {
-            type = "*/*"
-            addCategory(Intent.CATEGORY_OPENABLE)
-        }
+        onCameraUriReady(null)
+
         return try {
-            fileChooserLauncher.launch(intent)
+            val isCapture = fileChooserParams?.isCaptureEnabled == true
+            val acceptsImage = fileChooserParams?.acceptTypes?.any {
+                it.contains("image", ignoreCase = true)
+            } == true
+
+            val launchIntent: Intent = if (isCapture && acceptsImage) {
+                val captureDir = File(context.cacheDir, "receipt_captures").apply { mkdirs() }
+                // Clean stale temp captures older than 1 hour
+                captureDir.listFiles()?.forEach { f ->
+                    if (System.currentTimeMillis() - f.lastModified() > 3600_000L) f.delete()
+                }
+                val photoFile = File(captureDir, "struk_${System.currentTimeMillis()}.jpg")
+                val photoUri = FileProvider.getUriForFile(
+                    context,
+                    "${context.packageName}.fileprovider",
+                    photoFile
+                )
+                val cameraIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
+                    putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
+                    addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                if (cameraIntent.resolveActivity(context.packageManager) != null) {
+                    onCameraUriReady(photoUri)
+                    cameraIntent
+                } else {
+                    onCameraUriReady(null)
+                    buildPickerIntent(fileChooserParams)
+                }
+            } else {
+                buildPickerIntent(fileChooserParams)
+            }
+
+            fileChooserLauncher.launch(launchIntent)
             true
-        } catch (e: Exception) {
-            Log.w(TAG, "File chooser launch failed", e)
+        } catch (_: Throwable) {
+            onCameraUriReady(null)
             onFileCallbackReady(null)
             false
+        }
+    }
+
+    private fun buildPickerIntent(params: FileChooserParams?): Intent {
+        val acceptsImageOnly = params?.acceptTypes?.any { it.startsWith("image/", ignoreCase = true) } == true &&
+            params.acceptTypes.none { it.contains("json", ignoreCase = true) || it.contains("csv", ignoreCase = true) }
+
+        if (acceptsImageOnly && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            return Intent(MediaStore.ACTION_PICK_IMAGES).apply {
+                type = "image/*"
+            }
+        }
+        return params?.createIntent() ?: Intent(Intent.ACTION_GET_CONTENT).apply {
+            type = if (acceptsImageOnly) "image/*" else "*/*"
+            addCategory(Intent.CATEGORY_OPENABLE)
         }
     }
 
@@ -132,28 +236,21 @@ class VoraletWebChromeClient(
         message: String?,
         result: JsResult?
     ): Boolean {
-        val context = view?.context ?: return false
-        try {
-            android.app.AlertDialog.Builder(context)
+        val ctx = view?.context ?: return false
+        return try {
+            AlertDialog.Builder(ctx)
                 .setTitle("Konfirmasi")
                 .setMessage(message ?: "Apakah Anda yakin ingin melanjutkan?")
-                .setPositiveButton("Hapus") { _, _ ->
-                    result?.confirm()
-                }
-                .setNegativeButton("Batal") { _, _ ->
-                    result?.cancel()
-                }
-                .setOnCancelListener {
-                    result?.cancel()
-                }
+                .setPositiveButton("Ya, Lanjutkan") { _, _ -> result?.confirm() }
+                .setNegativeButton("Batal") { _, _ -> result?.cancel() }
+                .setOnCancelListener { result?.cancel() }
                 .setCancelable(true)
                 .create()
                 .show()
-            return true
-        } catch (e: Exception) {
-            Log.w(TAG, "Native onJsConfirm dialog error", e)
+            true
+        } catch (_: Throwable) {
             result?.cancel()
-            return false
+            false
         }
     }
 
@@ -163,25 +260,20 @@ class VoraletWebChromeClient(
         message: String?,
         result: JsResult?
     ): Boolean {
-        val context = view?.context ?: return false
-        try {
-            android.app.AlertDialog.Builder(context)
+        val ctx = view?.context ?: return false
+        return try {
+            AlertDialog.Builder(ctx)
                 .setTitle("Pemberitahuan")
                 .setMessage(message ?: "")
-                .setPositiveButton("OK") { _, _ ->
-                    result?.confirm()
-                }
-                .setOnCancelListener {
-                    result?.confirm()
-                }
+                .setPositiveButton("OK") { _, _ -> result?.confirm() }
+                .setOnCancelListener { result?.confirm() }
                 .setCancelable(true)
                 .create()
                 .show()
-            return true
-        } catch (e: Exception) {
-            Log.w(TAG, "Native onJsAlert dialog error", e)
+            true
+        } catch (_: Throwable) {
             result?.confirm()
-            return false
+            false
         }
     }
 }

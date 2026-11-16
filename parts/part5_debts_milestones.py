@@ -631,7 +631,7 @@ PART5_DEBTS_MILESTONES = """
         return String(remainingAmount);
       });
       const [accountId, setAccountId] = useState(() => accounts[0]?.id || '');
-      const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
+      const [date, setDate] = useState(() => getLocalDateString());
       const [notes, setNotes] = useState(() => (
         isHutang
           ? `Cicilan ke-${nextInstallmentNum}: ${debt.personName}`

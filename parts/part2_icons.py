@@ -818,8 +818,9 @@ PART2_ICONS = """
         const startVal = prevValRef.current;
         prevValRef.current = targetVal;
 
-        if (startVal === targetVal) {
+        if (startVal === targetVal || (typeof document !== 'undefined' && document.hidden)) {
           setDisplayVal(targetVal);
+          setIsCounting(false);
           return;
         }
 
@@ -828,6 +829,11 @@ PART2_ICONS = """
         const animDuration = Math.min(Math.max(duration, 350), 850);
 
         const tick = (now) => {
+          if (typeof document !== 'undefined' && document.hidden) {
+            setDisplayVal(targetVal);
+            setIsCounting(false);
+            return;
+          }
           const elapsed = now - startTime;
           const progress = Math.min(elapsed / animDuration, 1);
           // Authentic Apple fluid ease-out cubic

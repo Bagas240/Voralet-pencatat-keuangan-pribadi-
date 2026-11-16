@@ -2,27 +2,28 @@ package com.example
 
 import android.app.Application
 import android.os.Build
+import com.example.webview.VoraletWebViewConfig
 
 class VoraletApp : Application() {
 
-  init {
-    configureGraphicsEnvironment()
-  }
-
   override fun attachBaseContext(base: android.content.Context?) {
-    configureGraphicsEnvironment()
+    if (VoraletWebViewConfig.isEmulator) {
+      configureEmulatorGraphicsEnvironment()
+    }
     super.attachBaseContext(base)
   }
 
   override fun onCreate() {
     super.onCreate()
-    configureGraphicsEnvironment()
+    if (VoraletWebViewConfig.isEmulator) {
+      configureEmulatorGraphicsEnvironment()
+    }
     if (isMainProcess()) {
       MainActivity.prepareWebViewStorage(this)
     }
   }
 
-  private fun configureGraphicsEnvironment() {
+  private fun configureEmulatorGraphicsEnvironment() {
     try {
       android.system.Os.setenv("LIBGL_DRI3_DISABLE", "1", true)
       android.system.Os.setenv("EGL_LOG_LEVEL", "fatal", true)
@@ -32,29 +33,22 @@ class VoraletApp : Application() {
       android.system.Os.setenv("MESA_LOG_FILE", "/dev/null", true)
       android.system.Os.setenv("vendor.mesa.log", "silent", true)
       android.system.Os.setenv("vendor.mesa.log.file", "/dev/null", true)
-    } catch (_: Throwable) {
-      // Safe fallback
-    }
+    } catch (_: Throwable) {}
 
     try {
       System.setProperty("log.tag.MESA", "SUPPRESS")
       val spClass = Class.forName("android.os.SystemProperties")
       val setMethod = spClass.getMethod("set", String::class.java, String::class.java)
       setMethod.invoke(null, "log.tag.MESA", "SUPPRESS")
-      setMethod.invoke(null, "log.tag.MESA", "SILENT")
       setMethod.invoke(null, "vendor.mesa.log", "silent")
       setMethod.invoke(null, "vendor.mesa.log.file", "/dev/null")
-    } catch (_: Throwable) {
-      // Safe fallback
-    }
+    } catch (_: Throwable) {}
 
     try {
       val cmdLineFile = java.io.File("/data/local/tmp/webview-command-line")
       cmdLineFile.writeText("_ --disable-gpu --disable-gpu-rasterization --disable-gpu-compositing")
       cmdLineFile.setReadable(true, false)
-    } catch (_: Throwable) {
-      // Safe fallback
-    }
+    } catch (_: Throwable) {}
   }
 
   private fun isMainProcess(): Boolean {

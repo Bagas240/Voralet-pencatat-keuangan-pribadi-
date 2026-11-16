@@ -4,60 +4,66 @@ import android.app.Activity
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.Intent
 import android.os.Build
-import android.util.Log
+import android.print.PrintAttributes
+import android.print.PrintManager
+import android.util.Base64
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
+import androidx.core.content.FileProvider
 import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsControllerCompat
+import com.example.export.ExcelXlsxExporter
+import com.example.ocr.OfflineReceiptOcrEngine
+import com.example.webview.VoraletWebViewConfig
+import com.example.widget.PetWidgetProvider
+import com.example.widget.StreakWidgetProvider
+import org.json.JSONObject
+import java.io.File
+import java.util.concurrent.Executors
 
 /**
- * High-performance, secure Native Android Bridge for Voralet.
- * Exposes clipboard operations, system bar theming,
- * and security integrity helpers to the Web engine.
- * 100% offline, zero-device permissions required.
+ * High-performance, 100% Offline Native Android Bridge for Voralet.
+ * Handles:
+ * - Encrypted Home Widget sync
+ * - Genuine OOXML (.xlsx) Excel generation & SAF save/share
+ * - Offline bundled ML Kit Receipt OCR
+ * - Print / PDF export & encrypted backup saving
  */
 class AndroidNativeBridge(
-    private val activity: Activity
+    private val activity: Activity,
+    private val webViewProvider: () -> WebView?,
+    private val safSaveRequester: (fileName: String, mimeType: String, bytes: ByteArray) -> Unit
 ) {
     companion object {
         const val BRIDGE_NAME = "AndroidBridge"
-        private const val TAG = "AndroidNativeBridge"
-        private const val APP_VERSION = "3.3.0"
+        private const val APP_VERSION = "3.4.0"
+        private const val XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     }
+
+    private val workerExecutor = Executors.newSingleThreadExecutor()
 
     private val clipboardManager: ClipboardManager? by lazy {
         activity.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
     }
 
-    /**
-     * Synchronize live Streak and Pet data to Android Home Screen Widgets.
-     */
     @JavascriptInterface
     fun syncWidgetData(streakJson: String?, petJson: String?) {
         try {
             if (!streakJson.isNullOrEmpty()) {
-                com.example.widget.StreakWidgetProvider.saveStreakData(activity, streakJson)
+                StreakWidgetProvider.saveStreakData(activity, streakJson)
             }
             if (!petJson.isNullOrEmpty()) {
-                com.example.widget.PetWidgetProvider.savePetData(activity, petJson)
+                PetWidgetProvider.savePetData(activity, petJson)
             }
-        } catch (t: Throwable) {
-            Log.w(TAG, "Error syncing widget data", t)
-        }
+        } catch (_: Throwable) {}
     }
 
-    /**
-     * Tactile native haptic feedback - Disabled per zero-permission policy.
-     */
     @JavascriptInterface
     fun hapticFeedback(type: String?) {
-        // Disabled per zero-permission policy
+        // Silent per zero-permission policy
     }
 
-    /**
-     * Safe clipboard copy helper.
-     */
     @JavascriptInterface
     fun copyToClipboard(label: String?, text: String?): Boolean {
         if (text.isNullOrEmpty()) return false
@@ -65,15 +71,11 @@ class AndroidNativeBridge(
             val clip = ClipData.newPlainText(label ?: "Voralet", text)
             clipboardManager?.setPrimaryClip(clip)
             true
-        } catch (t: Throwable) {
-            Log.w(TAG, "Failed to copy to clipboard", t)
+        } catch (_: Throwable) {
             false
         }
     }
 
-    /**
-     * Sync system bar brightness / appearance with in-app theme.
-     */
     @JavascriptInterface
     fun setStatusBarTheme(isDark: Boolean) {
         activity.runOnUiThread {
@@ -82,27 +84,16 @@ class AndroidNativeBridge(
                 val insetsController = WindowCompat.getInsetsController(window, window.decorView)
                 insetsController.isAppearanceLightStatusBars = !isDark
                 insetsController.isAppearanceLightNavigationBars = !isDark
-            } catch (t: Throwable) {
-                Log.w(TAG, "Could not update status bar appearance", t)
-            }
+            } catch (_: Throwable) {}
         }
     }
 
-    /**
-     * Expose app version to client code.
-     */
     @JavascriptInterface
     fun getAppVersion(): String = APP_VERSION
 
-    /**
-     * Hardware acceleration check.
-     */
     @JavascriptInterface
-    fun isHardwareAccelerated(): Boolean = !com.example.webview.VoraletWebViewConfig.isEmulator
+    fun isHardwareAccelerated(): Boolean = !VoraletWebViewConfig.isEmulator
 
-    /**
-     * Print or export HTML report to PDF via Android PrintManager.
-     */
     @JavascriptInterface
     fun printHtml(htmlContent: String?, jobTitle: String?) {
         if (htmlContent.isNullOrBlank()) return
@@ -114,7 +105,7 @@ class AndroidNativeBridge(
                     override fun onPageFinished(view: WebView?, url: String?) {
                         super.onPageFinished(view, url)
                         try {
-                            val printManager = activity.getSystemService(Context.PRINT_SERVICE) as? android.print.PrintManager
+                            val printManager = activity.getSystemService(Context.PRINT_SERVICE) as? PrintManager
                             if (printManager != null && view != null) {
                                 val printAdapter = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                                     view.createPrintDocumentAdapter(title)
@@ -122,53 +113,147 @@ class AndroidNativeBridge(
                                     @Suppress("DEPRECATION")
                                     view.createPrintDocumentAdapter()
                                 }
-                                val printAttributes = android.print.PrintAttributes.Builder()
-                                    .setMediaSize(android.print.PrintAttributes.MediaSize.ISO_A4)
-                                    .setMinMargins(android.print.PrintAttributes.Margins.NO_MARGINS)
+                                val printAttributes = PrintAttributes.Builder()
+                                    .setMediaSize(PrintAttributes.MediaSize.ISO_A4)
+                                    .setMinMargins(PrintAttributes.Margins.NO_MARGINS)
                                     .build()
                                 printManager.print(title, printAdapter, printAttributes)
                             }
-                        } catch (t: Throwable) {
-                            Log.e(TAG, "Print error in onPageFinished", t)
-                        }
+                        } catch (_: Throwable) {}
                     }
                 }
                 tempWebView.loadDataWithBaseURL(null, htmlContent, "text/html", "UTF-8", null)
-            } catch (t: Throwable) {
-                Log.e(TAG, "Failed to initialize print webview", t)
-            }
+            } catch (_: Throwable) {}
         }
     }
 
     /**
-     * Share or open an exported document (Excel, PDF, or Backup JSON) in external apps.
-     * Uses Android FileProvider with zero runtime permissions.
+     * Generates a genuine OOXML (.xlsx) workbook offline on a background thread
+     * and triggers either Android SAF "Save As" ("save") or system Share/Open chooser ("share").
      */
+    @JavascriptInterface
+    fun exportExcelXlsx(payloadJson: String?, fileName: String?, mode: String?): Boolean {
+        if (payloadJson.isNullOrBlank()) return false
+        val safeName = (fileName ?: "Voralet_Laporan_Keuangan.xlsx")
+            .replace(Regex("[^a-zA-Z0-9._-]"), "_")
+            .let { if (it.endsWith(".xlsx", ignoreCase = true)) it else "$it.xlsx" }
+
+        workerExecutor.execute {
+            try {
+                val xlsxBytes = ExcelXlsxExporter.buildWorkbook(payloadJson)
+                activity.runOnUiThread {
+                    if (mode == "save") {
+                        safSaveRequester(safeName, XLSX_MIME, xlsxBytes)
+                    } else {
+                        shareFileBytes(safeName, xlsxBytes, XLSX_MIME)
+                    }
+                    notifyExportStatus(true, safeName)
+                }
+            } catch (_: Throwable) {
+                activity.runOnUiThread {
+                    notifyExportStatus(false, safeName)
+                }
+            }
+        }
+        return true
+    }
+
+    /**
+     * Saves arbitrary generated files (e.g. encrypted JSON backup, PDF) directly via Android Storage Access Framework
+     * so users can store them cleanly into Downloads/Documents without storage permissions.
+     */
+    @JavascriptInterface
+    fun saveFileToDevice(fileName: String?, contentBase64: String?, mimeType: String?): Boolean {
+        if (fileName.isNullOrBlank() || contentBase64.isNullOrBlank()) return false
+        return try {
+            val bytes = Base64.decode(contentBase64, Base64.DEFAULT)
+            val safeName = fileName.replace(Regex("[^a-zA-Z0-9._-]"), "_")
+            val resolvedMime = mimeType ?: "application/octet-stream"
+            activity.runOnUiThread {
+                safSaveRequester(safeName, resolvedMime, bytes)
+            }
+            true
+        } catch (_: Throwable) {
+            false
+        }
+    }
+
     @JavascriptInterface
     fun shareOrSaveFile(fileName: String?, contentBase64: String?, mimeType: String?): Boolean {
         if (fileName.isNullOrBlank() || contentBase64.isNullOrBlank()) return false
         return try {
-            val bytes = android.util.Base64.decode(contentBase64, android.util.Base64.DEFAULT)
-            val file = java.io.File(activity.cacheDir, fileName)
+            val bytes = Base64.decode(contentBase64, Base64.DEFAULT)
+            val safeName = fileName.replace(Regex("[^a-zA-Z0-9._-]"), "_")
+            val resolvedMime = mimeType ?: XLSX_MIME
+            shareFileBytes(safeName, bytes, resolvedMime)
+        } catch (_: Throwable) {
+            false
+        }
+    }
+
+    /**
+     * Performs 100% offline on-device OCR on a photographed or selected receipt image.
+     */
+    @JavascriptInterface
+    fun recognizeReceiptText(base64Image: String?, callbackId: String?) {
+        if (base64Image.isNullOrBlank() || callbackId.isNullOrBlank()) return
+        workerExecutor.execute {
+            OfflineReceiptOcrEngine.recognizeFromBase64(base64Image) { resultJson ->
+                val quotedId = JSONObject.quote(callbackId)
+                val quotedJson = JSONObject.quote(resultJson)
+                activity.runOnUiThread {
+                    try {
+                        webViewProvider()?.evaluateJavascript(
+                            "window.__onVoraletOcrResult && window.__onVoraletOcrResult($quotedId, $quotedJson);",
+                            null
+                        )
+                    } catch (_: Throwable) {}
+                }
+            }
+        }
+    }
+
+    private fun shareFileBytes(safeName: String, bytes: ByteArray, mimeType: String): Boolean {
+        return try {
+            val exportDir = File(activity.cacheDir, "exports").apply { mkdirs() }
+            exportDir.listFiles()?.forEach { f ->
+                if (System.currentTimeMillis() - f.lastModified() > 86_400_000L) f.delete()
+            }
+            val file = File(exportDir, safeName)
             file.writeBytes(bytes)
 
-            val uri = androidx.core.content.FileProvider.getUriForFile(
+            val uri = FileProvider.getUriForFile(
                 activity,
                 "${activity.packageName}.fileprovider",
                 file
             )
-            val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                type = mimeType ?: "application/vnd.ms-excel"
-                putExtra(android.content.Intent.EXTRA_STREAM, uri)
-                putExtra(android.content.Intent.EXTRA_SUBJECT, fileName)
-                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = mimeType
+                putExtra(Intent.EXTRA_STREAM, uri)
+                putExtra(Intent.EXTRA_SUBJECT, safeName)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-            activity.startActivity(android.content.Intent.createChooser(intent, "Buka / Simpan $fileName"))
+            activity.startActivity(Intent.createChooser(intent, "Buka atau Simpan $safeName"))
             true
-        } catch (t: Throwable) {
-            Log.e(TAG, "Failed to share or save file", t)
+        } catch (_: Throwable) {
             false
         }
+    }
+
+    private fun notifyExportStatus(success: Boolean, fileName: String) {
+        try {
+            val quotedName = JSONObject.quote(fileName)
+            webViewProvider()?.evaluateJavascript(
+                "window.__onVoraletExportResult && window.__onVoraletExportResult($success, $quotedName);",
+                null
+            )
+        } catch (_: Throwable) {}
+    }
+
+    fun release() {
+        try {
+            workerExecutor.shutdownNow()
+        } catch (_: Throwable) {}
     }
 }

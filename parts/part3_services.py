@@ -36,6 +36,28 @@ PART3_SERVICES = """
       REMINDER: 'voralet_reminder'
     };
 
+    const getLocalDateString = (dateInput) => {
+      const d = dateInput instanceof Date ? dateInput : (dateInput ? new Date(dateInput) : new Date());
+      if (isNaN(d.getTime())) {
+        const now = new Date();
+        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      }
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    };
+
+    const parseLocalDate = (dateStr) => {
+      if (!dateStr) return new Date(NaN);
+      const s = String(dateStr).trim();
+      const ymd = s.match(/^(\\d{4})-(\\d{1,2})-(\\d{1,2})$/);
+      if (ymd) {
+        return new Date(parseInt(ymd[1], 10), parseInt(ymd[2], 10) - 1, parseInt(ymd[3], 10));
+      }
+      return new Date(s);
+    };
+
     // =========================================================================
     // CRYPTOGRAPHY SERVICE (PBKDF2 PIN hashing with legacy migration)
     // =========================================================================
@@ -176,10 +198,19 @@ PART3_SERVICES = """
         }
         try {
           const binary = atob(backupObj.payload);
+          if (typeof backupObj.signature === 'string' && backupObj.signature.startsWith('VORALET-HMAC-')) {
+            let actualChecksum = 0;
+            for (let i = 0; i < binary.length; i++) {
+              actualChecksum = (actualChecksum + binary.charCodeAt(i)) & 0xFFFFFFFF;
+            }
+            const expectedSig = 'VORALET-HMAC-' + actualChecksum.toString(16).toUpperCase();
+            if (!CryptoService.equalConstantTime(expectedSig, backupObj.signature)) {
+              return null;
+            }
+          }
           const keyStr = 'VORALET_SECURE_VAULT_ENCRYPTION_KEY_LOCAL';
           const legacyKeyStr = 'VORALET_BACKUP_ENCRYPTED_VAULT_KEY_2006_2026';
           const decryptedBytes = new Uint8Array(binary.length);
-          // Try standard key first
           let decryptedJson = '';
           try {
             for (let i = 0; i < binary.length; i++) {
@@ -189,7 +220,6 @@ PART3_SERVICES = """
             decryptedJson = new TextDecoder().decode(decryptedBytes);
             return JSON.parse(decryptedJson);
           } catch (_) {
-            // Fallback to legacy key for existing backups
             for (let i = 0; i < binary.length; i++) {
               const k = legacyKeyStr.charCodeAt(i % legacyKeyStr.length);
               decryptedBytes[i] = (binary.charCodeAt(i) ^ k ^ ((i * 31) & 0xFF)) & 0xFF;
@@ -723,7 +753,7 @@ PART3_SERVICES = """
       },
       recordStreakActivity: () => {
         const now = Date.now();
-        const today = new Date().toISOString().split('T')[0];
+        const today = getLocalDateString();
         const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
         const current = StorageService.getStreakData();
         const lastTs = Number(current.lastActivityTimestamp) || 0;
@@ -803,10 +833,12 @@ PART3_SERVICES = """
         merged.petCoins = normalizedCoins;
 
         if (merged.lastFedDate) {
-          const today = new Date().toISOString().split('T')[0];
-          const last = new Date(merged.lastFedDate);
-          const curr = new Date(today);
-          const diffDays = Math.max(0, Math.round((curr - last) / (1000 * 60 * 60 * 24)));
+          const today = getLocalDateString();
+          const last = parseLocalDate(merged.lastFedDate);
+          const curr = parseLocalDate(today);
+          const diffDays = (!isNaN(last.getTime()) && !isNaN(curr.getTime()))
+            ? Math.max(0, Math.round((curr - last) / (1000 * 60 * 60 * 24)))
+            : 0;
           if (diffDays > 0) {
             merged.fullness = Math.max(15, (merged.fullness || 80) - (diffDays * 15));
             merged.happiness = Math.max(20, (merged.happiness || 85) - (diffDays * 10));
@@ -836,7 +868,7 @@ PART3_SERVICES = """
         const pet = petInput || StorageService.getPetData();
         const fullness = Number(pet.fullness) || 0;
         const happiness = Number(pet.happiness) || 0;
-        const today = new Date().toISOString().split('T')[0];
+        const today = getLocalDateString();
 
         // Syarat: Kenyang > 80 DAN Senang > 80, dan belum klaim bonus hari ini (+5 koin/hari)
         if (fullness > 80 && happiness > 80 && pet.lastCareBonusDate !== today) {
@@ -882,7 +914,7 @@ PART3_SERVICES = """
         pet.foodCount = Math.max(0, (pet.foodCount || 0) - 1);
         pet.fullness = Math.min(100, (pet.fullness || 50) + 25);
         pet.happiness = Math.min(100, (pet.happiness || 50) + 15);
-        pet.lastFedDate = new Date().toISOString().split('T')[0];
+        pet.lastFedDate = getLocalDateString();
         const careBonus = StorageService.checkDailyCareBonus(pet);
         const finalPet = careBonus.awarded ? careBonus.pet : pet;
         StorageService.setPetData(finalPet);
@@ -1070,7 +1102,7 @@ PART3_SERVICES = """
           .reduce((acc, t) => acc + (Number(t.amount) || 0), 0);
 
         // Today's total expenses
-        const todayStr = now.toISOString().split('T')[0];
+        const todayStr = getLocalDateString(now);
         const spentToday = (transactions || [])
           .filter(t => t && t.date === todayStr && t.type === 'EXPENSE')
           .reduce((acc, t) => acc + (Number(t.amount) || 0), 0);
@@ -1161,7 +1193,7 @@ PART3_SERVICES = """
     const formatDateID = (dateStr) => {
       if (!dateStr) return '';
       try {
-        const d = new Date(dateStr);
+        const d = parseLocalDate(dateStr);
         if (isNaN(d.getTime())) return String(dateStr);
         return d.toLocaleDateString('id-ID', {
           day: 'numeric',
@@ -1176,7 +1208,7 @@ PART3_SERVICES = """
     const formatFullDateID = (dateStr) => {
       if (!dateStr) return '';
       try {
-        const d = new Date(dateStr);
+        const d = parseLocalDate(dateStr);
         if (isNaN(d.getTime())) return String(dateStr);
         return d.toLocaleDateString('id-ID', {
           weekday: 'long',
@@ -1497,7 +1529,7 @@ PART3_SERVICES = """
 
       // Parse flexible date formats (YYYY-MM-DD, DD/MM/YYYY, DD-MM-YYYY, MM/DD/YYYY)
       parseFlexibleDate: (str) => {
-        if (!str) return new Date().toISOString().split('T')[0];
+        if (!str) return getLocalDateString();
         const trimmed = str.trim();
         
         // Check ISO YYYY-MM-DD
@@ -1520,9 +1552,9 @@ PART3_SERVICES = """
 
         const parsed = new Date(trimmed);
         if (!isNaN(parsed.getTime())) {
-          return parsed.toISOString().split('T')[0];
+          return getLocalDateString(parsed);
         }
-        return new Date().toISOString().split('T')[0];
+        return getLocalDateString();
       },
 
       // Clean numeric amount from formatted currency strings (e.g. "Rp 50.000,00", "-50000", "50,000.00")
@@ -2221,6 +2253,16 @@ PART3_SERVICES = """
               }
             };
 
+            if (typeof window !== 'undefined' && window.AndroidBridge && typeof window.AndroidBridge.saveFileToDevice === 'function') {
+              const dataUri = await window.html2pdf().set(opt).from(element).outputPdf('datauristring');
+              const base64Part = String(dataUri || '').split(',')[1] || '';
+              document.body.removeChild(container);
+              if (base64Part) {
+                return window.AndroidBridge.saveFileToDevice(filename, base64Part, 'application/pdf');
+              }
+              return false;
+            }
+
             await window.html2pdf().set(opt).from(element).save();
             document.body.removeChild(container);
             return true;
@@ -2902,31 +2944,166 @@ PART3_SERVICES = """
 </Workbook>`;
       },
 
-      exportToExcel: (data) => {
-        try {
-          const xml = ExcelExportService.generateExcelXml(data);
-          const filename = `Voralet_Laporan_Keuangan_Lengkap_${new Date().toISOString().slice(0, 10)}.xls`;
+      // Native Android .xlsx Export (with pure-JS OOXML fallback for browser preview)
+      buildCategoryLabelMap: (customCategories = []) => {
+        const map = {};
+        const cats = typeof getAllCategories === 'function' ? getAllCategories(customCategories) : [];
+        cats.forEach(c => {
+          if (c && c.id) map[c.id] = c.label || c.id;
+        });
+        return map;
+      },
 
-          // 1. Check if running inside Android Native app with FileProvider Bridge
-          if (typeof window !== 'undefined' && window.AndroidBridge && typeof window.AndroidBridge.shareOrSaveFile === 'function') {
+      crc32: (bytes) => {
+        let crc = 0xFFFFFFFF;
+        for (let i = 0; i < bytes.length; i++) {
+          crc ^= bytes[i];
+          for (let j = 0; j < 8; j++) {
+            crc = (crc >>> 1) ^ ((crc & 1) ? 0xEDB88320 : 0);
+          }
+        }
+        return (crc ^ 0xFFFFFFFF) >>> 0;
+      },
+
+      buildStoredZip: (files) => {
+        const encoder = new TextEncoder();
+        const localParts = [];
+        const centralParts = [];
+        let offset = 0;
+
+        files.forEach(({ name, content }) => {
+          const nameBytes = encoder.encode(name);
+          const dataBytes = typeof content === 'string' ? encoder.encode(content) : content;
+          const crc = ExcelExportService.crc32(dataBytes);
+
+          const lh = new Uint8Array(30 + nameBytes.length);
+          const ldv = new DataView(lh.buffer);
+          ldv.setUint32(0, 0x04034b50, true);
+          ldv.setUint16(4, 20, true);
+          ldv.setUint16(6, 0x0800, true);
+          ldv.setUint16(8, 0, true);
+          ldv.setUint32(14, crc, true);
+          ldv.setUint32(18, dataBytes.length, true);
+          ldv.setUint32(22, dataBytes.length, true);
+          ldv.setUint16(26, nameBytes.length, true);
+          lh.set(nameBytes, 30);
+          localParts.push(lh, dataBytes);
+
+          const ch = new Uint8Array(46 + nameBytes.length);
+          const cdv = new DataView(ch.buffer);
+          cdv.setUint32(0, 0x02014b50, true);
+          cdv.setUint16(4, 20, true);
+          cdv.setUint16(6, 20, true);
+          cdv.setUint16(8, 0x0800, true);
+          cdv.setUint16(10, 0, true);
+          cdv.setUint32(16, crc, true);
+          cdv.setUint32(20, dataBytes.length, true);
+          cdv.setUint32(24, dataBytes.length, true);
+          cdv.setUint16(28, nameBytes.length, true);
+          cdv.setUint32(42, offset, true);
+          ch.set(nameBytes, 46);
+          centralParts.push(ch);
+
+          offset += lh.length + dataBytes.length;
+        });
+
+        let centralSize = 0;
+        centralParts.forEach(p => { centralSize += p.length; });
+        const eocd = new Uint8Array(22);
+        const edv = new DataView(eocd.buffer);
+        edv.setUint32(0, 0x06054b50, true);
+        edv.setUint16(8, files.length, true);
+        edv.setUint16(10, files.length, true);
+        edv.setUint32(12, centralSize, true);
+        edv.setUint32(16, offset, true);
+
+        const totalLen = offset + centralSize + eocd.length;
+        const result = new Uint8Array(totalLen);
+        let pos = 0;
+        localParts.forEach(p => { result.set(p, pos); pos += p.length; });
+        centralParts.forEach(p => { result.set(p, pos); pos += p.length; });
+        result.set(eocd, pos);
+        return result;
+      },
+
+      generateXlsxFallbackBytes: (data) => {
+        const esc = ExcelExportService.escapeXml;
+        const accs = Array.isArray(data.accounts) ? data.accounts : [];
+        const txs = Array.isArray(data.transactions) ? data.transactions : [];
+        const catMap = ExcelExportService.buildCategoryLabelMap(data.customCategories);
+        const accMap = {};
+        accs.forEach(a => { if (a?.id) accMap[a.id] = a.name || 'Dompet'; });
+
+        const colRef = (i) => {
+          let n = i, s = '';
+          while (n >= 0) { s = String.fromCharCode(65 + (n % 26)) + s; n = Math.floor(n / 26) - 1; }
+          return s;
+        };
+        const makeSheet = (rows) => {
+          const body = rows.map((row, ri) => {
+            const cells = row.map((cell, ci) => {
+              const ref = colRef(ci) + (ri + 1);
+              if (typeof cell === 'number') return `<c r="${ref}"><v>${cell}</v></c>`;
+              return `<c r="${ref}" t="inlineStr"><is><t>${esc(cell)}</t></is></c>`;
+            }).join('');
+            return `<row r="${ri + 1}">${cells}</row>`;
+          }).join('');
+          return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>${body}</sheetData></worksheet>`;
+        };
+
+        const txRows = [['NO', 'TANGGAL', 'TIPE', 'KATEGORI', 'DOMPET', 'CATATAN', 'NOMINAL']];
+        txs.forEach((t, idx) => {
+          txRows.push([
+            idx + 1,
+            t.date || '-',
+            t.type === 'INCOME' ? 'MASUK' : 'KELUAR',
+            catMap[t.category] || t.category || 'Lainnya',
+            accMap[t.accountId] || 'Dompet Utama',
+            t.notes || t.note || '-',
+            Number(t.amount) || 0
+          ]);
+        });
+        const accRows = [['NO', 'DOMPET', 'TIPE', 'NO REK', 'SALDO AWAL']];
+        accs.forEach((a, idx) => {
+          accRows.push([idx + 1, a.name || 'Dompet', a.type || 'Cash', a.accountNumber || '-', Number(a.initialBalance ?? a.balance ?? 0)]);
+        });
+
+        return ExcelExportService.buildStoredZip([
+          { name: '[Content_Types].xml', content: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>' },
+          { name: '_rels/.rels', content: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>' },
+          { name: 'xl/workbook.xml', content: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Mutasi Transaksi" sheetId="1" r:id="rId1"/><sheet name="Daftar Dompet" sheetId="2" r:id="rId2"/></sheets></workbook>' },
+          { name: 'xl/_rels/workbook.xml.rels', content: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/></Relationships>' },
+          { name: 'xl/worksheets/sheet1.xml', content: makeSheet(txRows) },
+          { name: 'xl/worksheets/sheet2.xml', content: makeSheet(accRows) }
+        ]);
+      },
+
+      exportToExcel: (data, mode = 'save') => {
+        try {
+          const filename = `Voralet_Laporan_Keuangan_${getLocalDateString()}.xlsx`;
+          const categoryLabels = ExcelExportService.buildCategoryLabelMap(data?.customCategories);
+
+          // 1. Native Android OOXML (.xlsx) Generator Bridge (Zero Permissions)
+          if (typeof window !== 'undefined' && window.AndroidBridge && typeof window.AndroidBridge.exportExcelXlsx === 'function') {
             try {
-              const utf8Bytes = new TextEncoder().encode(xml);
-              let binary = '';
-              for (let i = 0; i < utf8Bytes.length; i++) {
-                binary += String.fromCharCode(utf8Bytes[i]);
-              }
-              const base64 = btoa(binary);
-              const success = window.AndroidBridge.shareOrSaveFile(filename, base64, 'application/vnd.ms-excel');
-              if (success) {
-                return true;
-              }
-            } catch (bridgeErr) {
-              console.warn('[ExcelExportService] Bridge export notice:', bridgeErr);
-            }
+              const payload = JSON.stringify({
+                accounts: data?.accounts || [],
+                transactions: data?.transactions || [],
+                savingsGoals: data?.savingsGoals || [],
+                debts: data?.debts || [],
+                userProfile: data?.userProfile || {},
+                categoryLabels
+              });
+              const ok = window.AndroidBridge.exportExcelXlsx(payload, filename, mode === 'share' ? 'share' : 'save');
+              if (ok) return true;
+            } catch (bridgeErr) {}
           }
 
-          // 2. Direct Web & PWA Blob Download
-          const blob = new Blob([xml], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+          // 2. Pure-JS OOXML (.xlsx) Download Fallback for Web Preview
+          const xlsxBytes = ExcelExportService.generateXlsxFallbackBytes(data || {});
+          const blob = new Blob([xlsxBytes], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+          });
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
@@ -2948,60 +3125,117 @@ PART3_SERVICES = """
     };
 
     // =========================================================================
-    // RECEIPT SCANNER & OCR HEURISTIC ENGINE (Foto Struk Belanja Otomatis)
+    // RECEIPT SCANNER & OFFLINE ON-DEVICE OCR ENGINE (Auto-Catat Struk Belanja)
     // =========================================================================
     const ReceiptOcrService = {
       MERCHANTS: [
-        { pattern: /indomaret/i, name: 'Indomaret', category: 'kebutuhan', note: 'Belanja di Indomaret' },
-        { pattern: /alfamart|alfa\s*midi/i, name: 'Alfamart', category: 'kebutuhan', note: 'Belanja di Alfamart' },
-        { pattern: /super\s*indo/i, name: 'Super Indo', category: 'kebutuhan', note: 'Belanja di Super Indo' },
-        { pattern: /hypermart|transmart|carrefour/i, name: 'Supermarket', category: 'kebutuhan', note: 'Belanja Bulanan Supermarket' },
+        { pattern: /indomaret/i, name: 'Indomaret', category: 'belanja', note: 'Belanja di Indomaret' },
+        { pattern: /alfamidi/i, name: 'Alfamidi', category: 'belanja', note: 'Belanja di Alfamidi' },
+        { pattern: /alfamart|alfa\s*mart/i, name: 'Alfamart', category: 'belanja', note: 'Belanja di Alfamart' },
+        { pattern: /super\s*indo/i, name: 'Super Indo', category: 'belanja', note: 'Belanja di Super Indo' },
+        { pattern: /hypermart|transmart|carrefour|lottemart|lotte\s*mart/i, name: 'Supermarket', category: 'belanja', note: 'Belanja Bulanan Supermarket' },
+        { pattern: /lawson|family\s*mart|circle\s*k/i, name: 'Minimarket', category: 'makan', note: 'Jajan Minimarket' },
+        { pattern: /mie\s*gacoan|gacoan/i, name: 'Mie Gacoan', category: 'makan', note: 'Makan di Mie Gacoan' },
+        { pattern: /mixue/i, name: 'Mixue Ice Cream', category: 'makan', note: 'Jajan Mixue' },
         { pattern: /starbucks/i, name: 'Starbucks Coffee', category: 'makan', note: 'Kopi & Minuman Starbucks' },
         { pattern: /kopi\s*kenangan/i, name: 'Kopi Kenangan', category: 'makan', note: 'Kopi Kenangan' },
-        { pattern: /janji\s*jiwa|fore\s*coffee|point\s*coffee/i, name: 'Kopi & Kafe', category: 'makan', note: 'Ngopi di Kafe' },
+        { pattern: /janji\s*jiwa|fore\s*coffee|point\s*coffee|tomoro|tuku/i, name: 'Kopi & Kafe', category: 'makan', note: 'Ngopi di Kafe' },
         { pattern: /mcdonald|mcd/i, name: "McDonald's", category: 'makan', note: "Makan di McDonald's" },
         { pattern: /kfc|kentucky/i, name: 'KFC Restaurant', category: 'makan', note: 'Makan di KFC' },
         { pattern: /hokben|hoka\s*hoka/i, name: 'HokBen', category: 'makan', note: 'Makan di HokBen' },
-        { pattern: /solaria|bakmi\s*gm|d'cost/i, name: 'Restoran', category: 'makan', note: 'Makan di Restoran' },
-        { pattern: /pertamina|spbu|shell|bp\s*akr/i, name: 'SPBU Pertamina', category: 'transport', note: 'Bahan Bakar Bensin' },
-        { pattern: /grab|gojek|maxim|ojol/i, name: 'Transportasi Online', category: 'transport', note: 'Ongkos Ojol / Transport' },
-        { pattern: /apotek|kimia\s*farma|k24|guardian|watson|century/i, name: 'Apotek & Kesehatan', category: 'kesehatan', note: 'Beli Obat di Apotek' },
-        { pattern: /gramedia|uniqlo|h&m|zara|miniso/i, name: 'Toko Ritel', category: 'belanja', note: 'Belanja Pakaian & Buku' },
-        { pattern: /pln|pdam|indihome|telkom/i, name: 'Tagihan Utilitas', category: 'tagihan', note: 'Pembayaran Tagihan Bulanan' }
+        { pattern: /solaria|bakmi\s*gm|d'cost|rica|yoshinoya|marugame|pizza\s*hut|burger\s*king/i, name: 'Restoran', category: 'makan', note: 'Makan di Restoran' },
+        { pattern: /warung|warteg|rumah\s*makan|rm\s|soto|bakso|ayam\s*geprek|nasi\s*padang|padang|cafe|resto/i, name: 'Rumah Makan', category: 'makan', note: 'Makan & Minum' },
+        { pattern: /pertamina|spbu|shell|bp\s*akr|vivo\s*energy|bensin|pertalite|pertamax|solar/i, name: 'SPBU BBM', category: 'transport', note: 'Isi Bahan Bakar Bensin' },
+        { pattern: /grab|gojek|maxim|blue\s*bird|kai\s|transjakarta|mrt|parkir|tol/i, name: 'Transportasi', category: 'transport', note: 'Ongkos Transport / Parkir' },
+        { pattern: /apotek|kimia\s*farma|k24|k-24|guardian|watson|century|rumah\s*sakit|klinik/i, name: 'Apotek & Kesehatan', category: 'kesehatan', note: 'Beli Obat / Kesehatan' },
+        { pattern: /gramedia|uniqlo|h&m|zara|miniso|mr\s*diy|ace\s*hardware|ikea|matahari/i, name: 'Toko Ritel', category: 'belanja', note: 'Belanja Ritel & Kebutuhan' },
+        { pattern: /pln|pdam|indihome|telkom|listrik|token|wifi|biznet/i, name: 'Tagihan Utilitas', category: 'tagihan', note: 'Pembayaran Tagihan Utilitas' },
+        { pattern: /bioskop|xxi|cgv|cinepolis|karaoke/i, name: 'Hiburan', category: 'hiburan', note: 'Tiket & Hiburan' }
       ],
 
-      SAMPLE_RECEIPTS: [
-        {
-          id: 'sample_indomaret',
-          title: 'Struk Indomaret',
-          store: 'Indomaret Point Kemang',
-          amount: 48500,
-          category: 'kebutuhan',
-          note: 'Belanja Snack & Minuman Indomaret',
-          date: new Date().toISOString().split('T')[0],
-          items: ['Roti Tawar Gandum', 'Ultra Milk Cokelat 250ml', 'Air Mineral 600ml', 'Chiki Balls']
-        },
-        {
-          id: 'sample_starbucks',
-          title: 'Struk Starbucks',
-          store: 'Starbucks Coffee Reserve',
-          amount: 62000,
-          category: 'makan',
-          note: 'Iced Caffe Latte & Croissant',
-          date: new Date().toISOString().split('T')[0],
-          items: ['Iced Caffe Latte Grande', 'Butter Croissant']
-        },
-        {
-          id: 'sample_pertamina',
-          title: 'Struk SPBU',
-          store: 'SPBU Pertamina 31.12',
-          amount: 100000,
-          category: 'transport',
-          note: 'Isi Pertamax 7.8 Liter',
-          date: new Date().toISOString().split('T')[0],
-          items: ['Pertamax 92 (7.8 L)']
-        }
-      ],
+      getSampleReceipts: () => {
+        const today = getLocalDateString();
+        return [
+          {
+            id: 'sample_indomaret',
+            title: 'Struk Indomaret',
+            store: 'Indomaret Point Kemang',
+            amount: 48500,
+            category: 'belanja',
+            note: 'Belanja di Indomaret Point Kemang',
+            date: today,
+            items: ['Roti Tawar Gandum', 'Ultra Milk Cokelat 250ml', 'Air Mineral 600ml']
+          },
+          {
+            id: 'sample_starbucks',
+            title: 'Struk Starbucks',
+            store: 'Starbucks Coffee Reserve',
+            amount: 62000,
+            category: 'makan',
+            note: 'Iced Caffe Latte & Croissant',
+            date: today,
+            items: ['Iced Caffe Latte Grande', 'Butter Croissant']
+          },
+          {
+            id: 'sample_pertamina',
+            title: 'Struk SPBU',
+            store: 'SPBU Pertamina 31.12',
+            amount: 100000,
+            category: 'transport',
+            note: 'Isi Pertamax 7.8 Liter',
+            date: today,
+            items: ['Pertamax 92 (7.8 L)']
+          }
+        ];
+      },
+
+      recognizeImage: (dataUrl) => {
+        return new Promise((resolve) => {
+          if (!dataUrl || typeof window === 'undefined' || !window.AndroidBridge || typeof window.AndroidBridge.recognizeReceiptText !== 'function') {
+            resolve({ ok: false, fullText: '', lines: [] });
+            return;
+          }
+          const cbId = 'ocr_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6);
+          if (!window.__voraletOcrCallbacks) window.__voraletOcrCallbacks = {};
+          if (!window.__onVoraletOcrResult) {
+            window.__onVoraletOcrResult = (id, rawJson) => {
+              const fn = window.__voraletOcrCallbacks && window.__voraletOcrCallbacks[id];
+              if (fn) {
+                delete window.__voraletOcrCallbacks[id];
+                fn(rawJson);
+              }
+            };
+          }
+          const timer = setTimeout(() => {
+            if (window.__voraletOcrCallbacks && window.__voraletOcrCallbacks[cbId]) {
+              delete window.__voraletOcrCallbacks[cbId];
+              resolve({ ok: false, fullText: '', lines: [] });
+            }
+          }, 12000);
+
+          window.__voraletOcrCallbacks[cbId] = (rawJson) => {
+            clearTimeout(timer);
+            try {
+              const parsed = typeof rawJson === 'string' ? JSON.parse(rawJson) : rawJson;
+              resolve({
+                ok: Boolean(parsed?.ok),
+                fullText: String(parsed?.fullText || ''),
+                lines: Array.isArray(parsed?.lines) ? parsed.lines : []
+              });
+            } catch (_) {
+              resolve({ ok: false, fullText: '', lines: [] });
+            }
+          };
+
+          try {
+            window.AndroidBridge.recognizeReceiptText(dataUrl, cbId);
+          } catch (_) {
+            clearTimeout(timer);
+            delete window.__voraletOcrCallbacks[cbId];
+            resolve({ ok: false, fullText: '', lines: [] });
+          }
+        });
+      },
 
       processImage: (file) => {
         return new Promise((resolve, reject) => {
@@ -3015,7 +3249,7 @@ PART3_SERVICES = """
             img.onload = () => {
               try {
                 const canvas = document.createElement('canvas');
-                const maxDim = 1000;
+                const maxDim = 1400;
                 let w = img.width;
                 let h = img.height;
                 if (w > h) {
@@ -3033,7 +3267,7 @@ PART3_SERVICES = """
                 canvas.height = h;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, w, h);
-                const compressed = canvas.toDataURL('image/jpeg', 0.82);
+                const compressed = canvas.toDataURL('image/jpeg', 0.88);
                 resolve({ dataUrl: compressed, width: w, height: h });
               } catch (err) {
                 resolve({ dataUrl: e.target.result, width: img.width, height: img.height });
@@ -3047,17 +3281,33 @@ PART3_SERVICES = """
         });
       },
 
-      parseReceiptText: (rawText) => {
-        const text = String(rawText || '').trim();
-        let detectedAmount = 0;
-        let detectedMerchant = 'Struk Belanja';
-        let detectedCategory = 'kebutuhan';
-        let detectedNote = 'Pengeluaran Struk Belanja';
-        const today = new Date().toISOString().split('T')[0];
-        let detectedDate = today;
+      parseMoneyToken: (rawNum) => {
+        if (!rawNum) return 0;
+        let s = String(rawNum).trim().replace(/\\s+/g, '');
+        // Drop decimal cents like ,00 or .00 at the very end
+        s = s.replace(/[.,]00$/, '');
+        // Normalize Indonesian/international thousand separators
+        const cleanDigits = s.replace(/[^0-9]/g, '');
+        if (!cleanDigits) return 0;
+        const val = parseInt(cleanDigits, 10);
+        if (isNaN(val) || val < 500 || val > 50000000) return 0;
+        return val;
+      },
 
+      parseReceiptText: (rawText, fileNameHint = '') => {
+        const text = String(rawText || '').trim();
+        const combinedSearch = (text + '\\n' + String(fileNameHint || '')).trim();
+        const lines = text.split(/\\r?\\n/).map(l => l.trim()).filter(Boolean);
+
+        let detectedAmount = 0;
+        let detectedMerchant = '';
+        let detectedCategory = 'belanja';
+        let detectedNote = '';
+        let detectedDate = getLocalDateString();
+
+        // 1. Merchant & Category Detection
         for (const m of ReceiptOcrService.MERCHANTS) {
-          if (m.pattern.test(text)) {
+          if (m.pattern.test(combinedSearch)) {
             detectedMerchant = m.name;
             detectedCategory = m.category;
             detectedNote = m.note;
@@ -3065,41 +3315,101 @@ PART3_SERVICES = """
           }
         }
 
-        const totalRegexes = [
-          /(?:grand\s*total|total\s*belanja|total|jumlah|tagihan|netto|bayar|tunai|cash)[\s.:=]*rp?\.?\s*([0-9.,]+)/i,
-          /rp\.?\s*([0-9]{1,3}(?:\.[0-9]{3})+(?:,[0-9]{2})?)/i,
-          /(?:total|subtotal)[\s.:=]*([0-9]{4,10})/i
-        ];
-
-        for (const rg of totalRegexes) {
-          const match = text.match(rg);
-          if (match && match[1]) {
-            const cleanNum = match[1].replace(/[^0-9]/g, '');
-            const parsed = parseInt(cleanNum, 10);
-            if (!isNaN(parsed) && parsed > 500 && parsed < 100000000) {
-              detectedAmount = parsed;
-              break;
+        if (!detectedMerchant && lines.length > 0) {
+          for (let i = 0; i < Math.min(4, lines.length); i++) {
+            const cand = lines[i];
+            if (cand.length >= 3 && cand.length <= 42 && !/^\\d+[\\d\\s\\/-]*$/.test(cand) && !/(jl\\.|jalan|telp|npwp|struk|receipt|kasir|tgl|tanggal)/i.test(cand)) {
+              detectedMerchant = cand.replace(/[^a-zA-Z0-9\\s&'./-]/g, '').trim();
+              if (detectedMerchant.length >= 3) break;
             }
           }
         }
-
-        const dateMatch = text.match(/(\d{1,2})[\/\.-](\d{1,2})[\/\.-](\d{2,4})/);
-        if (dateMatch) {
-          try {
-            let day = parseInt(dateMatch[1], 10);
-            let month = parseInt(dateMatch[2], 10);
-            let year = parseInt(dateMatch[3], 10);
-            if (year < 100) year += 2000;
-            if (day > 0 && day <= 31 && month > 0 && month <= 12 && year >= 2020 && year <= 2030) {
-              detectedDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            }
-          } catch (_) {}
+        if (!detectedMerchant) detectedMerchant = 'Struk Belanja';
+        if (!detectedNote) {
+          detectedNote = detectedMerchant === 'Struk Belanja' ? 'Pengeluaran Struk Belanja' : `Belanja di ${detectedMerchant}`;
         }
 
-        if (detectedAmount === 0) {
-          if (detectedCategory === 'makan') detectedAmount = 45000;
-          else if (detectedCategory === 'transport') detectedAmount = 50000;
-          else detectedAmount = 65000;
+        // 2. Smart Bottom-Up Total Amount Extraction (avoids Cash/Tunai/Change traps)
+        const priorityPatterns = [
+          /(?:grand\\s*total|total\\s*bayar|total\\s*belanja|total\\s*tagihan|total\\s*harga|jumlah\\s*bayar|net\\s*total)[^0-9\\n]*?(?:rp\\.?\\s*)?([0-9][0-9.,\\s]{2,14})/i,
+          /(?:^|\\s)total(?!\\s*(?:item|qty|barang|hemat|diskon|ppn))[^0-9\\n]*?(?:rp\\.?\\s*)?([0-9][0-9.,\\s]{2,14})/i,
+          /(?:subtotal|sub\\s*total)[^0-9\\n]*?(?:rp\\.?\\s*)?([0-9][0-9.,\\s]{2,14})/i
+        ];
+
+        const ignoredLineRe = /\\b(tunai|cash|kembalian|kembali|change|debit|qris|ovo|gopay|dana|npwp|telp|hp|wa|poin|point|hemat|diskon|member|kartu)\\b/i;
+
+        for (const rg of priorityPatterns) {
+          for (let i = lines.length - 1; i >= 0; i--) {
+            const line = lines[i];
+            if (ignoredLineRe.test(line) && !/total/i.test(line)) continue;
+            const match = line.match(rg);
+            if (match && match[1]) {
+              const parsed = ReceiptOcrService.parseMoneyToken(match[1]);
+              if (parsed > 0) {
+                detectedAmount = parsed;
+                break;
+              }
+            }
+          }
+          if (detectedAmount > 0) break;
+        }
+
+        // Fallback: examine lines near the lower half looking for Rp-prefixed or largest price
+        if (detectedAmount === 0 && lines.length > 0) {
+          let bestCandidate = 0;
+          const startIdx = Math.floor(lines.length * 0.35);
+          for (let i = startIdx; i < lines.length; i++) {
+            const line = lines[i];
+            if (ignoredLineRe.test(line)) continue;
+            const matches = line.match(/(?:rp\\.?\\s*)?([0-9]{1,3}(?:[.,][0-9]{3})+(?:[.,][0-9]{2})?|[0-9]{4,7})/gi);
+            if (matches) {
+              matches.forEach(tok => {
+                const v = ReceiptOcrService.parseMoneyToken(tok);
+                if (v > bestCandidate && v <= 20000000) bestCandidate = v;
+              });
+            }
+          }
+          if (bestCandidate > 0) detectedAmount = bestCandidate;
+        }
+
+        // 3. Date Extraction (DD/MM/YY, DD-MM-YYYY, YYYY-MM-DD, DD MMM YYYY)
+        const monthMap = { jan: 1, feb: 2, mar: 3, apr: 4, mei: 5, may: 5, jun: 6, jul: 7, agu: 8, ags: 8, aug: 8, sep: 9, okt: 10, oct: 10, nov: 11, des: 12, dec: 12 };
+        const namedDate = text.match(/(\\d{1,2})\\s+(jan|feb|mar|apr|mei|may|jun|jul|agu|ags|aug|sep|okt|oct|nov|des|dec)[a-z]*\\s+(\\d{2,4})/i);
+        const ymdMatch = text.match(/(\\d{4})[-\\/](\\d{1,2})[-\\/](\\d{1,2})/);
+        const dmyMatch = text.match(/(\\d{1,2})[\\/.\\-](\\d{1,2})[\\/.\\-](\\d{2,4})/);
+
+        if (namedDate) {
+          const day = parseInt(namedDate[1], 10);
+          const mon = monthMap[namedDate[2].toLowerCase().slice(0, 3)] || 1;
+          let yr = parseInt(namedDate[3], 10);
+          if (yr < 100) yr += 2000;
+          if (day >= 1 && day <= 31 && yr >= 2020 && yr <= 2035) {
+            detectedDate = `${yr}-${String(mon).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+          }
+        } else if (ymdMatch) {
+          const yr = parseInt(ymdMatch[1], 10);
+          const mon = parseInt(ymdMatch[2], 10);
+          const day = parseInt(ymdMatch[3], 10);
+          if (yr >= 2020 && yr <= 2035 && mon >= 1 && mon <= 12 && day >= 1 && day <= 31) {
+            detectedDate = `${yr}-${String(mon).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+          }
+        } else if (dmyMatch) {
+          const day = parseInt(dmyMatch[1], 10);
+          const mon = parseInt(dmyMatch[2], 10);
+          let yr = parseInt(dmyMatch[3], 10);
+          if (yr < 100) yr += 2000;
+          if (day >= 1 && day <= 31 && mon >= 1 && mon <= 12 && yr >= 2020 && yr <= 2035) {
+            detectedDate = `${yr}-${String(mon).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+          }
+        }
+
+        // 4. Extract concise item summary lines if available
+        const extractedItems = [];
+        for (const line of lines) {
+          if (ignoredLineRe.test(line) || /(?:total|kasir|tgl|tanggal|npwp|jl\\.|telp|struk)/i.test(line)) continue;
+          if (/[a-zA-Z]{3,}.*?([0-9]{1,3}[.,][0-9]{3}|[0-9]{4,6})/.test(line) && extractedItems.length < 5) {
+            extractedItems.push(line.slice(0, 48));
+          }
         }
 
         return {
@@ -3107,7 +3417,10 @@ PART3_SERVICES = """
           merchant: detectedMerchant,
           category: detectedCategory,
           note: detectedNote,
-          date: detectedDate
+          date: detectedDate,
+          items: extractedItems,
+          ocrSuccess: detectedAmount > 0,
+          rawText: text
         };
       }
     };
