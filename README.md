@@ -1,6 +1,6 @@
 <div align="center">
 
-  <img src="docs/images/voralet-hero-banner.svg" alt="Voralet - Personal Finance Vault Banner" width="100%" />
+  <img src="" alt="Voralet - Personal Finance Vault Banner" width="100%" />
 
   <br/><br/>
 
@@ -9,7 +9,7 @@
     <strong>Aplikasi Pencatat Keuangan Pribadi, Buku Kas, Manajemen Dompet, Pemindai Struk Offline &amp; Ekspor Excel (<code>.xlsx</code>)</strong>
   </p>
   <p>
-    <em>100% Pure Offline • Zero Tracking Permissions • ChaCha20 Asset Vault • On-Device ML Kit OCR</em>
+    <em>100% Pure Offline • Zero Tracking Permissions • ChaCha20 Asset Vault • On Device ML Kit OCR</em>
   </p>
 
   <p>
