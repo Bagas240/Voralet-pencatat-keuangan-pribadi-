@@ -28,11 +28,11 @@ jobs:
       - name: Verify Code Integrity & Offline Security
         run: python3 verify_master_security.py
 
-      - name: Set up JDK 17
+      - name: Set up JDK 21
         uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '21'
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4

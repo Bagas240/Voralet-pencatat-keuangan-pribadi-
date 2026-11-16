@@ -179,7 +179,7 @@ Get-FileHash .\app-debug.apk -Algorithm SHA256
 ## Membangun dari Kode Sumber
 
 ### Prasyarat
-- **JDK 17+**
+- **JDK 21**
 - **Android SDK** (`compileSdk = 36`, `minSdk = 24`)
 - **Python 3.10+** & **Node.js 18+** (digunakan oleh `build_index.py` saat kompilasi aset)
 
