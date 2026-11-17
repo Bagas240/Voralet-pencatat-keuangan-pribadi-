@@ -1,6 +1,6 @@
 <div align="center">
 
-  <img src="" alt="Voralet - Personal Finance Vault Banner" width="100%" />
+  <img src="https://github.com/Bagas240/Voralet-pencatat-keuangan-pribadi-/blob/main/image/2.jpg?raw=true" alt="Voralet - Personal Finance Vault Banner" width="100%" />
 
   <br/><br/>
 
@@ -39,19 +39,51 @@
 
 ## Ringkasan
 
-**Voralet** adalah aplikasi pencatat keuangan pribadi untuk Android yang dirancang dengan prinsip **Privacy-First** dan **Zero Network Dependency**. Seluruh data transaksi, saldo dompet, catatan hutang-piutang, target tabungan, hingga pemindaian struk belanja diproses sepenuhnya di dalam perangkat tanpa server pihak ketiga, tanpa API key eksternal, dan tanpa koneksi internet.
+**Voralet** adalah aplikasi pencatat keuangan pribadi untuk Android yang dirancang dengan prinsip **Privacy-First** dan **Zero Network Dependency**. Seluruh data transaksi, saldo dompet, catatan hutang-piutang, target tabungan, hingga pemindaian struk belanja diproses sepenuhnya di dalam perangkat tanpa server pihak ketiga, dan tanpa koneksi internet.
 
-Dibangun untuk tetap ringan, mulus di layar 60/90/120Hz, dan hemat baterai, Voralet v3.5.0 menggabungkan antarmuka modern dengan perlindungan keamanan berlapis (*ChaCha20-encrypted asset vault v2* dengan *key stretching*, *R8 Full Mode*, dan *RASP*), serta dilengkapi generator **Workbook Excel (`.xlsx`) 5 Sheet**, **Pemindai Struk On-Device berbasis Google ML Kit**, pengingat harian peliharaan opsional, dan pengecekan rilis otomatis dari **GitHub Releases**.
+Dibangun untuk tetap ringan, mulus di layar 60/90/120Hz, dan hemat baterai, Voralet menggabungkan antarmuka modern dengan perlindungan keamanan berlapis (*ChaCha20-encrypted asset vault v2* dengan *key stretching*, *R8 Full Mode*, dan *RASP*), serta dilengkapi generator **Workbook Excel (`.xlsx`) 5 Sheet**, **Pemindai Struk On-Device berbasis Google ML Kit**, pengingat harian peliharaan opsional, dan pengecekan rilis otomatis dari **GitHub Releases**.
 
 ---
 
 ## Pratinjau Arsitektur & Fitur
 
-<p align="center">
-  <img src="docs/images/voralet-feature-showcase.svg" alt="Voralet Feature and Security Architecture" width="100%" />
-</p>
-
----
+<table>
+  <tr>
+    <td align="center">
+      <img src="https://github.com/Bagas240/Voralet-pencatat-keuangan-pribadi-/blob/main/image/screenshot_1.png?raw=true" width="150" alt="Screenshot 1"/>
+    </td>
+    <td align="center">
+      <img src="https://github.com/Bagas240/Voralet-pencatat-keuangan-pribadi-/blob/main/image/screenshot_2.png?raw=true" width="150" alt="Screenshot 2"/>
+    </td>
+    <td align="center">
+      <img src="https://github.com/Bagas240/Voralet-pencatat-keuangan-pribadi-/blob/main/image/screenshot_3.png?raw=true" width="150" alt="Screenshot 3"/>
+    </td>
+    <td align="center">
+      <img src="https://github.com/Bagas240/Voralet-pencatat-keuangan-pribadi-/blob/main/image/screenshot_4.png?raw=true" width="150" alt="Screenshot 4"/>
+    </td>
+     <td align="center">
+      <img src="https://github.com/Bagas240/Voralet-pencatat-keuangan-pribadi-/blob/main/image/screenshot_5.png?raw=true" width="150" alt="Screenshot 4"/>
+    </td>
+     <td align="center">
+      <img src="https://github.com/Bagas240/Voralet-pencatat-keuangan-pribadi-/blob/main/image/screenshot_6.png?raw=true" width="150" alt="Screenshot 4"/>
+    </td>
+     <td align="center">
+      <img src="https://github.com/Bagas240/Voralet-pencatat-keuangan-pribadi-/blob/main/image/screenshot_7.png?raw=true" width="150" alt="Screenshot 4"/>
+    </td>
+     <td align="center">
+      <img src="https://github.com/Bagas240/Voralet-pencatat-keuangan-pribadi-/blob/main/image/screenshot_8.png?raw=true" width="150" alt="Screenshot 4"/>
+    </td>
+     <td align="center">
+      <img src="https://github.com/Bagas240/Voralet-pencatat-keuangan-pribadi-/blob/main/image/screenshot_9.png?raw=true" width="150" alt="Screenshot 4"/>
+    </td>
+    <td align="center">
+      <img src="https://github.com/Bagas240/Voralet-pencatat-keuangan-pribadi-/blob/main/image/screenshot_10.png?raw=true" width="150" alt="Screenshot 4"/>
+    </td>
+    <td align="center">
+      <img src="https://github.com/Bagas240/Voralet-pencatat-keuangan-pribadi-/blob/main/image/screenshot_11.png?raw=true" width="150" alt="Screenshot 4"/>
+    </td>
+  </tr>
+</table>
 
 ## Fitur Utama
 
@@ -59,7 +91,7 @@ Dibangun untuk tetap ringan, mulus di layar 60/90/120Hz, dan hemat baterai, Vora
 | :--- | :--- |
 | **Brankas PIN & Privasi** | Kunci aplikasi dengan **6-digit PIN lokal**, *Privacy Mode* untuk menyamarkan saldo dalam satu ketukan, serta perlindungan `FLAG_SECURE` pada build rilis untuk mencegah tangkapan dan perekaman layar dari aplikasi lain. |
 | **Multi Dompet & Akun** | Kelola rekening Bank, E-Wallet, dan Tunai secara terpisah dengan perhitungan saldo real-time untuk Pemasukan, Pengeluaran, dan Transfer antar dompet. |
-| **Scan Struk Offline (Auto-Catat)** | Pindai struk belanja melalui kamera atau galeri menggunakan **Google ML Kit Text Recognition** yang tertanam penuh di perangkat—tanpa memerlukan izin `CAMERA` ataupun akses internet. Mode **Auto-Catat** mengekstrak total harga, merchant, item belanja, dan kategori menjadi transaksi secara otomatis. |
+| **Scan Struk Offline (Auto-Catat)** | Pindai struk belanja melalui kamera atau galeri menggunakan **Google ML Kit Text Recognition** yang tertanam penuh di perangkat, tanpa memerlukan izin `CAMERA` ataupun akses internet. Mode **Auto-Catat** mengekstrak total harga, merchant, item belanja, dan kategori menjadi transaksi secara otomatis. |
 | **Ekspor Excel (`.xlsx`) 5 Sheet** | Generator OOXML `.xlsx` murni Kotlin tanpa dependensi eksternal berat. Menghasilkan 5 sheet terformat rapi (**Ringkasan Keuangan**, **Mutasi Transaksi**, **Hutang & Piutang**, **Tabungan Impian**, **Daftar Dompet**) lengkap dengan format mata uang Rupiah, *freeze header*, serta penyimpanan langsung melalui Android Storage Access Framework (SAF). |
 | **Laporan PDF & Backup Terverifikasi** | Ekspor ringkasan kas ke dokumen PDF secara offline dan cadangkan/pulihkan data lokal dengan verifikasi integritas HMAC-SHA256. |
 | **Tabungan Impian, Hutang & Widget** | Pantau progres target tabungan, kelola catatan hutang/piutang beserta cicilan, jaga streak pencatatan harian, dan akses ringkasan langsung melalui Widget Home Screen Android (*Streak* & *Pet Companion*). |
