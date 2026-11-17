@@ -74,4 +74,15 @@ class VoraletWebViewClientTest {
     assertTrue(client.shouldOverrideUrlLoading(null, fakeRequest("https://example.com")))
     assertTrue(client.shouldOverrideUrlLoading(null, fakeRequest("file:///android_asset/index.html")))
   }
+
+  @Test
+  fun `tamperLocked blocks even virtual https requests and navigation`() {
+    val context = ApplicationProvider.getApplicationContext<Context>()
+    val lockedClient = VoraletWebViewClient(context, tamperLocked = true) {}
+
+    val blockedHtml = lockedClient.shouldInterceptRequest(null, fakeRequest(VoraletWebViewConfig.ENTRY_URL))
+    assertNotNull(blockedHtml)
+    assertEquals(403, blockedHtml!!.statusCode)
+    assertTrue(lockedClient.shouldOverrideUrlLoading(null, fakeRequest(VoraletWebViewConfig.ENTRY_URL)))
+  }
 }

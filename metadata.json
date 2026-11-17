@@ -1,6 +1,6 @@
 {
   "name": "Voralet",
-  "description": "Aplikasi pencatat keuangan pribadi modern v3.3.0 untuk Android dengan enkripsi brankas penuh, widget layar utama Android (Streak & Pet), bonus rawat peliharaan, dan performa tinggi tanpa lag.",
+  "description": "Aplikasi pencatat keuangan pribadi modern v3.5.0 untuk Android dengan enkripsi brankas penuh, widget layar utama Android (Streak & Pet), notifikasi pengingat harian, cek pembaruan GitHub Releases, dan performa tinggi tanpa lag.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

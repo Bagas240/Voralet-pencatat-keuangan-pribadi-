@@ -10,9 +10,10 @@
     @android.webkit.JavascriptInterface <methods>;
 }
 
-# Preserve AppWidget Providers (referenced via AndroidManifest.xml)
+# Preserve AppWidget Providers & Notification Receiver (referenced via AndroidManifest.xml)
 -keep class com.example.widget.StreakWidgetProvider { *; }
 -keep class com.example.widget.PetWidgetProvider { *; }
+-keep class com.example.notification.PetReminderReceiver { *; }
 
 # Keep Offline ML Kit Text Recognition reflection/JNI classes cleanly
 -dontwarn com.google.mlkit.**
@@ -38,7 +39,7 @@
     public static void checkParameterIsNotNull(...);
 }
 
-# Strip all logging calls in release builds to prevent data/flow leaks via logcat
+# Strip all logging & stack-trace calls in release builds to prevent data/flow leaks
 -assumenosideeffects class android.util.Log {
     public static boolean isLoggable(java.lang.String, int);
     public static int v(...);
@@ -47,4 +48,7 @@
     public static int w(...);
     public static int e(...);
     public static int wtf(...);
+}
+-assumenosideeffects class java.lang.Throwable {
+    public void printStackTrace();
 }

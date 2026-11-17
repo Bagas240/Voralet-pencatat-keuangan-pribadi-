@@ -70,87 +70,19 @@ PART5_DEBTS_MILESTONES = """
 
       const percentLeft = Math.min(100, Math.max(0, (remainingMs / TWENTY_FOUR_HOURS) * 100));
 
-      // Dynamic Flame Level Configuration
-      const getFlameConfig = () => {
-        if (isPadam) {
-          return {
-            badge: '⚪',
-            name: 'Api Padam (Butuh Catatan)',
-            badgeText: 'Padam / Mati',
-            bg: 'bg-gradient-to-r from-slate-100 via-slate-50 to-slate-100 dark:from-slate-800/80 dark:via-slate-800 dark:to-slate-800',
-            border: 'border-slate-300 dark:border-slate-700',
-            textColor: 'text-slate-500 dark:text-slate-400',
-            barColor: 'bg-slate-400',
-            flameAnim: '',
-            subtext: 'Catat transaksi, tabungan, atau bayar hutang untuk menyalakan api streak 24 jam!'
-          };
-        }
-        if (level === 1) {
-          return {
-            badge: '🔥',
-            name: 'Api Oranye Menyala',
-            badgeText: 'Aktif 🔥',
-            bg: 'bg-gradient-to-r from-amber-50 via-orange-50 to-amber-100/70 dark:from-amber-950/40 dark:via-orange-950/30 dark:to-slate-800',
-            border: 'border-amber-300 dark:border-amber-700/70',
-            textColor: 'text-amber-600 dark:text-amber-400',
-            barColor: 'bg-gradient-to-r from-amber-500 to-orange-500',
-            flameAnim: 'animate-flame',
-            subtext: 'Pertahankan api selama 24 jam dengan rutin mencatat keuangan!'
-          };
-        }
-        if (level === 2) {
-          return {
-            badge: '🔴🔥',
-            name: 'Api Merah Membara',
-            badgeText: 'Membara 🔴',
-            bg: 'bg-gradient-to-r from-orange-50 via-rose-50 to-red-100/70 dark:from-orange-950/40 dark:via-rose-950/30 dark:to-slate-800',
-            border: 'border-rose-300 dark:border-rose-700/70',
-            textColor: 'text-rose-600 dark:text-rose-400',
-            barColor: 'bg-gradient-to-r from-orange-500 to-rose-600',
-            flameAnim: 'animate-flame',
-            subtext: 'Keren! 4-7 hari beruntun. Disiplin finansialmu mulai membara!'
-          };
-        }
-        if (level === 3) {
-          return {
-            badge: '💜🔥',
-            name: 'Api Ungu Magis',
-            badgeText: 'Magis 💜',
-            bg: 'bg-gradient-to-r from-purple-50 via-pink-50 to-indigo-100/70 dark:from-purple-950/40 dark:via-pink-950/30 dark:to-slate-800',
-            border: 'border-purple-300 dark:border-purple-700/70',
-            textColor: 'text-purple-600 dark:text-purple-400',
-            barColor: 'bg-gradient-to-r from-purple-500 to-pink-500',
-            flameAnim: 'animate-flame',
-            subtext: 'Konsistensi luar biasa! Keuanganmu terlindungi api magis!'
-          };
-        }
-        if (level === 4) {
-          return {
-            badge: '💎🔥',
-            name: 'Api Biru Neon',
-            badgeText: 'Neon 💎',
-            bg: 'bg-gradient-to-r from-cyan-50 via-sky-50 to-blue-100/70 dark:from-cyan-950/40 dark:via-sky-950/30 dark:to-slate-800',
-            border: 'border-cyan-300 dark:border-cyan-700/70',
-            textColor: 'text-cyan-600 dark:text-cyan-400',
-            barColor: 'bg-gradient-to-r from-cyan-400 to-blue-600',
-            flameAnim: 'animate-flame',
-            subtext: 'Separuh bulan tanpa putus! Kamu pengelola keuangan sejati!'
-          };
-        }
-        return {
-          badge: '👑🔥',
-          name: 'Api Dewa Emas',
-          badgeText: 'Dewa Api 👑',
-          bg: 'bg-gradient-to-r from-amber-100 via-yellow-50 to-amber-200/80 dark:from-amber-950/50 dark:via-yellow-950/40 dark:to-slate-800',
-          border: 'border-amber-400 dark:border-amber-600',
-          textColor: 'text-amber-500 dark:text-amber-300',
-          barColor: 'bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-600',
-          flameAnim: 'animate-flame',
-          subtext: 'Level tertinggi tercapai! Disiplin 30+ hari tanpa pernah padam!'
-        };
+      // Dynamic Flame Level Configuration (Single Source of Truth)
+      const levelMeta = getStreakLevelMeta(level, isPadam);
+      const flameCfg = {
+        badge: levelMeta.badge,
+        name: levelMeta.cardName,
+        badgeText: levelMeta.badgeText,
+        bg: levelMeta.cardBg,
+        border: levelMeta.cardBorder,
+        textColor: levelMeta.textColor,
+        barColor: levelMeta.barColor,
+        flameAnim: isPadam ? '' : 'animate-flame',
+        subtext: levelMeta.subtext
       };
-
-      const flameCfg = getFlameConfig();
 
       return (
         <div

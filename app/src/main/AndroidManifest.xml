@@ -2,7 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Zero Permissions Policy: 100% offline, privacy-first local personal finance -->
+    <!-- Minimal Permissions Policy: INTERNET (install-time, GitHub Releases check only) & optional POST_NOTIFICATIONS (Pet/Streak reminders) -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:name=".VoraletApp"
@@ -64,6 +66,11 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/pet_widget_info" />
         </receiver>
+
+        <!-- Daily Pet & Streak Reminder Receiver -->
+        <receiver
+            android:name=".notification.PetReminderReceiver"
+            android:exported="false" />
     </application>
 
 </manifest>

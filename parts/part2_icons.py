@@ -656,11 +656,6 @@ PART2_ICONS = """
       );
     };
 
-    // VoraletBadge backwards-compatible wrapper pointing to official VoraletLogo
-    const VoraletBadge = ({ className = "w-32 h-32", rounded = "rounded-[32%]", shadow = "shadow-[0_16px_48px_rgba(0,0,0,0.16)]" }) => (
-      <VoraletLogo size="xl" className={className} rounded={rounded} shadow={shadow} />
-    );
-
     const AppLogo = ({ 
       size = "md", 
       showText = true, 

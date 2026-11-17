@@ -541,15 +541,7 @@ PART8_APP = """
               title="Ketuk untuk info Streak Api"
             >
               <span className={`text-base ${(streakData?.currentStreak || 0) > 0 ? 'animate-flame' : ''}`}>
-                {(() => {
-                  const lvl = streakData?.level || 0;
-                  if (lvl === 5) return '👑🔥';
-                  if (lvl === 4) return '💎🔥';
-                  if (lvl === 3) return '💜🔥';
-                  if (lvl === 2) return '🔴🔥';
-                  if (lvl === 1) return '🔥';
-                  return '⚪';
-                })()}
+                {getStreakBadge(streakData?.level || 0)}
               </span>
               <div className="text-left leading-tight">
                 <span className="text-xs font-black text-slate-900 dark:text-white block">
@@ -644,7 +636,7 @@ PART8_APP = """
                         <span>•</span>
                         <span>Senang: <b className="text-rose-500">{petData?.happiness || 50}%</b></span>
                         <span>•</span>
-                        <span>Koin: <b className="text-amber-500 font-bold">🪙 {petData?.petCoins || 0}</b></span>
+                        <span>Koin: <b className="text-amber-500 font-bold">🪙 {petData?.coins ?? petData?.petCoins ?? 0}</b></span>
                       </div>
                     </div>
                   </div>
@@ -1258,10 +1250,14 @@ PART8_APP = """
       const [isStreakModalOpen, setIsStreakModalOpen] = useState(false);
       const [isMonthlyPdfModalOpen, setIsMonthlyPdfModalOpen] = useState(false);
       const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
+      const [updateInfo, setUpdateInfo] = useState(null);
+      const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
+      const [isUpdatePromptOpen, setIsUpdatePromptOpen] = useState(false);
 
       // Android Back Button Integration: Smoothly close open modals or navigate back to Dashboard
       useEffect(() => {
         window.handleAndroidBack = () => {
+          if (isUpdatePromptOpen) { setIsUpdatePromptOpen(false); return true; }
           if (isReceiptModalOpen) { setIsReceiptModalOpen(false); return true; }
           if (isTxModalOpen) { setIsTxModalOpen(false); return true; }
           if (isAccModalOpen) { setIsAccModalOpen(false); return true; }
@@ -1282,7 +1278,7 @@ PART8_APP = """
           delete window.handleAndroidBack;
         };
       }, [
-        isTxModalOpen, isAccModalOpen, isSavingsModalOpen, isSettingsModalOpen,
+        isUpdatePromptOpen, isTxModalOpen, isAccModalOpen, isSavingsModalOpen, isSettingsModalOpen,
         isDebtModalOpen, isPetModalOpen, isStreakModalOpen, isCsvImportModalOpen,
         isMonthlyPdfModalOpen, isReceiptModalOpen, activeTab
       ]);
@@ -1318,6 +1314,47 @@ PART8_APP = """
       const showToast = useCallback((msg) => {
         setToastMsg(msg);
       }, []);
+
+      const handleCheckUpdate = useCallback(async (forceCheck = false) => {
+        if (forceCheck) setIsCheckingUpdate(true);
+        try {
+          const res = await UpdateService.checkForUpdate(forceCheck);
+          if (res && !res.skipped) {
+            setUpdateInfo(res);
+            if (res.ok && res.hasUpdate) {
+              if (!forceCheck) {
+                setIsUpdatePromptOpen(true);
+              } else {
+                showToast(`Versi baru v${res.latestVersion} tersedia di GitHub!`);
+              }
+            } else if (forceCheck) {
+              if (res.ok) {
+                showToast(`Aplikasi sudah versi terbaru (v${res.currentVersion})`);
+              } else {
+                showToast('Gagal terhubung ke GitHub Releases. Periksa koneksi internet.');
+              }
+            }
+          }
+        } finally {
+          if (forceCheck) setIsCheckingUpdate(false);
+        }
+      }, [showToast]);
+
+      const handleOpenUpdateUrl = useCallback((url) => {
+        const opened = UpdateService.openUpdateUrl(url);
+        if (!opened) {
+          showToast('Tidak dapat membuka tautan pembaruan');
+        }
+      }, [showToast]);
+
+      useEffect(() => {
+        if (!isUnlocked) return;
+        NotificationBridgeService.syncReminder(StorageService.getReminderSettings());
+        const timer = setTimeout(() => {
+          handleCheckUpdate(false);
+        }, 1800);
+        return () => clearTimeout(timer);
+      }, [isUnlocked, handleCheckUpdate]);
 
       const handleFeedPet = useCallback(() => {
         const res = StorageService.feedPet();
@@ -2013,6 +2050,12 @@ PART8_APP = """
         setSavingsGoals([]);
         setDebts([]);
         setSafeBudget(0);
+        const resetStreak = StorageService.getStreakData();
+        const resetPet = StorageService.getPetData();
+        setStreakData(resetStreak);
+        setPetData(resetPet);
+        StorageService.syncToNativeWidget(resetStreak, resetPet);
+        NotificationBridgeService.syncReminder(StorageService.getReminderSettings());
         setIsUnlocked(false);
         showToast('PIN dibuat ulang dan data lama dihapus');
       }, []);
@@ -2029,6 +2072,12 @@ PART8_APP = """
         setDebts([]);
         setCustomCategories([]);
         setSafeBudget(0);
+        const resetStreak = StorageService.getStreakData();
+        const resetPet = StorageService.getPetData();
+        setStreakData(resetStreak);
+        setPetData(resetPet);
+        StorageService.syncToNativeWidget(resetStreak, resetPet);
+        NotificationBridgeService.syncReminder(StorageService.getReminderSettings());
         setIsUnlocked(false);
         setActiveTab('dashboard');
         setIsSettingsModalOpen(false);
@@ -2152,6 +2201,11 @@ PART8_APP = """
         if (Array.isArray(targetData.debts)) { setDebts(targetData.debts); StorageService.setDebts(targetData.debts); }
         if (Array.isArray(targetData.customCategories)) { setCustomCategories(targetData.customCategories); StorageService.setCustomCategories(targetData.customCategories); }
         if (targetData.safeBudget !== undefined) { setSafeBudget(targetData.safeBudget); StorageService.setSafeBudget(targetData.safeBudget); }
+        const syncedStreak = StorageService.getStreakData();
+        const syncedPet = StorageService.getPetData();
+        setStreakData(syncedStreak);
+        setPetData(syncedPet);
+        StorageService.syncToNativeWidget(syncedStreak, syncedPet);
         showToast('Data terenkripsi berhasil dipulihkan! 🔓');
       }, []);
 
@@ -2269,7 +2323,7 @@ PART8_APP = """
         );
       }
 
-      const isAnyModalOpen = isTxModalOpen || isAccModalOpen || isSavingsModalOpen || isSettingsModalOpen || isDebtModalOpen || isPetModalOpen || isStreakModalOpen || isMonthlyPdfModalOpen || isCsvImportModalOpen || isReceiptModalOpen;
+      const isAnyModalOpen = isTxModalOpen || isAccModalOpen || isSavingsModalOpen || isSettingsModalOpen || isDebtModalOpen || isPetModalOpen || isStreakModalOpen || isMonthlyPdfModalOpen || isCsvImportModalOpen || isReceiptModalOpen || isUpdatePromptOpen;
 
       return (
         <div className={`h-[100dvh] flex flex-col ${theme === 'dark' ? 'dark text-[#F8FAFC]' : 'text-[#0F172A]'} bg-transparent overflow-hidden select-none transition-colors duration-300 ease-in-out relative`}>
@@ -2471,6 +2525,11 @@ PART8_APP = """
             onSaveCustomCategory={handleSaveCustomCategory}
             onDeleteCustomCategory={handleDeleteCustomCategory}
             onOpenMonthlyPdfReport={() => setIsMonthlyPdfModalOpen(true)}
+            updateInfo={updateInfo}
+            isCheckingUpdate={isCheckingUpdate}
+            onCheckUpdate={handleCheckUpdate}
+            onOpenUpdateUrl={handleOpenUpdateUrl}
+            onShowToast={showToast}
           />
 
           <CsvImportModal
@@ -2514,6 +2573,13 @@ PART8_APP = """
             userProfile={memoizedUserProfile}
             hideBalance={hideBalance}
             onExportExcel={handleExportExcel}
+          />
+
+          <UpdatePromptModal
+            isOpen={isUpdatePromptOpen}
+            onClose={() => setIsUpdatePromptOpen(false)}
+            updateInfo={updateInfo}
+            onUpdateNow={handleOpenUpdateUrl}
           />
         </div>
       );

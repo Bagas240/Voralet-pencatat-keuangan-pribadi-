@@ -11,9 +11,11 @@ import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import androidx.core.content.FileProvider
 import androidx.core.view.WindowCompat
+import com.example.BuildConfig
 import com.example.export.ExcelXlsxExporter
+import com.example.notification.VoraletNotificationHelper
 import com.example.ocr.OfflineReceiptOcrEngine
-import com.example.webview.VoraletWebViewConfig
+import com.example.update.GitHubAutoUpdater
 import com.example.widget.PetWidgetProvider
 import com.example.widget.StreakWidgetProvider
 import org.json.JSONObject
@@ -21,17 +23,20 @@ import java.io.File
 import java.util.concurrent.Executors
 
 /**
- * High-performance, 100% Offline Native Android Bridge for Voralet.
+ * High-performance Native Android Bridge for Voralet.
  * Handles:
  * - Encrypted Home Widget sync
  * - Genuine OOXML (.xlsx) Excel generation & SAF save/share
  * - Offline bundled ML Kit Receipt OCR
  * - Print / PDF export & encrypted backup saving
+ * - Optional Pet & Streak daily notifications (POST_NOTIFICATIONS)
+ * - GitHub Releases auto-update check
  */
 class AndroidNativeBridge(
     private val activity: Activity,
     private val webViewProvider: () -> WebView?,
-    private val safSaveRequester: (fileName: String, mimeType: String, bytes: ByteArray) -> Unit
+    private val safSaveRequester: (fileName: String, mimeType: String, bytes: ByteArray) -> Unit,
+    private val notificationPermissionRequester: (Boolean) -> Unit = {}
 ) {
     companion object {
         const val BRIDGE_NAME = "AndroidBridge"
@@ -39,6 +44,82 @@ class AndroidNativeBridge(
     }
 
     private val workerExecutor = Executors.newSingleThreadExecutor()
+
+    @JavascriptInterface
+    fun getAppVersionName(): String = BuildConfig.VERSION_NAME
+
+    @JavascriptInterface
+    fun hasNotificationPermission(): Boolean =
+        VoraletNotificationHelper.hasNotificationPermission(activity)
+
+    @JavascriptInterface
+    fun requestNotificationPermission(sendTestAfterGrant: Boolean) {
+        activity.runOnUiThread {
+            notificationPermissionRequester(sendTestAfterGrant)
+        }
+    }
+
+    @JavascriptInterface
+    fun syncDailyReminder(enabled: Boolean, timeHHmm: String?) {
+        try {
+            VoraletNotificationHelper.scheduleDailyReminder(activity, enabled, timeHHmm)
+        } catch (_: Throwable) {}
+    }
+
+    @JavascriptInterface
+    fun sendTestPetNotification(): Boolean {
+        return try {
+            if (!VoraletNotificationHelper.hasNotificationPermission(activity)) {
+                activity.runOnUiThread { notificationPermissionRequester(true) }
+                false
+            } else {
+                VoraletNotificationHelper.showPetAndStreakNotification(activity, isTest = true)
+                true
+            }
+        } catch (_: Throwable) {
+            false
+        }
+    }
+
+    @JavascriptInterface
+    fun checkForAppUpdate(callbackId: String?, forceCheck: Boolean) {
+        if (callbackId.isNullOrBlank()) return
+        if (!forceCheck && !GitHubAutoUpdater.shouldRunAutoCheck(activity)) {
+            val skipped = JSONObject().apply {
+                put("ok", true)
+                put("skipped", true)
+                put("hasUpdate", false)
+                put("currentVersion", BuildConfig.VERSION_NAME)
+            }.toString()
+            dispatchUpdateCallback(callbackId, skipped)
+            return
+        }
+        workerExecutor.execute {
+            val result = GitHubAutoUpdater.checkLatestRelease(BuildConfig.VERSION_NAME)
+            if (result.ok) {
+                GitHubAutoUpdater.markCheckedNow(activity)
+            }
+            dispatchUpdateCallback(callbackId, result.toJsonString())
+        }
+    }
+
+    @JavascriptInterface
+    fun openTrustedUpdateUrl(url: String?): Boolean {
+        return GitHubAutoUpdater.openTrustedUpdateUrl(activity, url)
+    }
+
+    private fun dispatchUpdateCallback(callbackId: String, resultJson: String) {
+        val quotedId = JSONObject.quote(callbackId)
+        val quotedJson = JSONObject.quote(resultJson)
+        activity.runOnUiThread {
+            try {
+                webViewProvider()?.evaluateJavascript(
+                    "window.__onVoraletUpdateResult && window.__onVoraletUpdateResult($quotedId, $quotedJson);",
+                    null
+                )
+            } catch (_: Throwable) {}
+        }
+    }
 
     @JavascriptInterface
     fun syncWidgetData(streakJson: String?, petJson: String?) {

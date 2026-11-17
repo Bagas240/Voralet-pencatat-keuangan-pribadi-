@@ -31,5 +31,6 @@ class AppSecurityGuardTest {
     val context = ApplicationProvider.getApplicationContext<Context>()
     val report = AppSecurityGuard.verifyEnvironmentIntegrity(context)
     assertFalse("Test runner should not trigger Frida hook detection", report.isHookDetected)
+    assertFalse("Clean test runner should not report LD_PRELOAD hook", AppSecurityGuard.hasSuspiciousPreload())
   }
 }

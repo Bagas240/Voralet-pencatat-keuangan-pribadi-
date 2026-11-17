@@ -18,8 +18,6 @@ PART6_MODALS = """
       const [newCatEmoji, setNewCatEmoji] = useState('🏷️');
       const [newCatError, setNewCatError] = useState('');
 
-      const emojiPresets = ['🍔', '☕', '🚗', '🛍️', '💡', '🎮', '💊', '💼', '🎁', '📈', '🏷️', '🏠', '✈️', '📚', '🐾', '⚽'];
-
       const allCategories = useMemo(() => {
         return getAllCategories(customCategories);
       }, [customCategories]);
@@ -288,7 +286,7 @@ PART6_MODALS = """
                     <div className="space-y-1">
                       <label className="text-[10px] font-medium text-slate-500">Pilih Emoji:</label>
                       <div className="flex flex-wrap gap-1.5 p-1.5 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 max-h-24 overflow-y-auto">
-                        {emojiPresets.map(emoji => (
+                        {CATEGORY_EMOJI_PRESETS.map(emoji => (
                           <button
                             key={emoji}
                             type="button"
@@ -1409,7 +1407,7 @@ PART6_MODALS = """
       );
     };
 
-    const SettingsModal = ({ isOpen, onClose, userProfile, onUpdateProfile, onHardReset, onImportData, onExportData, onOpenCsvImport, onExportCsv, onExportExcel, theme, onToggleTheme, customCategories = [], onSaveCustomCategory, onDeleteCustomCategory, onOpenDeveloperGate, onOpenMonthlyPdfReport }) => {
+    const SettingsModal = ({ isOpen, onClose, userProfile, onUpdateProfile, onHardReset, onImportData, onExportData, onOpenCsvImport, onExportExcel, theme, onToggleTheme, customCategories = [], onSaveCustomCategory, onDeleteCustomCategory, onOpenMonthlyPdfReport, updateInfo = null, isCheckingUpdate = false, onCheckUpdate, onOpenUpdateUrl, onShowToast }) => {
       const [name, setName] = useState(userProfile.name || '');
       const [username, setUsername] = useState(userProfile.username || '');
       const [avatar, setAvatar] = useState(userProfile.avatar || '');
@@ -1428,13 +1426,23 @@ PART6_MODALS = """
       const [editingCatId, setEditingCatId] = useState(null);
       const [catErrorMsg, setCatErrorMsg] = useState('');
 
-      // Reminder Settings
+      // Reminder Settings & Native Notification Permission State
       const [reminderSettings, setReminderSettingsState] = useState(() => StorageService.getReminderSettings());
+      const [notifGranted, setNotifGranted] = useState(() => NotificationBridgeService.hasPermission());
 
-      const handleToggleReminder = (enabled) => {
+      const handleToggleReminder = async (enabled) => {
         const next = { ...reminderSettings, enabled };
         setReminderSettingsState(next);
         StorageService.setReminderSettings(next);
+        if (enabled && !NotificationBridgeService.hasPermission()) {
+          const granted = await NotificationBridgeService.requestPermission(false);
+          setNotifGranted(granted);
+          if (!granted && onShowToast) {
+            onShowToast('Izin notifikasi belum diberikan. Aktifkan di Pengaturan sistem bila diperlukan.');
+          }
+        } else {
+          setNotifGranted(NotificationBridgeService.hasPermission());
+        }
       };
 
       const handleChangeReminderTime = (time) => {
@@ -1443,12 +1451,28 @@ PART6_MODALS = """
         StorageService.setReminderSettings(next);
       };
 
-      const emojiPresets = ['🍔', '☕', '🚗', '🛍️', '💡', '🎮', '💊', '💼', '🎁', '📈', '🏷️', '🏠', '✈️', '📚', '🐾', '⚽'];
+      const handleTestNotification = async () => {
+        if (!NotificationBridgeService.hasPermission()) {
+          const granted = await NotificationBridgeService.requestPermission(true);
+          setNotifGranted(granted);
+          if (onShowToast) {
+            onShowToast(granted ? 'Notifikasi peliharaan berhasil dikirim!' : 'Izin notifikasi ditolak.');
+          }
+          return;
+        }
+        const sent = NotificationBridgeService.sendTestNotification();
+        if (onShowToast) {
+          onShowToast(sent ? 'Notifikasi peliharaan berhasil dikirim!' : 'Gagal mengirim notifikasi.');
+        }
+      };
 
       useEffect(() => {
         setName(userProfile.name || '');
         setUsername(userProfile.username || '');
         setAvatar(userProfile.avatar || '');
+        if (isOpen) {
+          setNotifGranted(NotificationBridgeService.hasPermission());
+        }
       }, [userProfile, isOpen]);
 
       if (!shouldRender) return null;
@@ -1746,7 +1770,7 @@ PART6_MODALS = """
                       <div>
                         <label className="text-[10px] font-semibold text-slate-500 block mb-1">Pilih Icon Emoji:</label>
                         <div className="flex flex-wrap gap-1.5 p-2 bg-white dark:bg-[#181818] rounded-xl border border-slate-200 dark:border-zinc-700 max-h-24 overflow-y-auto">
-                          {emojiPresets.map(emoji => (
+                          {CATEGORY_EMOJI_PRESETS.map(emoji => (
                             <button
                               key={emoji}
                               type="button"
@@ -2050,40 +2074,102 @@ PART6_MODALS = """
                   Voralet • Versi v__VORALET_VERSION__ (Enkripsi Brankas Penuh)
                 </p>
                 <p className="text-[10px] text-slate-400 dark:text-slate-500 max-w-xs leading-relaxed">
-                  Keuangan Sehat • Impian Dekat. 100% Offline, Zero-Permission, & Terenkripsi Menyeluruh.
+                  Keuangan Sehat • Impian Dekat. 100% Offline, Privasi Terjaga, &amp; Terenkripsi Menyeluruh.
                 </p>
               </div>
 
-              {/* Widget Layar Utama Android (Home Screen Widgets) */}
+              {/* Pembaruan Aplikasi (GitHub Releases) */}
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-700 space-y-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <IconBadge icon="refresh" className="p-2 rounded-xl bg-sky-50 dark:bg-slate-700 text-brand dark:text-sky-400" />
+                    <div className="min-w-0">
+                      <h4 className="text-xs font-bold text-slate-900 dark:text-white">Pembaruan Aplikasi</h4>
+                      <p className="text-[10px] text-slate-400 truncate">
+                        Versi terpasang: v{UpdateService.getCurrentVersion()}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={isCheckingUpdate}
+                    onClick={() => onCheckUpdate && onCheckUpdate(true)}
+                    className="px-3 py-1.5 bg-sky-50 dark:bg-slate-700 hover:bg-sky-100 dark:hover:bg-slate-600 text-brand dark:text-sky-300 text-xs font-bold rounded-xl border border-sky-200/80 dark:border-slate-600 flex items-center gap-1.5 shrink-0 ios-btn-tap disabled:opacity-60"
+                  >
+                    <Icon name="refresh" className={`w-3.5 h-3.5 ${isCheckingUpdate ? 'animate-spin' : ''}`} />
+                    <span>{isCheckingUpdate ? 'Memeriksa...' : 'Cek Pembaruan'}</span>
+                  </button>
+                </div>
+
+                {updateInfo && updateInfo.ok && updateInfo.hasUpdate && (
+                  <div className="p-3 rounded-xl bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300">
+                        Versi Baru Tersedia: v{updateInfo.latestVersion}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-600 text-white text-[9px] font-bold">
+                        GitHub Release
+                      </span>
+                    </div>
+                    {updateInfo.releaseNotes && (
+                      <p className="text-[10px] text-emerald-700 dark:text-emerald-200/80 line-clamp-3 leading-relaxed whitespace-pre-line">
+                        {updateInfo.releaseNotes}
+                      </p>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => onOpenUpdateUrl && onOpenUpdateUrl(updateInfo.downloadUrl || updateInfo.releasePageUrl)}
+                      className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 ios-btn-tap"
+                    >
+                      <Icon name="download" className="w-3.5 h-3.5" />
+                      <span>Unduh Pembaruan Sekarang</span>
+                    </button>
+                  </div>
+                )}
+
+                {updateInfo && updateInfo.ok && !updateInfo.hasUpdate && (
+                  <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold pl-1">
+                    Aplikasi sudah menggunakan versi terbaru (v{updateInfo.currentVersion}).
+                  </p>
+                )}
+
+                {updateInfo && !updateInfo.ok && (
+                  <p className="text-[10px] text-slate-400 pl-1">
+                    Tidak dapat terhubung ke GitHub Releases saat ini ({updateInfo.errorMessage || 'Offline'}).
+                  </p>
+                )}
+              </div>
+
+              {/* Widget Layar Utama Android (Home Screen Widgets - Clean Text Only) */}
               <div className="pt-3 border-t border-slate-100 dark:border-slate-700">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-lg">📱</span>
+                <div className="flex items-center gap-2.5 mb-2">
+                  <IconBadge icon="smartphone" className="p-2 rounded-xl bg-sky-50 dark:bg-slate-700 text-brand dark:text-sky-400" />
                   <div>
                     <h4 className="text-xs font-bold text-slate-900 dark:text-white">Widget Layar Utama Android</h4>
-                    <p className="text-[10px] text-slate-400">Api Streak 🔥 & Teman Peliharaan 🐾</p>
+                    <p className="text-[10px] text-slate-400">Api Streak dan Teman Peliharaan</p>
                   </div>
                 </div>
-                <div className="p-3 bg-amber-50/70 dark:bg-slate-900/60 rounded-xl border border-amber-200/60 dark:border-slate-700 text-[11px] text-slate-600 dark:text-slate-300 space-y-1">
-                  <p className="font-semibold text-slate-800 dark:text-slate-200">Cara Memasang di Home Screen HP:</p>
+                <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200/80 dark:border-slate-700 text-[11px] text-slate-600 dark:text-slate-300 space-y-1">
+                  <p className="font-semibold text-slate-800 dark:text-slate-200">Cara Memasang di Layar Utama Android:</p>
                   <ol className="list-decimal list-inside space-y-0.5 text-[10px] text-slate-500 dark:text-slate-400">
-                    <li>Tekan & tahan area kosong di Layar Utama HP Android kamu.</li>
+                    <li>Tekan dan tahan area kosong di Layar Utama perangkat Android Anda.</li>
                     <li>Pilih menu <b>Widget</b>.</li>
                     <li>Cari dan pilih aplikasi <b>Voralet</b>.</li>
-                    <li>Pilih <b>Api Streak</b> atau <b>Teman Peliharaan</b> dan seret ke layar!</li>
+                    <li>Pilih <b>Api Streak</b> atau <b>Teman Peliharaan</b> lalu seret ke layar utama.</li>
                   </ol>
                 </div>
               </div>
 
-              {/* Pengingat Harian Pencatat Keuangan */}
-              <div className="pt-3 border-t border-slate-100 dark:border-slate-700 space-y-2">
+              {/* Pengingat Harian & Notifikasi Peliharaan */}
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-700 space-y-2.5">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-sky-100 dark:bg-slate-700 flex items-center justify-center text-brand dark:text-sky-400">
-                      <Icon name="bell" className="w-4 h-4" />
-                    </div>
+                  <div className="flex items-center gap-2.5">
+                    <IconBadge icon="bell" className="p-2 rounded-xl bg-sky-50 dark:bg-slate-700 text-brand dark:text-sky-400" />
                     <div>
-                      <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">Pengingat Harian</h4>
-                      <p className="text-[10px] text-slate-400">Ingatkan catat transaksi setiap hari</p>
+                      <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">Pengingat Harian &amp; Notifikasi Pet</h4>
+                      <p className="text-[10px] text-slate-400">
+                        {notifGranted ? 'Izin notifikasi aktif' : 'Izin notifikasi opsional diperlukan'}
+                      </p>
                     </div>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
@@ -2097,14 +2183,24 @@ PART6_MODALS = """
                   </label>
                 </div>
                 {reminderSettings.enabled && (
-                  <div className="flex items-center justify-between pl-9 pr-1">
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Waktu Pengingat:</span>
-                    <input
-                      type="time"
-                      value={reminderSettings.time}
-                      onChange={(e) => handleChangeReminderTime(e.target.value)}
-                      className="px-2 py-1 text-xs font-semibold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-300 focus:outline-none"
-                    />
+                  <div className="space-y-2 pl-11 pr-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Waktu Pengingat:</span>
+                      <input
+                        type="time"
+                        value={reminderSettings.time}
+                        onChange={(e) => handleChangeReminderTime(e.target.value)}
+                        className="px-2 py-1 text-xs font-semibold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-300 focus:outline-none"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleTestNotification}
+                      className="w-full py-1.5 px-3 rounded-xl bg-slate-100 dark:bg-slate-700/80 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-[11px] font-semibold flex items-center justify-center gap-1.5 ios-btn-tap"
+                    >
+                      <Icon name="bell" className="w-3.5 h-3.5 text-brand dark:text-sky-400" />
+                      <span>{notifGranted ? 'Kirim Tes Notifikasi Peliharaan' : 'Izinkan & Tes Notifikasi'}</span>
+                    </button>
                   </div>
                 )}
               </div>
@@ -2728,69 +2824,8 @@ PART6_MODALS = """
       const today = getLocalDateString();
       const isRecordedToday = lastRecordedDate === today;
 
-      const STREAK_LEVELS = [
-        {
-          lvl: 1,
-          badge: '🔥',
-          name: 'Api Pemula (Ember Flame)',
-          days: '1 - 3 Hari',
-          bgGradient: 'from-amber-50 to-yellow-50 dark:from-amber-950/40 dark:to-yellow-950/30',
-          textColor: 'text-amber-600 dark:text-amber-400',
-          borderColor: 'border-amber-200 dark:border-amber-700/60',
-          desc: 'Langkah awal membiasakan mencatat keuangan setiap hari.'
-        },
-        {
-          lvl: 2,
-          badge: '🔴🔥',
-          name: 'Api Membara (Ruby Fire)',
-          days: '4 - 7 Hari',
-          bgGradient: 'from-orange-50 to-rose-50 dark:from-orange-950/40 dark:to-rose-950/30',
-          textColor: 'text-rose-600 dark:text-rose-400',
-          borderColor: 'border-rose-200 dark:border-rose-700/60',
-          desc: 'Konsistensi 1 minggu penuh! Pola budgeting mulai terbentuk.'
-        },
-        {
-          lvl: 3,
-          badge: '💜🔥',
-          name: 'Api Mistik (Amethyst Blaze)',
-          days: '8 - 14 Hari',
-          bgGradient: 'from-purple-50 to-indigo-50 dark:from-purple-950/40 dark:to-indigo-950/30',
-          textColor: 'text-purple-600 dark:text-purple-400',
-          borderColor: 'border-purple-200 dark:border-purple-700/60',
-          desc: 'Disiplin 2 minggu tanpa henti. Pengeluaran terkendali rapi.'
-        },
-        {
-          lvl: 4,
-          badge: '💎🔥',
-          name: 'Api Kristal (Diamond Cyan)',
-          days: '15 - 29 Hari',
-          bgGradient: 'from-cyan-50 to-sky-50 dark:from-cyan-950/40 dark:to-sky-950/30',
-          textColor: 'text-cyan-600 dark:text-cyan-400',
-          borderColor: 'border-cyan-200 dark:border-cyan-700/60',
-          desc: 'Separuh bulan penuh catatan rapi! Kebiasaan finansial matang.'
-        },
-        {
-          lvl: 5,
-          badge: '👑🔥',
-          name: 'Api Mahkota (Celestial Flame)',
-          days: '30+ Hari',
-          bgGradient: 'from-amber-50 via-rose-50 to-indigo-50 dark:from-amber-950/50 dark:via-rose-950/40 dark:to-indigo-950/50',
-          textColor: 'text-amber-500 dark:text-amber-300',
-          borderColor: 'border-amber-300 dark:border-amber-600',
-          desc: 'Tingkat Legendaris! Penguasa keuangan sejati 1 bulan nonstop.'
-        }
-      ];
-
-      const currentLvlObj = STREAK_LEVELS.find(l => l.lvl === level) || {
-        lvl: 0,
-        badge: '⚪',
-        name: 'Api Belum Menyala',
-        days: '0 Hari',
-        bgGradient: 'from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-800',
-        textColor: 'text-slate-500 dark:text-slate-400',
-        borderColor: 'border-slate-200 dark:border-slate-700',
-        desc: 'Catat transaksi hari ini untuk mulai menyalakan api pertamamu!'
-      };
+      const isPadam = currentStreak === 0 || Boolean(streakData?.isExpired);
+      const currentLvlObj = getStreakLevelMeta(level, isPadam);
 
       return (
         <div
@@ -2887,17 +2922,17 @@ PART6_MODALS = """
                 </ul>
               </div>
 
-              {/* Widget Layar Utama Android */}
-              <div className="p-3.5 rounded-xl bg-gradient-to-r from-amber-50/80 via-sky-50/70 to-indigo-50/80 dark:from-slate-800 dark:to-slate-800 border border-amber-200/60 dark:border-slate-700 text-left">
+              {/* Widget Layar Utama Android (Clean Text Only) */}
+              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-left">
                 <div className="flex items-center gap-1.5 text-slate-900 dark:text-white text-xs font-bold mb-1">
-                  <span>📱</span>
+                  <Icon name="smartphone" className="w-4 h-4 text-brand dark:text-sky-400" />
                   <span>Pasang Widget di Layar Utama Android</span>
                 </div>
                 <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
-                  Voralet v__VORALET_VERSION__ mendukung <b>Widget Api Streak 🔥</b> dan <b>Widget Teman Peliharaan 🐾</b> langsung di home screen HP kamu:
+                  Voralet v__VORALET_VERSION__ mendukung <b>Widget Api Streak</b> dan <b>Widget Teman Peliharaan</b> langsung di layar utama perangkat Android Anda:
                 </p>
-                <div className="mt-2 text-[10px] text-slate-500 dark:text-slate-400 bg-white/70 dark:bg-slate-900/60 p-2 rounded-lg border border-slate-200/60 dark:border-slate-700">
-                  <b>Cara Pasang:</b> Tekan & tahan area kosong di Layar Utama Android ➔ Pilih <b>Widget</b> ➔ Cari <b>Voralet</b> ➔ Tambahkan widget <b>Api Streak</b> atau <b>Teman Peliharaan</b>!
+                <div className="mt-2 text-[10px] text-slate-500 dark:text-slate-400 bg-white/80 dark:bg-slate-900/60 p-2 rounded-lg border border-slate-200/60 dark:border-slate-700">
+                  <b>Cara Pasang:</b> Tekan dan tahan area kosong di Layar Utama Android, pilih <b>Widget</b>, cari <b>Voralet</b>, lalu tambahkan widget <b>Api Streak</b> atau <b>Teman Peliharaan</b>.
                 </div>
               </div>
 
@@ -2907,7 +2942,7 @@ PART6_MODALS = """
                   Tingkatan Level Api Streak
                 </h5>
                 <div className="space-y-2">
-                  {STREAK_LEVELS.map((lvl) => {
+                  {STREAK_LEVELS_META.map((lvl) => {
                     const isCurrent = lvl.lvl === level;
                     const isUnlocked = currentStreak >= (lvl.lvl === 1 ? 1 : lvl.lvl === 2 ? 4 : lvl.lvl === 3 ? 8 : lvl.lvl === 4 ? 15 : 30);
                     return (
@@ -4348,6 +4383,69 @@ PART6_MODALS = """
               </div>
             </div>
           )}
+        </div>
+      );
+    };
+
+    // =========================================================================
+    // GITHUB RELEASE AUTO-UPDATE PROMPT MODAL
+    // =========================================================================
+    const UpdatePromptModal = ({ isOpen, onClose, updateInfo, onUpdateNow }) => {
+      const { shouldRender, isClosing, handleClose } = useModalLifecycle(isOpen, onClose, 300);
+
+      if (!shouldRender || !updateInfo) return null;
+
+      return (
+        <div
+          className={`ios-modal-backdrop ${isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'}`}
+          onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
+        >
+          <div className={`ios-modal-card bg-white dark:bg-slate-800 max-w-sm mx-auto rounded-[28px] p-5 shadow-2xl border border-slate-100 dark:border-slate-700 ${
+            isClosing ? 'animate-ios-pop-out' : 'animate-ios-pop-in'
+          }`}>
+            <div className="flex items-start justify-between gap-3 mb-3">
+              <div className="flex items-center gap-2.5">
+                <IconBadge icon="download" className="p-2.5 rounded-2xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400" />
+                <div>
+                  <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">
+                    Pembaruan Voralet Tersedia
+                  </h3>
+                  <p className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                    v{updateInfo.currentVersion} &rarr; v{updateInfo.latestVersion}
+                  </p>
+                </div>
+              </div>
+              <ModalCloseButton onClick={handleClose} />
+            </div>
+
+            <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/70 border border-slate-200/80 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-300 space-y-1.5 max-h-44 overflow-y-auto mb-4">
+              <p className="font-bold text-slate-800 dark:text-slate-200">Catatan Rilis GitHub:</p>
+              <p className="text-[11px] leading-relaxed whitespace-pre-line">
+                {updateInfo.releaseNotes || 'Rilis terbaru Voralet tersedia dengan peningkatan keamanan, stabilitas, dan perbaikan fitur.'}
+              </p>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={handleClose}
+                className="flex-1 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold ios-btn-tap"
+              >
+                Nanti
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (onUpdateNow) onUpdateNow(updateInfo.downloadUrl || updateInfo.releasePageUrl);
+                  handleClose();
+                }}
+                className="flex-[1.5] py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm ios-btn-tap"
+              >
+                <Icon name="download" className="w-4 h-4" />
+                <span>Update Sekarang</span>
+              </button>
+            </div>
+          </div>
         </div>
       );
     };

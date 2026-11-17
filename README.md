@@ -14,7 +14,7 @@
 
   <p>
     <a href="https://github.com/Bagas240/Voralet-pencatat-keuangan-pribadi-/releases">
-      <img src="https://img.shields.io/badge/Version-v3.4.0-0EA5E9?style=for-the-badge&logo=android&logoColor=white" alt="Version v3.4.0"/>
+      <img src="https://img.shields.io/badge/Version-v3.5.0-0EA5E9?style=for-the-badge&logo=android&logoColor=white" alt="Version v3.5.0"/>
     </a>
     <a href="LICENSE">
       <img src="https://img.shields.io/badge/License-Apache_2.0-2563EB?style=for-the-badge&logo=apache&logoColor=white" alt="License Apache 2.0"/>
@@ -41,7 +41,7 @@
 
 **Voralet** adalah aplikasi pencatat keuangan pribadi untuk Android yang dirancang dengan prinsip **Privacy-First** dan **Zero Network Dependency**. Seluruh data transaksi, saldo dompet, catatan hutang-piutang, target tabungan, hingga pemindaian struk belanja diproses sepenuhnya di dalam perangkat tanpa server pihak ketiga, tanpa API key eksternal, dan tanpa koneksi internet.
 
-Dibangun untuk tetap ringan, mulus di layar 60/90/120Hz, dan hemat baterai, Voralet v3.4.0 menggabungkan antarmuka modern dengan perlindungan keamanan berlapis (*ChaCha20-encrypted asset vault*, *R8 Full Mode*, dan *RASP*), serta dilengkapi generator **Workbook Excel (`.xlsx`) 5 Sheet** dan **Pemindai Struk Offline berbasis Google ML Kit**.
+Dibangun untuk tetap ringan, mulus di layar 60/90/120Hz, dan hemat baterai, Voralet v3.5.0 menggabungkan antarmuka modern dengan perlindungan keamanan berlapis (*ChaCha20-encrypted asset vault v2* dengan *key stretching*, *R8 Full Mode*, dan *RASP*), serta dilengkapi generator **Workbook Excel (`.xlsx`) 5 Sheet**, **Pemindai Struk On-Device berbasis Google ML Kit**, pengingat harian peliharaan opsional, dan pengecekan rilis otomatis dari **GitHub Releases**.
 
 ---
 
@@ -78,8 +78,8 @@ Voralet menerapkan pendekatan **Defense in Depth** untuk melindungi kode aplikas
    - Menghapus informasi `SourceFile`, `LineNumberTable`, log debug (`android.util.Log`), serta membatasi aturan *keep* secara ketat pada antarmuka native bridge.
 3. **Runtime Application Self-Protection (`AppSecurityGuard`)**
    - Mendeteksi keterikatan *debugger* (`Debug.isDebuggerConnected`, `TracerPid`), kerangka injeksi (*Frida*, *Xposed*, *LSPosed*, *Zygisk*), status *root*, serta memvalidasi tanda tangan sertifikat APK.
-4. **Hardened Offline WebView & Zero-Permission Manifest**
-   - `AndroidManifest.xml` tidak mendeklarasikan izin jaringan atau perangkat keras sensitif (`INTERNET`, `CAMERA`, `READ_EXTERNAL_STORAGE`, `WRITE_EXTERNAL_STORAGE`, `LOCATION`, `RECORD_AUDIO`).
+4. **Hardened Offline WebView & Minimal Permission Manifest**
+   - `AndroidManifest.xml` **tidak** mendeklarasikan izin perangkat keras atau penyimpanan yang sensitif (`CAMERA`, `READ_EXTERNAL_STORAGE`, `WRITE_EXTERNAL_STORAGE`, `READ_MEDIA_IMAGES`, `LOCATION`, `RECORD_AUDIO`, `REQUEST_INSTALL_PACKAGES`). Satu-satunya izin runtime opsional adalah `POST_NOTIFICATIONS` untuk pengingat kondisi peliharaan & api streak harian, serta izin `INTERNET` terbatas hanya di lapisan native (`GitHubAutoUpdater`) untuk memeriksa pembaruan rilis resmi di GitHub via HTTPS.
    - WebView beroperasi melalui origin virtual `https://appassets.androidplatform.net/` dengan `allowFileAccess = false`, `allowContentAccess = false`, pemblokiran seluruh navigasi/permintaan eksternal di `VoraletWebViewClient`, serta `android:allowBackup="false"` dan `android:usesCleartextTraffic="false"`.
 
 ---
@@ -159,7 +159,7 @@ Voralet menerapkan pendekatan **Defense in Depth** untuk melindungi kode aplikas
 
 ### Unduh Rilis Resmi
 1. Buka halaman **[GitHub Releases](https://github.com/Bagas240/Voralet-pencatat-keuangan-pribadi-/releases)**.
-2. Pilih versi rilis terbaru (misalnya **`v3.4.0`**) dan unduh berkas APK pada bagian **Assets**.
+2. Pilih versi rilis terbaru (misalnya **`v3.5.0`**) dan unduh berkas APK pada bagian **Assets** (atau gunakan fitur **Periksa Pembaruan** langsung di dalam menu Pengaturan Voralet).
 3. Jika menginstal di luar Google Play, aktifkan opsi *"Instal aplikasi tidak dikenal"* untuk browser atau file manager Anda pada Pengaturan Android.
 4. Buka aplikasi Voralet, atur **6-digit PIN lokal**, dan aplikasi siap digunakan secara offline.
 
@@ -217,6 +217,39 @@ Untuk melaporkan bug atau mengusulkan fitur baru, silakan buka tiket di halaman 
 
 ---
 
+## Kebijakan Keamanan (Security Policy)
+
+Keamanan dan privasi data pengguna adalah prioritas utama Voralet.
+
+| Versi | Status Dukungan |
+| :--- | :--- |
+| **`v3.5.x`** | :white_check_mark: Didukung penuh (pembaruan keamanan aktif) |
+| **`< v3.5.0`** | :x: Tidak lagi didukung — harap perbarui ke rilis terbaru |
+
+Jika Anda menemukan celah keamanan pada enkripsi vault, WebView isolation, maupun penanganan data lokal, harap **jangan** mempublikasikan eksploitasi secara terbuka terlebih dahulu. Laporkan secara privat melalui **[GitHub Security Advisories](https://github.com/Bagas240/Voralet-pencatat-keuangan-pribadi-/security/advisories/new)** atau hubungi pengelola melalui repositori resmi agar perbaikan dapat dirilis sebelum pengungkapan publik.
+
+---
+
+## Pengembang & Kontributor
+
+### Pengelola Utama (Maintainer)
+
+| Pengembang | Peran | GitHub |
+| :--- | :--- | :--- |
+| **Bagas240** | Creator & Lead Maintainer | [@Bagas240](https://github.com/Bagas240) |
+
+### Kontributor Repositori
+
+Terima kasih kepada seluruh kontributor yang telah membantu mengembangkan kode, melaporkan bug, dan meningkatkan keamanan **Voralet**:
+
+<p align="left">
+  <a href="https://github.com/Bagas240/Voralet-pencatat-keuangan-pribadi-/graphs/contributors">
+    <img src="https://contrib.rocks/image?repo=Bagas240/Voralet-pencatat-keuangan-pribadi-" alt="Kontributor Voralet" />
+  </a>
+</p>
+
+---
+
 ## Lisensi
 
 Proyek ini dilisensikan di bawah **[Apache License, Version 2.0](LICENSE)**.
@@ -236,3 +269,20 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ```
+
+---
+
+<div align="center">
+  <p>
+    Jika proyek ini bermanfaat, pertimbangkan untuk memberikan <strong>Star</strong> pada repositori ini di GitHub.<br/>
+    <a href="https://github.com/Bagas240/Voralet-pencatat-keuangan-pribadi-/stargazers">
+      <img src="https://img.shields.io/github/stars/Bagas240/Voralet-pencatat-keuangan-pribadi-?style=social" alt="GitHub Stars"/>
+    </a>
+    <a href="https://github.com/Bagas240/Voralet-pencatat-keuangan-pribadi-/network/members">
+      <img src="https://img.shields.io/github/forks/Bagas240/Voralet-pencatat-keuangan-pribadi-?style=social" alt="GitHub Forks"/>
+    </a>
+    <a href="https://github.com/Bagas240/Voralet-pencatat-keuangan-pribadi-/issues">
+      <img src="https://img.shields.io/github/issues/Bagas240/Voralet-pencatat-keuangan-pribadi-?style=social" alt="GitHub Issues"/>
+    </a>
+  </p>
+</div>

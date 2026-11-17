@@ -43,7 +43,7 @@ def resolve_version():
     except (OSError, subprocess.CalledProcessError):
         pass
 
-    return '3.4.0'
+    return '3.5.0'
 
 
 def _rotl32(v: int, n: int) -> int:
@@ -101,10 +101,20 @@ def _chacha20_xor(key: bytes, nonce: bytes, initial_counter: int, data: bytes) -
     return bytes(out)
 
 
+def _stretch_key(seed: bytes, domain: bytes, rounds: int = 16) -> bytes:
+    state = hashlib.sha256(seed + domain).digest()
+    for r in range(rounds):
+        state = hashlib.sha256(state + seed + domain + bytes([r & 0xFF])).digest()
+    return state
+
+
 def encrypt_vault_payload(html_text: str) -> bytes:
-    raw_seed = bytes((a ^ b) & 0xFF for a, b in zip(_SHARD_A, _SHARD_B))
-    enc_key = hashlib.sha256(raw_seed + b'ENC_CHACHA20_V1').digest()
-    mac_key = hashlib.sha256(raw_seed + b'MAC_HMACSHA256_V1').digest()
+    raw_seed = bytes(
+        (((a ^ b) + ((idx * 37 + 19) & 0xFF)) ^ ((idx * 13) & 0xFF)) & 0xFF
+        for idx, (a, b) in enumerate(zip(_SHARD_A, _SHARD_B))
+    )
+    enc_key = _stretch_key(raw_seed, b'ENC_CHACHA20_V2')
+    mac_key = _stretch_key(raw_seed, b'MAC_HMACSHA256_V2')
 
     compressed = zlib.compress(html_text.encode('utf-8'), 9)
     nonce = os.urandom(12)

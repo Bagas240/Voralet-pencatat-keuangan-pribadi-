@@ -1,7 +1,7 @@
 {
   "name": "voralet",
-  "version": "3.4.0",
-  "description": "Aplikasi pencatat keuangan pribadi 100% offline untuk Android dengan enkripsi vault ChaCha20, RASP anti-tamper, ekspor Excel (.xlsx), dan pemindai struk ML Kit offline.",
+  "version": "3.5.0",
+  "description": "Aplikasi pencatat keuangan pribadi 100% offline untuk Android dengan enkripsi vault ChaCha20, RASP anti-tamper, ekspor Excel (.xlsx), pemindai struk ML Kit on-device, notifikasi peliharaan opsional, dan cek pembaruan GitHub Releases.",
   "type": "module",
   "main": "server.ts",
   "scripts": {

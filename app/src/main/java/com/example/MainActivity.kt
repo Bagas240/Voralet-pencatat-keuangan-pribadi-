@@ -1,5 +1,6 @@
 package com.example
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
@@ -20,6 +21,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.bridge.AndroidNativeBridge
+import com.example.notification.VoraletNotificationHelper
 import com.example.security.AppSecurityGuard
 import com.example.webview.VoraletWebChromeClient
 import com.example.webview.VoraletWebViewClient
@@ -31,8 +33,8 @@ import java.util.concurrent.Executors
 
 /**
  * Main Activity for Voralet Personal Finance App.
- * 100% Offline, Edge-to-Edge, FLAG_SECURE vault protection, zero-permission camera/SAF integration,
- * and battery-aware animation throttling on pause/background.
+ * 100% Offline Vault, Edge-to-Edge, FLAG_SECURE vault protection, zero-permission camera/SAF integration,
+ * optional POST_NOTIFICATIONS for Pet/Streak reminders, and battery-aware animation throttling.
  */
 class MainActivity : ComponentActivity() {
 
@@ -42,7 +44,22 @@ class MainActivity : ComponentActivity() {
     private var fileCallback: ValueCallback<Array<Uri>>? = null
     private var pendingCameraUri: Uri? = null
     private var pendingExportBytes: ByteArray? = null
+    private var pendingTestNotifOnGrant = false
     private val ioExecutor = Executors.newSingleThreadExecutor()
+
+    private val notificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        val shouldTest = pendingTestNotifOnGrant
+        pendingTestNotifOnGrant = false
+        if (granted && shouldTest) {
+            VoraletNotificationHelper.showPetAndStreakNotification(this, isTest = true)
+        }
+        currentWebView?.evaluateJavascript(
+            "window.__onVoraletNotificationPermission && window.__onVoraletNotificationPermission($granted);",
+            null
+        )
+    }
 
     private val fileChooserLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -110,6 +127,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         prepareWebViewStorage(this)
+        VoraletNotificationHelper.ensureChannel(this)
 
         enableEdgeToEdge()
 
@@ -128,7 +146,7 @@ class MainActivity : ComponentActivity() {
         var securityWarning = false
         try {
             val report = AppSecurityGuard.verifyEnvironmentIntegrity(this)
-            if (!report.isSafe && !VoraletWebViewConfig.isEmulator) {
+            if (!report.isSafe && !VoraletWebViewConfig.isEmulator && !AppSecurityGuard.isDebuggableBuild(this)) {
                 securityWarning = true
             }
         } catch (_: Throwable) {}
@@ -181,6 +199,23 @@ class MainActivity : ComponentActivity() {
         setupWebView(initialBg, securityWarning)
     }
 
+    private fun requestNotificationPermission(sendTestAfterGrant: Boolean) {
+        if (VoraletNotificationHelper.hasNotificationPermission(this)) {
+            if (sendTestAfterGrant) {
+                VoraletNotificationHelper.showPetAndStreakNotification(this, isTest = true)
+            }
+            currentWebView?.evaluateJavascript(
+                "window.__onVoraletNotificationPermission && window.__onVoraletNotificationPermission(true);",
+                null
+            )
+            return
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            pendingTestNotifOnGrant = sendTestAfterGrant
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+
     private fun launchSaveDocument(fileName: String, mimeType: String, bytes: ByteArray) {
         pendingExportBytes = bytes
         try {
@@ -211,7 +246,8 @@ class MainActivity : ComponentActivity() {
         val bridge = AndroidNativeBridge(
             activity = this,
             webViewProvider = { currentWebView },
-            safSaveRequester = ::launchSaveDocument
+            safSaveRequester = ::launchSaveDocument,
+            notificationPermissionRequester = ::requestNotificationPermission
         )
         nativeBridge = bridge
 
@@ -221,6 +257,7 @@ class MainActivity : ComponentActivity() {
 
             webViewClient = VoraletWebViewClient(
                 appContext = applicationContext,
+                tamperLocked = securityWarning,
                 onCrashRecover = {
                     setupWebView(backgroundColor, securityWarning)
                 }

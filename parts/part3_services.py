@@ -234,9 +234,9 @@ PART3_SERVICES = """
           if (Object.prototype.voralet_injected || Array.prototype.voralet_injected) {
             return { intact: false, error: 'Prototype pollution terdeteksi' };
           }
-          return { intact: true, checksum: 'SHA256-VORALET-310-SECURE-VAULT' };
+          return { intact: true, checksum: 'SHA256-VORALET-350-SECURE-VAULT' };
         } catch (e) {
-          return { intact: true, checksum: 'VORALET-V310-RESERVE' };
+          return { intact: true, checksum: 'VORALET-V350-RESERVE' };
         }
       }
     };
@@ -799,10 +799,9 @@ PART3_SERVICES = """
         if (typeof merged.foodCount !== 'number') {
           merged.foodCount = 5;
         }
-        if (typeof merged.coins !== 'number') {
-          merged.coins = 50;
-        }
-        const normalizedCoins = typeof merged.coins === 'number' ? merged.coins : (typeof merged.petCoins === 'number' ? merged.petCoins : 50);
+        const normalizedCoins = typeof parsed.coins === 'number'
+          ? parsed.coins
+          : (typeof parsed.petCoins === 'number' ? parsed.petCoins : 50);
         merged.coins = normalizedCoins;
         merged.petCoins = normalizedCoins;
 
@@ -994,19 +993,145 @@ PART3_SERVICES = """
         return parsed;
       },
       setReminderSettings: (settings) => {
-        SafeStorage.setItem(STORAGE_KEYS.REMINDER, JSON.stringify(settings));
+        const normalized = {
+          enabled: Boolean(settings?.enabled),
+          time: (settings?.time && /^\\d{2}:\\d{2}$/.test(String(settings.time))) ? String(settings.time) : '20:00'
+        };
+        SafeStorage.setItem(STORAGE_KEYS.REMINDER, JSON.stringify(normalized));
+        try {
+          window.AndroidBridge?.syncDailyReminder?.(normalized.enabled, normalized.time);
+        } catch (_) {}
       },
       clearAll: () => {
         Object.values(STORAGE_KEYS).forEach(k => SafeStorage.removeItem(k));
       }
     };
 
+    // =========================================================================
+    // NATIVE NOTIFICATION & GITHUB AUTO-UPDATE BRIDGE SERVICES
+    // =========================================================================
+    const NotificationBridgeService = {
+      _pendingListeners: new Set(),
+      hasPermission: () => {
+        try {
+          if (window.AndroidBridge && typeof window.AndroidBridge.hasNotificationPermission === 'function') {
+            return Boolean(window.AndroidBridge.hasNotificationPermission());
+          }
+        } catch (_) {}
+        return false;
+      },
+      requestPermission: (sendTestAfterGrant = false) => {
+        return new Promise((resolve) => {
+          try {
+            if (!window.AndroidBridge || typeof window.AndroidBridge.requestNotificationPermission !== 'function') {
+              resolve(false);
+              return;
+            }
+            const timer = setTimeout(() => {
+              NotificationBridgeService._pendingListeners.delete(done);
+              resolve(NotificationBridgeService.hasPermission());
+            }, 15000);
+            const done = (granted) => {
+              clearTimeout(timer);
+              resolve(Boolean(granted));
+            };
+            NotificationBridgeService._pendingListeners.add(done);
+            window.AndroidBridge.requestNotificationPermission(Boolean(sendTestAfterGrant));
+          } catch (_) {
+            resolve(false);
+          }
+        });
+      },
+      sendTestNotification: () => {
+        try {
+          if (window.AndroidBridge && typeof window.AndroidBridge.sendTestPetNotification === 'function') {
+            return Boolean(window.AndroidBridge.sendTestPetNotification());
+          }
+        } catch (_) {}
+        return false;
+      },
+      syncReminder: (settings) => {
+        try {
+          const cfg = settings || StorageService.getReminderSettings();
+          window.AndroidBridge?.syncDailyReminder?.(Boolean(cfg?.enabled), cfg?.time || '20:00');
+        } catch (_) {}
+      }
+    };
+
+    const UpdateService = {
+      _callbacks: new Map(),
+      getCurrentVersion: () => {
+        try {
+          if (window.AndroidBridge && typeof window.AndroidBridge.getAppVersionName === 'function') {
+            const v = window.AndroidBridge.getAppVersionName();
+            if (v) return String(v);
+          }
+        } catch (_) {}
+        return '__VORALET_VERSION__';
+      },
+      checkForUpdate: (forceCheck = false) => {
+        return new Promise((resolve) => {
+          try {
+            if (!window.AndroidBridge || typeof window.AndroidBridge.checkForAppUpdate !== 'function') {
+              resolve({ ok: false, hasUpdate: false, currentVersion: UpdateService.getCurrentVersion(), errorMessage: 'Bridge tidak tersedia' });
+              return;
+            }
+            const callbackId = 'upd_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+            const timer = setTimeout(() => {
+              UpdateService._callbacks.delete(callbackId);
+              resolve({ ok: false, hasUpdate: false, currentVersion: UpdateService.getCurrentVersion(), errorMessage: 'Waktu tunggu habis' });
+            }, 10000);
+            UpdateService._callbacks.set(callbackId, (payload) => {
+              clearTimeout(timer);
+              resolve(payload);
+            });
+            window.AndroidBridge.checkForAppUpdate(callbackId, Boolean(forceCheck));
+          } catch (_) {
+            resolve({ ok: false, hasUpdate: false, currentVersion: UpdateService.getCurrentVersion(), errorMessage: 'Gagal memeriksa pembaruan' });
+          }
+        });
+      },
+      openUpdateUrl: (url) => {
+        try {
+          if (window.AndroidBridge && typeof window.AndroidBridge.openTrustedUpdateUrl === 'function') {
+            return Boolean(window.AndroidBridge.openTrustedUpdateUrl(String(url || '')));
+          }
+        } catch (_) {}
+        return false;
+      }
+    };
+
+    if (typeof window !== 'undefined') {
+      window.__onVoraletUpdateResult = (callbackId, rawJson) => {
+        try {
+          const cb = UpdateService._callbacks.get(callbackId);
+          if (cb) {
+            UpdateService._callbacks.delete(callbackId);
+            const parsed = typeof rawJson === 'string' ? JSON.parse(rawJson) : rawJson;
+            cb(parsed);
+          }
+        } catch (_) {}
+      };
+      window.__onVoraletNotificationPermission = (granted) => {
+        try {
+          const listeners = Array.from(NotificationBridgeService._pendingListeners);
+          NotificationBridgeService._pendingListeners.clear();
+          listeners.forEach(fn => {
+            try { fn(Boolean(granted)); } catch (_) {}
+          });
+        } catch (_) {}
+      };
+    }
+
     // Runtime Anti-Tamper & Prototype Freezing: Prevents in-memory hijacking or hooking
     try {
       if (typeof Object.freeze === 'function') {
         Object.freeze(SafeStorage);
         Object.freeze(CryptoService);
+        Object.freeze(Validators);
         Object.freeze(StorageService);
+        Object.freeze(NotificationBridgeService);
+        Object.freeze(UpdateService);
       }
     } catch (_) {}
 
@@ -1210,7 +1335,117 @@ PART3_SERVICES = """
       { id: 'lainnya', label: 'Lainnya', icon: 'tag', type: 'ALL' }
     ];
 
-    const CATEGORIES = DEFAULT_CATEGORIES;
+    const CATEGORY_EMOJI_PRESETS = ['🍔', '☕', '🚗', '🛍️', '💡', '🎮', '💊', '💼', '🎁', '📈', '🏷️', '🏠', '✈️', '📚', '🐾', '⚽'];
+
+    const STREAK_LEVELS_META = [
+      {
+        lvl: 1,
+        badge: '🔥',
+        name: 'Api Pemula (Ember Flame)',
+        cardName: 'Api Oranye Menyala',
+        badgeText: 'Aktif 🔥',
+        days: '1 - 3 Hari',
+        bgGradient: 'from-amber-50 to-yellow-50 dark:from-amber-950/40 dark:to-yellow-950/30',
+        cardBg: 'bg-gradient-to-r from-amber-50 via-orange-50 to-amber-100/70 dark:from-amber-950/40 dark:via-orange-950/30 dark:to-slate-800',
+        textColor: 'text-amber-600 dark:text-amber-400',
+        borderColor: 'border-amber-200 dark:border-amber-700/60',
+        cardBorder: 'border-amber-300 dark:border-amber-700/70',
+        barColor: 'bg-gradient-to-r from-amber-500 to-orange-500',
+        desc: 'Langkah awal membiasakan mencatat keuangan setiap hari.',
+        subtext: 'Pertahankan api selama 24 jam dengan rutin mencatat keuangan!'
+      },
+      {
+        lvl: 2,
+        badge: '🔴🔥',
+        name: 'Api Membara (Ruby Fire)',
+        cardName: 'Api Merah Membara',
+        badgeText: 'Membara 🔴',
+        days: '4 - 7 Hari',
+        bgGradient: 'from-orange-50 to-rose-50 dark:from-orange-950/40 dark:to-rose-950/30',
+        cardBg: 'bg-gradient-to-r from-orange-50 via-rose-50 to-red-100/70 dark:from-orange-950/40 dark:via-rose-950/30 dark:to-slate-800',
+        textColor: 'text-rose-600 dark:text-rose-400',
+        borderColor: 'border-rose-200 dark:border-rose-700/60',
+        cardBorder: 'border-rose-300 dark:border-rose-700/70',
+        barColor: 'bg-gradient-to-r from-orange-500 to-rose-600',
+        desc: 'Konsistensi 1 minggu penuh! Pola budgeting mulai terbentuk.',
+        subtext: 'Keren! 4-7 hari beruntun. Disiplin finansialmu mulai membara!'
+      },
+      {
+        lvl: 3,
+        badge: '💜🔥',
+        name: 'Api Mistik (Amethyst Blaze)',
+        cardName: 'Api Ungu Magis',
+        badgeText: 'Magis 💜',
+        days: '8 - 14 Hari',
+        bgGradient: 'from-purple-50 to-indigo-50 dark:from-purple-950/40 dark:to-indigo-950/30',
+        cardBg: 'bg-gradient-to-r from-purple-50 via-pink-50 to-indigo-100/70 dark:from-purple-950/40 dark:via-pink-950/30 dark:to-slate-800',
+        textColor: 'text-purple-600 dark:text-purple-400',
+        borderColor: 'border-purple-200 dark:border-purple-700/60',
+        cardBorder: 'border-purple-300 dark:border-purple-700/70',
+        barColor: 'bg-gradient-to-r from-purple-500 to-pink-500',
+        desc: 'Disiplin 2 minggu tanpa henti. Pengeluaran terkendali rapi.',
+        subtext: 'Konsistensi luar biasa! Keuanganmu terlindungi api magis!'
+      },
+      {
+        lvl: 4,
+        badge: '💎🔥',
+        name: 'Api Kristal (Diamond Cyan)',
+        cardName: 'Api Biru Neon',
+        badgeText: 'Neon 💎',
+        days: '15 - 29 Hari',
+        bgGradient: 'from-cyan-50 to-sky-50 dark:from-cyan-950/40 dark:to-sky-950/30',
+        cardBg: 'bg-gradient-to-r from-cyan-50 via-sky-50 to-blue-100/70 dark:from-cyan-950/40 dark:via-sky-950/30 dark:to-slate-800',
+        textColor: 'text-cyan-600 dark:text-cyan-400',
+        borderColor: 'border-cyan-200 dark:border-cyan-700/60',
+        cardBorder: 'border-cyan-300 dark:border-cyan-700/70',
+        barColor: 'bg-gradient-to-r from-cyan-400 to-blue-600',
+        desc: 'Separuh bulan penuh catatan rapi! Kebiasaan finansial matang.',
+        subtext: 'Separuh bulan tanpa putus! Kamu pengelola keuangan sejati!'
+      },
+      {
+        lvl: 5,
+        badge: '👑🔥',
+        name: 'Api Mahkota (Celestial Flame)',
+        cardName: 'Api Dewa Emas',
+        badgeText: 'Dewa Api 👑',
+        days: '30+ Hari',
+        bgGradient: 'from-amber-50 via-rose-50 to-indigo-50 dark:from-amber-950/50 dark:via-rose-950/40 dark:to-indigo-950/50',
+        cardBg: 'bg-gradient-to-r from-amber-100 via-yellow-50 to-amber-200/80 dark:from-amber-950/50 dark:via-yellow-950/40 dark:to-slate-800',
+        textColor: 'text-amber-500 dark:text-amber-300',
+        borderColor: 'border-amber-300 dark:border-amber-600',
+        cardBorder: 'border-amber-400 dark:border-amber-600',
+        barColor: 'bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-600',
+        desc: 'Tingkat Legendaris! Penguasa keuangan sejati 1 bulan nonstop.',
+        subtext: 'Level tertinggi tercapai! Disiplin 30+ hari tanpa pernah padam!'
+      }
+    ];
+
+    const getStreakBadge = (level) => {
+      const found = STREAK_LEVELS_META.find(l => l.lvl === Number(level));
+      return found ? found.badge : '⚪';
+    };
+
+    const getStreakLevelMeta = (level, isExpired = false) => {
+      if (isExpired || !level || Number(level) <= 0) {
+        return {
+          lvl: 0,
+          badge: '⚪',
+          name: 'Api Belum Menyala',
+          cardName: 'Api Padam (Butuh Catatan)',
+          badgeText: 'Padam / Mati',
+          days: '0 Hari',
+          bgGradient: 'from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-800',
+          cardBg: 'bg-gradient-to-r from-slate-100 via-slate-50 to-slate-100 dark:from-slate-800/80 dark:via-slate-800 dark:to-slate-800',
+          textColor: 'text-slate-500 dark:text-slate-400',
+          borderColor: 'border-slate-200 dark:border-slate-700',
+          cardBorder: 'border-slate-300 dark:border-slate-700',
+          barColor: 'bg-slate-400',
+          desc: 'Catat transaksi hari ini untuk mulai menyalakan api pertamamu!',
+          subtext: 'Catat transaksi, tabungan, atau bayar hutang untuk menyalakan api streak 24 jam!'
+        };
+      }
+      return STREAK_LEVELS_META.find(l => l.lvl === Number(level)) || STREAK_LEVELS_META[STREAK_LEVELS_META.length - 1];
+    };
 
     const getAllCategories = (customCats = null) => {
       const custom = customCats !== null ? customCats : (typeof StorageService !== 'undefined' ? StorageService.getCustomCategories() : []);

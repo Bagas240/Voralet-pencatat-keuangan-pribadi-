@@ -38,15 +38,34 @@ object AssetVaultDecryptor {
         0x20, 0x5C, 0x0D, 0x37, 0x17, 0x3F, 0x49, 0x33
     )
 
+    private fun stretchKey(seed: ByteArray, domain: ByteArray, rounds: Int = 16): ByteArray {
+        val digest = MessageDigest.getInstance("SHA-256")
+        digest.update(seed)
+        digest.update(domain)
+        var state = digest.digest()
+        for (round in 0 until rounds) {
+            digest.reset()
+            digest.update(state)
+            digest.update(seed)
+            digest.update(domain)
+            digest.update((round and 0xFF).toByte())
+            state = digest.digest()
+        }
+        return state
+    }
+
     internal fun deriveVaultKeys(): Pair<ByteArray, ByteArray> {
         val rawSeed = ByteArray(32) { idx ->
-            ((SHARD_A[idx] xor SHARD_B[idx]) and 0xFF).toByte()
+            val mixed = (((SHARD_A[idx] xor SHARD_B[idx]) + ((idx * 37 + 19) and 0xFF)) xor ((idx * 13) and 0xFF)) and 0xFF
+            mixed.toByte()
         }
-        val digest = MessageDigest.getInstance("SHA-256")
-        val encKey = digest.digest(rawSeed + "ENC_CHACHA20_V1".toByteArray(Charsets.UTF_8))
-        val macKey = MessageDigest.getInstance("SHA-256")
-            .digest(rawSeed + "MAC_HMACSHA256_V1".toByteArray(Charsets.UTF_8))
-        return encKey to macKey
+        return try {
+            val encKey = stretchKey(rawSeed, "ENC_CHACHA20_V2".toByteArray(Charsets.UTF_8))
+            val macKey = stretchKey(rawSeed, "MAC_HMACSHA256_V2".toByteArray(Charsets.UTF_8))
+            encKey to macKey
+        } finally {
+            rawSeed.fill(0)
+        }
     }
 
     fun loadDecryptedHtml(context: Context, assetName: String = "voralet_core.bin"): ByteArray {
@@ -65,18 +84,24 @@ object AssetVaultDecryptor {
         val ciphertext = blob.copyOfRange(49, blob.size)
 
         val (encKey, macKey) = deriveVaultKeys()
+        var compressed: ByteArray? = null
+        return try {
+            val mac = Mac.getInstance("HmacSHA256")
+            mac.init(SecretKeySpec(macKey, "HmacSHA256"))
+            mac.update(MAGIC)
+            mac.update(nonce)
+            mac.update(ciphertext)
+            val actualTag = mac.doFinal()
 
-        val mac = Mac.getInstance("HmacSHA256")
-        mac.init(SecretKeySpec(macKey, "HmacSHA256"))
-        mac.update(MAGIC)
-        mac.update(nonce)
-        mac.update(ciphertext)
-        val actualTag = mac.doFinal()
+            require(MessageDigest.isEqual(expectedTag, actualTag)) { "Vault integrity check failed" }
 
-        require(MessageDigest.isEqual(expectedTag, actualTag)) { "Vault integrity check failed" }
-
-        val compressed = chacha20Xor(encKey, nonce, 1, ciphertext)
-        return inflateZlib(compressed)
+            compressed = chacha20Xor(encKey, nonce, 1, ciphertext)
+            inflateZlib(compressed)
+        } finally {
+            encKey.fill(0)
+            macKey.fill(0)
+            compressed?.fill(0)
+        }
     }
 
     private fun inflateZlib(compressed: ByteArray): ByteArray {

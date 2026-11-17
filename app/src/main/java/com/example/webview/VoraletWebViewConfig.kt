@@ -84,7 +84,7 @@ object VoraletWebViewConfig {
                 allowContentAccess = false
                 allowFileAccessFromFileURLs = false
                 allowUniversalAccessFromFileURLs = false
-                // Offline isolation is enforced by VoraletWebViewClient + zero INTERNET permission
+                // Offline isolation is enforced by VoraletWebViewClient; INTERNET is used solely by native GitHubAutoUpdater
                 blockNetworkLoads = false
 
                 // Security: Block mixed HTTP/HTTPS content

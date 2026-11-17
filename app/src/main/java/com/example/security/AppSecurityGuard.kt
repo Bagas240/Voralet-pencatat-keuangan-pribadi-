@@ -28,7 +28,10 @@ object AppSecurityGuard {
         "/system/sd/xbin/su",
         "/system/bin/failsafe/su",
         "/data/local/su",
-        "/data/adb/magisk"
+        "/data/adb/magisk",
+        "/data/adb/ksu",
+        "/data/adb/ap",
+        "/system/bin/magisk"
     )
 
     private val HOOKING_LIBRARIES = arrayOf(
@@ -39,14 +42,15 @@ object AppSecurityGuard {
         "substrate",
         "cydia",
         "gadget",
-        "libzygisk"
+        "libzygisk",
+        "riru"
     )
 
     fun verifyEnvironmentIntegrity(context: Context): SecurityReport {
         val isDebugger = isDebuggerAttached()
         val isTraced = isProcessBeingTraced()
         val isFridaDetected = isFridaPresent()
-        val isHookFrameworkDetected = isHookFrameworkPresent()
+        val isHookFrameworkDetected = isHookFrameworkPresent() || hasSuspiciousPreload()
         val isRooted = isDeviceRooted()
         val isAppDebuggable = isDebuggableBuild(context)
         val hasValidSignature = getSigningCertSha256(context).isNotEmpty()
@@ -61,6 +65,15 @@ object AppSecurityGuard {
             isDebuggable = isAppDebuggable,
             hasValidSignature = hasValidSignature
         )
+    }
+
+    fun hasSuspiciousPreload(): Boolean {
+        return try {
+            val preload = System.getenv("LD_PRELOAD")?.lowercase().orEmpty()
+            preload.isNotBlank() && HOOKING_LIBRARIES.any { preload.contains(it) }
+        } catch (_: Throwable) {
+            false
+        }
     }
 
     fun isDebuggableBuild(context: Context): Boolean {

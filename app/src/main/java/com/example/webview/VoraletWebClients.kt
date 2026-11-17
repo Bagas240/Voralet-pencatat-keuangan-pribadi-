@@ -18,12 +18,14 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.result.ActivityResultLauncher
 import androidx.core.content.FileProvider
+import com.example.security.AppSecurityGuard
 import com.example.security.AssetVaultDecryptor
 import java.io.ByteArrayInputStream
 import java.io.File
 
 class VoraletWebViewClient(
     private val appContext: Context,
+    private val tamperLocked: Boolean = false,
     private val onCrashRecover: () -> Unit
 ) : WebViewClient() {
 
@@ -33,6 +35,9 @@ class VoraletWebViewClient(
         view: WebView?,
         request: WebResourceRequest?
     ): WebResourceResponse? {
+        if (tamperLocked) {
+            return blockedResponse()
+        }
         val uri = request?.url ?: return blockedResponse()
         val scheme = uri.scheme?.lowercase()
 
@@ -99,10 +104,13 @@ class VoraletWebViewClient(
         view: WebView?,
         request: WebResourceRequest?
     ): Boolean {
+        if (tamperLocked) return true
         val uri = request?.url ?: return true
-        val isTrusted = uri.scheme.equals("https", ignoreCase = true) &&
+        val urlString = uri.toString()
+        val isTrusted = AppSecurityGuard.isTrustedLocalOrigin(urlString) &&
+            uri.scheme.equals("https", ignoreCase = true) &&
             uri.host == VoraletWebViewConfig.VIRTUAL_HOST
-        // Strict offline policy: block navigation to any external URL
+        // Strict offline policy: block navigation to any external or file:// URL
         return !isTrusted
     }
 

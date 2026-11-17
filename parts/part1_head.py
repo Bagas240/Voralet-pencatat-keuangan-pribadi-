@@ -20,13 +20,21 @@ HTML_HEAD = """<!DOCTYPE html>
   <script>
     (function() {
       if (typeof window !== 'undefined') {
-        // 1. Production Console Silencer: Prevents dumping confidential financial balances & PINs to logcat/DevTools
+        // 1. Production Console Silencer & Hook Neutralizer: Prevents leaking balances/PINs or React internals
         try {
           const noop = function() {};
           console.log = noop;
           console.info = noop;
           console.debug = noop;
+          console.warn = noop;
           console.table = noop;
+          if (!window.__REACT_DEVTOOLS_GLOBAL_HOOK__) {
+            Object.defineProperty(window, '__REACT_DEVTOOLS_GLOBAL_HOOK__', {
+              value: Object.freeze({ isDisabled: true, supportsFiber: false, inject: noop, onCommitFiberRoot: noop, onCommitFiberUnmount: noop }),
+              configurable: false,
+              writable: false
+            });
+          }
         } catch (_) {}
 
         // 2. Anti-Context Menu & Text Selection Inspection
