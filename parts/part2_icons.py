@@ -697,6 +697,46 @@ PART2_ICONS = """
       );
     };
 
+    // Global LIFO Android Back Handler Stack & Active Portal Modal Counter
+    if (typeof window !== 'undefined') {
+      window.__voraletBackStack = window.__voraletBackStack || [];
+      window.__voraletModalCount = window.__voraletModalCount || 0;
+    }
+    const registerVoraletBackHandler = (handler) => {
+      if (typeof window === 'undefined' || typeof handler !== 'function') return () => {};
+      window.__voraletBackStack = window.__voraletBackStack || [];
+      window.__voraletBackStack.push(handler);
+      return () => {
+        const stack = window.__voraletBackStack;
+        if (!Array.isArray(stack)) return;
+        const idx = stack.lastIndexOf(handler);
+        if (idx !== -1) stack.splice(idx, 1);
+      };
+    };
+
+    // Portal Wrapper: Renders every modal directly into document.body so transformed
+    // tab containers or scroll boxes NEVER clip or misalign modals.
+    const ModalPortal = ({ children }) => {
+      useEffect(() => {
+        if (typeof window === 'undefined' || typeof document === 'undefined') return;
+        window.__voraletModalCount = (window.__voraletModalCount || 0) + 1;
+        document.documentElement.classList.add('voralet-modal-open');
+        window.dispatchEvent(new Event('voralet-modal-state'));
+        return () => {
+          window.__voraletModalCount = Math.max(0, (window.__voraletModalCount || 1) - 1);
+          if (window.__voraletModalCount === 0) {
+            document.documentElement.classList.remove('voralet-modal-open');
+          }
+          window.dispatchEvent(new Event('voralet-modal-state'));
+        };
+      }, []);
+
+      if (typeof document === 'undefined' || !document.body || typeof ReactDOM === 'undefined' || !ReactDOM.createPortal) {
+        return children;
+      }
+      return ReactDOM.createPortal(children, document.body);
+    };
+
     // iOS Interactive Swipe-to-Dismiss Handle for Bottom Sheets
     const ModalDragHandle = ({ onDismiss }) => {
       const startY = useRef(0);
@@ -722,8 +762,8 @@ PART2_ICONS = """
         if (delta > 0) {
           card.style.transform = `translate3d(0, ${delta}px, 0)`;
         } else {
-          // iOS rubber-band physics when pulling upwards
-          const damp = -Math.pow(-delta, 0.72) * 1.4;
+          // Subtle upward resistance
+          const damp = -Math.pow(-delta, 0.7) * 1.1;
           card.style.transform = `translate3d(0, ${damp}px, 0)`;
         }
       };
@@ -732,25 +772,30 @@ PART2_ICONS = """
         if (!isDragging.current) return;
         isDragging.current = false;
         const card = (handleRef.current && handleRef.current.closest) ? handleRef.current.closest('.ios-modal-card') : null;
+        const backdrop = (handleRef.current && handleRef.current.closest) ? handleRef.current.closest('.ios-modal-backdrop') : null;
         const endY = e.changedTouches && e.changedTouches[0] ? e.changedTouches[0].clientY : startY.current;
         const delta = endY - startY.current;
 
         if (card) {
           if (delta > 80) {
-            card.style.transition = 'transform 0.38s cubic-bezier(0.32, 0.94, 0.4, 1), opacity 0.38s ease';
+            card.style.transition = 'transform 0.21s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.21s ease';
             card.style.transform = 'translate3d(0, 100%, 0)';
-            card.style.opacity = '0.92';
+            card.style.opacity = '0';
+            if (backdrop) {
+              backdrop.style.transition = 'opacity 0.21s ease';
+              backdrop.style.opacity = '0';
+              backdrop.style.pointerEvents = 'none';
+            }
             setTimeout(() => {
-              if (typeof onDismiss === 'function') onDismiss();
-            }, 370);
+              if (typeof onDismiss === 'function') onDismiss({ immediate: true });
+            }, 210);
           } else {
-            // Authentic iOS spring snap-back
-            card.style.transition = 'transform 0.38s cubic-bezier(0.175, 0.885, 0.32, 1.25)';
+            card.style.transition = 'transform 0.24s cubic-bezier(0.22, 1, 0.36, 1)';
             card.style.transform = 'translate3d(0, 0, 0)';
             card.style.opacity = '1';
           }
         } else if (delta > 80) {
-          if (typeof onDismiss === 'function') onDismiss();
+          if (typeof onDismiss === 'function') onDismiss({ immediate: true });
         }
       };
 
@@ -785,33 +830,82 @@ PART2_ICONS = """
       );
     };
 
-    // Universal Modal Lifecycle Hook (Ensures In AND Out Exit Animation on ALL closes)
-    const useModalLifecycle = (isOpen, onClose, duration = 350) => {
-      const [shouldRender, setShouldRender] = useState(isOpen);
+    // Universal Modal Lifecycle Hook (Bug-free exit animation + LIFO Android Back integration)
+    const useModalLifecycle = (isOpen, onClose, duration = 230) => {
+      const normalizedDuration = Math.min(Number(duration) || 230, 240);
+      const [shouldRender, setShouldRender] = useState(Boolean(isOpen));
       const [isClosing, setIsClosing] = useState(false);
+
+      const shouldRenderRef = useRef(Boolean(isOpen));
+      const isClosingRef = useRef(false);
+      const timerRef = useRef(null);
+      const onCloseRef = useRef(onClose);
+      onCloseRef.current = onClose;
+
+      const clearCloseTimer = useCallback(() => {
+        if (timerRef.current) {
+          clearTimeout(timerRef.current);
+          timerRef.current = null;
+        }
+      }, []);
 
       useEffect(() => {
         if (isOpen) {
-          setShouldRender(true);
+          clearCloseTimer();
+          isClosingRef.current = false;
+          shouldRenderRef.current = true;
           setIsClosing(false);
-        } else if (shouldRender && !isClosing) {
+          setShouldRender(true);
+        } else if (shouldRenderRef.current && !isClosingRef.current) {
+          isClosingRef.current = true;
           setIsClosing(true);
-          const t = setTimeout(() => {
+          clearCloseTimer();
+          timerRef.current = setTimeout(() => {
+            timerRef.current = null;
+            shouldRenderRef.current = false;
             setShouldRender(false);
-            setIsClosing(false);
-          }, duration);
-          return () => clearTimeout(t);
+          }, normalizedDuration);
         }
-      }, [isOpen, shouldRender, isClosing, duration]);
+      }, [isOpen, normalizedDuration, clearCloseTimer]);
 
-      const handleClose = () => {
-        setIsClosing(true);
-        setTimeout(() => {
+      useEffect(() => {
+        return () => clearCloseTimer();
+      }, [clearCloseTimer]);
+
+      const handleClose = useCallback((opts) => {
+        const isImmediate = Boolean(opts && typeof opts === 'object' && opts.immediate === true);
+        if (isImmediate) {
+          clearCloseTimer();
+          isClosingRef.current = true;
+          shouldRenderRef.current = false;
           setIsClosing(false);
           setShouldRender(false);
-          if (onClose) onClose();
-        }, duration);
-      };
+          if (typeof onCloseRef.current === 'function') onCloseRef.current();
+          return;
+        }
+
+        if (isClosingRef.current) return;
+        clearCloseTimer();
+        isClosingRef.current = true;
+        setIsClosing(true);
+        timerRef.current = setTimeout(() => {
+          timerRef.current = null;
+          shouldRenderRef.current = false;
+          setShouldRender(false);
+          if (typeof onCloseRef.current === 'function') onCloseRef.current();
+        }, normalizedDuration);
+      }, [normalizedDuration, clearCloseTimer]);
+
+      // Register top-most modal handler into global LIFO back stack
+      useEffect(() => {
+        if (!shouldRender) return;
+        return registerVoraletBackHandler(() => {
+          if (!isClosingRef.current) {
+            handleClose();
+          }
+          return true;
+        });
+      }, [shouldRender, handleClose]);
 
       return { shouldRender, isClosing, handleClose };
     };

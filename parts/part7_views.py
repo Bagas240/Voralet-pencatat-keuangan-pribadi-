@@ -145,19 +145,18 @@ PART7_VIEWS = """
       const [selectedAccountId, setSelectedAccountId] = useState('');
       const [customNotes, setCustomNotes] = useState('');
       const [error, setError] = useState('');
-      const [isClosingDeposit, setIsClosingDeposit] = useState(false);
 
       const safeGoals = Array.isArray(savingsGoals) ? savingsGoals : [];
 
-      const handleCloseDeposit = () => {
-        setIsClosingDeposit(true);
-        setTimeout(() => {
-          setIsClosingDeposit(false);
-          setDepositGoal(null);
-          setDepositAmount('');
-          setError('');
-        }, 380);
-      };
+      const {
+        shouldRender: shouldRenderDeposit,
+        isClosing: isClosingDeposit,
+        handleClose: handleCloseDeposit
+      } = useModalLifecycle(Boolean(depositGoal), () => {
+        setDepositGoal(null);
+        setDepositAmount('');
+        setError('');
+      }, 220);
 
       useEffect(() => {
         if (depositGoal) {
@@ -280,19 +279,19 @@ PART7_VIEWS = """
           )}
 
           {/* Deposit/Withdraw Modal */}
-          {depositGoal && (() => {
+          {shouldRenderDeposit && depositGoal && (() => {
             const currentAmt = Number(depositGoal.currentAmount) || 0;
             const targetAmt = Number(depositGoal.targetAmount) || 0;
             const remTarget = Math.max(0, targetAmt - currentAmt);
 
             return (
+              <ModalPortal>
               <div
-                className={`ios-modal-backdrop ${isClosingDeposit ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'} z-[90]`}
+                className={`ios-modal-backdrop ios-modal-center ${isClosingDeposit ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'} z-[95]`}
                 onClick={(e) => { if (e.target === e.currentTarget) handleCloseDeposit(); }}
               >
-                <div className={`ios-modal-card bg-white dark:bg-slate-800 p-5 pb-8 sm:pb-6 ${isClosingDeposit ? 'animate-ios-sheet-exit' : 'animate-ios-sheet'} max-w-sm mx-auto rounded-[24px] shadow-2xl relative z-[95]`}>
-                  <ModalDragHandle onDismiss={handleCloseDeposit} />
-                  <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-700">
+                <div className={`ios-modal-card bg-white dark:bg-slate-800 max-w-sm mx-auto rounded-[24px] shadow-2xl overflow-hidden flex flex-col ${isClosingDeposit ? 'animate-ios-pop-out' : 'animate-ios-pop-in'}`}>
+                  <div className="ios-modal-header px-5 py-3.5 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800">
                     <div className="flex items-center gap-2">
                       <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${
                         depositMode === 'DEPOSIT'
@@ -313,7 +312,7 @@ PART7_VIEWS = """
                     <ModalCloseButton onClick={handleCloseDeposit} />
                   </div>
 
-                  <form onSubmit={handleDepositSubmit} className="space-y-3.5 pt-3">
+                  <form onSubmit={handleDepositSubmit} className="ios-modal-body p-5 space-y-3.5 overflow-y-auto no-scrollbar">
                     {/* Goal Progress Info */}
                     <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-1.5 text-xs">
                       <div className="flex justify-between">
@@ -351,7 +350,6 @@ PART7_VIEWS = """
                         }}
                         placeholder="Rp 0"
                         className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-base font-bold text-slate-900 dark:text-white focus:outline-none focus:border-brand"
-                        autoFocus
                       />
 
                       {/* Quick chips */}
@@ -473,7 +471,7 @@ PART7_VIEWS = """
                     <div className="flex gap-2.5 pt-2">
                       <button
                         type="button"
-                        onClick={() => setDepositGoal(null)}
+                        onClick={handleCloseDeposit}
                         className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-bold rounded-xl transition-colors shadow-xs ios-btn-tap"
                       >
                         Batal
@@ -493,6 +491,7 @@ PART7_VIEWS = """
                   </form>
                 </div>
               </div>
+              </ModalPortal>
             );
           })()}
         </div>
@@ -1391,6 +1390,15 @@ PART7_VIEWS = """
         isDraggingRef.current = false;
       };
 
+      useEffect(() => {
+        if (!isAdding) return;
+        return registerVoraletBackHandler(() => {
+          setIsAdding(false);
+          setEditingAcc(null);
+          return true;
+        });
+      }, [isAdding]);
+
       // Calculate total balance across all pockets
       const totalBalance = useMemo(() => {
         return safeAccounts.reduce((acc, a) => {
@@ -1747,7 +1755,7 @@ PART7_VIEWS = """
                     </div>
 
                     <div className="text-right flex items-center gap-1.5">
-                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-sky-100 bg-white/15 px-2 py-0.5 rounded-lg backdrop-blur-xs">
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-sky-100 bg-white/20 px-2 py-0.5 rounded-lg">
                         <span>{isStackedInDeck ? 'Ketuk Buka Kartu' : (isExpanded ? 'Tutup Opsi' : 'Kelola')}</span>
                         <Icon name={isStackedInDeck ? 'chevron-down' : (isExpanded ? 'chevron-up' : 'chevron-down')} className="w-3 h-3" />
                       </span>
@@ -1895,7 +1903,7 @@ PART7_VIEWS = """
                     )}
 
                     {isDeckStacked && list.length > 1 && (
-                      <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 z-40 px-3 py-1 rounded-full bg-slate-900/80 backdrop-blur-md border border-white/20 text-white text-[10px] font-bold flex items-center gap-1.5 shadow-lg pointer-events-none animate-pulse">
+                      <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 z-40 px-3 py-1 rounded-full bg-slate-900/90 border border-white/20 text-white text-[10px] font-bold flex items-center gap-1.5 shadow-lg pointer-events-none animate-pulse">
                         <Icon name="layers" className="w-3 h-3 text-sky-400" />
                         <span>Ketuk tumpukan untuk membuka ({list.length} kartu)</span>
                         <Icon name="chevron-down" className="w-3 h-3 text-sky-400" />

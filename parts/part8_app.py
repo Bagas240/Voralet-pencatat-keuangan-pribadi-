@@ -726,7 +726,7 @@ PART8_APP = """
 
             {/* Monthly income and expense summary */}
             <div className="grid grid-cols-2 gap-2 pt-3 border-t border-sky-400/50 dark:border-sky-500/40">
-              <div className="flex items-center gap-2.5 p-1.5 rounded-xl bg-white/5 backdrop-blur-[2px]">
+              <div className="flex items-center gap-2.5 p-1.5 rounded-xl bg-white/10">
                 <div className="w-8 h-8 rounded-xl bg-emerald-500/30 text-emerald-100 flex items-center justify-center shrink-0 border border-emerald-300/30">
                   <Icon name="arrow-down-left" className="w-4 h-4 text-emerald-200" strokeWidth={2.5} />
                 </div>
@@ -743,7 +743,7 @@ PART8_APP = """
                 </div>
               </div>
 
-              <div className="flex items-center gap-2.5 p-1.5 rounded-xl bg-white/5 backdrop-blur-[2px]">
+              <div className="flex items-center gap-2.5 p-1.5 rounded-xl bg-white/10">
                 <div className="w-8 h-8 rounded-xl bg-rose-500/30 text-rose-100 flex items-center justify-center shrink-0 border border-rose-300/30">
                   <Icon name="arrow-up-right" className="w-4 h-4 text-rose-200" strokeWidth={2.5} />
                 </div>
@@ -1254,9 +1254,17 @@ PART8_APP = """
       const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
       const [isUpdatePromptOpen, setIsUpdatePromptOpen] = useState(false);
 
-      // Android Back Button Integration: Smoothly close open modals or navigate back to Dashboard
+      // Android Back Button Integration: LIFO Modal Stack -> Fallback Modal Close -> Tab Back -> Exit
       useEffect(() => {
         window.handleAndroidBack = () => {
+          const stack = window.__voraletBackStack;
+          if (Array.isArray(stack) && stack.length > 0) {
+            const topHandler = stack[stack.length - 1];
+            if (typeof topHandler === 'function') {
+              const handled = topHandler();
+              if (handled !== false) return true;
+            }
+          }
           if (isUpdatePromptOpen) { setIsUpdatePromptOpen(false); return true; }
           if (isReceiptModalOpen) { setIsReceiptModalOpen(false); return true; }
           if (isTxModalOpen) { setIsTxModalOpen(false); return true; }
@@ -1350,11 +1358,7 @@ PART8_APP = """
       useEffect(() => {
         if (!isUnlocked) return;
         NotificationBridgeService.syncReminder(StorageService.getReminderSettings());
-        const timer = setTimeout(() => {
-          handleCheckUpdate(false);
-        }, 1800);
-        return () => clearTimeout(timer);
-      }, [isUnlocked, handleCheckUpdate]);
+      }, [isUnlocked]);
 
       const handleFeedPet = useCallback(() => {
         const res = StorageService.feedPet();

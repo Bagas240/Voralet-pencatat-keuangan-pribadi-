@@ -43,7 +43,7 @@ def resolve_version():
     except OSError:
         pass
 
-    return '3.6.0'
+    return '3.7.0'
 
 
 def _rotl32(v: int, n: int) -> int:

@@ -209,7 +209,7 @@ HTML_HEAD = """<!DOCTYPE html>
       color: #F8FAFC !important;
     }
 
-    /* iOS 26 Dynamic Ambient Liquid Glass Canvas (Composited Background) */
+    /* iOS 26 Dynamic Ambient Canvas (Lightweight Flat Surface) */
     .ios-liquid-bg {
       position: fixed;
       inset: 0;
@@ -219,8 +219,6 @@ HTML_HEAD = """<!DOCTYPE html>
       z-index: 0;
       overflow: hidden;
       background: #F8FAFC;
-      transform: translateZ(0);
-      will-change: transform;
     }
     .ios-liquid-orb-1, .ios-liquid-orb-2 {
       display: none !important;
@@ -604,9 +602,14 @@ HTML_HEAD = """<!DOCTYPE html>
                   color 240ms cubic-bezier(0.32, 0.72, 0, 1) !important;
     }
 
-    /* Battery Saver: Freeze all CSS animations when app is backgrounded or tab hidden */
+    /* Battery Saver: Freeze CSS animations when backgrounded or paused */
     html.voralet-paused *,
-    .voralet-paused * {
+    .voralet-paused *,
+    html.voralet-modal-open #root .animate-flame,
+    html.voralet-modal-open #root .animate-pet-idle,
+    html.voralet-modal-open #root .animate-pet-tail-idle,
+    html.voralet-modal-open #root .animate-pet-blink,
+    html.voralet-modal-open #root .animate-pulse {
       animation-play-state: paused !important;
     }
 
@@ -676,15 +679,11 @@ HTML_HEAD = """<!DOCTYPE html>
       -webkit-backface-visibility: hidden;
     }
 
-    /* iOS Dialog Pop-In and Pop-Out (Spring-Physics Alert Animations) */
+    /* Smooth iOS Dialog Pop-In and Pop-Out (Refined without jarring bounce) */
     @keyframes iosPopIn {
       0% {
         opacity: 0;
-        transform: scale3d(0.88, 0.88, 1) translate3d(0, 14px, 0);
-      }
-      70% {
-        opacity: 1;
-        transform: scale3d(1.02, 1.02, 1) translate3d(0, -2px, 0);
+        transform: scale3d(0.95, 0.95, 1) translate3d(0, 14px, 0);
       }
       100% {
         opacity: 1;
@@ -698,20 +697,16 @@ HTML_HEAD = """<!DOCTYPE html>
       }
       100% {
         opacity: 0;
-        transform: scale3d(0.88, 0.88, 1) translate3d(0, 14px, 0);
+        transform: scale3d(0.96, 0.96, 1) translate3d(0, 12px, 0);
       }
     }
     .animate-ios-pop-in {
-      animation: iosPopIn 0.36s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-      will-change: transform, opacity;
-      transform: translateZ(0);
+      animation: iosPopIn 0.24s cubic-bezier(0.22, 1, 0.36, 1) forwards;
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
     }
     .animate-ios-pop-out {
-      animation: iosPopOut 0.32s cubic-bezier(0.32, 0.94, 0.4, 1) forwards;
-      will-change: transform, opacity;
-      transform: translateZ(0);
+      animation: iosPopOut 0.2s cubic-bezier(0.32, 0.72, 0, 1) forwards;
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
     }
@@ -758,28 +753,24 @@ HTML_HEAD = """<!DOCTYPE html>
       will-change: transform;
     }
 
-    /* Modal & Sheet Keyframes (Spring Physics with In/Out Scale Bounce) */
+    /* Modal & Sheet Keyframes (Authentic Smooth iOS Deceleration, Zero Glitches) */
     @keyframes iosSheetEnter {
       0% {
-        transform: translate3d(0, 36px, 0) scale(0.86);
+        transform: translate3d(0, 36px, 0);
         opacity: 0;
       }
-      65% {
-        transform: translate3d(0, -6px, 0) scale(1.02);
-        opacity: 1;
-      }
       100% {
-        transform: translate3d(0, 0, 0) scale(1);
+        transform: translate3d(0, 0, 0);
         opacity: 1;
       }
     }
     @keyframes iosSheetExit {
       0% {
-        transform: translate3d(0, 0, 0) scale(1);
+        transform: translate3d(0, 0, 0);
         opacity: 1;
       }
       100% {
-        transform: translate3d(0, 28px, 0) scale(0.84);
+        transform: translate3d(0, 40px, 0);
         opacity: 0;
       }
     }
@@ -792,26 +783,21 @@ HTML_HEAD = """<!DOCTYPE html>
       100% { opacity: 0; }
     }
     .animate-ios-sheet {
-      animation: iosSheetEnter 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-      will-change: transform, opacity;
-      transform-origin: center bottom;
+      animation: iosSheetEnter 0.26s cubic-bezier(0.22, 1, 0.36, 1) forwards;
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
     }
     .animate-ios-sheet-exit {
-      animation: iosSheetExit 0.28s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-      will-change: transform, opacity;
-      transform-origin: center bottom;
+      animation: iosSheetExit 0.21s cubic-bezier(0.32, 0.72, 0, 1) forwards;
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
     }
     .animate-ios-backdrop {
-      animation: iosBackdropFadeIn 0.38s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-      will-change: opacity;
+      animation: iosBackdropFadeIn 0.24s cubic-bezier(0.22, 1, 0.36, 1) forwards;
     }
     .animate-ios-backdrop-exit {
-      animation: iosBackdropFadeOut 0.28s cubic-bezier(0.32, 0.94, 0.4, 1) forwards;
-      will-change: opacity;
+      animation: iosBackdropFadeOut 0.21s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+      pointer-events: none !important;
     }
 
     /* Receipt Scanner Laser & HUD Animations */
@@ -987,8 +973,7 @@ HTML_HEAD = """<!DOCTYPE html>
       animation: petWhiskerTwitch 0.6s ease-in-out infinite;
     }
     .animate-flame {
-      animation: flameFlicker 1.8s ease-in-out infinite;
-      will-change: transform, opacity;
+      animation: flameFlicker 2.2s ease-in-out infinite;
     }
     .animate-heart-float {
       animation: heartFloatUp 0.85s ease-out forwards;
@@ -1032,23 +1017,17 @@ HTML_HEAD = """<!DOCTYPE html>
       }
     }
     .animate-ios-tab-slide-forward {
-      animation: iosTabSlideForward 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-      will-change: transform, opacity;
-      transform: translateZ(0);
+      animation: iosTabSlideForward 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
     }
     .animate-ios-tab-slide-backward {
-      animation: iosTabSlideBackward 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-      will-change: transform, opacity;
-      transform: translateZ(0);
+      animation: iosTabSlideBackward 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
     }
     .animate-ios-tab-view {
-      animation: iosTabFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-      will-change: transform, opacity;
-      transform: translateZ(0);
+      animation: iosTabFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
     }
@@ -1064,8 +1043,6 @@ HTML_HEAD = """<!DOCTYPE html>
     }
     .animate-ios-tab-view-exit {
       animation: iosTabFadeOut 0.16s cubic-bezier(0.32, 0.94, 0.4, 1) forwards;
-      will-change: transform, opacity;
-      transform: translateZ(0);
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
     }
@@ -1083,8 +1060,6 @@ HTML_HEAD = """<!DOCTYPE html>
     }
     .animate-dashboard-card {
       animation: dashboardCardEntry 0.32s cubic-bezier(0.28, 0.84, 0.42, 1) both;
-      will-change: transform, opacity;
-      transform: translateZ(0);
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
     }
@@ -1097,8 +1072,6 @@ HTML_HEAD = """<!DOCTYPE html>
     .animate-value-pulse {
       animation: valuePulseHighlight 0.22s cubic-bezier(0.16, 1, 0.3, 1);
       display: inline-block;
-      will-change: transform;
-      transform: translateZ(0);
     }
 
     @keyframes txCardEntry {
@@ -1113,8 +1086,6 @@ HTML_HEAD = """<!DOCTYPE html>
     }
     .animate-tx-card-entry {
       animation: txCardEntry 0.28s cubic-bezier(0.28, 0.84, 0.42, 1) both;
-      will-change: transform, opacity;
-      transform: translateZ(0);
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
     }
@@ -1260,24 +1231,31 @@ HTML_HEAD = """<!DOCTYPE html>
       -webkit-backface-visibility: hidden;
     }
 
-    /* Modal Backdrop & Card (iOS 26 Liquid Glass Sheet) */
+    /* Modal Backdrop & Card (Full-Viewport Portal Sheet & Centered Dialogs) */
     .ios-modal-backdrop {
       position: fixed;
       inset: 0;
-      z-index: 80;
+      width: 100%;
+      height: 100%;
+      z-index: 90;
       display: flex;
       align-items: flex-end;
       justify-content: center;
-      background-color: rgba(15, 23, 42, 0.6);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
+      background-color: rgba(15, 23, 42, 0.56);
       overscroll-behavior: contain;
-      padding: 0;
+      padding: calc(var(--safe-top) + 0.75rem) 0 0 0;
+    }
+    html.dark .ios-modal-backdrop, .dark .ios-modal-backdrop {
+      background-color: rgba(2, 6, 23, 0.72);
+    }
+    .ios-modal-backdrop.ios-modal-center {
+      align-items: center !important;
+      padding: max(1rem, calc(var(--safe-top) + 0.75rem)) 1rem max(1rem, calc(var(--safe-bottom) + 0.75rem)) !important;
     }
     @media (min-width: 640px) {
       .ios-modal-backdrop {
         align-items: center;
-        padding: 1.25rem;
+        padding: max(1.25rem, calc(var(--safe-top) + 0.75rem)) 1.25rem max(1.25rem, calc(var(--safe-bottom) + 0.75rem));
       }
     }
     .ios-modal-card {
@@ -1292,14 +1270,19 @@ HTML_HEAD = """<!DOCTYPE html>
       background: #FFFFFF;
       border: 1px solid #E2E8F0;
       border-bottom: none;
-      box-shadow: 0 -10px 32px -6px rgba(15, 23, 42, 0.14);
+      box-shadow: 0 -10px 32px -6px rgba(15, 23, 42, 0.16);
       color: #0F172A;
-      padding-bottom: max(var(--safe-bottom), 0.5rem);
-      will-change: transform;
-      transform: translateZ(0);
+      padding-bottom: max(var(--safe-bottom), 0.75rem);
       -webkit-backface-visibility: hidden;
       backface-visibility: hidden;
       contain: layout style;
+    }
+    .ios-modal-backdrop.ios-modal-center .ios-modal-card {
+      border-radius: 1.65rem !important;
+      border: 1px solid #E2E8F0 !important;
+      padding-bottom: 0 !important;
+      max-height: calc(100dvh - var(--safe-top) - var(--safe-bottom) - 1.75rem);
+      box-shadow: 0 20px 44px -10px rgba(15, 23, 42, 0.24) !important;
     }
     .dark .ios-modal-card, html.dark .ios-modal-card {
       background: #1E293B !important;
@@ -1308,10 +1291,16 @@ HTML_HEAD = """<!DOCTYPE html>
       box-shadow: 0 -12px 38px -6px rgba(0, 0, 0, 0.65) !important;
       color: #F8FAFC !important;
     }
+    .dark .ios-modal-backdrop.ios-modal-center .ios-modal-card,
+    html.dark .ios-modal-backdrop.ios-modal-center .ios-modal-card {
+      border: 1px solid #334155 !important;
+      box-shadow: 0 24px 52px -12px rgba(0, 0, 0, 0.78) !important;
+    }
     @media (min-width: 640px) {
       .ios-modal-card {
         border-radius: 1.5rem;
         border-bottom: 1px solid #E2E8F0;
+        padding-bottom: 0;
         max-height: calc(100dvh - var(--safe-top) - var(--safe-bottom) - 2rem);
       }
       .dark .ios-modal-card, html.dark .ios-modal-card {
@@ -1327,7 +1316,10 @@ HTML_HEAD = """<!DOCTYPE html>
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
       overscroll-behavior: contain;
-      padding-bottom: calc(4rem + var(--safe-bottom)) !important;
+      padding-bottom: calc(1.5rem + var(--safe-bottom)) !important;
+    }
+    .ios-modal-backdrop.ios-modal-center .ios-modal-body {
+      padding-bottom: 1.25rem !important;
     }
 
     /* Popover spring */

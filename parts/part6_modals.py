@@ -10,7 +10,7 @@ PART6_MODALS = """
       const [date, setDate] = useState(() => getLocalDateString());
       const [notes, setNotes] = useState('');
       const [error, setError] = useState('');
-      const { shouldRender, isClosing, handleClose: baseClose } = useModalLifecycle(isOpen, onClose, 350);
+      const { shouldRender, isClosing, handleClose: baseClose } = useModalLifecycle(isOpen, onClose, 230);
 
       // Inline Custom Category Creation State
       const [showAddCategory, setShowAddCategory] = useState(false);
@@ -64,14 +64,20 @@ PART6_MODALS = """
         reader.readAsDataURL(file);
       };
 
-      const handleClose = () => {
+      const handleClose = useCallback((opts) => {
         setShowAddCategory(false);
         setNewCatName('');
         setShowReceiptLightbox(false);
-        baseClose();
-      };
+        baseClose(opts);
+      }, [baseClose]);
 
       useEffect(() => {
+        if (!isOpen) {
+          setShowAddCategory(false);
+          setNewCatName('');
+          setShowReceiptLightbox(false);
+          return;
+        }
         if (initialData) {
           setType(initialData.type || 'EXPENSE');
           setAmountStr(initialData.amount ? String(initialData.amount) : '');
@@ -92,6 +98,14 @@ PART6_MODALS = """
           setAccountId(accounts[0].id);
         }
       }, [initialData, accounts, isOpen]);
+
+      useEffect(() => {
+        if (!showReceiptLightbox) return;
+        return registerVoraletBackHandler(() => {
+          setShowReceiptLightbox(false);
+          return true;
+        });
+      }, [showReceiptLightbox]);
 
       if (!shouldRender) return null;
 
@@ -154,6 +168,7 @@ PART6_MODALS = """
       };
 
       return (
+        <ModalPortal>
         <div className={`ios-modal-backdrop ${isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'}`}
              onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}>
           <div className={`ios-modal-card bg-white dark:bg-slate-800 ${isClosing ? 'animate-ios-sheet-exit' : 'animate-ios-sheet'}`}>
@@ -163,12 +178,12 @@ PART6_MODALS = """
               <ModalCloseButton onClick={handleClose} />
             </div>
 
-            <form onSubmit={handleSubmit} className="ios-modal-body flex-1 overflow-y-auto pb-28 p-4 sm:p-5 space-y-4 no-scrollbar">
+            <form onSubmit={handleSubmit} className="ios-modal-body flex-1 overflow-y-auto pb-6 p-4 sm:p-5 space-y-4 no-scrollbar">
               {onOpenReceiptScanner && (
                 <button
                   type="button"
                   onClick={() => {
-                    handleClose();
+                    handleClose({ immediate: true });
                     onOpenReceiptScanner();
                   }}
                   className="w-full py-2.5 px-3.5 rounded-2xl bg-amber-50 dark:bg-slate-900 border border-amber-200 dark:border-amber-500/40 text-amber-900 dark:text-amber-200 flex items-center justify-between text-xs font-bold shadow-xs hover:bg-amber-100/70 dark:hover:bg-slate-800 transition-all ios-btn-tap"
@@ -437,8 +452,9 @@ PART6_MODALS = """
 
               {/* Lightbox Modal for Receipt Photo */}
               {showReceiptLightbox && receiptImage && (
+                <ModalPortal>
                 <div
-                  className="fixed inset-0 z-[120] bg-black/85 backdrop-blur-sm flex flex-col items-center justify-center p-4"
+                  className="fixed inset-0 z-[120] bg-black/88 flex flex-col items-center justify-center p-4"
                   onClick={() => setShowReceiptLightbox(false)}
                 >
                   <div className="relative max-w-sm sm:max-w-md w-full max-h-[85vh] flex flex-col items-center" onClick={(e) => e.stopPropagation()}>
@@ -459,6 +475,7 @@ PART6_MODALS = """
                     />
                   </div>
                 </div>
+                </ModalPortal>
               )}
 
               <div className="pt-2">
@@ -475,6 +492,7 @@ PART6_MODALS = """
             </form>
           </div>
         </div>
+        </ModalPortal>
       );
     };
 
@@ -801,7 +819,7 @@ PART6_MODALS = """
       const [selectedTheme, setSelectedTheme] = useState('bca');
       const [initialBalance, setInitialBalance] = useState('');
       const [editingAcc, setEditingAcc] = useState(null);
-      const { shouldRender, isClosing, handleClose } = useModalLifecycle(isOpen, onClose, 350);
+      const { shouldRender, isClosing, handleClose } = useModalLifecycle(isOpen, onClose, 230);
       const [localHideBalance, setLocalHideBalance] = useState(hideBalance);
 
       const safeAccounts = Array.isArray(accounts) ? accounts.filter(Boolean) : [];
@@ -823,6 +841,15 @@ PART6_MODALS = """
           setType('Bank');
         }
       }, [isOpen]);
+
+      useEffect(() => {
+        if (!isOpen || !isAdding) return;
+        return registerVoraletBackHandler(() => {
+          setIsAdding(false);
+          setEditingAcc(null);
+          return true;
+        });
+      }, [isOpen, isAdding]);
 
       const totalBalance = useMemo(() => {
         return Ledger.getTotalBalance(safeAccounts, safeTransactions);
@@ -900,6 +927,7 @@ PART6_MODALS = """
         : (Math.max(0, safeAccounts.length - 1) * 62 + 155);
 
       return (
+        <ModalPortal>
         <div
           className={`ios-modal-backdrop ${isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'}`}
           onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
@@ -1238,6 +1266,7 @@ PART6_MODALS = """
             </div>
           </div>
         </div>
+        </ModalPortal>
       );
     };
 
@@ -1247,7 +1276,7 @@ PART6_MODALS = """
       const [currentAmount, setCurrentAmount] = useState('0');
       const [targetDate, setTargetDate] = useState('');
       const [accountId, setAccountId] = useState(() => accounts?.[0]?.id || '');
-      const { shouldRender, isClosing, handleClose } = useModalLifecycle(isOpen, onClose, 350);
+      const { shouldRender, isClosing, handleClose } = useModalLifecycle(isOpen, onClose, 230);
 
       useEffect(() => {
         if (goalToEdit) {
@@ -1289,6 +1318,7 @@ PART6_MODALS = """
       };
 
       return (
+        <ModalPortal>
         <div className={`ios-modal-backdrop ${isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'}`}
              onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}>
           <div className={`ios-modal-card bg-white dark:bg-slate-800 ${isClosing ? 'animate-ios-sheet-exit' : 'animate-ios-sheet'}`}>
@@ -1300,7 +1330,7 @@ PART6_MODALS = """
               <ModalCloseButton onClick={handleClose} />
             </div>
 
-            <form onSubmit={handleSubmit} className="ios-modal-body flex-1 overflow-y-auto pb-28 p-4 sm:p-5 space-y-4 no-scrollbar">
+            <form onSubmit={handleSubmit} className="ios-modal-body flex-1 overflow-y-auto pb-6 p-4 sm:p-5 space-y-4 no-scrollbar">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Nama Impian</label>
                 <input
@@ -1404,6 +1434,7 @@ PART6_MODALS = """
             </form>
           </div>
         </div>
+        </ModalPortal>
       );
     };
 
@@ -1416,7 +1447,7 @@ PART6_MODALS = """
       const [newPin, setNewPin] = useState('');
       const [confirmPin, setConfirmPin] = useState('');
       const [pinMsg, setPinMsg] = useState({ text: '', isError: false });
-      const { shouldRender, isClosing, handleClose } = useModalLifecycle(isOpen, onClose, 350);
+      const { shouldRender, isClosing, handleClose } = useModalLifecycle(isOpen, onClose, 230);
 
       // Custom Category Management in Settings
       const [isManagingCategories, setIsManagingCategories] = useState(false);
@@ -1548,6 +1579,7 @@ PART6_MODALS = """
       };
 
       return (
+        <ModalPortal>
         <div className={`ios-modal-backdrop ${isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'}`}
              onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}>
           <div className={`ios-modal-card bg-white dark:bg-slate-800 ${isClosing ? 'animate-ios-sheet-exit' : 'animate-ios-sheet'}`}>
@@ -1557,7 +1589,7 @@ PART6_MODALS = """
               <ModalCloseButton onClick={handleClose} />
             </div>
 
-            <div className="ios-modal-body flex-1 overflow-y-auto pb-28 p-4 sm:p-5 space-y-5 no-scrollbar">
+            <div className="ios-modal-body flex-1 overflow-y-auto pb-6 p-4 sm:p-5 space-y-5 no-scrollbar">
               {/* Profil Identitas */}
               <form onSubmit={handleSaveProfile} className="p-4 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700 shadow-[0_4px_16px_rgba(15,23,42,0.08)] dark:shadow-[0_6px_20px_rgba(0,0,0,0.4)] space-y-4">
                 <div className="flex items-center gap-4">
@@ -1999,7 +2031,7 @@ PART6_MODALS = """
                   <button
                     type="button"
                     onClick={() => {
-                      handleClose();
+                      handleClose({ immediate: true });
                       if (onOpenCsvImport) onOpenCsvImport();
                     }}
                     className="px-3 py-1.5 bg-brand hover:bg-brand-hover text-white text-xs font-bold rounded-xl shrink-0 shadow-xs ios-btn-tap flex items-center gap-1"
@@ -2057,7 +2089,7 @@ PART6_MODALS = """
                 <button
                   type="button"
                   onClick={() => {
-                    handleClose();
+                    handleClose({ immediate: true });
                     if (onOpenMonthlyPdfReport) onOpenMonthlyPdfReport();
                   }}
                   className="w-full py-2.5 bg-sky-50 hover:bg-sky-100 dark:bg-slate-700/60 dark:hover:bg-slate-700 text-brand dark:text-sky-300 text-xs font-bold rounded-xl border border-sky-200/80 dark:border-slate-600 flex items-center justify-center gap-2 ios-btn-tap shadow-xs"
@@ -2222,6 +2254,7 @@ PART6_MODALS = """
             </div>
           </div>
         </div>
+        </ModalPortal>
       );
     };
 
@@ -2243,7 +2276,7 @@ PART6_MODALS = """
       const [targetAccountId, setTargetAccountId] = useState(accounts[0]?.id || '');
       const [hasHeaderRow, setHasHeaderRow] = useState(true);
       const [errorMessage, setErrorMessage] = useState('');
-      const { shouldRender, isClosing, handleClose } = useModalLifecycle(isOpen, onClose, 350);
+      const { shouldRender, isClosing, handleClose } = useModalLifecycle(isOpen, onClose, 230);
       const [importStats, setImportStats] = useState({ total: 0, expenses: 0, incomes: 0, sumAmount: 0 });
 
       // Column mapping states
@@ -2428,6 +2461,7 @@ PART6_MODALS = """
       };
 
       return (
+        <ModalPortal>
         <div className={`ios-modal-backdrop ${isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'}`}
              onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}>
           <div className={`ios-modal-card bg-white dark:bg-slate-800 ${isClosing ? 'animate-ios-sheet-exit' : 'animate-ios-sheet'} max-w-lg mx-auto`}>
@@ -2449,7 +2483,7 @@ PART6_MODALS = """
               <ModalCloseButton onClick={handleClose} />
             </div>
 
-            <div className="ios-modal-body flex-1 overflow-y-auto pb-28 p-4 sm:p-5 space-y-4 no-scrollbar">
+            <div className="ios-modal-body flex-1 overflow-y-auto pb-6 p-4 sm:p-5 space-y-4 no-scrollbar">
               {/* STEP 1: Upload or Paste CSV */}
               {step === 1 && (
                 <div className="space-y-4">
@@ -2800,6 +2834,7 @@ PART6_MODALS = """
             </div>
           </div>
         </div>
+        </ModalPortal>
       );
     };
 
@@ -2813,7 +2848,7 @@ PART6_MODALS = """
       onClose,
       streakData = {}
     }) => {
-      const { shouldRender, isClosing, handleClose } = useModalLifecycle(isOpen, onClose, 350);
+      const { shouldRender, isClosing, handleClose } = useModalLifecycle(isOpen, onClose, 230);
 
       if (!shouldRender) return null;
 
@@ -2828,6 +2863,7 @@ PART6_MODALS = """
       const currentLvlObj = getStreakLevelMeta(level, isPadam);
 
       return (
+        <ModalPortal>
         <div
           className={`ios-modal-backdrop ${isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'}`}
           onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
@@ -2998,6 +3034,7 @@ PART6_MODALS = """
             </div>
           </div>
         </div>
+        </ModalPortal>
       );
     };
 
@@ -3015,7 +3052,7 @@ PART6_MODALS = """
       onPlayPet,
       showToast
     }) => {
-      const { shouldRender, isClosing, handleClose } = useModalLifecycle(isOpen, onClose, 350);
+      const { shouldRender, isClosing, handleClose } = useModalLifecycle(isOpen, onClose, 230);
       const [outfit, setOutfit] = useState(petData?.outfit || 'NONE');
       const [currentAction, setCurrentAction] = useState('idle');
       const actionTimeoutRef = useRef(null);
@@ -3132,6 +3169,7 @@ PART6_MODALS = """
       const isPetSad = (petData.fullness || 50) < 30 || (petData.happiness || 50) < 30;
 
       return (
+        <ModalPortal>
         <div
           className={`ios-modal-backdrop ${isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'}`}
           onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
@@ -3388,6 +3426,7 @@ PART6_MODALS = """
             </div>
           </div>
         </div>
+        </ModalPortal>
       );
     };
 
@@ -3409,7 +3448,7 @@ PART6_MODALS = """
       hideBalance,
       onExportExcel
     }) => {
-      const { shouldRender, isClosing, handleClose } = useModalLifecycle(isOpen, onClose, 350);
+      const { shouldRender, isClosing, handleClose } = useModalLifecycle(isOpen, onClose, 230);
 
       const availableMonths = useMemo(() => {
         return PdfReportService.getAvailableMonths(transactions);
@@ -3490,6 +3529,7 @@ PART6_MODALS = """
       const lastMonthKey = `${lastMonthDate.getFullYear()}-${String(lastMonthDate.getMonth() + 1).padStart(2, '0')}`;
 
       return (
+        <ModalPortal>
         <div
           className={`ios-modal-backdrop ${isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'}`}
           onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
@@ -3877,6 +3917,7 @@ PART6_MODALS = """
             </div>
           </div>
         </div>
+        </ModalPortal>
       );
     };
 
@@ -3907,7 +3948,7 @@ PART6_MODALS = """
 
       const fileInputRef = useRef(null);
       const galleryInputRef = useRef(null);
-      const { shouldRender, isClosing, handleClose } = useModalLifecycle(isOpen, onClose, 350);
+      const { shouldRender, isClosing, handleClose } = useModalLifecycle(isOpen, onClose, 230);
 
       const allCategories = useMemo(() => {
         return getAllCategories(customCategories).filter(c => c.type === 'ALL' || c.type === 'EXPENSE');
@@ -4073,6 +4114,7 @@ PART6_MODALS = """
       };
 
       return (
+        <ModalPortal>
         <div
           className={`ios-modal-backdrop ${isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'}`}
           onClick={(e) => { if (e.target === e.currentTarget && !isScanning) handleClose(); }}
@@ -4384,6 +4426,7 @@ PART6_MODALS = """
             </div>
           )}
         </div>
+        </ModalPortal>
       );
     };
 
@@ -4391,16 +4434,17 @@ PART6_MODALS = """
     // GITHUB RELEASE AUTO-UPDATE PROMPT MODAL
     // =========================================================================
     const UpdatePromptModal = ({ isOpen, onClose, updateInfo, onUpdateNow }) => {
-      const { shouldRender, isClosing, handleClose } = useModalLifecycle(isOpen, onClose, 300);
+      const { shouldRender, isClosing, handleClose } = useModalLifecycle(isOpen, onClose, 220);
 
       if (!shouldRender || !updateInfo) return null;
 
       return (
+        <ModalPortal>
         <div
-          className={`ios-modal-backdrop ${isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'}`}
+          className={`ios-modal-backdrop ios-modal-center ${isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'}`}
           onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
         >
-          <div className={`ios-modal-card bg-white dark:bg-slate-800 max-w-sm mx-auto rounded-[28px] p-5 shadow-2xl border border-slate-100 dark:border-slate-700 ${
+          <div className={`ios-modal-card bg-white dark:bg-slate-800 max-w-sm mx-auto rounded-[26px] p-5 shadow-2xl border border-slate-100 dark:border-slate-700 ${
             isClosing ? 'animate-ios-pop-out' : 'animate-ios-pop-in'
           }`}>
             <div className="flex items-start justify-between gap-3 mb-3">
@@ -4447,6 +4491,7 @@ PART6_MODALS = """
             </div>
           </div>
         </div>
+        </ModalPortal>
       );
     };
 """

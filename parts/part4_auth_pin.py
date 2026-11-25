@@ -534,22 +534,25 @@ PART4_AUTH_PIN = """
     };
 
     // Forgot PIN recovery is destructive because username-only verification cannot protect old data.
-    const ForgotPinModal = ({ storedUsername, storedName, onClose, onResetPin }) => {
+    const ForgotPinModal = ({ isOpen, storedUsername, storedName, onClose, onResetPin }) => {
       const [step, setStep] = useState(1);
       const [inputUsername, setInputUsername] = useState('');
       const [verifyError, setVerifyError] = useState('');
       const [newPin, setNewPin] = useState('');
       const [confirmPin, setConfirmPin] = useState('');
       const [pinError, setPinError] = useState('');
-      const [isClosing, setIsClosing] = useState(false);
+      const { shouldRender, isClosing, handleClose } = useModalLifecycle(isOpen, onClose, 220);
 
-      const handleClose = () => {
-        setIsClosing(true);
-        setTimeout(() => {
-          setIsClosing(false);
-          onClose();
-        }, 380);
-      };
+      useEffect(() => {
+        if (!isOpen) {
+          setStep(1);
+          setInputUsername('');
+          setVerifyError('');
+          setNewPin('');
+          setConfirmPin('');
+          setPinError('');
+        }
+      }, [isOpen]);
 
       const handleVerifyUsername = (e) => {
         e.preventDefault();
@@ -586,20 +589,22 @@ PART4_AUTH_PIN = """
         });
       };
 
+      if (!shouldRender) return null;
+
       return (
-        <div className={`ios-modal-backdrop ${isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'}`}
-             onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}>
-          <div className={`ios-modal-card bg-white dark:bg-[#121212] border border-slate-200 dark:border-[#27272A] p-5 ${isClosing ? 'animate-ios-sheet-exit' : 'animate-ios-sheet'}`}>
-            <ModalDragHandle onDismiss={handleClose} />
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-[#27272A]">
-              <div className="flex items-center gap-2">
-                <IconBadge icon="lock" className="p-2 rounded-xl bg-sky-100 dark:bg-[#1C1C1E] text-brand dark:text-sky-400" />
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                  {step === 1 ? 'Verifikasi Lupa PIN' : 'Buat PIN Baru'}
-                </h3>
+        <ModalPortal>
+          <div className={`ios-modal-backdrop ios-modal-center ${isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'}`}
+               onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}>
+            <div className={`ios-modal-card bg-white dark:bg-[#121212] border border-slate-200 dark:border-[#27272A] p-5 max-w-sm mx-auto ${isClosing ? 'animate-ios-pop-out' : 'animate-ios-pop-in'}`}>
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-[#27272A]">
+                <div className="flex items-center gap-2">
+                  <IconBadge icon="lock" className="p-2 rounded-xl bg-sky-100 dark:bg-[#1C1C1E] text-brand dark:text-sky-400" />
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                    {step === 1 ? 'Verifikasi Lupa PIN' : 'Buat PIN Baru'}
+                  </h3>
+                </div>
+                <ModalCloseButton onClick={handleClose} />
               </div>
-              <ModalCloseButton onClick={handleClose} />
-            </div>
 
             {step === 1 ? (
               <form onSubmit={handleVerifyUsername} className="pt-4 space-y-4">
@@ -623,7 +628,6 @@ PART4_AUTH_PIN = """
                       }}
                       placeholder="username_kamu"
                       className="w-full pl-8 pr-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-[#27272A] bg-slate-50 dark:bg-[#181818] text-slate-900 dark:text-white text-xs font-mono focus:outline-none focus:border-brand dark:focus:border-sky-400 transition-colors"
-                      autoFocus
                     />
                   </div>
                   {verifyError && (
@@ -670,7 +674,6 @@ PART4_AUTH_PIN = """
                     }}
                     placeholder="••••••"
                     className="w-full px-3.5 py-2.5 rounded-xl border-2 border-slate-300 dark:border-zinc-700 bg-white dark:bg-[#181818] text-slate-900 dark:text-white text-center tracking-widest text-sm font-bold focus:outline-none focus:border-brand dark:focus:border-sky-400 transition-colors"
-                    autoFocus
                   />
                 </div>
                 <div>
@@ -714,8 +717,9 @@ PART4_AUTH_PIN = """
                 </div>
               </form>
             )}
+            </div>
           </div>
-        </div>
+        </ModalPortal>
       );
     };
 
@@ -807,18 +811,17 @@ PART4_AUTH_PIN = """
             </div>
           </div>
 
-          {isForgotModalOpen && (
-            <ForgotPinModal
-              storedUsername={username}
-              storedName={userName}
-              onClose={() => setIsForgotModalOpen(false)}
-              onResetPin={(newPin) => {
-                onResetPin(newPin);
-                setIsForgotModalOpen(false);
-                setPin('');
-              }}
-            />
-          )}
+          <ForgotPinModal
+            isOpen={isForgotModalOpen}
+            storedUsername={username}
+            storedName={userName}
+            onClose={() => setIsForgotModalOpen(false)}
+            onResetPin={(newPin) => {
+              onResetPin(newPin);
+              setIsForgotModalOpen(false);
+              setPin('');
+            }}
+          />
           </div>
         </div>
       );

@@ -6,57 +6,23 @@ PART5_DEBTS_MILESTONES = """
     // TIKTOK-STYLE STREAK FLAME CARD (Api Streak 24 Jam dengan Timer Mundur)
     // =========================================================================
     const TikTokStreakFlameCard = ({ streakData = {}, onOpenStreakModal, onTriggerAction }) => {
-      const [remainingMs, setRemainingMs] = useState(0);
-
       const currentStreak = Number(streakData?.currentStreak) || 0;
       const level = Number(streakData?.level) || 0;
       const lastActivityTs = Number(streakData?.lastActivityTimestamp) || 0;
       const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
 
-      useEffect(() => {
-        let interval = null;
-        const updateRemaining = () => {
-          if (!lastActivityTs) {
-            setRemainingMs(0);
-            return;
-          }
-          const expireTime = lastActivityTs + TWENTY_FOUR_HOURS;
-          const left = Math.max(0, expireTime - Date.now());
-          setRemainingMs(left);
-        };
+      const computeRemaining = () => {
+        if (!lastActivityTs) return 0;
+        return Math.max(0, lastActivityTs + TWENTY_FOUR_HOURS - Date.now());
+      };
 
-        const startTimer = () => {
-          updateRemaining();
-          if (!interval) {
-            interval = setInterval(updateRemaining, 1000);
-          }
-        };
-
-        const stopTimer = () => {
-          if (interval) {
-            clearInterval(interval);
-            interval = null;
-          }
-        };
-
-        startTimer();
-
-        const handleVisibility = () => {
-          if (document.hidden) {
-            stopTimer();
-          } else {
-            startTimer();
-          }
-        };
-
-        document.addEventListener('visibilitychange', handleVisibility);
-        return () => {
-          stopTimer();
-          document.removeEventListener('visibilitychange', handleVisibility);
-        };
-      }, [lastActivityTs]);
-
-      const isPadam = currentStreak === 0 || remainingMs <= 0 || Boolean(streakData?.isExpired);
+      const initialRem = computeRemaining();
+      const [statusFlags, setStatusFlags] = useState(() => ({
+        isPadam: currentStreak === 0 || initialRem <= 0 || Boolean(streakData?.isExpired),
+        isUrgent: initialRem > 0 && initialRem < 4 * 3600 * 1000
+      }));
+      const countdownRef = useRef(null);
+      const progressBarRef = useRef(null);
 
       // Format remaining time into HH:MM:SS
       const formatCountdown = (ms) => {
@@ -68,7 +34,68 @@ PART5_DEBTS_MILESTONES = """
         return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
       };
 
-      const percentLeft = Math.min(100, Math.max(0, (remainingMs / TWENTY_FOUR_HOURS) * 100));
+      useEffect(() => {
+        let interval = null;
+
+        const syncDisplay = () => {
+          const left = lastActivityTs ? Math.max(0, lastActivityTs + TWENTY_FOUR_HOURS - Date.now()) : 0;
+          const nextPadam = currentStreak === 0 || left <= 0 || Boolean(streakData?.isExpired);
+          const nextUrgent = !nextPadam && left < 4 * 3600 * 1000;
+
+          if (countdownRef.current) {
+            countdownRef.current.textContent = nextPadam ? 'Padam 💤' : formatCountdown(left);
+          }
+          if (progressBarRef.current) {
+            const pct = Math.min(100, Math.max(0, (left / TWENTY_FOUR_HOURS) * 100));
+            progressBarRef.current.style.width = nextPadam ? '0%' : `${pct}%`;
+          }
+
+          setStatusFlags(prev => {
+            if (prev.isPadam === nextPadam && prev.isUrgent === nextUrgent) return prev;
+            return { isPadam: nextPadam, isUrgent: nextUrgent };
+          });
+        };
+
+        const shouldRun = () => {
+          if (typeof document === 'undefined') return true;
+          return !document.hidden && !document.documentElement.classList.contains('voralet-modal-open');
+        };
+
+        const startTimer = () => {
+          syncDisplay();
+          if (!interval && shouldRun() && currentStreak > 0 && lastActivityTs > 0) {
+            interval = setInterval(syncDisplay, 1000);
+          }
+        };
+
+        const stopTimer = () => {
+          if (interval) {
+            clearInterval(interval);
+            interval = null;
+          }
+        };
+
+        const handleStateChange = () => {
+          if (shouldRun()) {
+            startTimer();
+          } else {
+            stopTimer();
+          }
+        };
+
+        startTimer();
+        document.addEventListener('visibilitychange', handleStateChange);
+        window.addEventListener('voralet-modal-state', handleStateChange);
+        return () => {
+          stopTimer();
+          document.removeEventListener('visibilitychange', handleStateChange);
+          window.removeEventListener('voralet-modal-state', handleStateChange);
+        };
+      }, [lastActivityTs, currentStreak, streakData?.isExpired]);
+
+      const isPadam = currentStreak === 0 || statusFlags.isPadam || Boolean(streakData?.isExpired);
+      const isUrgent = !isPadam && statusFlags.isUrgent;
+      const initialPct = Math.min(100, Math.max(0, (initialRem / TWENTY_FOUR_HOURS) * 100));
 
       // Dynamic Flame Level Configuration (Single Source of Truth)
       const levelMeta = getStreakLevelMeta(level, isPadam);
@@ -120,14 +147,17 @@ PART5_DEBTS_MILESTONES = """
               <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block">
                 {isPadam ? 'Status Api' : 'Sisa Waktu Nyala'}
               </span>
-              <div className={`text-xs font-mono font-black ${
-                isPadam
-                  ? 'text-slate-500'
-                  : remainingMs < 4 * 3600 * 1000
-                  ? 'text-rose-600 dark:text-rose-400 animate-pulse'
-                  : 'text-slate-900 dark:text-white'
-              }`}>
-                {isPadam ? 'Padam 💤' : formatCountdown(remainingMs)}
+              <div
+                ref={countdownRef}
+                className={`text-xs font-mono font-black ${
+                  isPadam
+                    ? 'text-slate-500'
+                    : isUrgent
+                    ? 'text-rose-600 dark:text-rose-400 animate-pulse'
+                    : 'text-slate-900 dark:text-white'
+                }`}
+              >
+                {isPadam ? 'Padam 💤' : formatCountdown(initialRem)}
               </div>
             </div>
           </div>
@@ -136,8 +166,9 @@ PART5_DEBTS_MILESTONES = """
           <div className="mt-3">
             <div className="w-full bg-slate-200/80 dark:bg-slate-700/80 h-2 rounded-full overflow-hidden shadow-inner">
               <div
-                className={`h-full transition-all duration-1000 rounded-full ${flameCfg.barColor}`}
-                style={{ width: isPadam ? '0%' : `${percentLeft}%` }}
+                ref={progressBarRef}
+                className={`h-full rounded-full ${flameCfg.barColor}`}
+                style={{ width: isPadam ? '0%' : `${initialPct}%` }}
               />
             </div>
           </div>
@@ -327,7 +358,7 @@ PART5_DEBTS_MILESTONES = """
       const [notes, setNotes] = useState('');
       const [accountId, setAccountId] = useState(() => accounts[0]?.id || '');
       const [recordToTransaction, setRecordToTransaction] = useState(true);
-      const { shouldRender, isClosing, handleClose } = useModalLifecycle(isOpen, onClose, 350);
+      const { shouldRender, isClosing, handleClose } = useModalLifecycle(isOpen, onClose, 220);
 
       useEffect(() => {
         if (debtToEdit) {
@@ -374,18 +405,18 @@ PART5_DEBTS_MILESTONES = """
       };
 
       return (
-        <div className={`ios-modal-backdrop ${isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'}`}
-             onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}>
-          <div className={`ios-modal-card bg-white dark:bg-slate-800 ${isClosing ? 'animate-ios-sheet-exit' : 'animate-ios-sheet'}`}>
-            <ModalDragHandle onDismiss={handleClose} />
-            <div className="ios-modal-header px-5 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800">
-              <h2 className="text-base font-bold text-slate-900 dark:text-white">
-                {debtToEdit ? 'Edit Catatan' : 'Catat Hutang / Piutang'}
-              </h2>
-              <ModalCloseButton onClick={handleClose} />
-            </div>
+        <ModalPortal>
+          <div className={`ios-modal-backdrop ios-modal-center ${isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'}`}
+               onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}>
+            <div className={`ios-modal-card bg-white dark:bg-slate-800 ${isClosing ? 'animate-ios-pop-out' : 'animate-ios-pop-in'}`}>
+              <div className="ios-modal-header px-5 py-3.5 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800">
+                <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                  {debtToEdit ? 'Edit Catatan' : 'Catat Hutang / Piutang'}
+                </h2>
+                <ModalCloseButton onClick={handleClose} />
+              </div>
 
-            <form onSubmit={handleSubmit} className="ios-modal-body flex-1 overflow-y-auto pb-28 p-4 sm:p-5 space-y-4 no-scrollbar">
+              <form onSubmit={handleSubmit} className="ios-modal-body flex-1 overflow-y-auto pb-5 p-4 sm:p-5 space-y-4 no-scrollbar">
               <div className="grid grid-cols-2 p-1 bg-slate-100 dark:bg-slate-900 rounded-xl">
                 <button
                   type="button"
@@ -424,7 +455,6 @@ PART5_DEBTS_MILESTONES = """
                   onChange={(e) => setPersonName(e.target.value)}
                   placeholder="Contoh: Rian / Bu Ani"
                   className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-900 dark:text-white focus:outline-none focus:border-brand"
-                  autoFocus
                 />
               </div>
 
@@ -532,6 +562,7 @@ PART5_DEBTS_MILESTONES = """
             </form>
           </div>
         </div>
+      </ModalPortal>
       );
     };
 
@@ -564,7 +595,7 @@ PART5_DEBTS_MILESTONES = """
           : `Terima cicilan ke-${nextInstallmentNum}: ${safeDebt.personName || ''}`
       ));
       const [error, setError] = useState('');
-      const { shouldRender, isClosing, handleClose } = useModalLifecycle(isOpen && !!debt, onClose, 350);
+      const { shouldRender, isClosing, handleClose } = useModalLifecycle(isOpen && !!debt, onClose, 220);
 
       useEffect(() => {
         if (debt) {
@@ -636,33 +667,33 @@ PART5_DEBTS_MILESTONES = """
       const estRemainingAfter = Math.max(0, remainingAmount - currentInputAmt);
 
       return (
-        <div className={`ios-modal-backdrop ${isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'}`}
-             onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}>
-          <div className={`ios-modal-card bg-white dark:bg-slate-800 ${isClosing ? 'animate-ios-sheet-exit' : 'animate-ios-sheet'}`}>
-            <ModalDragHandle onDismiss={handleClose} />
-            <div className="ios-modal-header px-5 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800">
-              <div className="flex items-center gap-2">
-                <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
-                  isHutang ? 'bg-rose-100 dark:bg-rose-900/50 text-rose-600' : 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600'
-                }`}>
-                  <Icon name={isHutang ? 'arrow-up-right' : 'arrow-down-left'} className="w-4 h-4" />
+        <ModalPortal>
+          <div className={`ios-modal-backdrop ios-modal-center ${isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'}`}
+               onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}>
+            <div className={`ios-modal-card bg-white dark:bg-slate-800 ${isClosing ? 'animate-ios-pop-out' : 'animate-ios-pop-in'}`}>
+              <div className="ios-modal-header px-5 py-3.5 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800">
+                <div className="flex items-center gap-2">
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+                    isHutang ? 'bg-rose-100 dark:bg-rose-900/50 text-rose-600' : 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600'
+                  }`}>
+                    <Icon name={isHutang ? 'arrow-up-right' : 'arrow-down-left'} className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                      <span>{isHutang ? 'Bayar Hutang' : 'Terima Piutang'}</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-semibold">
+                        Cicilan #{nextInstallmentNum}
+                      </span>
+                    </h2>
+                    <p className="text-[10px] text-slate-400 truncate max-w-[200px]">
+                      {debt.personName}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                    <span>{isHutang ? 'Bayar Hutang' : 'Terima Piutang'}</span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-semibold">
-                      Cicilan #{nextInstallmentNum}
-                    </span>
-                  </h2>
-                  <p className="text-[10px] text-slate-400 truncate max-w-[200px]">
-                    {debt.personName}
-                  </p>
-                </div>
+                <ModalCloseButton onClick={handleClose} />
               </div>
-              <ModalCloseButton onClick={handleClose} />
-            </div>
 
-            <form onSubmit={handleSubmit} className="ios-modal-body flex-1 overflow-y-auto pb-28 p-4 sm:p-5 space-y-4 no-scrollbar">
+              <form onSubmit={handleSubmit} className="ios-modal-body flex-1 overflow-y-auto pb-5 p-4 sm:p-5 space-y-4 no-scrollbar">
               {/* Two Direct Options: Lunas Semua vs Cicil */}
               <div className="grid grid-cols-2 p-1.5 bg-slate-100 dark:bg-slate-900 rounded-2xl gap-1">
                 <button
@@ -738,7 +769,6 @@ PART5_DEBTS_MILESTONES = """
                   }}
                   placeholder="Ketik nominal cicilan (cth: 13.000)"
                   className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-lg font-bold text-slate-900 dark:text-white focus:outline-none focus:border-brand"
-                  autoFocus
                 />
                 <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
                   {payMode === 'LUNAS'
@@ -838,6 +868,7 @@ PART5_DEBTS_MILESTONES = """
             </form>
           </div>
         </div>
+      </ModalPortal>
       );
     };
 
@@ -1256,7 +1287,14 @@ PART5_DEBTS_MILESTONES = """
                     hasPayments={hasPayments}
                     isHistoryOpen={isHistoryOpen}
                     onToggleStatus={onToggleStatus}
-                    onEditDebt={onEditDebt}
+                    onEditDebt={(debtItem) => {
+                      if (typeof onEditDebt === 'function') {
+                        onEditDebt(debtItem);
+                      } else {
+                        setSelectedDebt(debtItem);
+                        setIsModalOpen(true);
+                      }
+                    }}
                     onDeleteDebt={onDeleteDebt}
                     onPayDebt={setPayingDebt}
                     onToggleHistory={(id) => setExpandedPaymentsId(expandedPaymentsId === id ? null : id)}
@@ -1268,34 +1306,28 @@ PART5_DEBTS_MILESTONES = """
           )}
 
           {/* Add / Edit Debt Modal */}
-          {isModalOpen && (
-            <DebtModal
-              isOpen={isModalOpen}
-              debtToEdit={selectedDebt}
-              accounts={accounts}
-              onClose={() => setIsModalOpen(false)}
-              onSaveDebt={(data) => {
-                onAddDebt(data);
-                setIsModalOpen(false);
-              }}
-            />
-          )}
+          <DebtModal
+            isOpen={isModalOpen}
+            debtToEdit={selectedDebt}
+            accounts={accounts}
+            onClose={() => setIsModalOpen(false)}
+            onSaveDebt={(data) => {
+              onAddDebt(data);
+            }}
+          />
 
           {/* Pay Debt Modal */}
-          {payingDebt && (
-            <PayDebtModal
-              isOpen={Boolean(payingDebt)}
-              debt={payingDebt}
-              accounts={accounts}
-              onClose={() => setPayingDebt(null)}
-              onConfirmPayment={(paymentData) => {
-                if (typeof onPayDebt === 'function') {
-                  onPayDebt(payingDebt.id, paymentData);
-                }
-                setPayingDebt(null);
-              }}
-            />
-          )}
+          <PayDebtModal
+            isOpen={Boolean(payingDebt)}
+            debt={payingDebt}
+            accounts={accounts}
+            onClose={() => setPayingDebt(null)}
+            onConfirmPayment={(paymentData) => {
+              if (typeof onPayDebt === 'function' && payingDebt) {
+                onPayDebt(payingDebt.id, paymentData);
+              }
+            }}
+          />
         </div>
       );
     };

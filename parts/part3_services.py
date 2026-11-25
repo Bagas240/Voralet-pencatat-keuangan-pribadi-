@@ -1470,7 +1470,7 @@ PART3_SERVICES = """
         if (target.closest('.pin-keypad-screen')) return;
         setTimeout(() => {
           if (target && typeof target.scrollIntoView === 'function') {
-            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
           }
         }, 220);
       }
@@ -1480,7 +1480,7 @@ PART3_SERVICES = """
       setTimeout(() => {
         const active = document.activeElement;
         const isInput = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT');
-        if (!isInput) {
+        if (!isInput && window.scrollY > 0) {
           window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
         }
       }, 120);
@@ -1591,56 +1591,58 @@ PART3_SERVICES = """
 
     // Contextual Long-Press Popover Sheet
     const ContextualMenuModal = ({ isOpen, title, onClose, onEdit, onDuplicate }) => {
-      const { shouldRender, isClosing, handleClose } = useModalLifecycle(isOpen, onClose, 300);
+      const { shouldRender, isClosing, handleClose } = useModalLifecycle(isOpen, onClose, 220);
 
       if (!shouldRender) return null;
 
       return (
-        <div
-          className={`ios-modal-backdrop ${isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'}`}
-          onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
-        >
-          <div className={`ios-modal-card bg-white dark:bg-slate-800 p-4 max-w-xs mx-auto rounded-[24px] shadow-2xl border border-slate-100 dark:border-slate-700 ${
-            isClosing ? 'animate-ios-pop-out' : 'animate-ios-pop-in'
-          }`}>
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-700">
-              <span className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">{title || 'Pilihan Transaksi'}</span>
-              <button
-                type="button"
-                onClick={handleClose}
-                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors ios-btn-tap"
-                aria-label="Tutup"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-              </button>
-            </div>
-            <div className="pt-2 space-y-1">
-              {onEdit && (
+        <ModalPortal>
+          <div
+            className={`ios-modal-backdrop ios-modal-center ${isClosing ? 'animate-ios-backdrop-exit' : 'animate-ios-backdrop'}`}
+            onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
+          >
+            <div className={`ios-modal-card bg-white dark:bg-slate-800 p-4 max-w-xs mx-auto rounded-[24px] shadow-2xl border border-slate-100 dark:border-slate-700 ${
+              isClosing ? 'animate-ios-pop-out' : 'animate-ios-pop-in'
+            }`}>
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-700">
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">{title || 'Pilihan Transaksi'}</span>
                 <button
                   type="button"
-                  onClick={() => { handleClose(); onEdit(); }}
-                  className="w-full px-3 py-2.5 rounded-xl text-left text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-sky-50 dark:hover:bg-slate-700 flex items-center gap-2.5 ios-btn-tap"
+                  onClick={handleClose}
+                  className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors ios-btn-tap"
+                  aria-label="Tutup"
                 >
-                  <Icon name="edit" className="w-4 h-4 text-brand" />
-                  <span>Edit Transaksi</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
                 </button>
-              )}
-              {onDuplicate && (
-                <button
-                  type="button"
-                  onClick={() => { handleClose(); onDuplicate(); }}
-                  className="w-full px-3 py-2.5 rounded-xl text-left text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-sky-50 dark:hover:bg-slate-700 flex items-center gap-2.5 ios-btn-tap"
-                >
-                  <Icon name="duplicate" className="w-4 h-4 text-sky-500" />
-                  <span>Duplikat Transaksi</span>
-                </button>
-              )}
+              </div>
+              <div className="pt-2 space-y-1">
+                {onEdit && (
+                  <button
+                    type="button"
+                    onClick={() => { handleClose({ immediate: true }); onEdit(); }}
+                    className="w-full px-3 py-2.5 rounded-xl text-left text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-sky-50 dark:hover:bg-slate-700 flex items-center gap-2.5 ios-btn-tap"
+                  >
+                    <Icon name="edit" className="w-4 h-4 text-brand" />
+                    <span>Edit Transaksi</span>
+                  </button>
+                )}
+                {onDuplicate && (
+                  <button
+                    type="button"
+                    onClick={() => { handleClose(); onDuplicate(); }}
+                    className="w-full px-3 py-2.5 rounded-xl text-left text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-sky-50 dark:hover:bg-slate-700 flex items-center gap-2.5 ios-btn-tap"
+                  >
+                    <Icon name="duplicate" className="w-4 h-4 text-sky-500" />
+                    <span>Duplikat Transaksi</span>
+                  </button>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        </ModalPortal>
       );
     };
 
