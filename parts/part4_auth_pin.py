@@ -443,9 +443,17 @@ PART4_AUTH_PIN = """
       }, [onFinish]);
 
       return (
-        <div className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#0099FF] transition-all duration-400 ease-out select-none ${
-          isFadingOut ? 'opacity-0 scale-95 pointer-events-none' : 'opacity-100 scale-100'
-        }`}>
+        <div
+          style={{
+            paddingTop: 'var(--safe-top)',
+            paddingBottom: 'var(--safe-bottom)',
+            paddingLeft: 'var(--safe-left)',
+            paddingRight: 'var(--safe-right)'
+          }}
+          className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#0099FF] transition-all duration-400 ease-out select-none ${
+            isFadingOut ? 'opacity-0 scale-95 pointer-events-none' : 'opacity-100 scale-100'
+          }`}
+        >
           <div className="flex flex-col items-center text-center px-6 animate-ios-spring-pop">
             <VoraletLogo size="splash" />
           </div>
@@ -455,7 +463,7 @@ PART4_AUTH_PIN = """
 
     const PinDots = ({ count = 6, filled = 0, isError = false }) => {
       return (
-        <div className={`flex justify-center items-center gap-4 my-6 select-none ${isError ? 'animate-ios-pin-shake' : ''}`}>
+        <div className={`pin-dots-compact flex justify-center items-center gap-4 my-4 sm:my-6 select-none ${isError ? 'animate-ios-pin-shake' : ''}`}>
           {Array.from({ length: count }).map((_, idx) => {
             const isFilled = idx < filled;
             const isLatest = idx === filled - 1;
@@ -741,44 +749,53 @@ PART4_AUTH_PIN = """
       };
 
       return (
-        <div className="pin-keypad-screen flex flex-col justify-between p-6 bg-white dark:bg-[#0F172A] max-w-md mx-auto transition-colors duration-300 ease-in-out">
-          <div>
-            <div className="flex items-center justify-between pt-2">
-              <AppLogo size="sm" showText={true} />
-              <button
-                type="button"
-                onClick={onToggleTheme}
-                className="w-9 h-9 rounded-full flex items-center justify-center text-[#64748B] dark:text-[#94A3B8] hover:bg-slate-100 dark:hover:bg-[#1E293B] transition-colors ios-btn-tap"
-                aria-label="Mode Gelap / Terang"
-              >
-                <Icon name={theme === 'dark' ? 'sun' : 'moon'} className="w-5 h-5" />
-              </button>
+        <div
+          style={{
+            paddingTop: 'calc(var(--safe-top) + 0.75rem)',
+            paddingBottom: 'calc(var(--safe-bottom) + 1rem)',
+            paddingLeft: 'max(1.25rem, calc(var(--safe-left) + 1.25rem))',
+            paddingRight: 'max(1.25rem, calc(var(--safe-right) + 1.25rem))'
+          }}
+          className="pin-keypad-screen w-full bg-white dark:bg-[#0F172A] transition-colors duration-300 ease-in-out no-scrollbar"
+        >
+          <div className="w-full max-w-md sm:max-w-lg mx-auto min-h-full flex flex-col justify-between gap-2">
+            <div>
+              <div className="flex items-center justify-between pt-1">
+                <AppLogo size="sm" showText={true} />
+                <button
+                  type="button"
+                  onClick={onToggleTheme}
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-[#64748B] dark:text-[#94A3B8] hover:bg-slate-100 dark:hover:bg-[#1E293B] transition-colors ios-btn-tap"
+                  aria-label="Mode Gelap / Terang"
+                >
+                  <Icon name={theme === 'dark' ? 'sun' : 'moon'} className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="pt-4 sm:pt-8 text-center flex flex-col items-center">
+                {avatar ? (
+                  <div className="mb-3">
+                    <Avatar avatar={avatar} name={userName} size="w-16 h-16" textSize="text-xl" />
+                  </div>
+                ) : (
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-[22px] bg-[#F0F9FF] dark:bg-[#1E293B] border border-[#E0F2FE] dark:border-[#334155] flex items-center justify-center mb-3 text-[#0284C7] dark:text-[#38BDF8]">
+                    <Icon name="lock" className="w-7 h-7" strokeWidth={1.8} />
+                  </div>
+                )}
+                <h1 className="text-xl font-bold text-[#0F172A] dark:text-[#F8FAFC]">
+                  {userName ? `Hai, ${userName}` : 'Kunci Brankas'}
+                </h1>
+                <p className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-1">Masukkan 6-digit PIN untuk akses brankas</p>
+
+                <PinDots count={6} filled={pin.length} isError={error} />
+                {error && (
+                  <p className="text-xs font-semibold text-rose-500">PIN salah. Silakan coba kembali.</p>
+                )}
+              </div>
             </div>
 
-            <div className="pt-8 text-center flex flex-col items-center">
-              {avatar ? (
-                <div className="mb-3">
-                  <Avatar avatar={avatar} name={userName} size="w-16 h-16" textSize="text-xl" />
-                </div>
-              ) : (
-                <div className="w-16 h-16 rounded-[22px] bg-[#F0F9FF] dark:bg-[#1E293B] border border-[#E0F2FE] dark:border-[#334155] flex items-center justify-center mb-3 text-[#0284C7] dark:text-[#38BDF8]">
-                  <Icon name="lock" className="w-7 h-7" strokeWidth={1.8} />
-                </div>
-              )}
-              <h1 className="text-xl font-bold text-[#0F172A] dark:text-[#F8FAFC]">
-                {userName ? `Hai, ${userName}` : 'Kunci Brankas'}
-              </h1>
-              <p className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-1">Masukkan 6-digit PIN untuk akses brankas</p>
-
-              <PinDots count={6} filled={pin.length} isError={error} />
-              {error && (
-                <p className="text-xs font-semibold text-rose-500">PIN salah. Silakan coba kembali.</p>
-              )}
-            </div>
-          </div>
-
-          <div className="pb-8">
-            <Keypad onKeyPress={handlePress} onBackspace={handleBackspace} />
+            <div className="pb-2 sm:pb-4">
+              <Keypad onKeyPress={handlePress} onBackspace={handleBackspace} />
             <div className="mt-4 text-center">
               <button
                 type="button"
@@ -802,6 +819,7 @@ PART4_AUTH_PIN = """
               }}
             />
           )}
+          </div>
         </div>
       );
     };
@@ -941,15 +959,24 @@ PART4_AUTH_PIN = """
       };
 
       return (
-        <div className="min-h-[100dvh] w-full flex flex-col justify-between p-6 bg-white dark:bg-[#0F172A] max-w-md mx-auto transition-colors duration-300 ease-in-out text-[#0F172A] dark:text-[#F8FAFC]">
+        <div
+          style={{
+            paddingTop: 'calc(var(--safe-top) + 0.75rem)',
+            paddingBottom: 'calc(var(--safe-bottom) + 1rem)',
+            paddingLeft: 'max(1.25rem, calc(var(--safe-left) + 1.25rem))',
+            paddingRight: 'max(1.25rem, calc(var(--safe-right) + 1.25rem))'
+          }}
+          className="h-[100dvh] w-full bg-white dark:bg-[#0F172A] transition-colors duration-300 ease-in-out text-[#0F172A] dark:text-[#F8FAFC] overflow-y-auto no-scrollbar"
+        >
+          <div className="w-full max-w-md sm:max-w-lg mx-auto min-h-full flex flex-col justify-between">
           {/* STEP 1: Buat 6-Digit PIN Security */}
           {onboardingStep === 1 && (
-            <div className="pin-keypad-screen flex flex-col justify-between w-full">
-              <div className="pt-6 text-center">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E0F2FE] dark:bg-[#1E293B] border border-[#BAE6FD] dark:border-[#334155] text-[#0284C7] dark:text-[#38BDF8] text-xs font-bold mb-4">
+            <div className="flex-1 flex flex-col justify-between gap-2 w-full">
+              <div className="pt-2 sm:pt-6 text-center">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E0F2FE] dark:bg-[#1E293B] border border-[#BAE6FD] dark:border-[#334155] text-[#0284C7] dark:text-[#38BDF8] text-xs font-bold mb-3 sm:mb-4">
                   <span>Langkah 1 dari 4</span>
                 </div>
-                <div className="w-16 h-16 rounded-[22px] bg-[#F0F9FF] dark:bg-[#1E293B] border border-[#E0F2FE] dark:border-[#334155] flex items-center justify-center mx-auto mb-3 text-[#0284C7] dark:text-[#38BDF8]">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-[22px] bg-[#F0F9FF] dark:bg-[#1E293B] border border-[#E0F2FE] dark:border-[#334155] flex items-center justify-center mx-auto mb-2.5 sm:mb-3 text-[#0284C7] dark:text-[#38BDF8]">
                   <Icon name="lock" className="w-7 h-7" strokeWidth={1.8} />
                 </div>
                 <h1 className="text-xl font-bold text-[#0F172A] dark:text-[#F8FAFC]">
@@ -966,12 +993,12 @@ PART4_AUTH_PIN = """
                 />
 
                 {pinError && (
-                  <p className="text-xs font-semibold text-rose-500 mt-2">{pinError}</p>
+                  <p className="text-xs font-semibold text-rose-500 mt-1">{pinError}</p>
                 )}
               </div>
 
               {/* Elevated Button Container */}
-              <div className="pb-10 mb-8 pt-2 space-y-4">
+              <div className="pb-2 sm:pb-4 pt-1 space-y-3 sm:space-y-4">
                 <Keypad
                   onKeyPress={handleDigitPress}
                   onBackspace={handleBackspace}
@@ -980,7 +1007,7 @@ PART4_AUTH_PIN = """
                   type="button"
                   onClick={handleStep1Next}
                   disabled={newPin.length < 6}
-                  className={`w-full py-4 rounded-2xl font-bold text-sm transition-all ios-btn-tap ${
+                  className={`w-full py-3.5 sm:py-4 rounded-2xl font-bold text-sm transition-all ios-btn-tap ${
                     newPin.length === 6
                       ? 'bg-[#0284C7] hover:bg-[#0369A1] text-white shadow-md cursor-pointer'
                       : 'bg-slate-100 dark:bg-[#1E293B] border border-transparent dark:border-[#334155] text-[#64748B] dark:text-[#94A3B8] opacity-60 cursor-not-allowed'
@@ -1349,6 +1376,7 @@ PART4_AUTH_PIN = """
               </div>
             </div>
           )}
+          </div>
         </div>
       );
     };

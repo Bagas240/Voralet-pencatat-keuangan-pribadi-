@@ -154,6 +154,14 @@ HTML_HEAD = """<!DOCTYPE html>
 
   <style>
     :root {
+      --voralet-safe-top: 0px;
+      --voralet-safe-bottom: 0px;
+      --voralet-safe-left: 0px;
+      --voralet-safe-right: 0px;
+      --safe-top: max(env(safe-area-inset-top, 0px), var(--voralet-safe-top));
+      --safe-bottom: max(env(safe-area-inset-bottom, 0px), var(--voralet-safe-bottom));
+      --safe-left: max(env(safe-area-inset-left, 0px), var(--voralet-safe-left));
+      --safe-right: max(env(safe-area-inset-right, 0px), var(--voralet-safe-right));
       --ios-ease: cubic-bezier(0.25, 1, 0.5, 1);
       --ios-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
       --ios-bouncy: cubic-bezier(0.34, 1.68, 0.64, 1);
@@ -171,9 +179,11 @@ HTML_HEAD = """<!DOCTYPE html>
     }
     html, body {
       height: 100%;
+      min-height: 100dvh;
       width: 100%;
       margin: 0;
       padding: 0;
+      overflow: hidden;
       overscroll-behavior-y: contain;
       -webkit-overflow-scrolling: touch;
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
@@ -187,6 +197,7 @@ HTML_HEAD = """<!DOCTYPE html>
     }
     #root {
       height: 100%;
+      min-height: 100dvh;
       width: 100%;
       overflow: hidden;
       background: transparent;
@@ -202,8 +213,8 @@ HTML_HEAD = """<!DOCTYPE html>
     .ios-liquid-bg {
       position: fixed;
       inset: 0;
-      width: 100vw;
-      height: 100vh;
+      width: 100%;
+      height: 100%;
       pointer-events: none;
       z-index: 0;
       overflow: hidden;
@@ -561,12 +572,9 @@ HTML_HEAD = """<!DOCTYPE html>
     /* iOS Theme Cross-Fade Transition Overlay */
     .ios-theme-crossfade-overlay {
       position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      width: 100vw;
-      height: 100vh;
+      inset: 0;
+      width: 100%;
+      height: 100%;
       pointer-events: none;
       z-index: 99999;
       animation: iosThemeCrossfade 380ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
@@ -1274,8 +1282,8 @@ HTML_HEAD = """<!DOCTYPE html>
     }
     .ios-modal-card {
       width: 100%;
-      max-width: 32rem;
-      max-height: 90dvh;
+      max-width: 34rem;
+      max-height: calc(100dvh - var(--safe-top) - 0.75rem);
       display: flex;
       flex-direction: column;
       border-top-left-radius: 1.75rem;
@@ -1286,7 +1294,7 @@ HTML_HEAD = """<!DOCTYPE html>
       border-bottom: none;
       box-shadow: 0 -10px 32px -6px rgba(15, 23, 42, 0.14);
       color: #0F172A;
-      padding-bottom: max(env(safe-area-inset-bottom, 0px), 0.5rem);
+      padding-bottom: max(var(--safe-bottom), 0.5rem);
       will-change: transform;
       transform: translateZ(0);
       -webkit-backface-visibility: hidden;
@@ -1303,7 +1311,11 @@ HTML_HEAD = """<!DOCTYPE html>
     @media (min-width: 640px) {
       .ios-modal-card {
         border-radius: 1.5rem;
-        max-height: 85vh;
+        border-bottom: 1px solid #E2E8F0;
+        max-height: calc(100dvh - var(--safe-top) - var(--safe-bottom) - 2rem);
+      }
+      .dark .ios-modal-card, html.dark .ios-modal-card {
+        border-bottom: 1px solid #334155 !important;
       }
     }
     .ios-modal-header {
@@ -1315,7 +1327,7 @@ HTML_HEAD = """<!DOCTYPE html>
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
       overscroll-behavior: contain;
-      padding-bottom: 9rem !important;
+      padding-bottom: calc(4rem + var(--safe-bottom)) !important;
     }
 
     /* Popover spring */
@@ -1393,12 +1405,24 @@ HTML_HEAD = """<!DOCTYPE html>
     }
 
     .pin-keypad-screen {
+      min-height: 100dvh;
       height: 100dvh;
-      max-height: 100dvh;
-      overflow: hidden;
+      width: 100%;
+      overflow-y: auto;
+      overflow-x: hidden;
       user-select: none;
       -webkit-user-select: none;
       touch-action: manipulation;
+    }
+    @media (max-height: 680px) {
+      .ios-keypad-btn {
+        height: 2.85rem !important;
+        font-size: 1.05rem !important;
+      }
+      .pin-dots-compact {
+        margin-top: 0.75rem !important;
+        margin-bottom: 0.75rem !important;
+      }
     }
 
     /* Print & PDF Media Rules */
@@ -1474,6 +1498,17 @@ HTML_HEAD = """<!DOCTYPE html>
         }
       } catch (err) {}
     })();
+
+    window.__setVoraletSafeArea = function(top, bottom, left, right) {
+      try {
+        var root = document.documentElement;
+        if (!root || !root.style) return;
+        root.style.setProperty('--voralet-safe-top', (Number(top) || 0) + 'px');
+        root.style.setProperty('--voralet-safe-bottom', (Number(bottom) || 0) + 'px');
+        root.style.setProperty('--voralet-safe-left', (Number(left) || 0) + 'px');
+        root.style.setProperty('--voralet-safe-right', (Number(right) || 0) + 'px');
+      } catch (_) {}
+    };
 
     window.onerror = function(msg, url, line) {
       var r = document.getElementById('root');

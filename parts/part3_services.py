@@ -1658,9 +1658,12 @@ PART3_SERVICES = """
       }, [onClose]);
 
       return (
-        <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-[100] px-4 py-2.5 rounded-full bg-slate-900/95 dark:bg-slate-800/95 text-white text-xs font-semibold shadow-xl flex items-center gap-2.5 border border-slate-700/60 select-none ${isLeaving ? 'animate-ios-toast-exit' : 'animate-ios-toast'}`}>
+        <div
+          style={{ top: 'calc(var(--safe-top) + 0.75rem)' }}
+          className={`fixed left-1/2 -translate-x-1/2 z-[100] max-w-[calc(100vw-2rem)] px-4 py-2.5 rounded-full bg-slate-900/95 dark:bg-slate-800/95 text-white text-xs font-semibold shadow-xl flex items-center gap-2.5 border border-slate-700/60 select-none ${isLeaving ? 'animate-ios-toast-exit' : 'animate-ios-toast'}`}
+        >
           <span className="w-2 h-2 rounded-full bg-brand shrink-0"></span>
-          <span>{message}</span>
+          <span className="truncate">{message}</span>
         </div>
       );
     };

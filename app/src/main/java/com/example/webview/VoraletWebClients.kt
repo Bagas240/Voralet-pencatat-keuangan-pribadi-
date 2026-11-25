@@ -26,6 +26,7 @@ import java.io.File
 class VoraletWebViewClient(
     private val appContext: Context,
     private val tamperLocked: Boolean = false,
+    private val onPageFinishedCallback: (() -> Unit)? = null,
     private val onCrashRecover: () -> Unit
 ) : WebViewClient() {
 
@@ -112,6 +113,11 @@ class VoraletWebViewClient(
             uri.host == VoraletWebViewConfig.VIRTUAL_HOST
         // Strict offline policy: block navigation to any external or file:// URL
         return !isTrusted
+    }
+
+    override fun onPageFinished(view: WebView?, url: String?) {
+        super.onPageFinished(view, url)
+        onPageFinishedCallback?.invoke()
     }
 
     override fun onRenderProcessGone(

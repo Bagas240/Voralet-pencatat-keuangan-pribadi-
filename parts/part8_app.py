@@ -1479,9 +1479,9 @@ PART8_APP = """
           if (rootEl) rootEl.classList.remove('dark');
         }
         try {
-          window.AndroidBridge?.setStatusBarTheme?.(isDark);
+          window.AndroidBridge?.setStatusBarTheme?.(showSplash ? true : isDark);
         } catch (_) {}
-      }, [theme]);
+      }, [theme, showSplash]);
 
       // Automatically synchronize the app's dark mode setting with the user's system OS theme preferences using 'window.matchMedia('(prefers-color-scheme: dark)')'
       useEffect(() => {
@@ -2326,7 +2326,7 @@ PART8_APP = """
       const isAnyModalOpen = isTxModalOpen || isAccModalOpen || isSavingsModalOpen || isSettingsModalOpen || isDebtModalOpen || isPetModalOpen || isStreakModalOpen || isMonthlyPdfModalOpen || isCsvImportModalOpen || isReceiptModalOpen || isUpdatePromptOpen;
 
       return (
-        <div className={`h-[100dvh] flex flex-col ${theme === 'dark' ? 'dark text-[#F8FAFC]' : 'text-[#0F172A]'} bg-transparent overflow-hidden select-none transition-colors duration-300 ease-in-out relative`}>
+        <div className={`h-[100dvh] w-full flex flex-col ${theme === 'dark' ? 'dark text-[#F8FAFC]' : 'text-[#0F172A]'} bg-transparent overflow-hidden select-none transition-colors duration-300 ease-in-out relative`}>
           {/* iOS 26 Dynamic Ambient Liquid Glass Canvas */}
           <div className="ios-liquid-bg" aria-hidden="true">
             <div className="ios-liquid-orb-1" />
@@ -2339,10 +2339,12 @@ PART8_APP = """
           {/* Main App Viewport */}
           <div className="flex-1 flex flex-col w-full h-full overflow-hidden relative z-10">
             <main
-              className="flex-1 w-full max-w-md mx-auto px-4 pt-4 sm:pt-6 pb-28 overflow-y-auto no-scrollbar"
+              className="flex-1 w-full max-w-xl md:max-w-2xl lg:max-w-3xl mx-auto px-4 sm:px-6 overflow-y-auto no-scrollbar"
               style={{
-                paddingTop: 'max(env(safe-area-inset-top, 0px), 1.25rem)',
-                paddingBottom: 'calc(7.5rem + env(safe-area-inset-bottom, 0px))'
+                paddingTop: 'calc(var(--safe-top) + 0.75rem)',
+                paddingBottom: 'calc(6.5rem + var(--safe-bottom))',
+                paddingLeft: 'max(1rem, calc(var(--safe-left) + 1rem))',
+                paddingRight: 'max(1rem, calc(var(--safe-right) + 1rem))'
               }}
             >
             <ErrorBoundary>

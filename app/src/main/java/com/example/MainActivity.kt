@@ -15,6 +15,7 @@ import android.webkit.WebView
 import android.widget.FrameLayout
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.ViewCompat
@@ -46,6 +47,10 @@ class MainActivity : ComponentActivity() {
     private var pendingExportBytes: ByteArray? = null
     private var pendingTestNotifOnGrant = false
     private val ioExecutor = Executors.newSingleThreadExecutor()
+    private var lastSafeTopDp = 0f
+    private var lastSafeBottomDp = 0f
+    private var lastSafeLeftDp = 0f
+    private var lastSafeRightDp = 0f
 
     private val notificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -129,7 +134,23 @@ class MainActivity : ComponentActivity() {
         prepareWebViewStorage(this)
         VoraletNotificationHelper.ensureChannel(this)
 
-        enableEdgeToEdge()
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT)
+        )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            window.isStatusBarContrastEnforced = false
+            window.isNavigationBarContrastEnforced = false
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            window.attributes = window.attributes.apply {
+                layoutInDisplayCutoutMode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
+                } else {
+                    WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+                }
+            }
+        }
 
         // Anti-Screen Scraping & Malware Screenshot Protection on physical release devices only
         // (FLAG_SECURE blacks out VirtualDisplay / Streaming Emulator frames if enabled on emulators)
@@ -188,15 +209,57 @@ class MainActivity : ComponentActivity() {
             setBackgroundColor(initialBg)
         }
         rootContainer = container
+        window.decorView.setBackgroundColor(initialBg)
         setContentView(container)
 
         ViewCompat.setOnApplyWindowInsetsListener(container) { view, windowInsets ->
-            val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
-            view.setPadding(insets.left, insets.top, insets.right, insets.bottom)
+            val safeInsets = windowInsets.getInsets(
+                WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
+            )
+            val imeInsets = windowInsets.getInsets(WindowInsetsCompat.Type.ime())
+
+            // Full-bleed edge-to-edge: never pad top/bottom/sides for system bars (no black gaps);
+            // only apply bottom padding while the soft keyboard (IME) is visible.
+            view.setPadding(0, 0, 0, imeInsets.bottom)
+
+            val density = resources.displayMetrics.density.takeIf { it > 0f } ?: 1f
+            lastSafeTopDp = safeInsets.top / density
+            lastSafeBottomDp = if (imeInsets.bottom > 0) 0f else (safeInsets.bottom / density)
+            lastSafeLeftDp = safeInsets.left / density
+            lastSafeRightDp = safeInsets.right / density
+            pushSafeAreaToWebView()
+
             windowInsets
         }
 
         setupWebView(initialBg, securityWarning)
+    }
+
+    private fun pushSafeAreaToWebView() {
+        val wv = currentWebView ?: return
+        val top = "%.2f".format(java.util.Locale.US, lastSafeTopDp)
+        val bottom = "%.2f".format(java.util.Locale.US, lastSafeBottomDp)
+        val left = "%.2f".format(java.util.Locale.US, lastSafeLeftDp)
+        val right = "%.2f".format(java.util.Locale.US, lastSafeRightDp)
+        val js = """
+            (function() {
+              var root = document.documentElement;
+              if (root && root.style) {
+                root.style.setProperty('--voralet-safe-top', '${top}px');
+                root.style.setProperty('--voralet-safe-bottom', '${bottom}px');
+                root.style.setProperty('--voralet-safe-left', '${left}px');
+                root.style.setProperty('--voralet-safe-right', '${right}px');
+              }
+              if (window.__setVoraletSafeArea) {
+                window.__setVoraletSafeArea(${top}, ${bottom}, ${left}, ${right});
+              }
+            })();
+        """.trimIndent()
+        wv.post {
+            try {
+                wv.evaluateJavascript(js, null)
+            } catch (_: Throwable) {}
+        }
     }
 
     private fun requestNotificationPermission(sendTestAfterGrant: Boolean) {
@@ -258,6 +321,10 @@ class MainActivity : ComponentActivity() {
             webViewClient = VoraletWebViewClient(
                 appContext = applicationContext,
                 tamperLocked = securityWarning,
+                onPageFinishedCallback = {
+                    rootContainer?.let { ViewCompat.requestApplyInsets(it) }
+                    pushSafeAreaToWebView()
+                },
                 onCrashRecover = {
                     setupWebView(backgroundColor, securityWarning)
                 }

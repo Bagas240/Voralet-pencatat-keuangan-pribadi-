@@ -2061,8 +2061,12 @@ PART7_VIEWS = """
           onMouseMove={(e) => handlePointerMove(e.clientX)}
           onMouseUp={handlePointerUp}
           onMouseLeave={() => { if (isDraggingRef.current) handlePointerUp(); }}
-          className="fixed bottom-[max(1.25rem,env(safe-area-inset-bottom,1.25rem))] left-0 right-0 z-50 w-[92%] max-w-[360px] h-14 mx-auto rounded-full bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-700 shadow-md select-none touch-none overflow-hidden p-1.5 transition-transform duration-300"
-          style={{ willChange: 'transform', transform: 'translateZ(0)' }}
+          className="fixed left-0 right-0 z-50 w-[calc(100%-2rem)] max-w-[400px] sm:max-w-[460px] h-14 mx-auto rounded-full bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-700 shadow-md select-none touch-none overflow-hidden p-1.5 transition-transform duration-300"
+          style={{
+            bottom: 'calc(var(--safe-bottom) + 0.75rem)',
+            willChange: 'transform',
+            transform: 'translateZ(0)'
+          }}
         >
           {/* Inner relative container for precise pixel positioning */}
           <div className="relative w-full h-full">

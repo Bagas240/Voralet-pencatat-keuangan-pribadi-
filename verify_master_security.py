@@ -146,7 +146,7 @@ def verify_file_integrity():
 
 
 def main():
-    log("Initializing Voralet v3.5.0 Security & Integrity Audit...")
+    log("Initializing Voralet v3.6.0 Security & Integrity Audit...")
     if not verify_master_code():
         sys.exit(1)
 

@@ -33,17 +33,17 @@ def resolve_version():
         return github_ref.removeprefix('refs/tags/').lstrip('v')
 
     try:
-        tag = subprocess.check_output(
-            ['git', 'describe', '--tags', '--abbrev=0'],
-            stderr=subprocess.DEVNULL,
-            text=True
-        ).strip()
-        if tag:
-            return tag.lstrip('v')
-    except (OSError, subprocess.CalledProcessError):
+        import re
+        gradle_path = os.path.join('app', 'build.gradle.kts')
+        if os.path.isfile(gradle_path):
+            with open(gradle_path, 'r', encoding='utf-8') as f:
+                m = re.search(r'versionName\s*=\s*"([^"]+)"', f.read())
+                if m:
+                    return m.group(1).lstrip('v')
+    except OSError:
         pass
 
-    return '3.5.0'
+    return '3.6.0'
 
 
 def _rotl32(v: int, n: int) -> int:
